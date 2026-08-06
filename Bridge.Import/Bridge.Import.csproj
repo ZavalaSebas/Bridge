@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net10.0-windows, not plain net10.0: reads the Windows registry
+         (SteamPaths.cs) — tried plain net10.0 + the Microsoft.Win32.Registry
+         NuGet package first, but that produced CA1416 "only supported on
+         windows" warnings and an NU1510 "package not needed" warning, since
+         registry APIs already ship in the Windows-targeting shared framework.
+         Bridge only ever runs on Windows anyway (see DEVELOPMENT.md
+         Requirements), so there's no real cross-platform need being given up. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Bridge.Import</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bridge.Core\Bridge.Core.csproj" />
+  </ItemGroup>
+
+</Project>

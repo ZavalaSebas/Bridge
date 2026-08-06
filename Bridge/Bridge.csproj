@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>$(Version).0</AssemblyVersion>
+
+    <!-- Single-file self-contained publish (Fase 8). Without
+         IncludeNativeLibrariesForSelfExtract, WPF's own native interop DLLs
+         (PresentationNative/wpfgfx/D3DCompiler) and the native SQLite driver
+         end up as sidecar files next to the exe instead of inside it — this
+         was verified empirically (dotnet publish without it produced Bridge.exe
+         plus 6 separate .dll files), not assumed from docs. DebugType=none
+         drops the .pdb files from the publish output; Release builds during
+         normal development still get them (this only takes effect on publish
+         with -c Release, not on every build). -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- DebugType=none for Release comes from Directory.Build.props (repo root),
+         applies to every project, not just this one. -->
+    <!-- Do NOT add <PublishTrimmed>true</PublishTrimmed> without dedicated
+         testing — WPF, EF Core, and JSON reflection-based (de)serialization
+         are all trim-hazard-prone (see PLAN.md Risk Register). -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bridge.Core\Bridge.Core.csproj" />
+    <ProjectReference Include="..\Bridge.Storage\Bridge.Storage.csproj" />
+    <ProjectReference Include="..\Bridge.Metadata\Bridge.Metadata.csproj" />
+    <ProjectReference Include="..\Bridge.Import\Bridge.Import.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+  </ItemGroup>
+
+</Project>
