@@ -1,0 +1,14 @@
+<Project>
+
+  <!-- Applies to every project in the solution, current and future — avoids
+       repeating the same setting in each .csproj. See DEVELOPMENT.md >
+       "Bridge.Storage" / Fase 8 notes for why DebugType=none matters for
+       Release publishes specifically: without it, a single-file publish of
+       Bridge still leaves .pdb files from referenced projects (Bridge.Core,
+       Bridge.Storage, Bridge.Metadata) sitting next to the exe, contradicting
+       "single file" — verified empirically during Fase 8, not assumed. -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+</Project>

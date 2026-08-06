@@ -1,0 +1,92 @@
+﻿<Window x:Class="Bridge.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Bridge"
+        mc:Ignorable="d"
+        Title="Bridge" Height="600" Width="900">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
+                    <TextBox Width="180"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding NewGameName, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="Add" Margin="8,0,0,0" Padding="8,2" Command="{Binding AddGameCommand}" />
+                </StackPanel>
+                <Button DockPanel.Dock="Top" Content="Import Steam Library" Margin="8,0,8,8" Padding="8,2"
+                        Command="{Binding ImportSteamLibraryCommand}" />
+                <StackPanel DockPanel.Dock="Bottom" Margin="8">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Width="140"
+                                 VerticalContentAlignment="Center"
+                                 ToolTip="Folder to scan for ROMs"
+                                 Text="{Binding RomFolderInput, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Content="Scan ROMs" Margin="8,0,0,0" Padding="8,2" Command="{Binding ScanRomFolderCommand}" />
+                    </StackPanel>
+                    <Button Content="Configure Emulator..." Margin="0,8,0,0" Padding="8,2"
+                            HorizontalAlignment="Left" Click="ConfigureEmulator_Click" />
+                    <Button Content="IGDB Settings..." Margin="0,4,0,0" Padding="8,2"
+                            HorizontalAlignment="Left" Click="IgdbSettings_Click" />
+                </StackPanel>
+                <ListBox ItemsSource="{Binding Games}"
+                         SelectedItem="{Binding SelectedGame}"
+                         DisplayMemberPath="Name" />
+            </DockPanel>
+
+            <StackPanel Grid.Column="1" Margin="16">
+                <StackPanel DataContext="{Binding SelectedGame}">
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                             FontSize="24" FontWeight="Bold" BorderThickness="0" Background="Transparent" Padding="0" />
+                    <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                             TextWrapping="Wrap" AcceptsReturn="True" Height="80" Margin="0,8,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <CheckBox Content="Favorite" IsChecked="{Binding Favorite}" Margin="0,0,16,0" />
+                        <CheckBox Content="Hidden" IsChecked="{Binding Hidden}" />
+                    </StackPanel>
+                    <TextBlock Margin="0,16,0,0">
+                        <Run Text="Playtime (seconds): " />
+                        <Run Text="{Binding PlaytimeSeconds, Mode=OneWay}" />
+                    </TextBlock>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <Button Content="Save" Padding="8,2" Command="{Binding SaveGameCommand}" />
+                    <Button Content="Delete" Margin="8,0,0,0" Padding="8,2" Command="{Binding DeleteGameCommand}" />
+                    <Button Content="Download Metadata (IGDB)" Margin="8,0,0,0" Padding="8,2" Command="{Binding DownloadMetadataCommand}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <TextBox Width="240"
+                             VerticalContentAlignment="Center"
+                             ToolTip="Path to the game's .exe"
+                             Text="{Binding ExecutablePathInput, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="Set Play Action" Margin="8,0,0,0" Padding="8,2" Command="{Binding SetPlayActionCommand}" />
+                </StackPanel>
+                <Button Content="▶ Play" Margin="0,8,0,0" Padding="8,4" HorizontalAlignment="Left"
+                        FontWeight="Bold" Command="{Binding PlayGameCommand}" />
+            </StackPanel>
+        </Grid>
+
+        <StatusBar Grid.Row="1">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatisticsSummary}" FontWeight="SemiBold" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}" />
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
