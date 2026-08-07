@@ -4,8 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Bridge"
+        xmlns:converters="clr-namespace:Bridge.Converters"
         mc:Ignorable="d"
-        Title="Bridge" Height="600" Width="900">
+        Title="Bridge" Height="700" Width="1000">
+    <Window.Resources>
+        <converters:ImageUrlConverter x:Key="ImageUrlConverter" />
+        <converters:ReleaseDateConverter x:Key="ReleaseDateConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -14,13 +19,13 @@
 
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="260" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <DockPanel Grid.Column="0">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
-                    <TextBox Width="180"
+                    <TextBox Width="170"
                              VerticalContentAlignment="Center"
                              Text="{Binding NewGameName, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Content="Add" Margin="8,0,0,0" Padding="8,2" Command="{Binding AddGameCommand}" />
@@ -29,7 +34,7 @@
                         Command="{Binding ImportSteamLibraryCommand}" />
                 <StackPanel DockPanel.Dock="Bottom" Margin="8">
                     <StackPanel Orientation="Horizontal">
-                        <TextBox Width="140"
+                        <TextBox Width="130"
                                  VerticalContentAlignment="Center"
                                  ToolTip="Folder to scan for ROMs"
                                  Text="{Binding RomFolderInput, UpdateSourceTrigger=PropertyChanged}" />
@@ -45,38 +50,78 @@
                          DisplayMemberPath="Name" />
             </DockPanel>
 
-            <StackPanel Grid.Column="1" Margin="16">
-                <StackPanel DataContext="{Binding SelectedGame}">
-                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                             FontSize="24" FontWeight="Bold" BorderThickness="0" Background="Transparent" Padding="0" />
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="16" DataContext="{Binding SelectedGame}">
+
+                    <!-- Cover + Title + Scores -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Image Grid.Column="0" Width="140" Stretch="Uniform"
+                               Source="{Binding CoverImage, Converter={StaticResource ImageUrlConverter}}"
+                               RenderOptions.BitmapScalingMode="Fant" Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1">
+                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                     FontSize="20" FontWeight="Bold" BorderThickness="0" Background="Transparent" Padding="0" />
+                            <TextBlock Text="{Binding ReleaseDate, Converter={StaticResource ReleaseDateConverter}}"
+                                       Margin="0,2,0,0" Foreground="Gray" FontSize="13" />
+                            <WrapPanel Margin="0,6,0,0">
+                                <TextBlock Foreground="Gray" FontSize="12">
+                                    <Run Text="Critic: " />
+                                    <Run Text="{Binding CriticScore, Mode=OneWay, TargetNullValue='—'}" FontWeight="SemiBold" />
+                                    <Run Text="/100  ·  Community: " />
+                                    <Run Text="{Binding CommunityScore, Mode=OneWay, TargetNullValue='—'}" FontWeight="SemiBold" />
+                                    <Run Text="/100" />
+                                </TextBlock>
+                            </WrapPanel>
+                            <WrapPanel Margin="0,6,0,0">
+                                <CheckBox Content="Favorite" IsChecked="{Binding Favorite}" Margin="0,0,12,0" />
+                                <CheckBox Content="Hidden" IsChecked="{Binding Hidden}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Description -->
                     <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                             TextWrapping="Wrap" AcceptsReturn="True" Height="80" Margin="0,8,0,0" />
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <CheckBox Content="Favorite" IsChecked="{Binding Favorite}" Margin="0,0,16,0" />
-                        <CheckBox Content="Hidden" IsChecked="{Binding Hidden}" />
-                    </StackPanel>
-                    <TextBlock Margin="0,16,0,0">
-                        <Run Text="Playtime (seconds): " />
-                        <Run Text="{Binding PlaytimeSeconds, Mode=OneWay}" />
+                             TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" Margin="0,12,0,0" />
+
+                    <!-- Background Image -->
+                    <TextBlock Text="Background" FontWeight="SemiBold" Margin="0,12,0,0" />
+                    <Image MinHeight="120" MaxHeight="200" Stretch="UniformToFill"
+                           Source="{Binding BackgroundImage, Converter={StaticResource ImageUrlConverter}}"
+                           RenderOptions.BitmapScalingMode="Fant" Margin="0,4,0,0" />
+
+                    <!-- Playtime -->
+                    <TextBlock Margin="0,12,0,0" Foreground="Gray">
+                        <Run Text="Playtime: " />
+                        <Run Text="{Binding PlaytimeSeconds, Mode=OneWay, StringFormat='{}{0:N0}s'}" FontWeight="SemiBold" />
                     </TextBlock>
-                </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <Button Content="Save" Padding="8,2" Command="{Binding SaveGameCommand}" />
-                    <Button Content="Delete" Margin="8,0,0,0" Padding="8,2" Command="{Binding DeleteGameCommand}" />
-                    <Button Content="Download Metadata (IGDB)" Margin="8,0,0,0" Padding="8,2" Command="{Binding DownloadMetadataCommand}" />
-                </StackPanel>
+                    <!-- Install directory -->
+                    <TextBlock Margin="0,4,0,0" Foreground="Gray" TextWrapping="Wrap"
+                               Text="{Binding InstallDirectory, Mode=OneWay, TargetNullValue='Not installed'}" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <TextBox Width="240"
-                             VerticalContentAlignment="Center"
-                             ToolTip="Path to the game's .exe"
-                             Text="{Binding ExecutablePathInput, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Content="Set Play Action" Margin="8,0,0,0" Padding="8,2" Command="{Binding SetPlayActionCommand}" />
+                    <!-- Buttons -->
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Content="Save" Padding="8,2" Command="{Binding SaveGameCommand}" />
+                        <Button Content="Delete" Margin="8,0,0,0" Padding="8,2" Command="{Binding DeleteGameCommand}" />
+                        <Button Content="Download Metadata" Margin="8,0,0,0" Padding="8,2" Command="{Binding DownloadMetadataCommand}" />
+                    </StackPanel>
+
+                    <!-- Play -->
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <TextBox Width="240"
+                                 VerticalContentAlignment="Center"
+                                 ToolTip="Path to the game's .exe"
+                                 Text="{Binding ExecutablePathInput, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Content="Set Play Action" Margin="8,0,0,0" Padding="8,2" Command="{Binding SetPlayActionCommand}" />
+                    </StackPanel>
+                    <Button Content="▶ Play" Margin="0,8,0,8" Padding="8,4" HorizontalAlignment="Left"
+                            FontWeight="Bold" Command="{Binding PlayGameCommand}" />
                 </StackPanel>
-                <Button Content="▶ Play" Margin="0,8,0,0" Padding="8,4" HorizontalAlignment="Left"
-                        FontWeight="Bold" Command="{Binding PlayGameCommand}" />
-            </StackPanel>
+            </ScrollViewer>
         </Grid>
 
         <StatusBar Grid.Row="1">

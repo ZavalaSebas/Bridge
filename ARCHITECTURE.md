@@ -263,7 +263,7 @@ Playnite splits emulator profiles into `CustomEmulatorProfile` (user-configured 
 
 ---
 
-### ADR-10: IGDB as the sole text-metadata source
+### ADR-10: IGDB as a text-metadata source (primary, not sole — see ADR-12)
 
 **Status:** Accepted
 
@@ -288,6 +288,42 @@ Fase 5 was blocked from the start of implementation because Playnite's real meta
 
 - **Alternative 1: SteamGridDB** — images only, no text metadata; already tried once and explicitly rejected by the user as not what "the one Playnite uses" meant.
 - **Alternative 2: ScreenScraper** — stronger fit for pure-ROM/emulation metadata specifically, but the user asked for IGDB directly, not a retro-specific source.
+
+**Update (2026-08-06):** IGDB is no longer the *sole* metadata source. `SteamMetadataProvider` (ADR-12) was added as a second source that serves both as a fallback in the multi-provider chain and as the primary source for Steam-imported games (appid-direct lookup, no search needed). The interface `IGameMetadataProvider` was extracted to support this cleanly.
+
+---
+
+### ADR-12: Steam Store metadata as a secondary HTTP-anonymous metadata source
+
+**Status:** Accepted
+
+**Date:** 2026-08-06
+
+**Context:**
+Bridge now auto-imports Steam games on startup but they arrived with no metadata — just name, ExternalId, and install directory. The user asked for Steam metadata "tambien" on top of IGDB. Playnite's `UniversalSteamMetadata` addon fetches metadata from `store.steampowered.com/api/appdetails` + `/appreviews` + HTML search scraping — all 100% HTTP anonymous, no login, no API key, no Steam client required. Steam-imported games already have their AppID as `ExternalId`, enabling a guaranteed direct lookup without searching by name.
+
+**Decision:**
+`Bridge.Metadata.SteamMetadataProvider` implements `IGameMetadataProvider` and calls three endpoints:
+- `https://store.steampowered.com/api/appdetails?appids={id}` → Name, Description, ReleaseDate, Developers, Publishers, Genres, Platforms, Categories (Features), Metacritic score, Screenshots
+- `https://store.steampowered.com/appreviews/{id}?json=1` → CommunityScore (SteamDB formula: Wilson score with vote-count penalty)
+- `https://store.steampowered.com/search/?term={name}` → appid discovery for non-Steam games
+
+Images come from the Steam CDN (`steamcdn-a.akamaihd.net/steam/apps/{id}/library_600x900_2x.jpg` for covers, `/header.jpg` for backgrounds). All HTTP calls have try-catch guards (returns null on failure, never throws to the caller).
+
+In the multi-provider chain, Steam-imported games get a guaranteed appid-direct lookup first, then fall back to IGDB search. Non-Steam games try IGDB first, then Steam search by name. On startup, `DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all Steam games without a description.
+
+**Consequences:**
+- ✅ 12+ metadata fields for Steam games with zero auth burden — the user doesn't need any account or API key
+- ✅ Guaranteed lookup for Steam-imported games (appid is known) — no false positives from name search
+- ✅ Fallback chain handles IGDB being unconfigured or failing gracefully
+- ✅ `IGameMetadataProvider` interface extracted from this work — cleanly supports future providers
+- ❌ Rate limiting: Steam API can return 429; handled by falling through to the next provider, not by retry logic in this provider
+- ❌ HTML search scraping for non-Steam games is fragile (depends on `search_result_row` class and `data-ds-appid` attribute); acceptable for fallback-only use
+
+**Alternatives considered:**
+
+- **Alternative 1: SteamKit2** (what Playnite's real extension uses for `appinfo` like tags/franchise/icon) — rejected as overkill; the HTTP endpoints alone cover 80%+ of useful fields without requiring a Steam protocol library.
+- **Alternative 2: IGDB-only** — rejected; Steam Store metadata requires no credentials, making it a natural complement to the IGDB credentials-required path.
 
 ---
 

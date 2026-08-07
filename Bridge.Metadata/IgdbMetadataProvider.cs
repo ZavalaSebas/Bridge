@@ -1,31 +1,17 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using Bridge.Core.Contracts;
 using Bridge.Core.Import;
 using ReleaseDate = Bridge.Core.Entities.ReleaseDate;
 
 namespace Bridge.Metadata;
 
-/// <summary>
-/// Bridge's one and only text-metadata source, per the user's explicit choice
-/// (2026-08-05): IGDB, because it's the de facto standard metadata addon in
-/// Playnite's real ecosystem (not bundled in Playnite's own core repo — see
-/// PROJECT_FOUNDATION.md §28.20 — but the closest thing to "what Playnite
-/// actually uses" in practice). Matches ADR-8's reasoning shape even though
-/// this supersedes the SteamGridDB-images-only choice that ADR briefly
-/// explored and the user rejected — see ARCHITECTURE.md for the current record.
-///
-/// MVP scope: search by exact name, take the first IGDB result, map Name/
-/// Description/ReleaseDate/CoverImage/Genres only. No developer/publisher
-/// mapping yet (IGDB's involved_companies needs role-filtering — see
-/// PROJECT_FOUNDATION.md §28.3 for the full field list Playnite's real
-/// MetadataDownloader resolves, most of which isn't wired up here yet). No
-/// SkipExistingValues semantics yet — every call overwrites the target fields
-/// unconditionally; the caller decides whether to call this at all.
-/// </summary>
-public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, IgdbAuthClient authClient)
+public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, IgdbAuthClient authClient) : IGameMetadataProvider
 {
     private const string GamesEndpoint = "https://api.igdb.com/v4/games";
+
+    public string Name => "IGDB";
 
     public async Task<GameMetadata?> SearchAsync(string gameName, CancellationToken cancellationToken = default)
     {

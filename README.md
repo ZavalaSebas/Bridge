@@ -49,7 +49,7 @@ The app starts as plain WPF and evolves visually toward WPF UI once the function
 
 Grab the latest `Bridge.exe` from [Releases](https://github.com/ZavalaSebas/Bridge/releases). Self-contained — no .NET required. Just run it.
 
-*(No GitHub release cut yet — the project isn't in a git repo yet either, see `PLAN.md`. `dotnet publish` has been verified locally to produce a genuine single-file `Bridge.exe`, though.)*
+*(No GitHub release cut yet — the project is in active development. `dotnet publish` has been verified locally to produce a genuine single-file `Bridge.exe`, though.)*
 
 **Build from Source**
 
@@ -71,14 +71,16 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 
 ## Features
 
-> Bridge is early — the MVP loop below works end-to-end and is verified by actually running it, but plenty of the rough edges listed in [PLAN.md](PLAN.md#development-phases) are still open (no library import from Steam/GOG yet, no automatic emulator detection, no local image caching). See [PLAN.md](PLAN.md#scope-current-vs-future) for full current/future scope.
-
-- Local game library with add, edit, and delete
-- Manual game entries
-- Launch a game and track playtime automatically
+- **Steam library auto-import** — detects installed Steam games automatically on startup (registry + `libraryfolders.vdf` + `appmanifest*.acf`)
+- **Steam Store metadata** — downloads name, description, release date, cover/background art, critic/community scores, genres, and more from the official Steam store (no login, no API key)
+- **IGDB metadata** — text and image metadata from IGDB (requires a free Twitch Developer account)
+- **Multi-provider fallback** — metadata search tries IGDB first, then falls back to Steam Store automatically
+- **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
+- Manual game entries with add, edit, and delete
+- Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
-- Simple ROM import (folder scan) with emulator matching and launching
-- Metadata download from IGDB (description, release date, cover art, genres)
+- Simple ROM folder scan with emulator matching and `{RomPath}` launching
+- Self-contained single-file `.exe` (~148 MB) — no .NET runtime install required
 
 ---
 

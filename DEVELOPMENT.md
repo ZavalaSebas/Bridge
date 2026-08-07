@@ -77,15 +77,15 @@ Bridge/
 ├── Bridge/              # WPF host app — created, real ViewModels/Services/Statistics/Settings now, not just scaffold
 ├── Bridge.Core/         # Domain entities and repository contracts — created (see below)
 ├── Bridge.Storage/      # EF Core DbContext + repository implementations — created (see below)
-├── Bridge.Metadata/     # created — IgdbMetadataProvider/IgdbAuthClient (see below)
-├── Bridge.Import/       # not created — import logic lives in MainViewModel for now
+├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
+├── Bridge.Import/       # created — SteamLibraryImporter, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
 └── Bridge.Tests/        # created — 26 tests, all passing (see below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
 
-> **Status:** `Bridge.slnx`, `Bridge/Bridge.csproj`, `Bridge.Core/Bridge.Core.csproj`, `Bridge.Storage/Bridge.Storage.csproj`, `Bridge.Metadata/Bridge.Metadata.csproj`, and `Bridge.Tests/Bridge.Tests.csproj` all exist and build/test clean. **Module-boundary note** (see `PLAN.md` > Project Structure for the fuller version): `Bridge.Import`/`Bridge.Emulation` were never actually created as separate projects — that logic lives inside `Bridge` (the app project) instead, a real deviation from the original plan, flagged there for a deliberate decision before Fase 9, not silently accepted. `Bridge.Metadata` was deliberately built as a real separate project to not repeat that pattern a third time.
+> **Status:** `Bridge.slnx`, `Bridge/Bridge.csproj`, `Bridge.Core/Bridge.Core.csproj`, `Bridge.Storage/Bridge.Storage.csproj`, `Bridge.Metadata/Bridge.Metadata.csproj`, `Bridge.Import/Bridge.Import.csproj`, and `Bridge.Tests/Bridge.Tests.csproj` all exist and build/test clean. **Module-boundary note** (see `PLAN.md` > Project Structure for the fuller version): `Bridge.Emulation` was never actually created as a separate project — that logic lives inside `Bridge` (the app project) instead, a real deviation from the original plan, flagged there for a deliberate decision before Fase 9, not silently accepted. `Bridge.Metadata` and `Bridge.Import` were built as real separate projects.
 
 ### `Bridge.Core` — what's in it
 
@@ -111,7 +111,8 @@ Bridge.Core/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
 └── Contracts/
     ├── IRepository.cs         # generic CRUD + GetOrCreateByName
-    └── IGameRepository.cs
+    ├── IGameRepository.cs     # FindByExternalId
+    └── IGameMetadataProvider.cs # SearchAsync + Name — enables multi-provider fallback chain
 ```
 
 Every entity's field shape is traced directly to `PROJECT_FOUNDATION.md` §28's verified reference — where Bridge's shape deliberately diverges from Playnite's (no `PluginId`, one `Company` type, no `MetadataProperty`, single `EmulatorProfile` shape), the reasoning is recorded in [ARCHITECTURE.md](ARCHITECTURE.md) ADR-6 through ADR-9, not just in code comments. `dotnet build Bridge.Core/Bridge.Core.csproj` compiles clean (0 warnings, 0 errors) as of this writing.
@@ -141,10 +142,24 @@ Bridge.Metadata/
 ├── IgdbSettings.cs          # Client ID/Secret DTO — never hardcoded, see IgdbSettingsStore in Bridge/
 ├── IgdbAuthClient.cs        # Twitch OAuth2 client-credentials flow, caches the token
 ├── IgdbGame.cs              # raw IGDB /v4/games response shape (only the fields this MVP uses)
-└── IgdbMetadataProvider.cs  # SearchAsync(name) -> GameMetadata?, plus the mapping/URL-upgrade logic
+├── IgdbMetadataProvider.cs  # SearchAsync(name) -> GameMetadata?, implements IGameMetadataProvider
+├── SteamStoreModels.cs      # DTOs for store.steampowered.com/api/appdetails, /appreviews
+└── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
 ```
 
-See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-the-sole-text-metadata-source) for why IGDB, and the real limitation on how it was verified: no live IGDB credentials were available while building this, so `Bridge.Tests/Metadata/` (9 tests) exercises the whole flow — OAuth, request construction, response mapping, error paths — against a fake `HttpMessageHandler`, not the real IGDB servers. The credentials input UI (`Bridge/IgdbSettingsWindow.xaml`, "IGDB Settings..." button in `MainWindow`) and settings persistence (`Bridge/Settings/IgdbSettingsStore.cs` — a plain JSON file at `AppDataPath/igdb-settings.json`, separate from `bridge.db`) are wired and the app starts fine with no credentials configured (confirmed by launching it) — but the first real end-to-end proof only happens once someone enters an actual Twitch Client ID/Secret and clicks "Download Metadata (IGDB)".
+See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. On startup, `MainViewModel.DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all newly imported Steam games. No local image caching yet — cover/background URLs are stored as-is.
+
+### `Bridge.Import` — what's in it
+
+```
+Bridge.Import/
+└── Steam/
+    ├── SteamLibraryImporter.cs  # GetInstalledGames() — registry → libraryfolders.vdf → appmanifest*.acf
+    ├── VdfParser.cs             # hand-rolled recursive-descent VDF parser (ADR-11)
+    └── SteamPaths.cs            # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
+```
+
+See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. See also `PROJECT_FOUNDATION.md` §28.26 for the reference implementation in Playnite's SteamLibrary extension, and §28.27.A for the full upstream pipeline (online owned games, playtime via Web API, Family Sharing, etc. — all documented for future reference, none implemented in Bridge yet).
 
 ---
 
@@ -393,14 +408,15 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 26 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release` — 38 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
 - `Storage/RepositoryTests.cs` — `GetOrCreateByName` dedup, including case-insensitivity.
+- `Import/SteamLibraryImporterTests.cs` — VDF parsing, library folder detection, StateFlags filtering, re-scan update behavior.
 - `Services/RomScannerTests.cs` — extension filtering, dedup-by-existing-ROM-path, missing-directory error.
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
-- `Metadata/IgdbAuthClientTests.cs`, `Metadata/IgdbMetadataProviderTests.cs` — the whole IGDB flow (OAuth token fetch + caching, request format, response mapping, error paths) against a fake `HttpMessageHandler` (`Metadata/FakeHttpMessageHandler.cs`) — not real IGDB credentials, see [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-the-sole-text-metadata-source) for why that's a real, flagged limitation and not silently glossed over.
+- `Metadata/IgdbAuthClientTests.cs`, `Metadata/IgdbMetadataProviderTests.cs` — the whole IGDB flow (OAuth token fetch + caching, request format, response mapping, error paths) against a fake `HttpMessageHandler` (`Metadata/FakeHttpMessageHandler.cs`) — not real IGDB credentials, see [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why that's a real, flagged limitation and not silently glossed over.
 
 **Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`.
 

@@ -75,6 +75,14 @@ namespace Bridge
             services.AddSingleton<HttpClient>();
             services.AddSingleton<IgdbAuthClient>();
             services.AddSingleton<IgdbMetadataProvider>();
+            services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<IgdbMetadataProvider>());
+
+            // Steam Store metadata: 100% HTTP, anonymous, no API key needed.
+            // Registered as both concrete (for appid-specific lookups on
+            // Steam-imported games) and via IGameMetadataProvider for the
+            // multi-provider fallback chain in MainViewModel.
+            services.AddSingleton<SteamMetadataProvider>();
+            services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<SteamMetadataProvider>());
 
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();
