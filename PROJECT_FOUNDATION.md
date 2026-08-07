@@ -3114,6 +3114,199 @@ STEAM — deteccion de juegos instalados, 100% archivos locales, sin red:
   a GameMetadata.ExternalId=AppID, Name, InstallDirectory, IsInstalled=true.
   Epic no se investigo en esta pasada (no estaba en el repo de extensiones
   revisado, es otro repo/addon) — queda pendiente si se necesita.
+
+28.27 EXTENSIONES DE BIBLIOTECAS — EL PIPELINE REAL COMPLETO DE STEAM,
+      EL BACKEND DE IGDB Y COMO IMPORTAN LAS OTRAS 9 LIBRERIAS
+(agregado 2026-08-06, cuarta sesion, fuente: el mismo repo
+D:\Proyectos\PlayniteExtensions-master\PlayniteExtensions-master — esto
+amplia 28.26, que solo cubrio los juegos instalados de Steam y el proxy de
+IGDB. Aqui se documenta el agregador completo de Steam, el flujo real del
+backend de IGDB y el metodo de deteccion/import de cada libreria del repo).
+
+A. STEAM — EL AGREGADOR (SteamServiceAggregator.GetGamesAsync)
+  Archivo: source/Libraries/SteamLibrary/Services/SteamServiceAggregator.cs
+  (392 lineas) + SteamLibrary.cs (GetGames -> crea el agregador con los
+  servicios). El import real NO es un solo flujo: es la fusion de varias
+  fuentes por GameId (el AppID de Steam como string).
+
+  Orden del agregador (GetGamesAsync, linea 37):
+  1. settings.ImportInstalledGames (default true): importa instalados 100%
+     local via SteamLocalService.GetInstalledGames() (lo de 28.26). Marca
+     installedGameIds.
+  2. settings.ConnectAccount (default false): via online:
+     a. Si IsPrivateAccount: GetOwnedGamesApiKey(apiKey) +
+        GetClientLastPlayedTimesApiKey -> LastPlayTimeSync = now.
+     b. Si no: SteamStoreService.GetAccessTokenAsync() (scrapea
+        store.steampowered.com/dynamicstore/userdata/ con WebView para
+        sacar rgOwnedApps y un token), luego GetOwnedGamesWeb. FALLOBACK:
+        si GetClientAppList falla, usa GetSteamStoreGamesAsync (userdata
+        rgOwnedApps -> POST al backend de Playnite steam/appinfo para
+        nombre/tipo localizado, filtra type=="game").
+     c. ImportFamilySharedGames (default true): FamilyGroupsService.
+     d. GetClientLastPlayedTimesWeb para playtimes.
+  3. AdditionalAccounts: cuentas extra con su propia API key; se salta las
+     que ya estan en el grupo familiar (familySharingUserIds).
+  4. IgnoreOtherInstalled: elimina instalados que NO aparecen en la
+     biblioteca online de cuentas bajo control del usuario.
+  5. GetGamesFromExtraIds: IDs manuales ("Nombre: url.../app/240" o
+     "240;Nombre").
+  6. Filtro final (linea 220): nombre no vacio y
+     (IsInstalled || settings.ImportUninstalledGames).
+  7. Source default "Steam" para los instalados (linea 222-225).
+  8. UpdateExistingGames (linea 268): en la DB, solo sincroniza SourceId e
+     InstallSize si el juego ya existe (con BufferedUpdate), sin tocar
+     campos editados por el usuario.
+
+  Endpoints web reales del import (todos con retry en 429, 5 intentos):
+    api.steampowered.com/IPlayerService/GetOwnedGames/v1/  -> owned + playtime
+        params: key|access_token, steamid, include_appinfo=true,
+        include_played_free_games=true, include_free_sub, language.
+    api.steampowered.com/IPlayerService/ClientGetLastPlayedTimes/v1/ -> playtime
+        params: key|access_token, min_last_played (incremental).
+    api.steampowered.com/IClientCommService/GetClientAppList/v1/ -> juegos
+        de la sesion del cliente con bytes_required (=> InstallSize).
+    api.steampowered.com/IFamilyGroupsService/GetFamilyGroupForUser/v1/
+        y GetSharedLibraryApps/v1/ -> Family Sharing (Source "Steam Family
+        Sharing").
+    store.steampowered.com/dynamicstore/userdata/ (fallback, WebView).
+  NOTA: localconfig.vdf NO se usa en el import actual — es codigo heredado
+  muerto (existe GetGamesLastActivity pero nunca se invoca). El playtime
+  viene SIEMPRE de la Web API, no de archivos locales.
+
+  Playtime/LastActivity (PlayerService.cs:36-72):
+    Playtime = playtime_forever * 60  (minutos -> segundos)
+    LastActivity = GetLastPlayedDateTime(rtime_last_played) (unix -> DateTime;
+    unix 0 -> null). NO existe import de PlayCount.
+  Juegos no instalados: se crean igual con InstallDirectory=null,
+  IsInstalled=false, y entran solo si ImportUninstalledGames.
+  PlayAction: NO se serializa GameAction; el launch es dinamico
+  (SteamPlayController.Play -> "steam://rungameid/{GameId}" o
+  "steam://launch/{GameId}/Dialog") + ProcessMonitor.WatchDirectoryProcesses
+  del InstallDirectory para detectar el proceso real y medir la sesion.
+
+  Settings que importan (SteamLibrarySettingsViewModel.cs):
+    ImportInstalledGames (true), ConnectAccount (false),
+    ImportUninstalledGames (false, requiere ConnectAccount),
+    IsPrivateAccount (API key vs web token), IncludeFreeSubGames,
+    ImportFamilySharedGames (true), IgnoreOtherInstalled,
+    AdditionalAccounts (AccountId+RuntimeApiKey+ImportPlayTime),
+    ExtraIDsToImport, LastPlayTimeSync. La API key se cifra en keys.dat
+    (Encryption AES-256 con password = SID de Windows).
+
+B. IGDB — EL FLUJO REAL (backend + extension). Ampliacion de 28.26.
+  28.26 confirmo que el addon es un proxy del backend api2.playnite.link.
+  El flujo que Bridge debe replicar si llama a IGDB directo (ADR-10):
+  - OAuth: POST id.twitch.tv/oauth2/token con client_id+client_secret,
+    grant_type=client_credentials. Se re-autentica cuando una peticion
+    devuelve 401/403 (no hay refresh por TTL). Token cacheado en disco.
+  - Rate limit del backend: 4 requests/segundo, timeout 50s. Errores:
+    401/403 -> reauth + 1 reintento; 429 -> delay 500ms + 1 reintento;
+    500 -> delay 2s + 1 reintento.
+  - Busqueda (backend, MongoDB textScore): umbral 0.6 (0.9 en
+    alternative_names), penaliza ports (game_type==11, -0.01), merge y
+    DistinctBy. Matching automatico TryMatchGame (normalizar nombre:
+    ordena "X, The", quita [...](...){} y marcas, numeros->romanos,
+    prefijo "The", and<->&, sin apostrofes, sin ":" "-", sin subtitulo;
+    con año usa el año; multi-match: librerias -> el mas nuevo, manual ->
+    el mas viejo). Lookup exacto por ExternalGame para Steam/GOG/Epic/Itch
+    (sin heuristica).
+  - Mapeo campo a campo (IgdbLazyMetadataProvider.cs), lo que Bridge NO
+    tiene aun:
+    Developers/Publishers = involved_companies_expanded filtrando
+        developer / publisher -> company_expanded.name.
+    Genres = genres_expanded.name (tienen id pero el addon usa name;
+        sin localizacion propia, queda en ingles del backend).
+    Features = game_modes_expanded TitleCase (+ "VR" si
+        player_perspectives == "Virtual Reality").
+    CriticScore = aggregated_rating; CommunityScore = rating.
+    AgeRating = age_ratings org 1(ESRB)/2(PEGI) -> "ESRB {rating}".
+    Series = collections_expanded.
+    Description = summary con \n -> \n<br>.
+    Links = websites_expanded.
+    NO expone Platform, Tags ni InstallSize.
+  - Imagenes (ImageSizes.cs): reescritura de URL de IGDB con regex
+    /t_[^/]+ -> t_{size}. Icon = thumb_2x (180x180); Cover = original o
+    1080p si height>1080; Background = 1080p/original (seleccion
+    First/Random/Select segun ImageSelectionPriority). Tamaños disponibles:
+    cover_small 90x128, screenshot_med 569x320, cover_big 264x374,
+    logo_med 284x160, screenshot_big 889x500, screenshot_huge 1280x720,
+    thumb 90x90, micro 35x35, 720p, 1080p, original.
+  - Settings del addon: UseScreenshotsIfNecessary, ImageSelectionPriority,
+    UseCoverAsIcon. (El Client ID/Secret del usuario no existe en Playnite
+    porque el backend los tiene.)
+
+C. LAS OTRAS 9 LIBRERIAS — METODO DE DETECCION/IMPORT (resumen por
+   libreria, todas en source/Libraries/). Patron comun: GetGames() =
+   1) importa instalados (local) si el setting, 2) si ConnectAccount obtiene
+   la biblioteca de la cuenta y, si ImportUninstalledGames=false, filtra a
+   solo instalados, 3) merge por GameId, 4) notificacion de error.
+   GameMetadata siempre: Source=MetadataNameProperty(nombre), Platforms=
+   {pc_windows}, Name=.RemoveTrademarks(), GameId=ID del ecosistema
+   (NO global: appName Epic, numero GOG, ProductId Battle.net, PFN Xbox,
+   {machine_name}_{human_name} Humble, id itchio, uplay_id, titleId).
+
+  - Epic: instalados = %PROGRAMDATA%\Epic\UnrealEngineLauncher\
+    LauncherInstalled.dat + EpicGamesLauncher\Data\Manifests\*.item (JSON,
+    AppName), filtra DLC (MainGameAppName). Owned = API web OAuth
+    (library/api/public/items, catalog bulk por namespace/catalogItemId,
+    playtime items). GameId=AppName. Play=com.epicgames.launcher://apps/{id}.
+    Requiere login para owned.
+  - GOG: instalados = registry de desinstalacion (clave ^(\d+)_is1,
+    Publisher GOG.com) + goggame-{id}.info (DLC y playTasks). Owned = API
+    web con cookies de WebView (menu.gog.com/v1/account/basic,
+    www.gog.com/u/{user}/games/stats, fallback getFilteredProducts). Play=
+    Galaxy /launchViaAutostart. Galaxy NO se usa para detectar.
+  - BattleNet: instalados = registry (--uid en UninstallString) + lista
+    hardcodeada BattleNetGames.cs + fallback product.db protobuf (no SQLite)
+    en c:\ProgramData\Battle.net\Agent\. Owned = account.battle.net/api/
+    games-and-subs (cookies WebView). GameId=ProductId (WoW, D3...).
+  - Xbox: NO es local. UWP Apps del sistema + API Xbox Live (OAuth
+    Live+XSTS: login.live.com/oauth20_*, user.auth.xboxlive.com,
+    xsts.auth.xboxlive.com; titlehub.xboxlive.com/titles/titlehistory,
+    userstats.xboxlive.com/batch). GameId=PFN. Requiere cuenta incluso
+    para instalados (la API dice que UWP es un juego).
+  - Amazon: instalados = SQLite %LOCALAPPDATA%\Amazon Games\Data\Games\Sql\
+    GameInstallInfo.sqlite (Installed=1). Owned = gaming.amazon.com/api/
+    distribution/entitlements (PKCE + device registration con MachineGuid).
+    Play=amazon-games://play/{id} o exe de fuel.json.
+  - Uplay (Ubisoft Connect): instalados = registry
+    HKLM\SOFTWARE\ubisoft\Launcher\Installs\{GameId}. Owned = caché LOCAL
+    protobuf del cliente %LOCALAPPDATA%\Ubisoft Game Launcher\cache\
+    configuration\configurations (YAML dentro). Sin web, sin login del
+    plugin (pero requiere que el cliente tenga sesion). Play=uplay://launch.
+  - Humble: owned = API web (humblebundle.com/api/v1/orders?gamekeys=...,
+    /home/library con #user-home-json-data; Trove publico sin auth).
+    Instalados = %APPDATA%\Humble App\config.json. Usa ImportGames
+    customizado (no GetGames). GameId={machine_name}_{human_name}.
+  - Itchio: butler (daemon itch) JSON-RPC 2.0 sobre TCP, sin HTTP directo.
+    Instalados = Fetch.Caves (cave.game.id); owned = ProfileOwnedKeys +
+    ProfileCollections/GameRecords. Requiere butler.db con sesion del
+    cliente itch. Play=.itch.toml + butler.Launch.
+  - Rockstar: 100% local registry (regex "...uninstall={titleId}" en
+    UninstallString) + lista hardcodeada RockstarGames.cs. Sin owned, sin
+    web. Play=Launcher.exe -launchTitleInFolder "{dir}".
+
+  Clasificacion para Bridge (orden de dificultad si se quisieran soportar):
+  locales puros: Rockstar, Uplay (owned via cache local del cliente).
+  locales instalados + web owned: Epic, GOG, BattleNet, Amazon, Humble.
+  requieren cuenta incluso para instalados: Xbox. itchio requiere butler.
+  Dato clave: los tokens se cifran con Encryption.cs (AES-256, password =
+  SID de Windows) en tokens.json/login.json/xsts.json/extras.dat, o se usan
+  cookies de WebView (sesion fragil: GOG/Humble/BattleNet).
+
+  IMPLICACIONES PARA BRIDGE:
+  1. El import actual de Steam en Bridge (instalados, local) == el paso 1
+     del agregador real (ImportInstalledGames). Lo que falta para parity:
+     la capa online (owned + playtime via Web API) que requiere login del
+     usuario; y el merge/sync de SourceId+InstallSize sin tocar campos
+     editados (Bridge ya syncs IsInstalled/InstallDirectory).
+  2. IGDB: Bridge mapea 5 campos; el addon real mapea 15+ y el matching
+     automatico vive en el backend (heuristica TryMatchGame). Para un
+     match automatico confiable hay que portar esa heuristica.
+  3. El playcount no se importa en ninguna libreria (solo playtime y
+     lastActivity) — coherente con el modelo actual de Bridge.
+  4. Los GameId de cada ecosistema son su ID nativo; Bridge deberia
+     conservar ese esquema como ExternalId por SourceId.
 ================================================================================
 
 FIN DEL DOCUMENTO

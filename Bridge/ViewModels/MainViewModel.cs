@@ -20,7 +20,8 @@ public partial class MainViewModel : ObservableObject
     private readonly IRepository<GameSource> _sourceRepository;
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
-    private readonly IgdbMetadataProvider _metadataProvider;
+    private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
+    private readonly SteamMetadataProvider _steamMetadataProvider;
     private readonly SteamLibraryImporter _steamImporter;
 
     public ObservableCollection<Game> Games { get; } = [];
@@ -56,7 +57,8 @@ public partial class MainViewModel : ObservableObject
         IRepository<GameSource> sourceRepository,
         GameLauncher launcher,
         RomScanner romScanner,
-        IgdbMetadataProvider metadataProvider,
+        IEnumerable<IGameMetadataProvider> metadataProviders,
+        SteamMetadataProvider steamMetadataProvider,
         SteamLibraryImporter steamImporter)
     {
         _gameRepository = gameRepository;
@@ -65,11 +67,15 @@ public partial class MainViewModel : ObservableObject
         _sourceRepository = sourceRepository;
         _launcher = launcher;
         _romScanner = romScanner;
-        _metadataProvider = metadataProvider;
+        _metadataProviders = metadataProviders;
+        _steamMetadataProvider = steamMetadataProvider;
         _steamImporter = steamImporter;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
+        ImportSteamLibrary();
+        var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
+        _ = DownloadMissingSteamMetadataAsync(steamSourceId);
     }
 
     private void LoadGames()
@@ -254,59 +260,129 @@ public partial class MainViewModel : ObservableObject
     private async Task DownloadMetadataAsync()
     {
         if (SelectedGame is null)
+            return;
+
+        var game = SelectedGame;
+        var gameName = game.Name;
+
+        StatusMessage = $"Downloading metadata for '{gameName}'...";
+
+        GameMetadata? metadata = null;
+        string? providerName = null;
+
+        // Steam-imported games: use appid directly for a guaranteed lookup
+        if (game.SourceId != GameSource.ManualId && uint.TryParse(game.ExternalId, out _))
         {
+            try
+            {
+                metadata = await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId);
+                providerName = _steamMetadataProvider.Name;
+            }
+            catch
+            {
+                // Steam API failed — fall through to the provider chain
+            }
+        }
+
+        // Fallback chain: try each provider by name search
+        if (metadata is null)
+        {
+            foreach (var provider in _metadataProviders)
+            {
+                try
+                {
+                    metadata = await provider.SearchAsync(gameName);
+                    if (metadata is not null)
+                    {
+                        providerName = provider.Name;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // Try next provider
+                }
+            }
+        }
+
+        if (metadata is null)
+        {
+            StatusMessage = $"No metadata found for '{gameName}'.";
             return;
         }
 
-        StatusMessage = $"Downloading metadata for '{SelectedGame.Name}'...";
-        try
+        ApplyMetadata(game, metadata);
+
+        if (metadata.Genres is { Count: > 0 })
         {
-            var metadata = await _metadataProvider.SearchAsync(SelectedGame.Name);
-            if (metadata is null)
-            {
-                StatusMessage = $"No IGDB match found for '{SelectedGame.Name}'.";
-                return;
-            }
-
-            // No SkipExistingValues semantics yet (PROJECT_FOUNDATION.md §28.3
-            // has the real algorithm for that) — this unconditionally
-            // overwrites whatever the IGDB response actually provided.
-            if (!string.IsNullOrWhiteSpace(metadata.Description))
-            {
-                SelectedGame.Description = metadata.Description;
-            }
-
-            if (metadata.ReleaseDate is { } releaseDate)
-            {
-                SelectedGame.ReleaseDate = releaseDate;
-            }
-
-            if (!string.IsNullOrWhiteSpace(metadata.CoverImage))
-            {
-                // Stored as a raw URL for now, not downloaded/cached locally —
-                // Bridge.Storage has no file-cache equivalent to Playnite's
-                // AddFile yet (§28.2). Mirrors Playnite's own lazy-URL
-                // background-image behavior (§28.3) rather than inventing
-                // something new.
-                SelectedGame.CoverImage = metadata.CoverImage;
-            }
-
             foreach (var genreName in metadata.Genres)
             {
                 var genre = _genreRepository.GetOrCreateByName(genreName);
-                if (!SelectedGame.GenreIds.Contains(genre.Id))
-                {
-                    SelectedGame.GenreIds.Add(genre.Id);
-                }
+                if (!game.GenreIds.Contains(genre.Id))
+                    game.GenreIds.Add(genre.Id);
             }
-
-            _gameRepository.Update(SelectedGame);
-            RefreshListDisplay(SelectedGame);
-            StatusMessage = $"Metadata applied to '{SelectedGame.Name}' (matched IGDB: '{metadata.Name}').";
         }
-        catch (Exception ex)
+
+        _gameRepository.Update(game);
+        RefreshListDisplay(game);
+        StatusMessage = $"Metadata applied to '{game.Name}' (source: {providerName}).";
+    }
+
+    private static void ApplyMetadata(Game game, GameMetadata metadata)
+    {
+        if (!string.IsNullOrWhiteSpace(metadata.Description))
+            game.Description = metadata.Description;
+
+        if (metadata.ReleaseDate is { } releaseDate)
+            game.ReleaseDate = releaseDate;
+
+        if (!string.IsNullOrWhiteSpace(metadata.CoverImage))
+            game.CoverImage = metadata.CoverImage;
+
+        if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage))
+            game.BackgroundImage = metadata.BackgroundImage;
+
+        if (metadata.CriticScore.HasValue)
+            game.CriticScore = metadata.CriticScore;
+
+        if (metadata.CommunityScore.HasValue)
+            game.CommunityScore = metadata.CommunityScore;
+    }
+
+    private async Task DownloadMissingSteamMetadataAsync(Guid steamSourceId)
+    {
+        var candidates = _gameRepository.GetAll()
+            .Where(g => g.SourceId == steamSourceId && string.IsNullOrWhiteSpace(g.Description))
+            .ToList();
+
+        foreach (var game in candidates)
         {
-            StatusMessage = $"Metadata download failed: {ex.Message}";
+            try
+            {
+                var metadata = await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId);
+                if (metadata is null)
+                    continue;
+
+                ApplyMetadata(game, metadata);
+
+                if (metadata.Genres is { Count: > 0 })
+                {
+                    foreach (var genreName in metadata.Genres)
+                    {
+                        var genre = _genreRepository.GetOrCreateByName(genreName);
+                        if (!game.GenreIds.Contains(genre.Id))
+                            game.GenreIds.Add(genre.Id);
+                    }
+                }
+
+                _gameRepository.Update(game);
+                RefreshListDisplay(game);
+                StatusMessage = $"Metadata applied to '{game.Name}' (source: {_steamMetadataProvider.Name}).";
+            }
+            catch
+            {
+                // Skip this game, try the next one
+            }
         }
     }
 

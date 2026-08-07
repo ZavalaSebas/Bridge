@@ -27,11 +27,19 @@
 
 <h2>Features</h2>
 <ul>
-  <li>Coming soon — project is in early planning (Fase 0). See PLAN.md in the repo.</li>
+  <li>Manual game library: add, edit, delete, favorite/hidden flags.</li>
+  <li>Launch games via <code>GameAction</code> and track playtime with poll-based monitoring.</li>
+  <li>Steam library import (registry → <code>libraryfolders.vdf</code> → <code>appmanifest*.acf</code>).</li>
+  <li>ROM folder scanning and emulator setup with <code>{RomPath}</code> substitution.</li>
+  <li>Metadata download from IGDB (Name, Description, Release Date, Cover Image, Genres).</li>
+  <li>Library statistics (playtime, playcount, last activity).</li>
 </ul>
 
 <h2>Getting Started</h2>
-<p>Coming soon</p>
+<p>Build and run from the repo root:</p>
+<pre><code>dotnet build Bridge.slnx -c Release
+dotnet run --project Bridge/Bridge.csproj</code></pre>
+<p>The database is created automatically on first launch under <code>%LOCALAPPDATA%\Bridge\</code>.</p>
 
 <h2>Documentation</h2>
 <ul>
