@@ -14,25 +14,6 @@ namespace Bridge
             InitializeComponent();
         }
 
-        // View-only behavior (Fase 1 shell): the hamburger collapses/expands the
-        // sidebar to an icon rail. Kept in code-behind because it's pure layout
-        // state, not app logic — same category as GridSplitter handling.
-        private void ToggleSidebar_Click(object sender, RoutedEventArgs e)
-        {
-            bool collapsed = SidebarColumn.Width.Value <= 56;
-            SidebarColumn.Width = new GridLength(collapsed ? 280 : 56);
-            SidebarTitle.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
-            foreach (var item in NavList.ItemContainerGenerator.Items)
-            {
-                if (NavList.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container
-                    && FindVisualChild<System.Windows.Controls.TextBlock>(container) is { } label
-                    && label.Name == "NavLabel")
-                {
-                    label.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
-                }
-            }
-        }
-
         // Fase 2 (List): collapses/expands the detail panel to the right of the
         // list. Width 0 = collapsed; the GridSplitter still lets the user drag it
         // back open (its neighbor column has MinWidth 0).
@@ -40,6 +21,13 @@ namespace Bridge
         {
             bool collapsed = DetailColumn.Width.Value <= 0;
             DetailColumn.Width = new GridLength(collapsed ? 380 : 0);
+        }
+
+        // Playnite-style sidebar: toggles sort direction (Ascending/Descending).
+        private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.SortDescending = !vm.SortDescending;
         }
 
         // Fase 4 (Table): the ListView rows bind to GameDetailRow (not Game
@@ -105,25 +93,6 @@ namespace Bridge
         }
 
         private bool _suppressTableResize;
-
-        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
-                if (child is T match)
-                {
-                    return match;
-                }
-
-                if (FindVisualChild<T>(child) is { } nested)
-                {
-                    return nested;
-                }
-            }
-
-            return null;
-        }
 
         // Opens the overflow menu anchored to the top-bar button. ContextMenu is
         // not part of the visual tree, so it must be opened explicitly.
