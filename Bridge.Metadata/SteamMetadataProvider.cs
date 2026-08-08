@@ -116,6 +116,13 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             CoverImage = string.Format(CoverVerticalUrl, appId)
         };
 
+        // Steam's per-game header image is the only artwork reliably present on
+        // every appdetails response; the old `clienticon` field (which provided
+        // a square .ico) is no longer returned by the API, so the header serves
+        // as the library icon.
+        if (!string.IsNullOrWhiteSpace(data.HeaderImage))
+            metadata.Icon = data.HeaderImage;
+
         if (!string.IsNullOrWhiteSpace(data.ShortDescription) && string.IsNullOrWhiteSpace(metadata.Description))
             metadata.Description = StripHtml(data.ShortDescription);
 
@@ -140,9 +147,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (data.Platforms is { } platforms)
         {
             metadata.Platforms = [];
-            if (platforms.Windows) metadata.Platforms.Add("pc_windows");
-            if (platforms.Mac) metadata.Platforms.Add("macintosh");
-            if (platforms.Linux) metadata.Platforms.Add("pc_linux");
+            if (platforms.Windows) metadata.Platforms.Add("Windows");
+            if (platforms.Mac) metadata.Platforms.Add("macOS");
+            if (platforms.Linux) metadata.Platforms.Add("Linux");
         }
 
         if (data.Categories is { Count: > 0 })

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Automatic Steam play action** — a Steam-imported game with no configured `GameAction` launches via `steam://rungameid/{appid}` passed to `steam.exe -silent` (the same approach Playnite's Steam addon takes for Steamworks-DRM games, never the local `.exe`), tracked by directory (watch processes running from the game's `InstallDirectory`). Resolution logic is pure and unit-tested in `Bridge.Import/Steam/SteamPlayActions.cs`.
+- **Developers/Publishers/Platforms shown in the detail panel** — metadata is now resolved to real `Company`/`Platform` entities and displayed under the install directory (labels collapse when empty). Steam platform slugs (`pc_windows`/`macintosh`/`pc_linux`) now map to readable names (`Windows`/`macOS`/`Linux`).
+- **Game icons in the library list** — each game shows its icon next to its name, like Playnite. Steam-imported games use Steam's square 32x32 `clienticon` from the local `appcache\librarycache\{appid}\` (the field the web API stopped returning, so Bridge reads the file Steam itself caches — resolved by `Bridge.Import/Steam/SteamLocalIconResolver.cs`); games without a cached icon fall back to the `header.jpg` URL from metadata.
+
+### Changed
+- Global actions moved out of the main page into a `File`/`Tools` menu bar (Add Game, Import Steam Library, Exit; Scan ROMs, Configure Emulator, IGDB Settings). Add Game and Scan ROMs now use dedicated prompt dialogs (`AddGameWindow`, `ScanRomWindow`).
+- Game detail panel reorganized: playtime, install directory, save/delete/download buttons, and the Play button now sit in the right column beside the cover; only Description and Background remain below.
+- "Set Play Action" field removed from the UI for now — the Steam play action is resolved automatically, and the field only made sense for manual non-Steam games (still in the ViewModel as `SetPlayActionCommand`/`ExecutablePathInput`, unused).
+
 ## [0.1.0] — 2026-08-06
 
 ### Added
@@ -26,11 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Not implemented yet (see PLAN.md)
 - Fase 7 (polish) and Fase 9 (consolidation).
 - Full scanner pipeline: CRC/serial matching, playlists (.cue/.m3u/.gdi), exclusions, subfolder/archive scanning.
-- Multi-mode process tracking (Directory, ProcessName, process tree) and URL/Script game action types.
+- Multi-mode process tracking (Directory, ProcessName, process tree) and URL/Script game action types **for user-configured actions** — the URL action + Directory tracking now exist only for the auto-resolved Steam play action (`SteamPlayActions`), not as a general feature.
 - `SoftwareApps`, `FilterPresets`, `ImportExclusions` collections.
 - Local image caching (covers/backgrounds stored as raw URLs for now).
 - `SkipExistingValues` semantics (metadata downloads unconditionally overwrite).
-- `Developers`/`Publishers`/`Platforms`/`Features` are downloaded but not yet displayed in the UI (stored as entity IDs).
+- `Features` are downloaded but not yet displayed in the UI (stored as entity IDs).
 
 ---
 

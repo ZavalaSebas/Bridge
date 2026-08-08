@@ -19,7 +19,9 @@ Bridge brings your games — from external libraries, manual entries, and emulat
 
 ## What is Bridge?
 
-Bridge is a from-scratch rewrite of the functional behavior of [Playnite](https://playnite.link/): a game library manager that unifies games from external libraries, manually added entries, and emulated ROMs into one local, self-contained catalog. It deliberately drops Playnite's plugin architecture and dual desktop/fullscreen frontends to stay small and easy to maintain, while preserving what actually matters day to day — incremental import, local metadata/image caching, fast virtualized views, and emulation support. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the full analysis behind this rewrite.
+Bridge is an original game library manager: it unifies games from external libraries, manually added entries, and emulated ROMs into one local, self-contained catalog. It keeps what matters day to day — incremental import, local metadata, fast virtualized views, and emulation support — without a plugin runtime or a separate fullscreen frontend.
+
+[Playnite](https://playnite.link/) is an inspiration, not a specification. During development Bridge uses Playnite's *observed behavior* as a reference to understand how features should feel (import semantics, playtime tracking, metadata resolution), but its structure, architecture, and implementation are its own — no shared code, no ported internals, different module layout, different persistence, different UI. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the behavioral notes that inform development.
 
 > **Disclaimer:** Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG, or any platform or emulator project referenced in this document. Bridge does not crack, bypass, or circumvent DRM. It organizes games you already own and emulators/ROMs you already have; it does not provide or distribute copyrighted game files.
 
@@ -76,8 +78,9 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **IGDB metadata** — text and image metadata from IGDB (requires a free Twitch Developer account)
 - **Multi-provider fallback** — metadata search tries IGDB first, then falls back to Steam Store automatically
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
+- **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - Manual game entries with add, edit, and delete
-- Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring
+- Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
 - Simple ROM folder scan with emulator matching and `{RomPath}` launching
 - Self-contained single-file `.exe` (~148 MB) — no .NET runtime install required
@@ -92,7 +95,7 @@ Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence
 
 ## Development
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the full project guide, architecture, and workflow rules. See [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) for the source analysis this rewrite is based on.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the full project guide, architecture, and workflow rules. See [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) for the behavioral notes on Playnite that inform Bridge's development decisions.
 
 ---
 
@@ -104,7 +107,7 @@ This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
 ## Acknowledgments
 
-Bridge's design is informed by a close reading of [Playnite](https://playnite.link/)'s source (see `PROJECT_FOUNDATION.md` §27 for the specific files reviewed). Playnite is an excellent, mature project — Bridge exists to explore a smaller, plugin-free take on the same problem, not to replace it.
+Bridge's design is informed by studying [Playnite](https://playnite.link/)'s behavior (see `PROJECT_FOUNDATION.md` §27 for the notes). Playnite is an excellent, mature project — Bridge is a separate, smaller, plugin-free take on the same *problem space*, built independently.
 
 ---
 

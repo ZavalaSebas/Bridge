@@ -3,6 +3,7 @@ using System.IO;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Import.Steam;
 
 namespace Bridge.Services;
 
@@ -15,17 +16,27 @@ namespace Bridge.Services;
 /// MVP scope, deliberately narrower than Playnite's real behavior — see
 /// PLAN.md's Fase 3/6 entries for what's still missing, don't treat these
 /// gaps as bugs:
-/// - Only GameActionType.File and GameActionType.Emulator are supported
-///   (no Url/Script yet).
+/// - GameActionType.Url is supported but only for the auto-resolved Steam
+///   case below, not as a general user-configured action.
+/// - GameActionType.Script isn't supported.
 /// - Emulator argument substitution is a single literal "{RomPath}" token
 ///   replace, not Playnite's full ExpandVariables system (§28.9) — no
 ///   {InstallDir}/{PlayniteDir}/etc. tokens yet.
-/// - Only the exact launched process is tracked (behaves like Playnite's
-///   TrackingMode.OriginalProcess for every TrackingMode value). Process-tree
-///   walking (Process mode) and Directory/ProcessName tracking are NOT
-///   implemented — the "launcher spawns the real game and exits" case
-///   (Steam/Epic-style launchers) will incorrectly report the game as
-///   stopped as soon as the launcher process exits.
+/// - Steam tracking uses TrackingMode.Directory (watch processes whose
+///   binary lives under the game's InstallDirectory — Playnite's
+///   WatchDirectoryProcesses, §28.9). Everything else tracks the exact
+///   launched process only (behaves like Playnite's OriginalProcess for every
+///   TrackingMode value) — no process-tree walking yet.
+///
+/// Automatic Steam play action: mirrors Playnite's SteamPlayController
+/// (SteamGameController.cs:160-204, verified against the real extension and
+/// core in PROJECT_FOUNDATION.md §28.26). When a Steam-imported game (appid in
+/// ExternalId) has no user-configured GameAction, Launch() resolves one at
+/// runtime — steam://rungameid/{appid} passed to steam.exe as
+/// "-silent \"steam://rungameid/{appid}\"". The local .exe in InstallDirectory
+/// is deliberately NOT used to launch (Steamworks DRM — running the exe
+/// directly without the Steam client fails), which is why Playnite never does
+/// either. The resolved action is not persisted.
 /// </summary>
 public class GameLauncher(IRepository<Emulator> emulatorRepository)
 {
@@ -35,7 +46,8 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     public void Launch(Game game)
     {
         var action = game.GameActions.FirstOrDefault(a => a.IsPlayAction)
-            ?? game.GameActions.FirstOrDefault();
+            ?? game.GameActions.FirstOrDefault()
+            ?? TryResolveAutomaticAction(game);
 
         if (action is null)
         {
@@ -45,6 +57,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         var process = action.Type switch
         {
             GameActionType.File => StartFileAction(action),
+            GameActionType.Url => StartUrlAction(action),
             GameActionType.Emulator => StartEmulatorAction(game, action),
             _ => throw new NotSupportedException($"Action type {action.Type} isn't supported yet.")
         };
@@ -54,7 +67,29 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         game.PlayCount++;
         GameStarted?.Invoke(game);
 
-        _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+        if (action.TrackingMode == TrackingMode.Directory)
+        {
+            _ = TrackDirectoryAsync(game, action.InitialTrackingDelayMs, action.TrackingFrequencyMs);
+        }
+        else
+        {
+            _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+        }
+    }
+
+    private static GameAction? TryResolveAutomaticAction(Game game)
+    {
+        // Mirrors Playnite's SteamPlayController, which is created for every Steam game
+        // with no stored GameAction (SteamLibrary.cs:101-109 + SteamGameController.cs:139-153).
+        // The action build is pure logic in SteamPlayActions (unit-tested without needing
+        // Steam installed); only the "is Steam actually installed" check needs the registry.
+        var action = SteamPlayActions.CreatePlayAction(game);
+        if (action is null)
+        {
+            return null;
+        }
+
+        return string.IsNullOrWhiteSpace(SteamPaths.GetInstallationPath()) ? null : action;
     }
 
     private static Process StartFileAction(GameAction action) =>
@@ -65,6 +100,34 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             WorkingDirectory = string.IsNullOrWhiteSpace(action.WorkingDirectory) ? null : action.WorkingDirectory,
             UseShellExecute = true
         }) ?? throw new InvalidOperationException($"Failed to start process: {action.Path}");
+
+    // Mirrors Playnite's SteamPlayController.Play (SteamGameController.cs:160-204):
+    // prefer explicit steam.exe -silent "steam://..." (avoids the client window and
+    // is more reliable than relying on the steam:// URL association), fall back to
+    // ShellExecute on the URL itself (ProcessStarter.StartUrl equivalent).
+    private static Process StartUrlAction(GameAction action)
+    {
+        var steamPath = SteamPaths.GetInstallationPath();
+        if (!string.IsNullOrWhiteSpace(steamPath))
+        {
+            var steamExe = Path.Combine(steamPath, "steam.exe");
+            if (File.Exists(steamExe))
+            {
+                return Process.Start(new ProcessStartInfo
+                {
+                    FileName = steamExe,
+                    Arguments = $"-silent \"{action.Path}\"",
+                    UseShellExecute = true
+                }) ?? throw new InvalidOperationException($"Failed to start Steam: {steamExe}");
+            }
+        }
+
+        return Process.Start(new ProcessStartInfo
+        {
+            FileName = action.Path,
+            UseShellExecute = true
+        }) ?? throw new InvalidOperationException($"Failed to open URL: {action.Path}");
+    }
 
     private Process StartEmulatorAction(Game game, GameAction action)
     {
@@ -118,5 +181,68 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             game.PlaytimeSeconds += sessionSeconds;
             GameStopped?.Invoke(game, sessionSeconds);
         }
+    }
+
+    // Directory-based tracking for the auto-resolved Steam case. Mirrors Playnite's
+    // WatchDirectoryProcesses (§28.9): the launched process is steam.exe, which is
+    // NOT the game, so we watch for any process whose executable lives under the
+    // game's InstallDirectory instead of tracking a PID. Waits for at least one such
+    // process to appear (InitialTrackingDelayMs grace period for Steam to spin up),
+    // then for all of them to exit.
+    private async Task TrackDirectoryAsync(Game game, int initialDelayMs, int frequencyMs)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            if (initialDelayMs > 0)
+            {
+                await Task.Delay(initialDelayMs);
+            }
+
+            while (!HasProcessInDirectory(game.InstallDirectory))
+            {
+                await Task.Delay(frequencyMs);
+            }
+
+            while (HasProcessInDirectory(game.InstallDirectory))
+            {
+                await Task.Delay(frequencyMs);
+            }
+        }
+        finally
+        {
+            stopwatch.Stop();
+            var sessionSeconds = (ulong)stopwatch.Elapsed.TotalSeconds;
+            game.IsRunning = false;
+            game.PlaytimeSeconds += sessionSeconds;
+            GameStopped?.Invoke(game, sessionSeconds);
+        }
+    }
+
+    private static bool HasProcessInDirectory(string installDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(installDirectory) || !Directory.Exists(installDirectory))
+        {
+            return false;
+        }
+
+        foreach (var process in Process.GetProcesses())
+        {
+            try
+            {
+                var path = process.MainModule?.FileName;
+                if (!string.IsNullOrWhiteSpace(path) &&
+                    path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // Access denied or the process exited mid-iteration — skip it.
+            }
+        }
+
+        return false;
     }
 }

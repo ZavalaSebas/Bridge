@@ -2,6 +2,8 @@
 
 This document records architectural decisions made during the development of Bridge.
 
+> **Framing:** Playnite is an *inspiration*, not a specification. ADRs may reference how Playnite behaves (as verified in `PROJECT_FOUNDATION.md` §28) to explain *why* a Bridge decision was made, but Bridge's structure, implementation, and module layout are its own — decisions here are about what Bridge actually does, in Bridge's own architecture.
+
 ## What is an ADR?
 
 An Architecture Decision Record (ADR) documents a significant architectural decision: the context that led to it, the decision itself, and its consequences.
@@ -182,11 +184,11 @@ The module split exists purely for development-time organization (compile-time b
 Playnite's `Game` carries both `PluginId` (which `LibraryPlugin` instance imported the game — the real dedup key, paired with `GameId`) and a separate `GameSource` entity (a cosmetic, user-editable label like "Steam"/"Retail"). These are deliberately different things in Playnite because a plugin *instance* and a user-facing *label* aren't the same concept when plugins are loaded/unloaded independently of what the user wants to call a game's origin (PROJECT_FOUNDATION.md §28.1). Per [ADR-1](#adr-1-no-plugin-system-in-v1), Bridge has no plugin instances at all — `Bridge.Import` just has a handful of hardcoded importer classes.
 
 **Decision:**
-Bridge collapses the two into one: `GameSource` (`Bridge.Core.Entities.GameSource`) is both the dedup-key component (paired with `Game.ExternalId`, mirroring Playnite's `(GameId, PluginId)` pair as `(ExternalId, SourceId)`) and the label shown in the UI. `Game.IsCustomGame` becomes `SourceId == GameSource.ManualId` (a well-known `Guid.Empty` sentinel), mirroring Playnite's `PluginId == Guid.Empty` check exactly.
+Bridge collapses the two into one: `GameSource` (`Bridge.Core.Entities.GameSource`) is both the dedup-key component (paired with `Game.ExternalId`, the analog of Playnite's `(GameId, PluginId)` pair as `(ExternalId, SourceId)`) and the label shown in the UI. `Game.IsCustomGame` becomes `SourceId == GameSource.ManualId` (a well-known `Guid.Empty` sentinel), the same sentinel pattern Playnite uses for its own custom-game check.
 
 **Consequences:**
 - ✅ One entity instead of two for a concept that only needed splitting because of plugin instance identity, which Bridge doesn't have
-- ✅ `IGameRepository.FindByExternalId(externalId, sourceId)` maps directly onto Playnite's real dedup logic (§28.2) with a straight rename, not a redesign
+- ✅ `IGameRepository.FindByExternalId(externalId, sourceId)` implements the dedup-by-source-and-external-id concept Playnite uses (§28.2), adapted to Bridge's `(ExternalId, SourceId)` shape
 - ❌ If Bridge ever does add a plugin system later (deferred, not ruled out — see ADR-1), this collapse would need to be undone; acceptable since that's explicitly a "not now" decision anyway
 
 **Alternatives considered:**
@@ -231,7 +233,7 @@ Bridge's `Import.GameMetadata` uses plain `List<string>` for every reference-ent
 
 **Consequences:**
 - ✅ One fewer type hierarchy; importer code is a flat "resolve each name, assign the id" loop
-- ✅ `IRepository<T>.GetOrCreateByName` (see `Contracts/IRepository.cs`) directly matches Playnite's real `ItemCollection.Add(string)` resolution behavior, so the *behavior* is preserved even though the *shape* is simpler
+- ✅ `IRepository<T>.GetOrCreateByName` (see `Contracts/IRepository.cs`) gives Bridge the same resolve-by-name behavior Playnite gets from `ItemCollection.Add(string)`, without the abstraction — same outcome, simpler shape
 - ❌ If Bridge ever needs a source to supply an already-known id instead of a name (e.g. importing from another Bridge instance's export), this would need extending — not needed for anything in current scope
 
 **Alternatives considered:**
@@ -255,7 +257,7 @@ Playnite splits emulator profiles into `CustomEmulatorProfile` (user-configured 
 **Consequences:**
 - ✅ Nothing to build for a bundled-catalog feature that isn't in scope yet
 - ✅ Adding a built-in-catalog variant later is additive (a new type plus a lookup path), not a rewrite of `EmulatorProfile` or anything that depends on it
-- ❌ Every emulator Bridge supports before that catalog exists must be manually configured by the user (matches Playnite's `CustomEmulatorProfile` UX, not its `BuiltInEmulatorProfile` zero-config UX) — acceptable, since zero-config built-in profiles were never part of the MVP scope in `PLAN.md`
+- ❌ Every emulator Bridge supports before that catalog exists must be manually configured by the user (the manual-config UX Playnite's `CustomEmulatorProfile` also has, as opposed to `BuiltInEmulatorProfile`'s zero-config UX) — acceptable, since zero-config built-in profiles were never part of the MVP scope in `PLAN.md`
 
 **Alternatives considered:**
 
@@ -273,13 +275,13 @@ Playnite splits emulator profiles into `CustomEmulatorProfile` (user-configured 
 Fase 5 was blocked from the start of implementation because Playnite's real metadata pipeline has no single built-in source to copy — verified against source (`PROJECT_FOUNDATION.md` §28.3, §28.20): every metadata provider, including IGDB, is a separately-installed addon, not bundled in Playnite's own core repository. An earlier attempt to pick SteamGridDB unilaterally (images-only) was explicitly rejected by the user as not matching what they meant by "the one Playnite uses." The user then confirmed directly: use IGDB, because it's the metadata addon actually used in practice once Playnite is set up, even though it isn't bundled by default.
 
 **Decision:**
-`Bridge.Metadata` (a real separate class library project — see the note in `PLAN.md` > Project Structure about not repeating the `Bridge.Import`/`Bridge.Emulation` deviation a third time) implements a single, concrete `IgdbMetadataProvider`. Authentication is Twitch's real OAuth2 client-credentials flow (IGDB is Twitch/Amazon-owned) via `IgdbAuthClient`, requiring a user-supplied Client ID/Secret from a free Twitch Developer account — never hardcoded, stored in a local `igdb-settings.json` under `AppDataPath`, separate from `bridge.db` (mirrors Playnite's own config/library-data separation, §28.12).
+`Bridge.Metadata` (a real separate class library project — see the note in `PLAN.md` > Project Structure about not repeating the `Bridge.Import`/`Bridge.Emulation` deviation a third time) implements a single, concrete `IgdbMetadataProvider`. Authentication is Twitch's real OAuth2 client-credentials flow (IGDB is Twitch/Amazon-owned) via `IgdbAuthClient`, requiring a user-supplied Client ID/Secret from a free Twitch Developer account — never hardcoded, stored in a local `igdb-settings.json` under `AppDataPath`, separate from `bridge.db` (the same config/library-data separation Playnite uses, §28.12).
 
 **Important limitation on how this was verified:** the assistant implementing this had no real IGDB/Twitch credentials. The OAuth flow, request construction, and response-mapping logic are verified against a fake `HttpMessageHandler` returning realistic canned responses (`Bridge.Tests/Metadata/*`, 9 tests) — this proves the code is wired correctly, but the actual live call to IGDB's real servers with real credentials has **not** been exercised. Test this for real the first time a real Client ID/Secret is entered via "IGDB Settings..." in the app.
 
 **Consequences:**
 - ✅ One well-defined integration matching the user's explicit choice, not an invented one
-- ✅ Settings/library-data separation matches Playnite's own real pattern, not an arbitrary Bridge invention
+- ✅ Settings/library-data separation follows the same separation pattern Playnite uses, not an arbitrary Bridge invention
 - ✅ Auth token caching (with a 60s expiry safety margin) means repeated metadata downloads in one session don't re-authenticate every time
 - ❌ MVP scope only maps Name/Description/ReleaseDate/CoverImage/Genres — no Developers/Publishers (IGDB's `involved_companies` needs role-filtering, deferred), no `SkipExistingValues` semantics (every download unconditionally overwrites), no local image caching (cover URLs are stored as-is, not downloaded — see `DownloadMetadataAsync` in `MainViewModel.cs`)
 - ❌ Live network behavior (rate limits, auth failures, malformed responses beyond what was hand-tested) is genuinely unverified — flagged, not silently assumed to work
@@ -310,6 +312,8 @@ Bridge now auto-imports Steam games on startup but they arrived with no metadata
 
 Images come from the Steam CDN (`steamcdn-a.akamaihd.net/steam/apps/{id}/library_600x900_2x.jpg` for covers, `/header.jpg` for backgrounds). All HTTP calls have try-catch guards (returns null on failure, never throws to the caller).
 
+**Update (2026-08-07) — icon resolution:** Steam stopped returning the `clienticon` field from `appdetails` (verified against the real API: the field is empty for current games), which is the square icon Playnite shows in its library list. Instead of pulling in SteamKit2 just for `appinfo`, Bridge reads the file Steam itself caches locally — `SteamLocalIconResolver.TryGetLocalIconPath(appId)` in `Bridge.Import/Steam` returns the 32x32 clienticon from `appcache\librarycache\{appid}\{40-hex}.jpg` (verified real: 628 apps on this machine have one), with the `header.jpg` URL as fallback. `MainViewModel.ApplySteamLocalIcon` prefers it on load and after every metadata download, so the list shows the square Steam icon like Playnite rather than the wide header.
+
 In the multi-provider chain, Steam-imported games get a guaranteed appid-direct lookup first, then fall back to IGDB search. Non-Steam games try IGDB first, then Steam search by name. On startup, `DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all Steam games without a description.
 
 **Consequences:**
@@ -337,9 +341,9 @@ In the multi-provider chain, Steam-imported games get a guaranteed appid-direct 
 The user asked specifically for automatic detection of installed Steam games (Playnite does this via a dedicated `LibraryPlugin` addon). Verified against the real `SteamLibrary` extension source (`D:\Proyectos\PlayniteExtensions-master`, see `PROJECT_FOUNDATION.md` §28.26): detection is 100% local — no Steam Web API, no API key, no network call. It reads `HKCU\Software\Valve\Steam` for the install path, parses `steamapps\libraryfolders.vdf` (Valve's VDF/KeyValue text format, not JSON) to find every library folder, then parses each library's `appmanifest_*.acf` files (same VDF format) filtering by the `FullyInstalled` state-flag bit.
 
 **Decision:**
-Ported the same flow into a new `Bridge.Import` project — the first time that project (previously flagged as "not created, logic lives inline" in `PLAN.md`) was actually built for real, alongside `SteamPaths.cs` (registry read) and a **hand-rolled `VdfParser`** rather than pulling in Playnite's own dependency (`SteamKit2`, a full Steam network-protocol SDK) just for its `KeyValue` VDF reader — that would be a large, mostly-unused dependency for one small parsing job. The parser is a minimal recursive-descent reader covering exactly the subset both real Steam files use (nested `"key" "value"` pairs, `{ }` blocks, `//` comments, backslash-escaped characters) — not a general VDF writer/editor.
+Built the same detection flow into a new `Bridge.Import` project — the first time that project (previously flagged as "not created, logic lives inline" in `PLAN.md`) was actually built for real, alongside `SteamPaths.cs` (registry read) and a **hand-rolled `VdfParser`** rather than pulling in Playnite's own dependency (`SteamKit2`, a full Steam network-protocol SDK) just for its `KeyValue` VDF reader — that would be a large, mostly-unused dependency for one small parsing job. The parser is a minimal recursive-descent reader covering exactly the subset both real Steam files use (nested `"key" "value"` pairs, `{ }` blocks, `//` comments, backslash-escaped characters) — not a general VDF writer/editor.
 
-**Verified, not assumed:** ran against this machine's real Steam installation (29 real installed games, two library folders across two drives) before writing a single automated test — the real data drove the test fixtures, not the other way around. `SteamLibraryImporter.GetInstalledGames()` → `MainViewModel.ImportSteamLibraryCommand` dedupes by `(ExternalId, SourceId)` exactly like `GameRepository.FindByExternalId` (ADR-6) and, on re-import, only syncs `IsInstalled`/`InstallDirectory` on existing games — mirrors Playnite's real re-scan contract (`PROJECT_FOUNDATION.md` §28.2) of never clobbering user-edited fields on a rescan.
+**Verified, not assumed:** ran against this machine's real Steam installation (29 real installed games, two library folders across two drives) before writing a single automated test — the real data drove the test fixtures, not the other way around. `SteamLibraryImporter.GetInstalledGames()` → `MainViewModel.ImportSteamLibraryCommand` dedupes by `(ExternalId, SourceId)` exactly like `GameRepository.FindByExternalId` (ADR-6) and, on re-import, only syncs `IsInstalled`/`InstallDirectory` on existing games — the same re-scan contract Playnite follows (`PROJECT_FOUNDATION.md` §28.2) of never clobbering user-edited fields on a rescan.
 
 **Consequences:**
 - ✅ Zero new runtime dependencies beyond the already-used `Microsoft.Win32.Registry` compatibility package

@@ -27,5 +27,38 @@ namespace Bridge
             var window = new IgdbSettingsWindow(viewModel) { Owner = this };
             window.ShowDialog();
         }
+
+        private void AddGame_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new AddGameWindow { Owner = this };
+            if (window.ShowDialog() != true)
+            {
+                return;
+            }
+
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.AddGameCommand.Execute(window.GameName);
+            }
+        }
+
+        private void ScanRom_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new ScanRomWindow { Owner = this };
+            if (window.ShowDialog() != true)
+            {
+                return;
+            }
+
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.ScanRomFolderCommand.Execute(window.RomFolder);
+            }
+        }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 }

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.IO;
 using System.Net.Http;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
@@ -20,7 +19,7 @@ public class ImageUrlConverter : IValueConverter
         {
             return new BitmapImage(new Uri(url));
         }
-        catch
+        catch (Exception)
         {
             return null;
         }
