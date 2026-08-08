@@ -80,7 +80,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # created — 55 tests, all passing (see below)
+└── Bridge.Tests/        # created — 65 tests, all passing (see below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -108,7 +108,9 @@ Bridge.Core/
 ├── Enums/
 │   ├── GameActionType.cs, TrackingMode.cs, ScannerPlayActionMode.cs, CompletionStatusKind.cs
 │   ├── LibraryFilterPreset.cs   # All/Favorite/MostPlayed/RecentlyPlayed list presets
-│   └── GameSortField.cs         # 22 sortable fields, Description attribute = display label
+│   ├── GameSortField.cs         # 22 sortable fields, Description attribute = display label
+│   ├── GameGroupField.cs        # 21 groupable fields, Description attribute = display label
+│   └── ViewMode.cs              # List / Covers / Details main-content views
 ├── Import/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
 └── Contracts/
@@ -167,15 +169,26 @@ See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--loc
 
 `SteamLocalIconResolver.TryGetLocalIconPath(appId, steamInstallPath = null)` resolves the square 32x32 icon Steam itself caches for the library (the `clienticon` — the exact artwork Playnite shows). Steam stopped returning `clienticon` from the web API, so Bridge reads the file Steam writes to `appcache\librarycache\{appid}\{40-hex}.jpg` (default install path comes from `SteamPaths`); returns `null` when Steam isn't installed or that app has no cached icon, so callers fall back to the `header.jpg` URL from metadata. Verified against the real cache on this machine (628 apps with a cached 32x32 icon). `MainViewModel.ApplySteamLocalIcon` prefers it on load and after every metadata download.
 
-### Library list: search, presets, sorting
+### Library list: search, presets, sorting, grouping
 
-The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of the raw collection, so all three concerns stay in one place:
+The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of the raw collection, so all concerns stay in one place:
 
 - **Search** — `SearchText` observable bound to a text box; `GameMatchesSearch` filters on a case-insensitive name substring.
 - **Presets** — `FilterPreset` (`LibraryFilterPreset`: All/Favorite/MostPlayed/RecentlyPlayed) adds a predicate (`Favorite`/`RecentlyPlayed` filter); `MostPlayed`/`RecentlyPlayed` also fix the sort field. Combinable with the search box.
 - **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling).
+- **Grouping** — `GroupField` (`GameGroupField`, 21 fields, "Don't group" off) adds a `PropertyGroupDescription` (with a null property name so the item itself flows through a `GameGroupConverter`) to `GroupDescriptions`. `GameGroupResolver` is pure and unit-tested: buckets for playtime/install size/scores, drive letter, release year, coarse date buckets ("Never/Last 7 days/..."), reference names via lookups. Group headers render via the `ListBox.GroupStyle`.
 
-UI: `EnumValues` exposes the enums to XAML; `EnumDescriptionConverter` turns `[Description]` labels into readable ComboBox text ("Time Played", not "PlaytimeSeconds"). This is UI, not domain logic — the sort field enum and comparer live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF.
+UI: `EnumValues` exposes the enums to XAML; `EnumDescriptionConverter` turns `[Description]` labels into readable ComboBox text ("Time Played", not "PlaytimeSeconds"). This is UI, not domain logic — the sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF.
+
+### View modes
+
+`ViewMode` (List / Covers / Details) switches the main content area via a ComboBox; the left `ListBox` collapses in Covers and Details modes. All three bind the same `GamesView`, so search/filter/sort/group apply everywhere:
+
+- **List** — the original layout: left list + right `TabControl` (Statistics / Game detail).
+- **Covers** — a `WrapPanel` of cover cards (cover image + name strip). Hover reveals an overlay (`Opacity` 0→1; it stays present with a hit-testable background so the `IsMouseOver` trigger fires — `Visibility.Collapsed` would never get mouse events) with **Play** and **Info** buttons.
+- **Details** — a flat `ListView`/`GridView` with columns (Name + icon, Release Date, Genre, Last Played, Time Played, Library, Play/Info actions), bound to `DetailedRows` (`GameDetailRow`: the `Game` plus pre-resolved Developers/Publishers/Platforms/Genres/Library strings, so templates never touch repositories). `RebuildDetailedRows` regenerates from `GamesView` on every `CollectionChanged` — it reflects the same filtered/ordered view as the other modes.
+
+`PlayGameCommand` accepts an optional `Game` (`PlayGame(Game? game = null)`), so a cover/row can launch its own game via `CommandParameter`; the detail panel's Play button keeps relying on `SelectedGame`. `GameInfoWindow` (compact, no images) is opened from the hover/row **Info** buttons in code-behind (`GameInfo_Click`), which sets `SelectedGame` first so the resolved reference texts refresh before the window binds.
 
 ### Statistics tab
 
@@ -428,7 +441,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 55 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release` — 65 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
@@ -439,6 +452,7 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 55 tests, all passing
 - `Services/RomScannerTests.cs` — extension filtering, dedup-by-existing-ROM-path, missing-directory error.
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
 - `Statistics/GameSortComparerTests.cs` — `GameSortComparer` sort-by-field logic: ascending/descending by name, playtime, last activity, favorite, plus reference resolution (Developer, Source) through the name lookups and the "empty values sort last in both directions" rule.
+- `Statistics/GameGroupResolverTests.cs` — `GameGroupResolver` group-key logic: first-letter Name groups, reference-name resolution (Developer/Library), install/completion buckets, playtime/install-size buckets, drive letter, release year, and the empty key for "Don't group".
 - `Metadata/IgdbAuthClientTests.cs`, `Metadata/IgdbMetadataProviderTests.cs` — the whole IGDB flow (OAuth token fetch + caching, request format, response mapping, error paths) against a fake `HttpMessageHandler` (`Metadata/FakeHttpMessageHandler.cs`) — not real IGDB credentials, see [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why that's a real, flagged limitation and not silently glossed over.
 
 **Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). The Steam play action *resolution* is covered (`SteamPlayActionsTests`) since it's pure logic, but the real `steam.exe -silent "steam://..."` invocation and directory-based process watching are not. If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`.

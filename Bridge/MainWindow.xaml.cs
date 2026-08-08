@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using Bridge.Core.Entities;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -59,6 +60,23 @@ namespace Bridge
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        // Opens the compact info window (all details + description, no images)
+        // from a cover's hover button. Uses the hovered game, not the list
+        // selection — SelectedGame is set so the resolved DevelopersText/
+        // PublishersText/PlatformsText refresh before the window binds.
+        private void GameInfo_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.FrameworkElement { Tag: Game game })
+            {
+                var window = new GameInfoWindow { Owner = this, DataContext = DataContext };
+                if (DataContext is MainViewModel viewModel)
+                {
+                    viewModel.SelectedGame = game;
+                }
+                window.ShowDialog();
+            }
         }
     }
 }

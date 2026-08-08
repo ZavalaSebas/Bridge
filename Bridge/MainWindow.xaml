@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Bridge"
+        xmlns:enums="clr-namespace:Bridge.Core.Enums;assembly=Bridge.Core"
         xmlns:converters="clr-namespace:Bridge.Converters"
         mc:Ignorable="d"
         x:Name="Root"
@@ -14,6 +15,7 @@
         <converters:PlaytimeConverter x:Key="PlaytimeConverter" />
         <converters:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
         <converters:BoolToIndexConverter x:Key="BoolToIndexConverter" />
+        <converters:ShortDateConverter x:Key="ShortDateConverter" />
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
@@ -42,7 +44,17 @@
                 </Grid.ColumnDefinitions>
 
                 <DockPanel Grid.Column="0">
-                    <Grid DockPanel.Dock="Top" Margin="8,8,8,0">
+                    <ComboBox DockPanel.Dock="Top" Margin="8,8,8,4" Padding="4,3"
+                              ItemsSource="{Binding Source={x:Static local:EnumValues.ViewModes}}"
+                              SelectedItem="{Binding ViewMode}"
+                              ToolTip="View mode">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Grid DockPanel.Dock="Top" Margin="8,4,8,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -68,11 +80,44 @@
                               ItemsSource="{Binding Source={x:Static local:EnumValues.FilterPresets}}"
                               SelectedItem="{Binding FilterPreset}"
                               ToolTip="Filter presets" />
+                    <ComboBox DockPanel.Dock="Top" Margin="8,0,8,4" Padding="4,3"
+                              ItemsSource="{Binding Source={x:Static local:EnumValues.GroupFields}}"
+                              SelectedItem="{Binding GroupField}"
+                              ToolTip="Group by">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                     <TextBox DockPanel.Dock="Top" Margin="8,0,8,4" Padding="4,3"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Filter games by name" />
                     <ListBox ItemsSource="{Binding GamesView}"
                              SelectedItem="{Binding SelectedGame}">
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewMode}" Value="{x:Static enums:ViewMode.Grid}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ViewMode}" Value="{x:Static enums:ViewMode.Table}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                   Margin="0,4,0,2" Foreground="Gray" />
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Margin="0,2">
@@ -86,7 +131,18 @@
                     </ListBox>
                 </DockPanel>
 
-            <TabControl Grid.Column="1" Margin="0,4,0,0">
+            <Grid Grid.Column="1" Margin="0,4,0,0">
+                <TabControl>
+                    <TabControl.Style>
+                        <Style TargetType="TabControl">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ViewMode}" Value="{x:Static enums:ViewMode.Grid}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TabControl.Style>
                 <TabItem Header="Statistics">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="16" DataContext="{Binding Statistics}">
@@ -313,7 +369,145 @@
                     </StackPanel>
                 </ScrollViewer>
                 </TabItem>
-            </TabControl>
+                </TabControl>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer.Style>
+                        <Style TargetType="ScrollViewer">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ViewMode}" Value="{x:Static enums:ViewMode.Grid}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ScrollViewer.Style>
+                    <ItemsControl ItemsSource="{Binding GamesView}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Width="200" Height="300" Margin="8">
+                                    <Border Background="#1E1E1E" CornerRadius="4">
+                                        <Grid>
+                                            <Image Stretch="UniformToFill"
+                                                   Source="{Binding CoverImage, Converter={StaticResource ImageUrlConverter}}"
+                                                   RenderOptions.BitmapScalingMode="Fant" />
+                                            <Border VerticalAlignment="Bottom" Background="#99000000" Padding="6,3">
+                                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap"
+                                                           FontWeight="SemiBold" Foreground="White"
+                                                           TextTrimming="CharacterEllipsis" MaxHeight="40" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                    <Border CornerRadius="4" Background="#66000000">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Opacity" Value="0" />
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Opacity" Value="1" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Content="▶ Play" FontWeight="Bold" Padding="20,6"
+                                                    Command="{Binding DataContext.PlayGameCommand, ElementName=Root}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Info" Margin="0,8,0,0" Padding="20,6"
+                                                    Click="GameInfo_Click"
+                                                    Tag="{Binding}" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <ListView ItemsSource="{Binding DetailedRows}">
+                    <ListView.Style>
+                        <Style TargetType="ListView">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ViewMode}" Value="{x:Static enums:ViewMode.Table}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.Style>
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Name" Width="260">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Height="32" Stretch="Uniform"
+                                                   Source="{Binding Game.Icon, Converter={StaticResource ImageUrlConverter}}"
+                                                   RenderOptions.BitmapScalingMode="Fant" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding Game.Name}" VerticalAlignment="Center"
+                                                       FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Release Date" Width="120">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Game.ReleaseDate, Converter={StaticResource ReleaseDateConverter}}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Genre" Width="220">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding GenresText}" TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Last Played" Width="110">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Game.LastActivity, Converter={StaticResource ShortDateConverter}}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Time Played" Width="110">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Game.PlaytimeSeconds, Converter={StaticResource PlaytimeConverter}}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Library" Width="110">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding LibraryText}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="" Width="140">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="▶" FontWeight="Bold" Padding="10,2"
+                                                    Command="{Binding DataContext.PlayGameCommand, ElementName=Root}"
+                                                    CommandParameter="{Binding Game}" ToolTip="Play" />
+                                            <Button Content="Info" Margin="6,0,0,0" Padding="10,2"
+                                                    Click="GameInfo_Click"
+                                                    Tag="{Binding Game}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
         </Grid>
 
         <StatusBar Grid.Row="1">

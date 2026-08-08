@@ -79,7 +79,8 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Multi-provider fallback** — metadata search tries IGDB first, then falls back to Steam Store automatically
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
-- **Search, filter presets and sorting** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, and sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending
+- **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
+- **Three view modes** — **List** (list + detail panel), **Covers** (cover wall; hovering a cover reveals Play/Info buttons over the artwork), and **Details** (flat table with Name, Release Date, Genre, Last Played, Time Played, Library columns and Play/Info actions); search/filter/sort/group apply in all of them
 - **Statistics tab** — library overview with counts and percentages, total/average play time, total install size, completion status, and a Top Play Time list (like Playnite's Overview, in a tab in front of the game detail)
 - Manual game entries with add, edit, and delete
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
