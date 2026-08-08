@@ -180,19 +180,45 @@ The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of 
 
 UI: `EnumValues` exposes the enums to XAML; `EnumDescriptionConverter` turns `[Description]` labels into readable ComboBox text ("Time Played", not "PlaytimeSeconds"). This is UI, not domain logic — the sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF.
 
-### View modes
+### Shell (3-zone architecture)
 
-`ViewMode` (List / Covers / Details) switches the main content area via a ComboBox; the left `ListBox` collapses in Covers and Details modes. All three bind the same `GamesView`, so search/filter/sort/group apply everywhere:
+The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), divided into 3 rows:
 
-- **List** — the original layout: left list + right `TabControl` (Statistics / Game detail).
-- **Covers** — a `WrapPanel` of cover cards (cover image + name strip). Hover reveals an overlay (`Opacity` 0→1; it stays present with a hit-testable background so the `IsMouseOver` trigger fires — `Visibility.Collapsed` would never get mouse events) with **Play** and **Info** buttons.
-- **Details** — a flat `ListView`/`GridView` with columns (Name + icon, Release Date, Genre, Last Played, Time Played, Library, Play/Info actions), bound to `DetailedRows` (`GameDetailRow`: the `Game` plus pre-resolved Developers/Publishers/Platforms/Genres/Library strings, so templates never touch repositories). `RebuildDetailedRows` regenerates from `GamesView` on every `CollectionChanged` — it reflects the same filtered/ordered view as the other modes.
+1. **Top Bar** (`ui:TitleBar`): Dark theme TitleBar with `Library24` icon, search `TextBox`, `ViewMode` `ComboBox` (List/Covers/Details), and an overflow menu (`MoreHorizontal24`) with global actions (Add Game, Import Steam, Scan ROMs, Configure Emulator, IGDB Settings, Exit). The search box binds to `SearchText` (two-way, `UpdateSourceTrigger=PropertyChanged`).
 
-`PlayGameCommand` accepts an optional `Game` (`PlayGame(Game? game = null)`), so a cover/row can launch its own game via `CommandParameter`; the detail panel's Play button keeps relying on `SelectedGame`. `GameInfoWindow` (compact, no images) is opened from the hover/row **Info** buttons in code-behind (`GameInfo_Click`), which sets `SelectedGame` first so the resolved reference texts refresh before the window binds.
+2. **Sidebar** (left, 280px, collapsible to 56px via hamburger `PanelLeft24`): `NavigationSection` enum nav (`Library` / `Favorites` / `Sources` / `Statistics` / `Settings`) mapped to existing ViewModel state via `OnNavigationSectionChanged` (`Favorites` → `FilterPreset.Favorite`, `Sources` → `GroupField.Library`). The sidebar background uses `Bridge.Sidebar.Background` (0.92 opacity over Mica for an Acrylic-like effect).
 
-### Statistics tab
+3. **Content Area** (remaining width, z-order stacking): 5 render targets displayed based on `NavigationSection` and `ViewMode`:
+   - **List** (`ViewMode.List`, `NavigationSection` = Library/Favorites/Sources): toolbar (sort field / direction / filter / group, 22 sort fields, 21 group fields) + `ListBox` (grouped `GamesView` with section headers) + collapsible detail panel (GridSplitter, cover/name/scores/checkboxes/description/Play/Save/Delete/Metadata). Detail panel collapses to 0 via `ToggleDetailPanel_Click`.
+   - **Covers** (`ViewMode.Grid`): `ListBox` + `WrapPanel` of 200×300px cover cards with hover intent (scale 1.03x + drop shadow + overlay fade, 120ms `CubicEase EaseOut`). Overlay shows Play (`#10B981` accent) and Info buttons. Selection ring uses primary accent `#007ACC`.
+   - **Details** (`ViewMode.Table`): `ListView`/`GridView` with themed column headers and 7 columns (Name + icon, Release Date, Genre, Last Played, Time Played, Library, Play/Info). Name column dynamically fills remaining width via `SizeChanged` handler (`Width` property-based, not `ActualWidth`). Selection: left accent bar (3px `BorderThickness` + `SystemAccentBrandBrush`) — same pattern as List and Statistics' Top Played.
+   - **Statistics** (`NavigationSection.Statistics`): Dashboard with Library Overview (5 cards in `WrapPanel`), Playtime, Install Size, Completion Status, and Top Play Time list.
+   - **Settings** (`NavigationSection.Settings`): Cards with IGDB config, Steam import, emulator config, and About section.
 
-`MainWindow`'s right column is now a `TabControl` with a `Statistics` tab in front and the game detail behind it. The tab binds to `MainViewModel.Statistics` (a `LibraryStatistics` object, recomputed by `RefreshStatistics` after every Add/Delete/Save/GameStopped) and mirrors Playnite's Overview: counts with percentages, total/average play time, total install size, completion status, and the Top Play Time list. `LibraryStatistics.Compute` is pure (unit-tested) — no persisted stats entity, exactly like Playnite's on-the-fly `StatisticsViewModel` (§28.5).
+### Selection / Hover pattern (unified)
+
+All list-based views (List, Table, Statistics Top Played) use the same visual treatment on selection:
+- `IsMouseOver`: `Background="{StaticResource Bridge.Card.Hover}"` (#333333)
+- `IsSelected`: `Background="Transparent"` (suppresses `SystemColors.HighlightBrush` from default control template), `BorderThickness="3,0,0,0"` + `BorderBrush="{StaticResource Bridge.SystemAccentBrush}"` (#007ACC left accent bar)
+
+Covers uses a similar pattern through a custom `ControlTemplate` with a `SelectionRing` `Border` and `DataTrigger` on `TemplatedParent.IsSelected`.
+
+### Tipografía y tema
+
+All styling is defined in `Bridge/Styles/Theme.xaml` (dark palette #1E1E1E/#252526/#2D2D2D/#333333, Inter Variable font via `pack://application:,,,/Fonts/#Inter`, spacing and corner radius tokens, motion durations). The dictionary overrides WPF-UI's semantic tokens in Color+Brush pairs — see ADR-3 in ARCHITECTURE.md for the full decision record.
+
+### DataTrigger + DataContext convention (detail panel / hero zone)
+
+**Rule:** Any `Style.DataTrigger` that checks `SelectedGame` from within a subtree that overrides `DataContext` to `{Binding SelectedGame}` **must use `ElementName=Root`**, never a bare `{Binding SelectedGame}`.
+
+**Why:** When `DataContext` is overridden to the Game object, `{Binding SelectedGame}` resolves against the Game (property doesn't exist → null → trigger fires incorrectly). This has caused the same bug twice (Fase 2 ScrollViewer, Fase 7 hero Grid) — both times the entire detail panel rendered invisible because the visibility trigger collapsed everything.
+
+**Correct pattern:**
+```xml
+<DataTrigger Binding="{Binding DataContext.SelectedGame, ElementName=Root}" Value="{x:Null}">
+    <Setter Property="Visibility" Value="Collapsed" />
+</DataTrigger>
+```
 
 ---
 
@@ -313,7 +339,7 @@ MAJOR.MINOR.PATCH
 
 **`PublishReadyToRun=true` was tried and rejected** — measured slower startup (2671ms vs. a ~2000ms average without it) and a larger file (176MB vs 148MB). Don't re-enable it without a fresh measurement; there's no guarantee this app's startup profile won't change as more of it gets built.
 
-**Measured baseline** (3 runs, published exe launched from an isolated folder — not the dev `bin/` output, to make sure nothing from the local build environment was silently helping): ~2 seconds from process start to visible window (1633-2310ms across runs), ~140-147MB RAM at rest. No numeric startup/RAM target was ever set anywhere in this project's docs to validate these against — treat them as the current baseline, not a pass/fail measurement. If startup time becomes a real complaint later, the next thing to try (not yet attempted) is trimming what runs during `App.OnStartup` before the window shows, not a publish-flag change.
+**Measured baseline** (3 runs, published exe launched from an isolated folder — not the dev `bin/` output): ~2.6 seconds from process start to visible window (2548-2614ms across runs), ~180MB RAM at rest (WorkingSet). The pre-overhaul baseline was ~2s / ~147MB — the +~600ms / +~33MB regression is attributable to WPF-UI theme dictionaries, Inter Variable font (879KB), Mica DWM compositing, and per-card DropShadowEffect. A deferral experiment (`Loaded` event) didn't help. No numeric startup/RAM target was ever set — these are documented as the current baseline, not a pass/fail measurement. If startup time becomes a real complaint, try trimming `App.OnStartup` work before window show.
 
 ---
 

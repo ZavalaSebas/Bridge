@@ -1,8 +1,18 @@
 ﻿<Application x:Class="Bridge.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Bridge">
+             xmlns:local="clr-namespace:Bridge"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <Application.Resources>
-
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Wpf.Ui 3.x: tema (Dark) + estilos de controles. El diccionario
+                     de Bridge (Styles/Theme.xaml) se mergea DESPUÉS para que sus
+                     tokens semánticos (paleta, acento, tipografía) ganen. -->
+                <ui:ThemesDictionary Theme="Dark" />
+                <ui:ControlsDictionary />
+                <ResourceDictionary Source="Styles/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

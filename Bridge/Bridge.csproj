@@ -39,6 +39,13 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Inter Variable font, embedded as a WPF Resource so the app ships
+         self-contained without depending on it being installed on the machine. -->
+    <Resource Include="Fonts\InterVariable.ttf" />
   </ItemGroup>
 
 </Project>
