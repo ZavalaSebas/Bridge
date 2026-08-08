@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
@@ -28,8 +30,81 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<Game> Games { get; } = [];
 
+    public ICollectionView GamesView { get; }
+
     [ObservableProperty]
     private Game? _selectedGame;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        GamesView.Refresh();
+    }
+
+    [ObservableProperty]
+    private LibraryFilterPreset _filterPreset;
+
+    [ObservableProperty]
+    private LibraryStatistics? _statistics;
+
+    [ObservableProperty]
+    private GameSortField _sortField;
+
+    [ObservableProperty]
+    private bool _sortDescending;
+
+    partial void OnSortFieldChanged(GameSortField value)
+    {
+        ApplySort();
+    }
+
+    partial void OnSortDescendingChanged(bool value)
+    {
+        ApplySort();
+    }
+
+    private void ApplySort()
+    {
+        if (GamesView is not ListCollectionView listView)
+            return;
+
+        listView.CustomSort = new GameSortComparer(
+            SortField,
+            SortDescending,
+            BuildNameLookup(_companyRepository),
+            BuildNameLookup(_platformRepository),
+            BuildNameLookup(_genreRepository),
+            BuildNameLookup(_sourceRepository));
+        listView.Refresh();
+    }
+
+    private static IReadOnlyDictionary<Guid, string> BuildNameLookup<T>(IRepository<T> repository)
+        where T : DatabaseObject
+        => repository.GetAll().ToDictionary(item => item.Id, item => item.Name);
+
+    partial void OnFilterPresetChanged(LibraryFilterPreset value)
+    {
+        ApplyFilterPreset();
+    }
+
+    private void ApplyFilterPreset()
+    {
+        switch (FilterPreset)
+        {
+            case LibraryFilterPreset.MostPlayed:
+                SortField = GameSortField.PlaytimeSeconds;
+                SortDescending = true;
+                break;
+            case LibraryFilterPreset.RecentlyPlayed:
+                SortField = GameSortField.RecentActivity;
+                SortDescending = true;
+                break;
+        }
+
+        GamesView.Refresh();
+    }
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
@@ -114,6 +189,8 @@ public partial class MainViewModel : ObservableObject
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
+        GamesView = CollectionViewSource.GetDefaultView(Games);
+        GamesView.Filter = GameMatchesSearch;
         ImportSteamLibrary();
         var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
         _ = DownloadMissingSteamMetadataAsync(steamSourceId);
@@ -124,10 +201,50 @@ public partial class MainViewModel : ObservableObject
         foreach (var game in _gameRepository.GetAll())
         {
             ApplySteamLocalIcon(game);
-            Games.Add(game);
+            AddGameSorted(game);
         }
 
         RefreshStatistics();
+    }
+
+    // Inserts into Games keeping the collection ordered by name (ordinal,
+    // case-insensitive) — binary-search find the insert position instead of
+    // sorting the whole collection after every add. SortingName is never
+    // populated by the importers yet, so Name is the sort key.
+    private void AddGameSorted(Game game)
+    {
+        int index = 0;
+        int lo = 0, hi = Games.Count;
+        while (lo < hi)
+        {
+            int mid = (lo + hi) / 2;
+            if (string.Compare(Games[mid].Name, game.Name, StringComparison.OrdinalIgnoreCase) <= 0)
+                lo = mid + 1;
+            else
+                hi = mid;
+        }
+        index = lo;
+
+        Games.Insert(index, game);
+    }
+
+    // Search + preset filter: matches the name search and the active preset.
+    // Empty/whitespace search shows everything within the preset.
+    private bool GameMatchesSearch(object item)
+    {
+        if (item is not Game game)
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(SearchText)
+            && !game.Name.Contains(SearchText.Trim(), StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return FilterPreset switch
+        {
+            LibraryFilterPreset.Favorite => game.Favorite,
+            LibraryFilterPreset.RecentlyPlayed => game.LastActivity.HasValue,
+            _ => true
+        };
     }
 
     // Playnite shows Steam's square 32x32 clienticon (PROJECT_FOUNDATION.md
@@ -149,6 +266,7 @@ public partial class MainViewModel : ObservableObject
     private void RefreshStatistics()
     {
         var stats = LibraryStatistics.Compute(Games);
+        Statistics = stats;
         var hours = stats.TotalPlaytimeSeconds / 3600.0;
         StatisticsSummary =
             $"Total: {stats.TotalCount} | Installed: {stats.InstalledCount} | " +
@@ -166,7 +284,7 @@ public partial class MainViewModel : ObservableObject
 
         var game = new Game { Name = name.Trim() };
         _gameRepository.Add(game);
-        Games.Add(game);
+        AddGameSorted(game);
         SelectedGame = game;
         RefreshStatistics();
     }
@@ -253,7 +371,7 @@ public partial class MainViewModel : ObservableObject
             foreach (var game in found)
             {
                 _gameRepository.Add(game);
-                Games.Add(game);
+                AddGameSorted(game);
             }
 
             RefreshStatistics();
@@ -288,7 +406,7 @@ public partial class MainViewModel : ObservableObject
                         IsInstalled = metadata.IsInstalled
                     };
                     _gameRepository.Add(game);
-                    Games.Add(game);
+                    AddGameSorted(game);
                     added++;
                 }
                 else
