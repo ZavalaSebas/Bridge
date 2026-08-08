@@ -34,7 +34,7 @@ When making changes, consider:
 
 ## Why Bridge?
 
-Bridge is a from-scratch rewrite of Playnite's functional behavior: one local, self-contained catalog for games from external libraries, manual entries, and emulated ROMs. It exists because Playnite's plugin-oriented architecture (`ExtensionFactory`, versioned SDK contracts, dual desktop/fullscreen frontends, hot-swappable theme system) carries complexity that only pays off once there's a real third-party extension ecosystem to support — which a solo-maintained tool doesn't have. Bridge keeps what makes Playnite functionally useful (incremental import, local metadata/image caching, virtualized list views, emulation support) and drops what exists purely to support runtime extensibility. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the full analysis this rewrite is based on, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the specific decisions (ADR-1 through ADR-5) that follow from it.
+Bridge is an original game library manager: one local, self-contained catalog for games from external libraries, manual entries, and emulated ROMs. It keeps what makes a good library manager functionally useful (incremental import, local metadata/image caching, virtualized list views, emulation support) and drops what exists purely to support runtime extensibility — no plugin architecture, no dual desktop/fullscreen frontends. [Playnite](https://playnite.link/) is an *inspiration*: its observed behavior informs how Bridge's features should feel, but Bridge is designed independently — different module layout, different persistence, different UI, no shared code. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the behavioral notes used during development, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the specific decisions (ADR-1 through ADR-5) that follow from this direction.
 
 ---
 
@@ -78,9 +78,9 @@ Bridge/
 ├── Bridge.Core/         # Domain entities and repository contracts — created (see below)
 ├── Bridge.Storage/      # EF Core DbContext + repository implementations — created (see below)
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
-├── Bridge.Import/       # created — SteamLibraryImporter, VdfParser, SteamPaths (see below)
+├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # created — 26 tests, all passing (see below)
+└── Bridge.Tests/        # created — 47 tests, all passing (see below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -154,12 +154,16 @@ See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-sour
 ```
 Bridge.Import/
 └── Steam/
-    ├── SteamLibraryImporter.cs  # GetInstalledGames() — registry → libraryfolders.vdf → appmanifest*.acf
-    ├── VdfParser.cs             # hand-rolled recursive-descent VDF parser (ADR-11)
-    └── SteamPaths.cs            # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
+    ├── SteamLibraryImporter.cs     # GetInstalledGames() — registry → libraryfolders.vdf → appmanifest*.acf
+    ├── SteamLocalIconResolver.cs   # square 32x32 clienticon from appcache\librarycache\{appid}\{hash}.jpg
+    ├── SteamPlayActions.cs         # runtime play action resolution for Steam games (steam://rungameid/{appid})
+    ├── VdfParser.cs                # hand-rolled recursive-descent VDF parser (ADR-11)
+    └── SteamPaths.cs               # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
 ```
 
-See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. See also `PROJECT_FOUNDATION.md` §28.26 for the reference implementation in Playnite's SteamLibrary extension, and §28.27.A for the full upstream pipeline (online owned games, playtime via Web API, Family Sharing, etc. — all documented for future reference, none implemented in Bridge yet).
+See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. See also `PROJECT_FOUNDATION.md` §28.26 for the behavioral notes on Playnite's SteamLibrary extension, and §28.27.A for the full upstream pipeline (online owned games, playtime via Web API, Family Sharing, etc. — all documented for future reference, none implemented in Bridge yet). `SteamPlayActions.CreatePlayAction` builds the `steam://rungameid/{appid}` URL action that Steam games use at launch (the same behavior Playnite's `SteamPlayController` exhibits, §28.26): resolved at runtime, launched via `steam.exe -silent` because Steamworks DRM makes launching the local `.exe` fail. Pure logic, unit-tested in `Bridge.Tests/Import/SteamPlayActionsTests.cs` without needing Steam installed.
+
+`SteamLocalIconResolver.TryGetLocalIconPath(appId, steamInstallPath = null)` resolves the square 32x32 icon Steam itself caches for the library (the `clienticon` — the exact artwork Playnite shows). Steam stopped returning `clienticon` from the web API, so Bridge reads the file Steam writes to `appcache\librarycache\{appid}\{40-hex}.jpg` (default install path comes from `SteamPaths`); returns `null` when Steam isn't installed or that app has no cached icon, so callers fall back to the `header.jpg` URL from metadata. Verified against the real cache on this machine (628 apps with a cached 32x32 icon). `MainViewModel.ApplySteamLocalIcon` prefers it on load and after every metadata download.
 
 ---
 
@@ -408,17 +412,19 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 38 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release` — 47 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
 - `Storage/RepositoryTests.cs` — `GetOrCreateByName` dedup, including case-insensitivity.
 - `Import/SteamLibraryImporterTests.cs` — VDF parsing, library folder detection, StateFlags filtering, re-scan update behavior.
+- `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
+- `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
 - `Services/RomScannerTests.cs` — extension filtering, dedup-by-existing-ROM-path, missing-directory error.
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
 - `Metadata/IgdbAuthClientTests.cs`, `Metadata/IgdbMetadataProviderTests.cs` — the whole IGDB flow (OAuth token fetch + caching, request format, response mapping, error paths) against a fake `HttpMessageHandler` (`Metadata/FakeHttpMessageHandler.cs`) — not real IGDB credentials, see [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why that's a real, flagged limitation and not silently glossed over.
 
-**Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`.
+**Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). The Steam play action *resolution* is covered (`SteamPlayActionsTests`) since it's pure logic, but the real `steam.exe -silent "steam://..."` invocation and directory-based process watching are not. If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`.
 
 **Real bug found and fixed while writing these tests**: `Microsoft.Data.Sqlite` pools connections by default, so `File.Delete` on a temp `.db` file right after disposing its `DbContext` intermittently throws `IOException` — the connection isn't actually released yet. Fixed by adding `Pooling=False` to the test-only connection strings. This wasn't just a scratch-script annoyance — it would have made these exact tests flaky in CI if left in.
 

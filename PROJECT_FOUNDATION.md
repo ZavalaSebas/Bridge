@@ -3,6 +3,8 @@ DOCUMENTACION DE CONVERSACION Y BASE PARA REESCRITURA DE PLAYNITE
 Fecha: 2026-08-05
 Idioma: es-ES
 
+> **Nota de encuadre:** Este documento es un **análisis interno de referencia** — registra cómo funciona Playnite por dentro para *informar las decisiones de desarrollo de Bridge*, no como especificación a replicar. Bridge no es una reescritura de Playnite: su arquitectura, estructura de módulos, persistencia e interfaz son propias e independientes. Las secciones §28 se usan en los demás documentos como "evidencia de comportamiento observado" (cómo debería sentirse una feature), nunca como contrato de implementación.
+
 1. OBJETIVO GENERAL DISCUTIDO
 
 La conversacion se centro en comprender en profundidad como funciona Playnite para poder replantear el proyecto desde cero o reescribirlo con una arquitectura mas simple y moderna. La idea principal del usuario fue:
@@ -3114,6 +3116,22 @@ STEAM — deteccion de juegos instalados, 100% archivos locales, sin red:
   a GameMetadata.ExternalId=AppID, Name, InstallDirectory, IsInstalled=true.
   Epic no se investigo en esta pasada (no estaba en el repo de extensiones
   revisado, es otro repo/addon) — queda pendiente si se necesita.
+
+  ICONO 32x32 DEL CLIENTE STEAM (hallazgo 2026-08-07, usado por Bridge):
+  el icono cuadrado que Playnite muestra en la lista de la biblioteca es el
+  "clienticon" de Steam, un archivo de 40 caracteres hex (hash) que el
+  CLIENTE Steam guarda localmente en {InstallationPath}/appcache/librarycache/
+  {appid}/{40hex}.jpg — una imagen real de 32x32, junto a header.jpg
+  (460x215) y library_*.jpg. La API web store.steampowered.com/api/appdetails
+  YA NO devuelve el campo clienticon (verificado contra la API real con
+  Dota 2 570, HL2 220, CS2 730, CS 1.6 10, GMod 4000 y Destiny 2 1085660 —
+  el campo sale vacio en todas). Por eso Bridge no copia la via de SteamKit2
+  (PICSGetProductInfo) que usa el addon real para el hash, sino que lee el
+  archivo local que Steam ya descargo (verificado: 628 apps con icono 32x32
+  real en el cache de esta maquina, no placeholders), con fallback a la URL
+  de header.jpg que provee SteamMetadataProvider. Implementado en
+  Bridge.Import/Steam/SteamLocalIconResolver.cs; MainViewModel.ApplySteamLocalIcon
+  lo aplica al cargar y tras cada descarga de metadata.
 
 28.27 EXTENSIONES DE BIBLIOTECAS — EL PIPELINE REAL COMPLETO DE STEAM,
       EL BACKEND DE IGDB Y COMO IMPORTAN LAS OTRAS 9 LIBRERIAS

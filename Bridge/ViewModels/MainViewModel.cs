@@ -17,6 +17,8 @@ public partial class MainViewModel : ObservableObject
     private readonly IGameRepository _gameRepository;
     private readonly IRepository<Emulator> _emulatorRepository;
     private readonly IRepository<Genre> _genreRepository;
+    private readonly IRepository<Company> _companyRepository;
+    private readonly IRepository<Platform> _platformRepository;
     private readonly IRepository<GameSource> _sourceRepository;
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
@@ -30,9 +32,6 @@ public partial class MainViewModel : ObservableObject
     private Game? _selectedGame;
 
     [ObservableProperty]
-    private string _newGameName = string.Empty;
-
-    [ObservableProperty]
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
@@ -42,18 +41,58 @@ public partial class MainViewModel : ObservableObject
     private string _statisticsSummary = string.Empty;
 
     [ObservableProperty]
-    private string _romFolderInput = string.Empty;
+    private string _developersText = string.Empty;
+
+    [ObservableProperty]
+    private string _publishersText = string.Empty;
+
+    [ObservableProperty]
+    private string _platformsText = string.Empty;
 
     partial void OnSelectedGameChanged(Game? value)
     {
         var playAction = value?.GameActions.FirstOrDefault(a => a.IsPlayAction);
         ExecutablePathInput = playAction?.Path ?? string.Empty;
+        RefreshReferenceFields(value);
+    }
+
+    private void RefreshReferenceFields(Game? game)
+    {
+        if (game is null)
+        {
+            DevelopersText = string.Empty;
+            PublishersText = string.Empty;
+            PlatformsText = string.Empty;
+            return;
+        }
+
+        // Resolve stored ids back to display names. Straight lookup per id —
+        // fine for the MVP's small reference collections; don't build a
+        // caching dictionary until profiling shows these resolve calls matter.
+        DevelopersText = FormatField("Developers", game.DeveloperIds, _companyRepository);
+        PublishersText = FormatField("Publishers", game.PublisherIds, _companyRepository);
+        PlatformsText = FormatField("Platforms", game.PlatformIds, _platformRepository);
+    }
+
+    // "Label: value1, value2" — or empty string when there's nothing to show
+    // (the XAML collapses empty lines via a DataTrigger).
+    private static string FormatField<T>(string label, IEnumerable<Guid> ids, IRepository<T> repo)
+        where T : DatabaseObject
+    {
+        var names = ids
+            .Select(id => repo.Get(id)?.Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToList();
+
+        return names.Count == 0 ? string.Empty : $"{label}: {string.Join(", ", names)}";
     }
 
     public MainViewModel(
         IGameRepository gameRepository,
         IRepository<Emulator> emulatorRepository,
         IRepository<Genre> genreRepository,
+        IRepository<Company> companyRepository,
+        IRepository<Platform> platformRepository,
         IRepository<GameSource> sourceRepository,
         GameLauncher launcher,
         RomScanner romScanner,
@@ -64,6 +103,8 @@ public partial class MainViewModel : ObservableObject
         _gameRepository = gameRepository;
         _emulatorRepository = emulatorRepository;
         _genreRepository = genreRepository;
+        _companyRepository = companyRepository;
+        _platformRepository = platformRepository;
         _sourceRepository = sourceRepository;
         _launcher = launcher;
         _romScanner = romScanner;
@@ -82,10 +123,27 @@ public partial class MainViewModel : ObservableObject
     {
         foreach (var game in _gameRepository.GetAll())
         {
+            ApplySteamLocalIcon(game);
             Games.Add(game);
         }
 
         RefreshStatistics();
+    }
+
+    // Playnite shows Steam's square 32x32 clienticon (PROJECT_FOUNDATION.md
+    // §28.26), which Steam keeps locally in appcache\librarycache\{appid}\ —
+    // the web API no longer returns the `clienticon` field, so the local file
+    // is the faithful source. Falls back to whatever Icon already holds
+    // (e.g. the header.jpg URL from metadata) when Steam isn't installed or
+    // that app has no cached icon.
+    private void ApplySteamLocalIcon(Game game)
+    {
+        if (game.SourceId == GameSource.ManualId || !uint.TryParse(game.ExternalId, out _))
+            return;
+
+        var localIcon = SteamLocalIconResolver.TryGetLocalIconPath(game.ExternalId);
+        if (!string.IsNullOrWhiteSpace(localIcon))
+            game.Icon = localIcon;
     }
 
     private void RefreshStatistics()
@@ -99,18 +157,17 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddGame()
+    private void AddGame(string? name)
     {
-        if (string.IsNullOrWhiteSpace(NewGameName))
+        if (string.IsNullOrWhiteSpace(name))
         {
             return;
         }
 
-        var game = new Game { Name = NewGameName.Trim() };
+        var game = new Game { Name = name.Trim() };
         _gameRepository.Add(game);
         Games.Add(game);
         SelectedGame = game;
-        NewGameName = string.Empty;
         RefreshStatistics();
     }
 
@@ -171,9 +228,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ScanRomFolder()
+    private void ScanRomFolder(string? romFolder)
     {
-        if (string.IsNullOrWhiteSpace(RomFolderInput))
+        if (string.IsNullOrWhiteSpace(romFolder))
         {
             return;
         }
@@ -192,7 +249,7 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            var found = _romScanner.Scan(RomFolderInput.Trim(), emulator.Id, profile, Games);
+            var found = _romScanner.Scan(romFolder.Trim(), emulator.Id, profile, Games);
             foreach (var game in found)
             {
                 _gameRepository.Add(game);
@@ -200,7 +257,7 @@ public partial class MainViewModel : ObservableObject
             }
 
             RefreshStatistics();
-            StatusMessage = $"Scan complete: {found.Count} new ROM(s) imported from '{RomFolderInput}'.";
+            StatusMessage = $"Scan complete: {found.Count} new ROM(s) imported from '{romFolder}'.";
         }
         catch (Exception ex)
         {
@@ -312,16 +369,8 @@ public partial class MainViewModel : ObservableObject
         }
 
         ApplyMetadata(game, metadata);
-
-        if (metadata.Genres is { Count: > 0 })
-        {
-            foreach (var genreName in metadata.Genres)
-            {
-                var genre = _genreRepository.GetOrCreateByName(genreName);
-                if (!game.GenreIds.Contains(genre.Id))
-                    game.GenreIds.Add(genre.Id);
-            }
-        }
+        ApplyMetadataReferences(game, metadata);
+        ApplySteamLocalIcon(game);
 
         _gameRepository.Update(game);
         RefreshListDisplay(game);
@@ -339,6 +388,9 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(metadata.CoverImage))
             game.CoverImage = metadata.CoverImage;
 
+        if (!string.IsNullOrWhiteSpace(metadata.Icon))
+            game.Icon = metadata.Icon;
+
         if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage))
             game.BackgroundImage = metadata.BackgroundImage;
 
@@ -347,6 +399,53 @@ public partial class MainViewModel : ObservableObject
 
         if (metadata.CommunityScore.HasValue)
             game.CommunityScore = metadata.CommunityScore;
+    }
+
+    // Resolve metadata names into real reference-entity ids (Genre/Company/
+    // Platform) via GetOrCreateByName — the same mechanism Bridge.Import uses
+    // for Steam data (see ADR-7 for why Developer/Publisher share one Company
+    // table). Appends to the existing id lists without duplicating ids.
+    private void ApplyMetadataReferences(Game game, GameMetadata metadata)
+    {
+        if (metadata.Genres is { Count: > 0 })
+        {
+            foreach (var genreName in metadata.Genres)
+            {
+                var genre = _genreRepository.GetOrCreateByName(genreName);
+                if (!game.GenreIds.Contains(genre.Id))
+                    game.GenreIds.Add(genre.Id);
+            }
+        }
+
+        if (metadata.Developers is { Count: > 0 })
+        {
+            foreach (var name in metadata.Developers)
+            {
+                var company = _companyRepository.GetOrCreateByName(name);
+                if (!game.DeveloperIds.Contains(company.Id))
+                    game.DeveloperIds.Add(company.Id);
+            }
+        }
+
+        if (metadata.Publishers is { Count: > 0 })
+        {
+            foreach (var name in metadata.Publishers)
+            {
+                var company = _companyRepository.GetOrCreateByName(name);
+                if (!game.PublisherIds.Contains(company.Id))
+                    game.PublisherIds.Add(company.Id);
+            }
+        }
+
+        if (metadata.Platforms is { Count: > 0 })
+        {
+            foreach (var name in metadata.Platforms)
+            {
+                var platform = _platformRepository.GetOrCreateByName(name);
+                if (!game.PlatformIds.Contains(platform.Id))
+                    game.PlatformIds.Add(platform.Id);
+            }
+        }
     }
 
     private async Task DownloadMissingSteamMetadataAsync(Guid steamSourceId)
@@ -363,21 +462,13 @@ public partial class MainViewModel : ObservableObject
                 if (metadata is null)
                     continue;
 
-                ApplyMetadata(game, metadata);
+        ApplyMetadata(game, metadata);
+        ApplyMetadataReferences(game, metadata);
+        ApplySteamLocalIcon(game);
 
-                if (metadata.Genres is { Count: > 0 })
-                {
-                    foreach (var genreName in metadata.Genres)
-                    {
-                        var genre = _genreRepository.GetOrCreateByName(genreName);
-                        if (!game.GenreIds.Contains(genre.Id))
-                            game.GenreIds.Add(genre.Id);
-                    }
-                }
-
-                _gameRepository.Update(game);
-                RefreshListDisplay(game);
-                StatusMessage = $"Metadata applied to '{game.Name}' (source: {_steamMetadataProvider.Name}).";
+        _gameRepository.Update(game);
+        RefreshListDisplay(game);
+        StatusMessage = $"Metadata applied to '{game.Name}' (source: {_steamMetadataProvider.Name}).";
             }
             catch
             {
