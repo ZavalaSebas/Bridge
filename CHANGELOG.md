@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Three view modes** — the main content area now switches between **List** (list + detail panel with tabs, the original view), **Covers** (a cover wall where hovering a cover reveals **Play** and **Info** buttons over the artwork) and **Details** (a flat `ListView`/`GridView` with columns: Name + icon, Release Date, Genre, Last Played, Time Played, Library, and Play/Info actions). Switched with the "View mode" ComboBox (`ViewMode` enum).
+- **Compact info window** (`GameInfoWindow`) — opened by the hover **Info** button (in Covers and Details views) using the hovered game, not the list selection; shows all details and description without images. `PlayGameCommand` now takes the game as an optional parameter so covers/rows can launch their own game.
+- **Grouping in the library list** — group by 21 fields ("Don't group" + Name, Library, Developer, Publisher, Platform, Genre, Installation Status, Completion Status, Time Played, Play Count, Install Size, Install Drive, Last Played, Recent Activity, Release Year, Date Added, Date Modified, Community/Critic/User Score). Uses `ListCollectionView.GroupDescriptions` fed by a pure, unit-tested `GameGroupResolver` (buckets for playtime/install size/scores, reference names via lookups); the list shows group headers.
 - **Search, filter presets and sorting in the library list** — a name search box (case-insensitive substring), filter presets (`All` / `Favorite` / `Most Played` / `Recently Played`, combinable with the search), and sort by field + direction (22 fields: Name, Time Played, Play Count, Last Played, Recent Activity, Favorite, Hidden, Install Size, Installation Folder, Installation Status, Release Date, Date Added, Date Modified, Version, Community/Critic/User Score, Developer, Publisher, Platform, Genre, Library). Sorting uses `ListCollectionView.CustomSort` with a pure, unit-tested `GameSortComparer`; reference entities sort by resolved display name. Empty/unset values always sort last, regardless of direction.
 - **Statistics tab** — the right panel is now a `TabControl` with a `Statistics` tab in front and the game detail behind it. Replicates Playnite's Overview: library counts with percentages (All/Installed/Not installed/Hidden/Favorite), total/average play time, total install size (sum of `InstallSizeBytes`), completion status (Not played/Played), and a Top Play Time list.
 - **Automatic Steam play action** — a Steam-imported game with no configured `GameAction` launches via `steam://rungameid/{appid}` passed to `steam.exe -silent` (the same approach Playnite's Steam addon takes for Steamworks-DRM games, never the local `.exe`), tracked by directory (watch processes running from the game's `InstallDirectory`). Resolution logic is pure and unit-tested in `Bridge.Import/Steam/SteamPlayActions.cs`.
@@ -46,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local image caching (covers/backgrounds stored as raw URLs for now).
 - `SkipExistingValues` semantics (metadata downloads unconditionally overwrite).
 - `Features` are downloaded but not yet displayed in the UI (stored as entity IDs).
-- Sort fields that need repositories Bridge doesn't have yet (Age Rating, Category, Feature, Series, Region, Tag) — listed in the `GameSortField` enum doc comment as future work.
+- Sort/group fields that need repositories Bridge doesn't have yet (Age Rating, Category, Feature, Series, Region, Tag) — listed in the `GameSortField`/`GameGroupField` enum doc comments as future work.
 
 ---
 

@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows.Data;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Core.Import;
+using Bridge.Converters;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
 using Bridge.Services;
@@ -32,6 +34,8 @@ public partial class MainViewModel : ObservableObject
 
     public ICollectionView GamesView { get; }
 
+    public ObservableCollection<GameDetailRow> DetailedRows { get; } = [];
+
     [ObservableProperty]
     private Game? _selectedGame;
 
@@ -55,6 +59,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _sortDescending;
 
+    [ObservableProperty]
+    private GameGroupField _groupField;
+
+    [ObservableProperty]
+    private ViewMode _viewMode;
+
     partial void OnSortFieldChanged(GameSortField value)
     {
         ApplySort();
@@ -63,6 +73,11 @@ public partial class MainViewModel : ObservableObject
     partial void OnSortDescendingChanged(bool value)
     {
         ApplySort();
+    }
+
+    partial void OnGroupFieldChanged(GameGroupField value)
+    {
+        ApplyGrouping();
     }
 
     private void ApplySort()
@@ -77,6 +92,30 @@ public partial class MainViewModel : ObservableObject
             BuildNameLookup(_platformRepository),
             BuildNameLookup(_genreRepository),
             BuildNameLookup(_sourceRepository));
+        listView.Refresh();
+    }
+
+    private void ApplyGrouping()
+    {
+        if (GamesView is not ListCollectionView listView)
+            return;
+
+        listView.GroupDescriptions.Clear();
+        if (GroupField != GameGroupField.None)
+        {
+            listView.GroupDescriptions.Add(new PropertyGroupDescription(
+                null,
+                new GameGroupConverter
+                {
+                    Resolver = new GameGroupResolver(
+                        BuildNameLookup(_companyRepository),
+                        BuildNameLookup(_platformRepository),
+                        BuildNameLookup(_genreRepository),
+                        BuildNameLookup(_sourceRepository)),
+                    Field = GroupField
+                }));
+        }
+
         listView.Refresh();
     }
 
@@ -162,6 +201,34 @@ public partial class MainViewModel : ObservableObject
         return names.Count == 0 ? string.Empty : $"{label}: {string.Join(", ", names)}";
     }
 
+    private static string JoinNames<T>(IEnumerable<Guid> ids, IRepository<T> repo)
+        where T : DatabaseObject
+        => string.Join(", ", ids
+            .Select(id => repo.Get(id)?.Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n)));
+
+    // Rebuilds the detailed-list rows from whatever GamesView currently shows
+    // (respects search/filter/sort/group). Called on every view refresh.
+    private void RebuildDetailedRows()
+    {
+        DetailedRows.Clear();
+        foreach (var item in GamesView)
+        {
+            if (item is not Game game)
+                continue;
+
+            DetailedRows.Add(new GameDetailRow
+            {
+                Game = game,
+                DevelopersText = JoinNames(game.DeveloperIds, _companyRepository),
+                PublishersText = JoinNames(game.PublisherIds, _companyRepository),
+                PlatformsText = JoinNames(game.PlatformIds, _platformRepository),
+                GenresText = JoinNames(game.GenreIds, _genreRepository),
+                LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual"
+            });
+        }
+    }
+
     public MainViewModel(
         IGameRepository gameRepository,
         IRepository<Emulator> emulatorRepository,
@@ -191,6 +258,8 @@ public partial class MainViewModel : ObservableObject
         LoadGames();
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
+        ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) => RebuildDetailedRows();
+        RebuildDetailedRows();
         ImportSteamLibrary();
         var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
         _ = DownloadMissingSteamMetadataAsync(steamSourceId);
@@ -596,20 +665,21 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayGame()
+    private void PlayGame(Game? game = null)
     {
-        if (SelectedGame is null)
+        var target = game ?? SelectedGame;
+        if (target is null)
         {
             return;
         }
 
         try
         {
-            _launcher.Launch(SelectedGame);
+            _launcher.Launch(target);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Couldn't launch '{SelectedGame.Name}': {ex.Message}";
+            StatusMessage = $"Couldn't launch '{target.Name}': {ex.Message}";
         }
     }
 

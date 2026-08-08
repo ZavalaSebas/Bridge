@@ -17,6 +17,12 @@ public static class EnumValues
     public static ReadOnlyCollection<GameSortField> SortFields { get; } =
         new(Enum.GetValues<GameSortField>());
 
+    public static ReadOnlyCollection<GameGroupField> GroupFields { get; } =
+        new(Enum.GetValues<GameGroupField>());
+
+    public static ReadOnlyCollection<ViewMode> ViewModes { get; } =
+        new(Enum.GetValues<ViewMode>());
+
     /// <summary>Display name for an enum member: Description attribute if present, else ToString().</summary>
     public static string GetDisplayName(Enum value)
     {

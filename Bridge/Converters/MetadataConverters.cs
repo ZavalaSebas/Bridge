@@ -2,6 +2,9 @@ using System.Globalization;
 using System.Net.Http;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
+using Bridge.Core.Entities;
+using Bridge.Core.Enums;
+using Bridge.Statistics;
 
 namespace Bridge.Converters;
 
@@ -85,4 +88,30 @@ public class BoolToIndexConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value is int i && i != 0;
+}
+
+/// <summary>
+/// Feeds ListCollectionView.GroupDescriptions: turns a Game into its group key
+/// via a GameGroupResolver (configured by the ViewModel with name lookups).
+/// </summary>
+public class GameGroupConverter : IValueConverter
+{
+    public required GameGroupResolver Resolver { get; init; }
+    public required GameGroupField Field { get; init; }
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is Game game ? Resolver.GetGroupKey(game, Field) : null;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+[ValueConversion(typeof(DateTime?), typeof(string))]
+public class ShortDateConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is DateTime date ? date.ToString("d") : "Never";
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
