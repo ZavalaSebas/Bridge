@@ -210,10 +210,10 @@ public partial class MainViewModel : ObservableObject
         // Resolve stored ids back to display names. Straight lookup per id —
         // fine for the MVP's small reference collections; don't build a
         // caching dictionary until profiling shows these resolve calls matter.
-        DevelopersText = FormatField("Developers", game.DeveloperIds, _companyRepository);
-        PublishersText = FormatField("Publishers", game.PublisherIds, _companyRepository);
-        PlatformsText = FormatField("Platforms", game.PlatformIds, _platformRepository);
-        GenresText = FormatField("Genre", game.GenreIds, _genreRepository);
+        DevelopersText = JoinNames(game.DeveloperIds, _companyRepository);
+        PublishersText = JoinNames(game.PublisherIds, _companyRepository);
+        PlatformsText = JoinNames(game.PlatformIds, _platformRepository);
+        GenresText = JoinNames(game.GenreIds, _genreRepository);
         LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
     }
 
