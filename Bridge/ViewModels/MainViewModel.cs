@@ -65,6 +65,25 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private ViewMode _viewMode;
 
+    // Fase 1 (UI overhaul): sidebar navigation. This is the single allowed
+    // ViewModel change for that phase — an additive property that maps sidebar
+    // shortcuts onto the FilterPreset / GroupField state that already exists.
+    [ObservableProperty]
+    private NavigationSection _navigationSection = NavigationSection.Library;
+
+    partial void OnNavigationSectionChanged(NavigationSection value)
+    {
+        switch (value)
+        {
+            case NavigationSection.Favorites:
+                FilterPreset = LibraryFilterPreset.Favorite;
+                break;
+            case NavigationSection.Sources:
+                GroupField = GameGroupField.Library;
+                break;
+        }
+    }
+
     partial void OnSortFieldChanged(GameSortField value)
     {
         ApplySort();
@@ -163,6 +182,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _platformsText = string.Empty;
 
+    [ObservableProperty]
+    private string _genresText = string.Empty;
+
+    [ObservableProperty]
+    private string _libraryText = string.Empty;
+
     partial void OnSelectedGameChanged(Game? value)
     {
         var playAction = value?.GameActions.FirstOrDefault(a => a.IsPlayAction);
@@ -177,6 +202,8 @@ public partial class MainViewModel : ObservableObject
             DevelopersText = string.Empty;
             PublishersText = string.Empty;
             PlatformsText = string.Empty;
+            GenresText = string.Empty;
+            LibraryText = string.Empty;
             return;
         }
 
@@ -186,6 +213,8 @@ public partial class MainViewModel : ObservableObject
         DevelopersText = FormatField("Developers", game.DeveloperIds, _companyRepository);
         PublishersText = FormatField("Publishers", game.PublisherIds, _companyRepository);
         PlatformsText = FormatField("Platforms", game.PlatformIds, _platformRepository);
+        GenresText = FormatField("Genre", game.GenreIds, _genreRepository);
+        LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
     }
 
     // "Label: value1, value2" — or empty string when there's nothing to show

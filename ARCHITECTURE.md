@@ -100,26 +100,86 @@ Bridge starts as a single desktop WPF application. A fullscreen/controller-orien
 
 ---
 
-### ADR-3: Single theme initially, WPF UI introduced later
+### ADR-3: WPF-UI 4.3.0 for the visual overhaul (supersedes the original "plain WPF first" ADR)
 
 **Status:** Accepted
 
-**Date:** 2026-08-05
+**Date:** 2026-08-08
 
 **Context:**
-Playnite's `ThemeManager` supports hot-swappable themes via `ResourceDictionary` substitution, theme API versioning, and per-mode (desktop/fullscreen) theme sets. That's a lot of infrastructure for a v1 that hasn't even settled its core visual language yet.
+
+The original ADR-3 (2026-08-05) planned to ship with plain WPF and introduce WPF UI in a later "Fase 7". The project reached functional stability faster than expected (auto-import, metadata, play actions, statistics all working), so the visual overhaul was pulled forward into a single 6-phase redesign executed after the functional core was stable.
 
 **Decision:**
-Bridge ships with one built-in visual style, plain WPF first. WPF UI (modern controls, Mica/Acrylic, theming) is introduced in Fase 7 of the project plan, once the functional core is stable — see [PLAN.md](PLAN.md#development-phases).
+
+1. **Library:** `WPF-UI` (with hyphen) **4.3.0** from lepoco, target `net10.0-windows7.0`. Controls: `FluentWindow` (Mica via `WindowBackdropType`), `TitleBar` (3-zone: Icon + Header + Caption), `SymbolIcon/SymbolRegular` (Fluent System Icons v1.1.316), `ui:Button`, `ui:ThemesDictionary`/`ui:ControlsDictionary`.
+
+2. **Shell architecture (3-zone):** `TitleBar` (search, ViewMode selector, overflow menu) + sidebar (hamburger-collapsible `NavigationSection` nav: Library/Favorites/Sources/Statistics/Settings) + Content Area (placeholder in Fase 1, filled across Fases 2-5).
+
+3. **Palette (dark-first):** `Bridge/Styles/Theme.xaml` overrides WPF-UI 3.x semantic tokens (`Color`+`Brush` paired, because WPF-UI brushes reference their colors via `StaticResource`). Primary accent `#007ACC` (nav/focus/selection). Secondary accent `#10B981` (Emerald) **exclusive** to Play/CTA buttons.
+
+4. **Typography:** Inter Variable (`InterVariable.ttf` embedded in `Bridge/Fonts/`, sourced from `rsms/inter` release v4.1). Font sizes defined as tokens: Caption(11)/BodySmall(12)/Body(13)/BodyLarge(14)/Heading(15)/Title(20)/Display(28).
+
+5. **Motion:** Duration tokens (`Fast` 120ms, `Normal` 150ms, `Slow` 200ms) + `EaseOut`/`EaseInOut` KeySplines defined in Theme.xaml. Used in Covers hover animations (120ms `CubicEase EaseOut`).
+
+6. **6-phase evolution:** Fase 0=plan approval, Fase 1=shell+theme+WPF UI, Fase 2=List view (list + collapsible detail panel via GridSplitter, left-accent selection bar), Fase 3=Covers (hero view: scale+shadow+overlay fade on hover), Fase 4=Details table (GridView with dynamic Name column), Fase 5=Statistics tab + Settings, Fase 6=consistency review + docs + baseline.
+
+7. **Selection/Hover pattern** (unified across List, Covers, Details, Statistics Top Played): `BorderThickness="3,0,0,0"` + `Bridge.SystemAccentBrush` on `IsSelected` (left accent bar), `Bridge.Card.Hover` on `IsMouseOver`, `Background="Transparent"` on `IsSelected` to suppress `SystemColors.HighlightBrush`. No custom ControlTemplates for list items — just Style triggers overriding default template behavior.
 
 **Consequences:**
-- ✅ No theme-switching infrastructure to build/maintain before there's anything worth theming
-- ✅ Visual polish work is isolated to a dedicated phase instead of ongoing overhead
-- ❌ No user-facing theme customization in v1
+
+- ✅ Modern launcher look (Mica, Fluent icons, Inter) on the first user-facing build
+- ✅ Consistent visual language across all views (same tokens, same selection pattern, same hover states)
+- ✅ Sidebar navigation (`NavigationSection`) maps to existing state (`FilterPreset`/`GroupField`) via `OnNavigationSectionChanged` — no new backend plumbing
+- ❌ No runtime theme switching; the dark palette is a fixed override of WPF-UI's semantic tokens
+
+**Performance trade-off (DELIBERATE — read this before blaming the overhaul):**
+
+The visual overhaul adds measurable overhead. This was a conscious decision, not an accidental regression:
+
+| Metric | Pre-overhaul (plain WPF) | Post-overhaul (final, all 5 views) | Delta |
+|---|---|---|---|
+| Cold start (published exe, isolated folder, 3-run avg) | ~2.0s (1633-2310ms) | ~2.6s (2548-2614ms) | **+30%** |
+| RAM at rest (WorkingSet) | ~143MB | ~180MB | **+23%** |
+
+**Root causes** (not a single culprit — cumulative across layers):
+- WPF-UI theme dictionaries (`ui:ThemesDictionary` + `ui:ControlsDictionary`): three merged ResourceDictionaries with ~200+ token overrides each
+- Inter Variable font (`InterVariable.ttf`, 879KB embedded as a WPF Resource): adds ~6MB to the font cache on first render
+- Mica backdrop (`WindowBackdropType.Mica`): DWM compositing pipeline activation adds ~80-150ms to the first frame and ~5MB to the working set
+- Per-card `DropShadowEffect` in Covers view: each card holds a WPF bitmap effect object (even at `BlurRadius=0`) — affects GPU memory pressure, not visible in WorkingSet but measurable in frame timing
+
+**What was tried to mitigate it:**
+- **Deferred `ApplicationThemeManager.Apply(Mica)`** to `Window.Loaded` (Fase 2 perf experiment): measured 2590-2836ms vs 2467-2510ms synchronous — **made cold start worse** (the extra render/theme-apply cycle cost more than inline execution), reverted. Verified single attempt, not retried. See code comment in `App.xaml.cs`.
+- **`PublishReadyToRun=true`** (tested during original Fase 8 packaging): made it slower (2671ms avg) and bigger (176MB). Not enabled.
+- **`DebugType=none`** + `IncludeNativeLibrariesForSelfExtract=true` (Fase 8): already applied, no further gains to squeeze.
+
+**Open future work (if performance becomes a real complaint):**
+- Trim `App.OnStartup` work before the window shows (e.g., defer Steam import + metadata download to `Loaded`)
+- Investigate `PublishAot` once .NET NativeAOT supports WPF (not today)
+- Replace per-card `DropShadowEffect` with a pre-rendered gradient overlay (avoids GPU bitmap effects entirely)
+- Consider a lightweight "no-Mica" fallback mode for older hardware
+
+No numeric startup/RAM budget was ever defined to validate these against — the numbers above are documented as the **current baseline**, not a pass/fail target.
+
+**Security note — NuGet supply-chain impostor:**
+
+During Fase 1, the package `Wpf.Ui` (without hyphen) was found in the NuGet cache. Investigation revealed it is **NOT** the real lepoco library:
+
+- Publisher: "XIAMU" (Chinese metadata, `projectUrl` points to `xiamu.3vkj.vip`)
+- Description: `WPF.UI AttachProperties`
+- Target: .NET 4.5 only (no `net10.0-windows7.0`)
+- No `XmlnsDefinition` for `http://schemas.lepo.co/wpfui/2022/xaml`
+- Cached at `%USERPROFILE%\.nuget\packages\wpf.ui`
+
+The real library is **`WPF-UI`** (with hyphen, NuGet ID `WPF-UI`, package name `Wpf.Ui.dll`). The impostor was deleted from the cache. Future contributors adding the package should verify the author is `lepoco` and the project URL is `https://github.com/lepoco/wpfui`.
 
 **Alternatives considered:**
 
-- **Alternative 1:** Adopt WPF UI from the very first UI commit — rejected because it couples early, fast-changing UI work to a third-party library's conventions before the app's own structure is settled.
+- **Alternative 1 (old ADR-3):** Ship with plain WPF, introduce WPF UI later — rejected because the UI design was ready and the functional core was stable enough for the visual overhaul to proceed immediately.
+
+- **Alternative 2:** Use `WPF-UI` 3.x (stable) instead of 4.x — rejected because 4.x targets `net10.0-windows7.0` matching the project target, and 3.x's `SystemAccentColorPrimary` token behavior is deprecated.
+
+- **Alternative 3:** Adobe XAML Fluent theme / MahApps.Metro — rejected to keep the dependency surface small and avoid theming conflicts with a custom palette.
 
 ---
 

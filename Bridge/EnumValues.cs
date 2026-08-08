@@ -23,6 +23,9 @@ public static class EnumValues
     public static ReadOnlyCollection<ViewMode> ViewModes { get; } =
         new(Enum.GetValues<ViewMode>());
 
+    public static ReadOnlyCollection<NavigationSection> NavigationSections { get; } =
+        new(Enum.GetValues<NavigationSection>());
+
     /// <summary>Display name for an enum member: Description attribute if present, else ToString().</summary>
     public static string GetDisplayName(Enum value)
     {

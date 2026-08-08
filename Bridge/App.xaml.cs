@@ -45,6 +45,24 @@ namespace Bridge
             };
             MainWindow = mainWindow;
             mainWindow.Show();
+
+            // Fase 1 (UI overhaul): apply the Wpf.Ui Dark theme and window
+            // backdrop. Mica on Win11 (WindowBackdropType.Mica); on Win10 the
+            // library's ApplyBackdrop compatibility check falls back to the
+            // solid window background (set on FluentWindow). updateAccent:false
+            // keeps our own SystemAccentColor* (#007ACC) instead of letting the
+            // OS accent overwrite it. Must run after MainWindow is set so
+            // UiApplication.Current.MainWindow resolves for the backdrop.
+            //
+            // Fase 2 perf experiment (reverted): deferring this to
+            // mainWindow.Loaded did NOT improve cold start (2590-2836ms vs
+            // 2467-2510ms measured synchronously, same method) — reverted to
+            // the synchronous call. Baseline delta vs pre-UI-overhaul (~2s /
+            // ~140MB) is documented for Fase 6.
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(
+                Wpf.Ui.Appearance.ApplicationTheme.Dark,
+                Wpf.Ui.Controls.WindowBackdropType.Mica,
+                updateAccent: false);
         }
 
         private static void ConfigureServices(IServiceCollection services)

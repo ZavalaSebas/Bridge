@@ -60,9 +60,9 @@ public class PlaytimeConverter : IValueConverter
         return seconds switch
         {
             0 => "Not played",
-            < 60 => $"{seconds} seconds",
-            < 3600 => $"{seconds / 60} minutes",
-            _ => $"{seconds / 3600.0:0.#} hours"
+            < 60 => seconds == 1 ? "1 second" : $"{seconds} seconds",
+            < 3600 => $"{seconds / 60} {(seconds / 60 == 1 ? "minute" : "minutes")}",
+            _ => $"{seconds / 3600.0:0.#} {(seconds / 3600.0 < 2 ? "hour" : "hours")}"
         };
     }
 

@@ -41,7 +41,7 @@ Bridge is an original game library manager: it unifies games from external libra
 
 Bridge is a modular-monolith WPF application: internal modules (`Core`, `Storage`, `Import`, `Metadata`, `Emulation`, `App`) each own one responsibility, with no UI/domain mixing and no runtime plugin boundary. Games and their metadata are stored locally — images and metadata are cached on first fetch so nothing gets re-downloaded unnecessarily, and library imports run incrementally so re-scanning a source only updates what changed.
 
-The app starts as plain WPF and evolves visually toward WPF UI once the functional core is stable. It ships as a single self-contained `.exe` (~148 MB, verified — one file, no sidecar DLLs) — no .NET runtime install required, no external services beyond what's needed to fetch metadata. Measured cold-start time is ~2 seconds and ~140 MB RAM at rest (see `DEVELOPMENT.md` for the full measurement notes and what was tried).
+The app uses [WPF-UI](https://github.com/lepoco/wpfui) 4.3.0 with a custom dark theme, Mica backdrop, Inter variable font, and sidebar-based navigation. It ships as a single self-contained `.exe` (~155 MB, verified — one file, no sidecar DLLs) — no .NET runtime install required, no external services beyond what's needed to fetch metadata. Measured cold-start time is ~2.6 seconds and ~180 MB RAM at rest (see `DEVELOPMENT.md` for the full measurement notes).
 
 ---
 
@@ -80,13 +80,14 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
-- **Three view modes** — **List** (list + detail panel), **Covers** (cover wall; hovering a cover reveals Play/Info buttons over the artwork), and **Details** (flat table with Name, Release Date, Genre, Last Played, Time Played, Library columns and Play/Info actions); search/filter/sort/group apply in all of them
-- **Statistics tab** — library overview with counts and percentages, total/average play time, total install size, completion status, and a Top Play Time list (like Playnite's Overview, in a tab in front of the game detail)
+- **Four view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column), **Statistics** (dashboard with library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
+- **Sidebar navigation** — Library, Favorites (quick filter), Sources (group by library), Statistics, and Settings — collapsible to an icon rail via hamburger button
+- **Dark theme + Mica** — custom dark palette (#1E1E1E) with Inter variable font, dual accent system (#007ACC for UI/navigation, #10B981 exclusive for Play buttons), and Mica backdrop on Windows 11
 - Manual game entries with add, edit, and delete
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
 - Simple ROM folder scan with emulator matching and `{RomPath}` launching
-- Self-contained single-file `.exe` (~148 MB) — no .NET runtime install required
+- Self-contained single-file `.exe` (~155 MB) — no .NET runtime install required
 
 ---
 
