@@ -80,7 +80,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # created — 47 tests, all passing (see below)
+└── Bridge.Tests/        # created — 55 tests, all passing (see below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -107,6 +107,8 @@ Bridge.Core/
 │   └── ReferenceEntities.cs   # Genre, Category, Tag, Series, AgeRating, GameFeature
 ├── Enums/
 │   ├── GameActionType.cs, TrackingMode.cs, ScannerPlayActionMode.cs, CompletionStatusKind.cs
+│   ├── LibraryFilterPreset.cs   # All/Favorite/MostPlayed/RecentlyPlayed list presets
+│   └── GameSortField.cs         # 22 sortable fields, Description attribute = display label
 ├── Import/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
 └── Contracts/
@@ -164,6 +166,20 @@ Bridge.Import/
 See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. See also `PROJECT_FOUNDATION.md` §28.26 for the behavioral notes on Playnite's SteamLibrary extension, and §28.27.A for the full upstream pipeline (online owned games, playtime via Web API, Family Sharing, etc. — all documented for future reference, none implemented in Bridge yet). `SteamPlayActions.CreatePlayAction` builds the `steam://rungameid/{appid}` URL action that Steam games use at launch (the same behavior Playnite's `SteamPlayController` exhibits, §28.26): resolved at runtime, launched via `steam.exe -silent` because Steamworks DRM makes launching the local `.exe` fail. Pure logic, unit-tested in `Bridge.Tests/Import/SteamPlayActionsTests.cs` without needing Steam installed.
 
 `SteamLocalIconResolver.TryGetLocalIconPath(appId, steamInstallPath = null)` resolves the square 32x32 icon Steam itself caches for the library (the `clienticon` — the exact artwork Playnite shows). Steam stopped returning `clienticon` from the web API, so Bridge reads the file Steam writes to `appcache\librarycache\{appid}\{40-hex}.jpg` (default install path comes from `SteamPaths`); returns `null` when Steam isn't installed or that app has no cached icon, so callers fall back to the `header.jpg` URL from metadata. Verified against the real cache on this machine (628 apps with a cached 32x32 icon). `MainViewModel.ApplySteamLocalIcon` prefers it on load and after every metadata download.
+
+### Library list: search, presets, sorting
+
+The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of the raw collection, so all three concerns stay in one place:
+
+- **Search** — `SearchText` observable bound to a text box; `GameMatchesSearch` filters on a case-insensitive name substring.
+- **Presets** — `FilterPreset` (`LibraryFilterPreset`: All/Favorite/MostPlayed/RecentlyPlayed) adds a predicate (`Favorite`/`RecentlyPlayed` filter); `MostPlayed`/`RecentlyPlayed` also fix the sort field. Combinable with the search box.
+- **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling).
+
+UI: `EnumValues` exposes the enums to XAML; `EnumDescriptionConverter` turns `[Description]` labels into readable ComboBox text ("Time Played", not "PlaytimeSeconds"). This is UI, not domain logic — the sort field enum and comparer live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF.
+
+### Statistics tab
+
+`MainWindow`'s right column is now a `TabControl` with a `Statistics` tab in front and the game detail behind it. The tab binds to `MainViewModel.Statistics` (a `LibraryStatistics` object, recomputed by `RefreshStatistics` after every Add/Delete/Save/GameStopped) and mirrors Playnite's Overview: counts with percentages, total/average play time, total install size, completion status, and the Top Play Time list. `LibraryStatistics.Compute` is pure (unit-tested) — no persisted stats entity, exactly like Playnite's on-the-fly `StatisticsViewModel` (§28.5).
 
 ---
 
@@ -412,7 +428,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 47 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release` — 55 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
@@ -422,6 +438,7 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 47 tests, all passing
 - `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
 - `Services/RomScannerTests.cs` — extension filtering, dedup-by-existing-ROM-path, missing-directory error.
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
+- `Statistics/GameSortComparerTests.cs` — `GameSortComparer` sort-by-field logic: ascending/descending by name, playtime, last activity, favorite, plus reference resolution (Developer, Source) through the name lookups and the "empty values sort last in both directions" rule.
 - `Metadata/IgdbAuthClientTests.cs`, `Metadata/IgdbMetadataProviderTests.cs` — the whole IGDB flow (OAuth token fetch + caching, request format, response mapping, error paths) against a fake `HttpMessageHandler` (`Metadata/FakeHttpMessageHandler.cs`) — not real IGDB credentials, see [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why that's a real, flagged limitation and not silently glossed over.
 
 **Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). The Steam play action *resolution* is covered (`SteamPlayActionsTests`) since it's pure logic, but the real `steam.exe -silent "steam://..."` invocation and directory-based process watching are not. If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`.
