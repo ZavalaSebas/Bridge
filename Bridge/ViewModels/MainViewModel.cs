@@ -285,6 +285,7 @@ public partial class MainViewModel : ObservableObject
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
+        SelectedGame = Games.FirstOrDefault();
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
         ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) => RebuildDetailedRows();
