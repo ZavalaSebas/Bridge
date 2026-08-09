@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.IO;
+using System.Net.Http;
 using System.Windows.Media.Imaging;
 
 namespace Bridge.Converters;
@@ -27,6 +29,15 @@ public static class RemoteImageCache
 
     private static readonly object CallbacksLock = new();
     private static readonly Dictionary<string, List<Action>> PendingCallbacks = new();
+
+    // WPF's BitmapImage downloader needs a Dispatcher, so an HTTP UriSource on a
+    // pool thread never completes (the image stays blank — "no cover loaded").
+    // Downloading the bytes here and decoding from a stream keeps the whole load
+    // synchronous and thread-agnostic. HttpClient is thread-safe; share one.
+    private static readonly HttpClient DownloadClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(30)
+    };
 
     /// <summary>
     /// Returns the cached frozen image for <paramref name="url"/>, or null and
@@ -143,6 +154,24 @@ public static class RemoteImageCache
     {
         try
         {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+            {
+                // Remote artwork: fetch the bytes ourselves (HttpClient works on
+                // any thread), then decode from a stream with OnLoad. Setting an
+                // HTTP UriSource here would hand the download to WPF's dispatcher-
+                // bound Downloader, which never finishes on a pool thread.
+                var bytes = DownloadClient.GetByteArrayAsync(uri).GetAwaiter().GetResult();
+                using var stream = new MemoryStream(bytes);
+                var remote = new BitmapImage();
+                remote.BeginInit();
+                remote.CacheOption = BitmapCacheOption.OnLoad;
+                remote.StreamSource = stream;
+                remote.EndInit();
+                remote.Freeze();
+                return remote;
+            }
+
+            // Local file path — BitmapImage reads it directly, no download.
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;

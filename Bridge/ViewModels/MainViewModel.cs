@@ -326,7 +326,7 @@ public partial class MainViewModel : ObservableObject
     {
         foreach (var game in _gameRepository.GetAll())
         {
-            ApplySteamLocalIcon(game);
+            ApplySteamLocalArtwork(game);
             AddGameSorted(game);
         }
 
@@ -379,14 +379,27 @@ public partial class MainViewModel : ObservableObject
     // is the faithful source. Falls back to whatever Icon already holds
     // (e.g. the header.jpg URL from metadata) when Steam isn't installed or
     // that app has no cached icon.
-    private void ApplySteamLocalIcon(Game game)
+    // Prefers the artwork Steam caches locally (appcache\librarycache\{appid}\)
+    // over web URLs so the library shows complete art the moment a game is
+    // loaded — no download, no "blank until metadata" state. Resolves all three
+    // pieces (square icon, vertical cover, widescreen hero background) and only
+    // overrides fields a local file exists for.
+    private void ApplySteamLocalArtwork(Game game)
     {
         if (game.SourceId == GameSource.ManualId || !uint.TryParse(game.ExternalId, out _))
             return;
 
-        var localIcon = SteamLocalIconResolver.TryGetLocalIconPath(game.ExternalId);
-        if (!string.IsNullOrWhiteSpace(localIcon))
-            game.Icon = localIcon;
+        var icon = SteamLocalIconResolver.TryGetLocalIconPath(game.ExternalId);
+        if (!string.IsNullOrWhiteSpace(icon))
+            game.Icon = icon;
+
+        var cover = SteamLocalIconResolver.TryGetLocalCoverPath(game.ExternalId);
+        if (!string.IsNullOrWhiteSpace(cover))
+            game.CoverImage = cover;
+
+        var background = SteamLocalIconResolver.TryGetLocalBackgroundPath(game.ExternalId);
+        if (!string.IsNullOrWhiteSpace(background))
+            game.BackgroundImage = background;
     }
 
     private void RefreshStatistics()
@@ -545,10 +558,11 @@ public partial class MainViewModel : ObservableObject
                         InstallDirectory = metadata.InstallDirectory,
                         IsInstalled = metadata.IsInstalled
                     };
-                    // Resolve the local 32x32 clienticon BEFORE the row binds so
-                    // the list shows an icon for every installed Steam game the
-                    // moment it's added — no waiting for the (slow) web metadata.
-                    ApplySteamLocalIcon(game);
+                    // Resolve the locally-cached Steam artwork (icon, cover,
+                    // hero background) BEFORE the row binds so the library shows
+                    // complete art for every installed Steam game the moment it's
+                    // added — no waiting for the (slow) web metadata.
+                    ApplySteamLocalArtwork(game);
                     _gameRepository.Add(game);
                     AddGameSorted(game);
                     added++;
@@ -632,7 +646,7 @@ public partial class MainViewModel : ObservableObject
 
         ApplyMetadata(game, metadata);
         ApplyMetadataReferences(game, metadata);
-        ApplySteamLocalIcon(game);
+        ApplySteamLocalArtwork(game);
 
         _gameRepository.Update(game);
         RefreshListDisplay(game);
@@ -755,7 +769,7 @@ public partial class MainViewModel : ObservableObject
             {
                 ApplyMetadata(game, metadata);
                 ApplyMetadataReferences(game, metadata);
-                ApplySteamLocalIcon(game);
+                ApplySteamLocalArtwork(game);
 
                 // This sync runs after the window is interactive — the game may
                 // have been deleted (or had its actions edited) while the awaits
