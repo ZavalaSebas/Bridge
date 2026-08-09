@@ -31,19 +31,49 @@ namespace Bridge
         private void SetViewModeList_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
+            {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.List;
+                ShowFullWidthDetail();
+            }
         }
 
         private void SetViewModeGrid_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
+            {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Grid;
+                CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
+                ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
+                DetailColumn.MinWidth = 0;
+                DetailColumn.Width = new GridLength(0);
+                DetailSeparator.Visibility = System.Windows.Visibility.Collapsed;
+                DetailSplitter.Visibility = System.Windows.Visibility.Collapsed;
+            }
         }
 
         private void SetViewModeTable_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
+            {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Table;
+                ShowFullWidthDetail();
+            }
+        }
+
+        // List/Table views keep the full detail panel on the right; the covers
+        // (Grid) view runs full-screen and only opens the compact info panel.
+        private void ShowFullWidthDetail()
+        {
+            ViewsColumn.Width = new GridLength(360);
+            DetailColumn.MinWidth = 320;
+            DetailColumn.Width = new GridLength(1, GridUnitType.Star);
+            DetailSeparator.Visibility = System.Windows.Visibility.Visible;
+            DetailSplitter.Visibility = System.Windows.Visibility.Visible;
+        }
+
+        private void CloseCompactInfo_Click(object sender, RoutedEventArgs e)
+        {
+            CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
         }
 
         private void ShowSettings_Click(object sender, RoutedEventArgs e)
@@ -280,20 +310,17 @@ namespace Bridge
             Close();
         }
 
-        // Opens the compact info window (all details + description, no images)
-        // from a cover's hover button. Uses the hovered game, not the list
-        // selection — SelectedGame is set so the resolved DevelopersText/
-        // PublishersText/PlatformsText refresh before the window binds.
+        // Covers view: the Info hover button opens the compact inline panel
+        // (details + description, no images) on the right, like Playnite's grid
+        // side panel. SelectedGame is set so the resolved DevelopersText/
+        // PublishersText/PlatformsText refresh before the panel binds.
         private void GameInfo_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.FrameworkElement { Tag: Game game })
+            if (sender is System.Windows.FrameworkElement { Tag: Game game }
+                && DataContext is MainViewModel viewModel)
             {
-                var window = new GameInfoWindow { Owner = this, DataContext = DataContext };
-                if (DataContext is MainViewModel viewModel)
-                {
-                    viewModel.SelectedGame = game;
-                }
-                window.ShowDialog();
+                viewModel.SelectedGame = game;
+                CompactInfoPanel.Visibility = System.Windows.Visibility.Visible;
             }
         }
     }
