@@ -30,6 +30,31 @@ namespace Bridge
                 vm.SortDescending = !vm.SortDescending;
         }
 
+        // View mode toggle buttons in top panel (Playnite-style).
+        private void SetViewModeList_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.ViewMode = Bridge.Core.Enums.ViewMode.List;
+        }
+
+        private void SetViewModeGrid_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.ViewMode = Bridge.Core.Enums.ViewMode.Grid;
+        }
+
+        private void SetViewModeTable_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.ViewMode = Bridge.Core.Enums.ViewMode.Table;
+        }
+
+        private void ShowSettings_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Settings;
+        }
+
         // Fase 4 (Table): the ListView rows bind to GameDetailRow (not Game
         // directly), so SelectedItem needs an explicit handler to keep
         // SelectedGame in sync with the current table selection.
