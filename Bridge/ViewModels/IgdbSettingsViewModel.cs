@@ -32,7 +32,17 @@ public partial class IgdbSettingsViewModel : ObservableObject
     {
         _settings.ClientId = ClientId.Trim();
         _settings.ClientSecret = ClientSecret.Trim();
-        IgdbSettingsStore.Save(_settings);
+
+        try
+        {
+            IgdbSettingsStore.Save(_settings);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Save failed: {ex.Message}";
+            return;
+        }
+
         StatusMessage = "Saved.";
         Saved?.Invoke();
     }

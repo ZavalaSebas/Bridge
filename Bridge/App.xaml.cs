@@ -110,8 +110,28 @@ namespace Bridge
 
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
+            LogException(e.Exception);
             MessageBox.Show(e.Exception.Message, Config.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
+        }
+
+        // Errors from the fire-and-forget tasks (_ = ...) never reach the
+        // dispatcher, but every UI-thread exception does — log it so bugs aren't
+        // silently swallowed by the MessageBox-and-continue handler above.
+        private static void LogException(Exception exception)
+        {
+            try
+            {
+                var logDirectory = Path.Combine(Config.AppDataPath, "logs");
+                Directory.CreateDirectory(logDirectory);
+                File.AppendAllText(
+                    Path.Combine(logDirectory, "errors.log"),
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exception}\r\n\r\n");
+            }
+            catch
+            {
+                // Logging must never take the app down.
+            }
         }
     }
 }

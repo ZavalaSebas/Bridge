@@ -46,8 +46,8 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     public void Launch(Game game)
     {
         var action = game.GameActions.FirstOrDefault(a => a.IsPlayAction)
-            ?? game.GameActions.FirstOrDefault()
-            ?? TryResolveAutomaticAction(game);
+            ?? TryResolveAutomaticAction(game)
+            ?? game.GameActions.FirstOrDefault();
 
         if (action is null)
         {
@@ -104,21 +104,26 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     // Mirrors Playnite's SteamPlayController.Play (SteamGameController.cs:160-204):
     // prefer explicit steam.exe -silent "steam://..." (avoids the client window and
     // is more reliable than relying on the steam:// URL association), fall back to
-    // ShellExecute on the URL itself (ProcessStarter.StartUrl equivalent).
+    // ShellExecute on the URL itself (ProcessStarter.StartUrl equivalent). Only
+    // steam:// URLs go through steam.exe — anything else (http/https, mailto, ...)
+    // is ShellExecute'd directly.
     private static Process StartUrlAction(GameAction action)
     {
-        var steamPath = SteamPaths.GetInstallationPath();
-        if (!string.IsNullOrWhiteSpace(steamPath))
+        if (action.Path.StartsWith("steam://", StringComparison.OrdinalIgnoreCase))
         {
-            var steamExe = Path.Combine(steamPath, "steam.exe");
-            if (File.Exists(steamExe))
+            var steamPath = SteamPaths.GetInstallationPath();
+            if (!string.IsNullOrWhiteSpace(steamPath))
             {
-                return Process.Start(new ProcessStartInfo
+                var steamExe = Path.Combine(steamPath, "steam.exe");
+                if (File.Exists(steamExe))
                 {
-                    FileName = steamExe,
-                    Arguments = $"-silent \"{action.Path}\"",
-                    UseShellExecute = true
-                }) ?? throw new InvalidOperationException($"Failed to start Steam: {steamExe}");
+                    return Process.Start(new ProcessStartInfo
+                    {
+                        FileName = steamExe,
+                        Arguments = $"-silent \"{action.Path}\"",
+                        UseShellExecute = true
+                    }) ?? throw new InvalidOperationException($"Failed to start Steam: {steamExe}");
+                }
             }
         }
 
@@ -173,6 +178,13 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 await Task.Delay(frequencyMs);
             }
         }
+        catch
+        {
+            // The process exited/disposed between checks (or access to its
+            // handle was denied). Tracking stops but the session is still
+            // recorded in `finally` — this is the fire-and-forget task, so
+            // swallowing here is what prevents an unobserved-task exception.
+        }
         finally
         {
             stopwatch.Stop();
@@ -206,7 +218,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             // to start it, a bad InstallDirectory, offline mode, ...), don't hang
             // forever: give up after DirectoryLaunchTimeout so IsRunning clears and
             // no phantom playtime gets recorded.
-            while (!HasProcessInDirectory(game.InstallDirectory))
+            while (!await HasProcessInDirectoryAsync(game.InstallDirectory))
             {
                 if (stopwatch.Elapsed >= DirectoryLaunchTimeout)
                 {
@@ -219,10 +231,17 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             launched = true;
             sessionStart = stopwatch.Elapsed;
 
-            while (HasProcessInDirectory(game.InstallDirectory))
+            while (await HasProcessInDirectoryAsync(game.InstallDirectory))
             {
                 await Task.Delay(frequencyMs);
             }
+        }
+        catch
+        {
+            // Swallow — this is a fire-and-forget task; the session is still
+            // finalized in `finally`. Nothing here should throw in practice
+            // (HasProcessInDirectoryAsync catches internally), this is purely
+            // defensive against an unobserved-task exception.
         }
         finally
         {
@@ -240,6 +259,13 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
     private static readonly TimeSpan DirectoryLaunchTimeout = TimeSpan.FromMinutes(5);
 
+    // Enumerating every running process can take 100-300ms on a loaded system.
+    // The tracking loops run on the UI thread (see the note above TrackAsync),
+    // so the enumeration itself must not — offload it to a pool thread and keep
+    // only the (cheap) continuation on the UI thread.
+    private static Task<bool> HasProcessInDirectoryAsync(string installDirectory) =>
+        Task.Run(() => HasProcessInDirectory(installDirectory));
+
     private static bool HasProcessInDirectory(string installDirectory)
     {
         if (string.IsNullOrWhiteSpace(installDirectory) || !Directory.Exists(installDirectory))
@@ -247,33 +273,54 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             return false;
         }
 
-        foreach (var process in Process.GetProcesses())
+        Process[] processes;
+        try
         {
-            try
-            {
-                var path = process.MainModule?.FileName;
-                if (string.IsNullOrWhiteSpace(path) ||
-                    !path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                // Path-prefix boundary check: "C:\Games\Steam2\game.exe" must not
-                // match an install dir of "C:\Games\Steam".
-                if (path.Length > installDirectory.Length &&
-                    path[installDirectory.Length] is not ('\\' or '/'))
-                {
-                    continue;
-                }
-
-                return true;
-            }
-            catch
-            {
-                // Access denied or the process exited mid-iteration — skip it.
-            }
+            processes = Process.GetProcesses();
+        }
+        catch
+        {
+            // Process enumeration itself failed (rare) — treat as "not running".
+            return false;
         }
 
-        return false;
+        try
+        {
+            foreach (var process in processes)
+            {
+                try
+                {
+                    var path = process.MainModule?.FileName;
+                    if (string.IsNullOrWhiteSpace(path) ||
+                        !path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Path-prefix boundary check: "C:\Games\Steam2\game.exe" must not
+                    // match an install dir of "C:\Games\Steam".
+                    if (path.Length > installDirectory.Length &&
+                        path[installDirectory.Length] is not ('\\' or '/'))
+                    {
+                        continue;
+                    }
+
+                    return true;
+                }
+                catch
+                {
+                    // Access denied or the process exited mid-iteration — skip it.
+                }
+            }
+
+            return false;
+        }
+        finally
+        {
+            foreach (var process in processes)
+            {
+                process.Dispose();
+            }
+        }
     }
 }

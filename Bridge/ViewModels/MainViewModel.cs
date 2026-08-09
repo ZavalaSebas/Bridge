@@ -24,6 +24,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IRepository<Company> _companyRepository;
     private readonly IRepository<Platform> _platformRepository;
     private readonly IRepository<GameSource> _sourceRepository;
+    private readonly IRepository<CompletionStatus> _completionStatusRepository;
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
     private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
@@ -75,6 +76,13 @@ public partial class MainViewModel : ObservableObject
     {
         switch (value)
         {
+            case NavigationSection.Library:
+                // The sidebar "Library" shortcut means "show the whole library":
+                // reset the filter preset that a filter menu entry may have left
+                // active (otherwise "Favorites" stays stuck on with no way to
+                // clear it from the sidebar).
+                FilterPreset = LibraryFilterPreset.All;
+                break;
             case NavigationSection.Favorites:
                 FilterPreset = LibraryFilterPreset.Favorite;
                 break;
@@ -130,7 +138,8 @@ public partial class MainViewModel : ObservableObject
                         BuildNameLookup(_companyRepository),
                         BuildNameLookup(_platformRepository),
                         BuildNameLookup(_genreRepository),
-                        BuildNameLookup(_sourceRepository)),
+                        BuildNameLookup(_sourceRepository),
+                        BuildNameLookup(_completionStatusRepository)),
                     Field = GroupField
                 }));
         }
@@ -252,6 +261,7 @@ public partial class MainViewModel : ObservableObject
         IRepository<Company> companyRepository,
         IRepository<Platform> platformRepository,
         IRepository<GameSource> sourceRepository,
+        IRepository<CompletionStatus> completionStatusRepository,
         GameLauncher launcher,
         RomScanner romScanner,
         IEnumerable<IGameMetadataProvider> metadataProviders,
@@ -264,6 +274,7 @@ public partial class MainViewModel : ObservableObject
         _companyRepository = companyRepository;
         _platformRepository = platformRepository;
         _sourceRepository = sourceRepository;
+        _completionStatusRepository = completionStatusRepository;
         _launcher = launcher;
         _romScanner = romScanner;
         _metadataProviders = metadataProviders;
@@ -277,9 +288,38 @@ public partial class MainViewModel : ObservableObject
         GamesView.Filter = GameMatchesSearch;
         ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) => RebuildDetailedRows();
         RebuildDetailedRows();
-        ImportSteamLibrary();
-        var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
-        _ = DownloadMissingSteamMetadataAsync(steamSourceId);
+        _ = InitializeAsync();
+    }
+
+    // Startup work that used to run synchronously in the constructor (Steam
+    // import + background metadata sync), which blocked the window from showing
+    // for seconds on large libraries. Runs after the window is visible; both
+    // stages stay on the UI thread between awaits (the singleton BridgeDbContext
+    // isn't thread-safe) but yield regularly so the UI keeps responding.
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            PreloadIcons();
+            var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
+            await ImportSteamLibraryCoreAsync(steamSourceId);
+            PreloadIcons();
+            await DownloadMissingSteamMetadataAsync(steamSourceId);
+            PreloadIcons();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Startup import failed: {ex.Message}";
+        }
+    }
+
+    // Warms the frozen-image cache so the small icons are usually ready by the
+    // time the library renders. Remote images also decode in the background;
+    // a failed/unreachable one simply never enters the cache. Each Image in the
+    // UI picks up its artwork the moment it's cached via CachedImage.SourceUrl.
+    private void PreloadIcons()
+    {
+        RemoteImageCache.Preload(Games.Select(g => g.Icon));
     }
 
     private void LoadGames()
@@ -470,27 +510,45 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ImportSteamLibrary()
+    private async Task ImportSteamLibrary()
+    {
+        var steamSource = _sourceRepository.GetOrCreateByName("Steam");
+        await ImportSteamLibraryCoreAsync(steamSource.Id);
+    }
+
+    private async Task ImportSteamLibraryCoreAsync(Guid steamSourceId)
     {
         try
         {
-            var steamSource = _sourceRepository.GetOrCreateByName("Steam");
-            var found = _steamImporter.GetInstalledGames();
+            // Manifest enumeration is pure file I/O — run it on a pool thread.
+            // The DB writes below stay on the UI thread (singleton DbContext).
+            var found = await Task.Run(_steamImporter.GetInstalledGames);
             int added = 0, updated = 0;
 
             foreach (var metadata in found)
             {
-                var existing = _gameRepository.FindByExternalId(metadata.ExternalId, steamSource.Id);
+                // Yield periodically so a large library doesn't freeze the UI
+                // while the window is already interactive.
+                if ((added + updated) > 0 && (added + updated) % 25 == 0)
+                {
+                    await Task.Yield();
+                }
+
+                var existing = _gameRepository.FindByExternalId(metadata.ExternalId, steamSourceId);
                 if (existing is null)
                 {
                     var game = new Game
                     {
                         Name = metadata.Name,
                         ExternalId = metadata.ExternalId,
-                        SourceId = steamSource.Id,
+                        SourceId = steamSourceId,
                         InstallDirectory = metadata.InstallDirectory,
                         IsInstalled = metadata.IsInstalled
                     };
+                    // Resolve the local 32x32 clienticon BEFORE the row binds so
+                    // the list shows an icon for every installed Steam game the
+                    // moment it's added — no waiting for the (slow) web metadata.
+                    ApplySteamLocalIcon(game);
                     _gameRepository.Add(game);
                     AddGameSorted(game);
                     added++;
@@ -658,27 +716,66 @@ public partial class MainViewModel : ObservableObject
             .Where(g => g.SourceId == steamSourceId && string.IsNullOrWhiteSpace(g.Description))
             .ToList();
 
-        foreach (var game in candidates)
+        if (candidates.Count == 0)
         {
+            return;
+        }
+
+        StatusMessage = $"Downloading metadata for {candidates.Count} game(s)...";
+
+        // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
+        // requests are the slow part, and firing all of them at once would trip
+        // Steam's store throttling (429s → "partial" metadata). Task.Run puts
+        // the work on pool threads so the HTTP continuations don't come back to
+        // the UI thread; only reads (game.ExternalId) happen off the UI thread
+        // here — entity mutation and the DbContext saves stay on the UI thread
+        // in the loop below.
+        using var throttle = new SemaphoreSlim(4);
+        var results = await Task.WhenAll(candidates.Select(game =>
+            Task.Run(async () =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    return (game, metadata: await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId));
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            })));
+
+        int applied = 0;
+        foreach (var (game, metadata) in results)
+        {
+            if (metadata is null)
+                continue;
+
             try
             {
-                var metadata = await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId);
-                if (metadata is null)
+                ApplyMetadata(game, metadata);
+                ApplyMetadataReferences(game, metadata);
+                ApplySteamLocalIcon(game);
+
+                // This sync runs after the window is interactive — the game may
+                // have been deleted (or had its actions edited) while the awaits
+                // above were in flight. Only save what's still live.
+                if (!Games.Contains(game))
                     continue;
 
-        ApplyMetadata(game, metadata);
-        ApplyMetadataReferences(game, metadata);
-        ApplySteamLocalIcon(game);
-
-        _gameRepository.Update(game);
-        RefreshListDisplay(game);
-        StatusMessage = $"Metadata applied to '{game.Name}' (source: {_steamMetadataProvider.Name}).";
+                _gameRepository.Update(game);
+                RefreshListDisplay(game);
+                applied++;
             }
             catch
             {
                 // Skip this game, try the next one
             }
         }
+
+        StatusMessage = applied > 0
+            ? $"Metadata sync complete: {applied}/{candidates.Count} game(s) updated."
+            : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
     }
 
     [RelayCommand]
@@ -712,22 +809,31 @@ public partial class MainViewModel : ObservableObject
     {
         _gameRepository.Update(game);
         RefreshListDisplay(game);
+
+        // Re-applies the active CustomSort comparer so the game re-positions
+        // when the user sorted by Playtime/PlayCount/LastActivity — the
+        // CollectionChanged(Replace) from RefreshListDisplay doesn't do that.
+        GamesView.Refresh();
+
         RefreshStatistics();
         StatusMessage = $"{game.Name} — session: {sessionSeconds}s, total: {game.PlaytimeSeconds}s";
     }
 
     // Game is a plain POCO (no INotifyPropertyChanged — Bridge.Core entities
     // stay UI-agnostic on purpose), so the ListBox/detail panel won't pick up
-    // in-place field changes on their own. Re-setting the same reference at
-    // its index forces a CollectionChanged(Replace), which is enough to make
-    // WPF re-read bound properties without adding change notification to the
-    // entity itself.
+    // in-place field changes on their own. A same-reference CollectionChanged
+    // (Replace) does NOT make WPF re-read bound properties — virtualized
+    // containers keep their old DataContext and never re-bind. Removing and
+    // re-inserting at the same index forces the generator to prepare a fresh
+    // container, which re-evaluates every binding (icons, covers, etc.) without
+    // adding change notification to the entity itself.
     private void RefreshListDisplay(Game game)
     {
         var index = Games.IndexOf(game);
         if (index >= 0)
         {
-            Games[index] = game;
+            Games.RemoveAt(index);
+            Games.Insert(index, game);
         }
 
         if (SelectedGame == game)

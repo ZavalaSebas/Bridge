@@ -25,19 +25,25 @@ public class JsonValueConverter<T> : ValueConverter<T, string>
 
     private static T Deserialize(string json)
     {
-        if (string.IsNullOrEmpty(json))
+        // An empty JSON column — or a literal "null" written by some other tool —
+        // means "no data". For collection properties (the common case —
+        // List<GameAction>, List<Guid>, ...) that must round-trip as an empty
+        // list, not null: a null list violates the entities' "always non-null
+        // collections" contract and NREs on callers like MainViewModel's
+        // GameActions.FirstOrDefault. For non-collection values (ReleaseDate?)
+        // null is the correct result. Deserialize<T> can also legitimately return
+        // null for a non-nullable T ("null" JSON or JsonIgnoreCondition), which is
+        // why the ?? is applied on the parse result too.
+        if (string.IsNullOrEmpty(json) || json == "null")
         {
-            // An empty JSON column means "no data". For collection properties
-            // (the common case — List<GameAction>, List<Guid>, ...) that must
-            // round-trip as an empty list, not null: a null list violates the
-            // entities' "always non-null collections" contract and NREs on
-            // callers like MainViewModel's GameActions.FirstOrDefault. For
-            // non-collection values (ReleaseDate?) null is the correct result.
-            return typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)
-                ? (T)Activator.CreateInstance(typeof(T))!
-                : default!;
+            return CreateEmptyValue();
         }
 
-        return JsonSerializer.Deserialize<T>(json, JsonOptions)!;
+        return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? CreateEmptyValue();
     }
+
+    private static T CreateEmptyValue() =>
+        typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)
+            ? (T)Activator.CreateInstance(typeof(T))!
+            : default!;
 }

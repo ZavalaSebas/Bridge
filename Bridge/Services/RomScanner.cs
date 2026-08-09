@@ -23,9 +23,13 @@ public class RomScanner
             throw new DirectoryNotFoundException($"ROM folder not found: {directory}");
         }
 
+        // Dedup by full path: the same folder could have been scanned with a
+        // relative vs absolute path (or differing separators), which would make
+        // exact string comparison miss and re-import the same ROM. Normalizing
+        // both sides to a full path keeps the string comparison reliable.
         var alreadyImported = existingGames
             .SelectMany(g => g.Roms)
-            .Select(r => r.Path)
+            .Select(r => NormalizePath(r.Path))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var extensions = profile.ImageExtensions.Count > 0
@@ -35,7 +39,7 @@ public class RomScanner
         var results = new List<Game>();
         foreach (var file in Directory.GetFiles(directory))
         {
-            if (alreadyImported.Contains(file))
+            if (alreadyImported.Contains(NormalizePath(file)))
             {
                 continue;
             }
@@ -62,5 +66,19 @@ public class RomScanner
         }
 
         return results;
+    }
+
+    private static string NormalizePath(string path)
+    {
+        try
+        {
+            return Path.GetFullPath(path);
+        }
+        catch
+        {
+            // Unparseable path (bad chars) — fall back to the raw string so the
+            // scan can't crash on it.
+            return path;
+        }
     }
 }

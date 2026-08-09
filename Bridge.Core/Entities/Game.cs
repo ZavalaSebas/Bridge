@@ -13,12 +13,10 @@ namespace Bridge.Core.Entities;
 /// </summary>
 public class Game : DatabaseObject
 {
-    // Identity / source
     public string ExternalId { get; set; } = string.Empty;
     public Guid SourceId { get; set; } = GameSource.ManualId;
     public bool IsCustomGame => SourceId == GameSource.ManualId;
 
-    // Display
     public string SortingName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
@@ -41,7 +39,6 @@ public class Game : DatabaseObject
     public string InstallDirectory { get; set; } = string.Empty;
     public ulong? InstallSizeBytes { get; set; }
 
-    // Play
     public List<GameAction> GameActions { get; set; } = [];
     public List<GameRom> Roms { get; set; } = [];
     public ulong PlaytimeSeconds { get; set; }
@@ -60,11 +57,9 @@ public class Game : DatabaseObject
     public bool UseGlobalPostScript { get; set; } = true;
     public bool UseGlobalGameStartedScript { get; set; } = true;
 
-    // Flags
     public bool Hidden { get; set; }
     public bool Favorite { get; set; }
 
-    // Scores
     public int? UserScore { get; set; }
     public int? CriticScore { get; set; }
     public int? CommunityScore { get; set; }

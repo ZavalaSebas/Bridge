@@ -78,8 +78,13 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
     public static string UpgradeImageUrl(string url, string size = "t_cover_big")
     {
         var withScheme = url.StartsWith("//") ? "https:" + url : url;
+        // Real IGDB URLs contain exactly one t_thumb token, so Replace-all is
+        // equivalent to replace-first here; kept simple.
         return withScheme.Replace("t_thumb", size);
     }
 
-    private static string EscapeApicalypseString(string value) => value.Replace("\"", "\\\"");
+    // The search term is embedded in a quoted Apicalypse query, so both
+    // characters that terminate a string literal must be escaped.
+    private static string EscapeApicalypseString(string value) =>
+        value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 }

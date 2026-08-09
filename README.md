@@ -39,7 +39,7 @@ Bridge is an original game library manager: it unifies games from external libra
 
 ## How It Works
 
-Bridge is a modular-monolith WPF application: internal modules (`Core`, `Storage`, `Import`, `Metadata`, `Emulation`, `App`) each own one responsibility, with no UI/domain mixing and no runtime plugin boundary. Games and their metadata are stored locally — images and metadata are cached on first fetch so nothing gets re-downloaded unnecessarily, and library imports run incrementally so re-scanning a source only updates what changed.
+Bridge is a modular-monolith WPF application: internal modules (`Core`, `Storage`, `Import`, `Metadata`, `App`) each own one responsibility, with no UI/domain mixing and no runtime plugin boundary. ROM scanning and emulator launching live in `Bridge/Services` (there is no separate `Bridge.Emulation` project). Games and their metadata are stored locally — images and metadata are cached on first fetch so nothing gets re-downloaded unnecessarily, and library imports run incrementally so re-scanning a source only updates what changed.
 
 The app uses [WPF-UI](https://github.com/lepoco/wpfui) 4.3.0 with a custom dark theme, Mica backdrop, Inter variable font, and sidebar-based navigation. It ships as a single self-contained `.exe` (~155 MB, verified — one file, no sidecar DLLs) — no .NET runtime install required, no external services beyond what's needed to fetch metadata. Measured cold-start time is ~2.6 seconds and ~180 MB RAM at rest (see `DEVELOPMENT.md` for the full measurement notes).
 
@@ -80,7 +80,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
-- **Four view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column), **Statistics** (dashboard with library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
+- **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
 - **Sidebar navigation** — Icon rail (44px) with Library and Statistics tabs for quick view switching
 - **Dark theme + Mica** — custom dark palette (#1E1E1E) with Inter variable font, dual accent system (#007ACC for UI/navigation, #10B981 exclusive for Play buttons), and Mica backdrop on Windows 11
 - Manual game entries with add, edit, and delete
@@ -93,7 +93,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 
 ## Architecture
 
-Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata`/`Emulation` (use cases) → `App` (WPF UI). See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
+Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata` (use cases) → `App` (WPF UI; ROM scanning + emulator launch live in `Bridge/Services`). See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
 
 ---
 
@@ -111,7 +111,7 @@ This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
 ## Acknowledgments
 
-Bridge's design is informed by studying [Playnite](https://playnite.link/)'s behavior (see `PROJECT_FOUNDATION.md` §27 for the notes). Playnite is an excellent, mature project — Bridge is a separate, smaller, plugin-free take on the same *problem space*, built independently.
+Bridge's design is informed by studying [Playnite](https://playnite.link/)'s behavior (see `PROJECT_FOUNDATION.md` §28 for the notes). Playnite is an excellent, mature project — Bridge is a separate, smaller, plugin-free take on the same *problem space*, built independently.
 
 ---
 

@@ -10,12 +10,14 @@ public class GameGroupResolverTests
     private static readonly Guid CDPR = Guid.NewGuid();
     private static readonly Guid Steam = Guid.NewGuid();
     private static readonly Guid Epic = Guid.NewGuid();
+    private static readonly Guid Completed = Guid.NewGuid();
 
     private static GameGroupResolver CreateResolver() => new(
         companyNames: new Dictionary<Guid, string> { [Bethesda] = "Bethesda", [CDPR] = "CD Projekt Red" },
         platformNames: new Dictionary<Guid, string>(),
         genreNames: new Dictionary<Guid, string>(),
-        sourceNames: new Dictionary<Guid, string> { [Steam] = "Steam", [Epic] = "Epic" });
+        sourceNames: new Dictionary<Guid, string> { [Steam] = "Steam", [Epic] = "Epic" },
+        completionStatusNames: new Dictionary<Guid, string> { [Completed] = "Completed" });
 
     [Fact]
     public void GetGroupKey_Name_GroupsByFirstLetter()
@@ -55,12 +57,12 @@ public class GameGroupResolverTests
     }
 
     [Fact]
-    public void GetGroupKey_CompletionStatus_GroupsByPlayedFlag()
+    public void GetGroupKey_CompletionStatus_ResolvesStatusName()
     {
         var resolver = CreateResolver();
 
-        Assert.Equal("Played", resolver.GetGroupKey(new Game { PlaytimeSeconds = 60 }, GameGroupField.CompletionStatus));
-        Assert.Equal("Not Played", resolver.GetGroupKey(new Game { PlaytimeSeconds = 0 }, GameGroupField.CompletionStatus));
+        Assert.Equal("Completed", resolver.GetGroupKey(new Game { CompletionStatusId = Completed }, GameGroupField.CompletionStatus));
+        Assert.Equal("None", resolver.GetGroupKey(new Game(), GameGroupField.CompletionStatus));
     }
 
     [Fact]
