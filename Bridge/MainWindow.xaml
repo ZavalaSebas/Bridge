@@ -55,7 +55,7 @@
             <DockPanel VerticalAlignment="Center">
 
                 <!-- 1. Logo → Main Menu (File, Tools, Settings, Exit) -->
-                <Button DockPanel.Dock="Left" Width="44" Height="44" Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Bridge menu">
+                <Button DockPanel.Dock="Left" Width="44" Height="44" Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Bridge menu" Click="MenuButton_Click">
                     <Button.ContextMenu><ContextMenu>
                         <MenuItem Header="Add Game..." Click="AddGame_Click" />
                         <MenuItem Header="Import Steam Library" Command="{Binding PlacementTarget.DataContext.ImportSteamLibraryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
@@ -81,7 +81,7 @@
                 </Border>
 
                 <!-- 3. Filter Presets (icon button → ContextMenu) -->
-                <Button DockPanel.Dock="Left" Width="34" Height="34" Background="Transparent" BorderThickness="0" Margin="6,0,0,0" ToolTip="Filter presets" Cursor="Hand">
+                <Button DockPanel.Dock="Left" Width="34" Height="34" Background="Transparent" BorderThickness="0" Margin="6,0,0,0" ToolTip="Filter presets" Cursor="Hand" Click="MenuButton_Click">
                     <Button.ContextMenu><ContextMenu Name="FilterPresetMenu" DataContext="{Binding}">
                         <MenuItem Header="All" Click="FilterPresetMenu_Click" Tag="All" />
                         <MenuItem Header="Favorites" Click="FilterPresetMenu_Click" Tag="Favorite" />
@@ -92,7 +92,7 @@
                 </Button>
 
                 <!-- 4. Sort settings (icon button → ContextMenu) -->
-                <Button DockPanel.Dock="Left" Width="34" Height="34" Background="Transparent" BorderThickness="0" Margin="2,0,0,0" ToolTip="Sort settings" Cursor="Hand">
+                <Button DockPanel.Dock="Left" Width="34" Height="34" Background="Transparent" BorderThickness="0" Margin="2,0,0,0" ToolTip="Sort settings" Cursor="Hand" Click="MenuButton_Click">
                     <Button.ContextMenu><ContextMenu Name="SortFieldMenu" DataContext="{Binding}">
                         <MenuItem Header="Name" Click="SortFieldMenu_Click" Tag="Name" />
                         <MenuItem Header="Playtime" Click="SortFieldMenu_Click" Tag="PlaytimeSeconds" />
@@ -110,7 +110,7 @@
                 </Button>
 
                 <!-- 5. Group settings (icon button → ContextMenu) -->
-                <Button DockPanel.Dock="Left" Width="34" Height="34" Background="Transparent" BorderThickness="0" Margin="2,0,0,0" ToolTip="Group settings" Cursor="Hand">
+                <Button DockPanel.Dock="Left" Width="34" Height="34" Background="Transparent" BorderThickness="0" Margin="2,0,0,0" ToolTip="Group settings" Cursor="Hand" Click="MenuButton_Click">
                     <Button.ContextMenu><ContextMenu Name="GroupFieldMenu" DataContext="{Binding}">
                         <MenuItem Header="None" Click="GroupFieldMenu_Click" Tag="None" />
                         <MenuItem Header="Library" Click="GroupFieldMenu_Click" Tag="Library" />
@@ -152,7 +152,7 @@
 
             <Border Grid.Column="0" Background="{StaticResource Bridge.Sidebar.Background}" BorderBrush="{StaticResource Bridge.SeparatorBrush}" BorderThickness="0,0,1,0">
                 <StackPanel VerticalAlignment="Top">
-                    <Button Width="44" Height="44" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Cursor="Hand" ToolTip="Main menu">
+                    <Button Width="44" Height="44" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Cursor="Hand" Click="MenuButton_Click">
                         <Button.ContextMenu><ContextMenu>
                             <MenuItem Header="Add Game..." Click="AddGame_Click" />
                             <MenuItem Header="Import Steam Library" Command="{Binding PlacementTarget.DataContext.ImportSteamLibraryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
