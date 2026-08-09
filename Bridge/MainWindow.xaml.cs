@@ -14,23 +14,22 @@ namespace Bridge
             InitializeComponent();
         }
 
-        // Fase 2 (List): collapses/expands the detail panel to the right of the
-        // list. Width 0 = collapsed; the GridSplitter still lets the user drag it
-        // back open (its neighbor column has MinWidth 0).
+        // Collapses/expands the detail panel. Width 0 = collapsed; the
+        // GridSplitter still lets the user drag it back open.
         private void ToggleDetailPanel_Click(object sender, RoutedEventArgs e)
         {
             bool collapsed = DetailColumn.Width.Value <= 0;
             DetailColumn.Width = new GridLength(collapsed ? 1 : 0, GridUnitType.Star);
         }
 
-        // Playnite-style sidebar: toggles sort direction (Ascending/Descending).
+        // Toggles sort direction (Ascending/Descending).
         private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
                 vm.SortDescending = !vm.SortDescending;
         }
 
-        // View mode toggle buttons in top panel (Playnite-style).
+        // View mode toggle buttons in the top panel.
         private void SetViewModeList_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
@@ -55,9 +54,8 @@ namespace Bridge
                 vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Settings;
         }
 
-        // Fase 4 (Table): the ListView rows bind to GameDetailRow (not Game
-        // directly), so SelectedItem needs an explicit handler to keep
-        // SelectedGame in sync with the current table selection.
+        // Table view: rows bind to GameDetailRow (not Game directly), so
+        // SelectedItem needs an explicit handler to sync SelectedGame.
         private void TableList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is System.Windows.Controls.ListView { SelectedItem: GameDetailRow row }
@@ -67,17 +65,10 @@ namespace Bridge
             }
         }
 
-        // Fase 4 (Table): GridView doesn't support star sizing on columns, so
-        // the Name column width is recalculated here on every ListView resize
-        // event. The remaining space after all fixed-width columns (cols 1-6)
-        // and the system scrollbar is given to column 0 (Name).
-        //
-        // Column Widths (use Width, NOT ActualWidth — ActualWidth varies
-        // during layout and causes Name to oscillate between overshoot and
-        // collapse). The assignment is deferred to Loaded priority so the
-        // selection trigger's BorderThickness layout finishes before the
-        // column resize; without this deferral the two layout passes race
-        // within the same frame and produce a gray ghost band + blurry text.
+        // Table view: dynamically adjusts Name column width to fill
+        // remaining space after fixed-width columns. Uses Width (not
+        // ActualWidth) for stable values. Deferred to Loaded priority
+        // to avoid layout race conditions with selection triggers.
         private void TableList_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
         {
             if (sender is not System.Windows.Controls.ListView listView
@@ -132,8 +123,8 @@ namespace Bridge
                 vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Statistics;
         }
 
-        // Generic: opens the sender's ContextMenu on left-click (used by
-        // Logo, Filter, Sort, Group icon buttons in TopPanel).
+        // Opens the sender's ContextMenu on left-click (used by icon
+        // buttons in the top panel).
         private void MenuButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.FrameworkElement element && element.ContextMenu is { } menu)
@@ -144,7 +135,7 @@ namespace Bridge
             }
         }
 
-        // Playnite: double-click on a list item launches the game.
+        // Double-click on a list item launches the game.
         private void List_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (sender is System.Windows.Controls.ListBox listBox
@@ -155,7 +146,7 @@ namespace Bridge
             }
         }
 
-        // Playnite-style TopPanel: filter preset menu items.
+        // Top panel: filter preset context menu handler.
         private void FilterPresetMenu_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm
@@ -172,7 +163,7 @@ namespace Bridge
             }
         }
 
-        // Playnite-style TopPanel: sort field menu items.
+        // Top panel: sort field context menu handler.
         private void SortFieldMenu_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm
@@ -194,7 +185,7 @@ namespace Bridge
             }
         }
 
-        // Playnite-style TopPanel: group field menu items.
+        // Top panel: group field context menu handler.
         private void GroupFieldMenu_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm

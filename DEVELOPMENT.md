@@ -180,20 +180,22 @@ The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of 
 
 UI: `EnumValues` exposes the enums to XAML; `EnumDescriptionConverter` turns `[Description]` labels into readable ComboBox text ("Time Played", not "PlaytimeSeconds"). This is UI, not domain logic — the sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF.
 
-### Shell (3-zone architecture)
+### Shell architecture
 
 The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), divided into 3 rows:
 
-1. **Top Bar** (`ui:TitleBar`): Dark theme TitleBar with `Library24` icon, search `TextBox`, `ViewMode` `ComboBox` (List/Covers/Details), and an overflow menu (`MoreHorizontal24`) with global actions (Add Game, Import Steam, Scan ROMs, Configure Emulator, IGDB Settings, Exit). The search box binds to `SearchText` (two-way, `UpdateSourceTrigger=PropertyChanged`).
+1. **Top Panel** (`ui:TitleBar`, 50px): Logo button (opens main menu with Add Game, Import Steam, Scan ROMs, Configure Emulator, IGDB Settings, Statistics, Settings, Exit) + Search `TextBox` (260px, binds `SearchText`) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (List/Grid/Details, segmented control) + placeholder buttons (Random game, Explorer, Filter panel).
 
-2. **Sidebar** (left, 280px, collapsible to 56px via hamburger `PanelLeft24`): `NavigationSection` enum nav (`Library` / `Favorites` / `Sources` / `Statistics` / `Settings`) mapped to existing ViewModel state via `OnNavigationSectionChanged` (`Favorites` → `FilterPreset.Favorite`, `Sources` → `GroupField.Library`). The sidebar background uses `Bridge.Sidebar.Background` (0.92 opacity over Mica for an Acrylic-like effect).
+2. **Sidebar** (left, 44px icon rail): Two icon buttons — **Library** (resets to game list view) and **Statistics** (shows the statistics dashboard overlay). Navigation handled via `NavigationSection` enum in `MainViewModel`.
 
-3. **Content Area** (remaining width, z-order stacking): 5 render targets displayed based on `NavigationSection` and `ViewMode`:
-   - **List** (`ViewMode.List`, `NavigationSection` = Library/Favorites/Sources): toolbar (sort field / direction / filter / group, 22 sort fields, 21 group fields) + `ListBox` (grouped `GamesView` with section headers) + collapsible detail panel (GridSplitter, cover/name/scores/checkboxes/description/Play/Save/Delete/Metadata). Detail panel collapses to 0 via `ToggleDetailPanel_Click`.
-   - **Covers** (`ViewMode.Grid`): `ListBox` + `WrapPanel` of 200×300px cover cards with hover intent (scale 1.03x + drop shadow + overlay fade, 120ms `CubicEase EaseOut`). Overlay shows Play (`#10B981` accent) and Info buttons. Selection ring uses primary accent `#007ACC`.
-   - **Details** (`ViewMode.Table`): `ListView`/`GridView` with themed column headers and 7 columns (Name + icon, Release Date, Genre, Last Played, Time Played, Library, Play/Info). Name column dynamically fills remaining width via `SizeChanged` handler (`Width` property-based, not `ActualWidth`). Selection: left accent bar (3px `BorderThickness` + `SystemAccentBrandBrush`) — same pattern as List and Statistics' Top Played.
-   - **Statistics** (`NavigationSection.Statistics`): Dashboard with Library Overview (5 cards in `WrapPanel`), Playtime, Install Size, Completion Status, and Top Play Time list.
-   - **Settings** (`NavigationSection.Settings`): Cards with IGDB config, Steam import, emulator config, and About section.
+3. **Content Area** (remaining width, 3 columns): Sidebar (44px) + separator (1px) + game list (360px) + GridSplitter + detail panel (* remaining). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans columns 2-4.
+
+View modes switch via 3 toggle buttons in the Top Panel:
+- **List** (`ViewMode.List`): `ListBox` with 28×28 icons + white game names (grouped via `GamesView`). Double-click launches the game.
+- **Covers** (`ViewMode.Grid`): `ListBox` + `WrapPanel` of 200×300px cards with hover intent (scale 1.03x + drop shadow + overlay fade, 120ms `CubicEase EaseOut`).
+- **Details** (`ViewMode.Table`): `ListView`/`GridView` with 7 themed columns. Name column dynamically fills remaining space via `SizeChanged` handler.
+
+Detail panel (right): `CoverImage` 200px + title/scores/checkboxes + Play (Emerald, `CornerRadius="2"`) / More (ContextMenu with Save/Download Metadata/Delete) / Edit buttons. Below: Details (label/value pairs in accent blue) + Description (editable). Background image (`SelectedGame.BackgroundImage`) fills the panel at 60% opacity with dark overlay.
 
 ### Selection / Hover pattern (unified)
 

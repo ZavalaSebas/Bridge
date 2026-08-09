@@ -81,7 +81,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
 - **Four view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column), **Statistics** (dashboard with library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
-- **Sidebar navigation** — Library, Favorites (quick filter), Sources (group by library), Statistics, and Settings — collapsible to an icon rail via hamburger button
+- **Sidebar navigation** — Icon rail (44px) with Library and Statistics tabs for quick view switching
 - **Dark theme + Mica** — custom dark palette (#1E1E1E) with Inter variable font, dual accent system (#007ACC for UI/navigation, #10B981 exclusive for Play buttons), and Mica backdrop on Windows 11
 - Manual game entries with add, edit, and delete
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
