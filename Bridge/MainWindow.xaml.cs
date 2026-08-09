@@ -143,6 +143,18 @@ namespace Bridge
                 vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Statistics;
         }
 
+        // Generic: opens the sender's ContextMenu on left-click (used by
+        // Logo, Filter, Sort, Group icon buttons in TopPanel).
+        private void MenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.FrameworkElement element && element.ContextMenu is { } menu)
+            {
+                menu.PlacementTarget = element;
+                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                menu.IsOpen = true;
+            }
+        }
+
         // Playnite: double-click on a list item launches the game.
         private void List_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
