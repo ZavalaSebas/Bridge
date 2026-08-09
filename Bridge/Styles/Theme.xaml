@@ -130,6 +130,7 @@
     <sys:Double x:Key="Bridge.FontSize.BodyLarge">14</sys:Double>
     <sys:Double x:Key="Bridge.FontSize.Heading">15</sys:Double>
     <sys:Double x:Key="Bridge.FontSize.Title">20</sys:Double>
+    <sys:Double x:Key="Bridge.FontSize.TitleLarge">24</sys:Double>
     <sys:Double x:Key="Bridge.FontSize.Display">28</sys:Double>
 
     <FontWeight x:Key="Bridge.FontWeight.Normal">400</FontWeight>
@@ -170,8 +171,16 @@
 
     <!-- Sidebar: semitransparente para dejar pasar el Mica/Acrylic de la
          ventana (efecto vidrio). Sobre el fallback sólido de Win10 se ve
-         simplemente como un panel oscuro — aceptable. -->
-    <SolidColorBrush x:Key="Bridge.Sidebar.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" Opacity="0.92" />
+         simplemente como un panel oscuro — aceptable. Con el fondo borroso del
+         juego seleccionado detrás, la translucidez es la que crea el look de
+         "cristal empañado" (como el default theme de Playnite). -->
+    <SolidColorBrush x:Key="Bridge.Sidebar.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" Opacity="0.75" />
+
+    <!-- Frosted-glass window background: el fondo del juego seleccionado, borroso
+         y oscurecido, detrás de todo el contenido (replica de
+         FadeImage + BlurEffect de Playnite). -->
+    <sys:Double x:Key="Bridge.Background.BlurRadius">40</sys:Double>
+    <SolidColorBrush x:Key="Bridge.Background.DarkOverlay" Color="#B2000000" />
 
     <SolidColorBrush x:Key="Bridge.SeparatorBrush" Color="#3A3A3A" />
 
