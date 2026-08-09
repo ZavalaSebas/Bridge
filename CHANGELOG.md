@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Steam directory-based playtime tracking now gives up after 5 minutes if the game never spawns a process in its `InstallDirectory` (instead of tracking forever with `IsRunning` stuck true), and only counts the session from the moment the game's process actually appears.
 - Release date display no longer renders a dangling hyphen (`2026-08-`) when only the year and month are known.
 - Removed dead code: unused `FormatField`, unused `HttpClient` field in `ImageUrlConverter`, the ComboBox-era `EnumValues`/`EnumDescriptionConverter`/`BoolToIndexConverter` (registered in XAML but bound by nothing), and unused `SteamSearchEntry`. Empty JSON list columns now round-trip as empty lists instead of `null`.
+- Security: pinned `SQLitePCLRaw.bundle_e_sqlite3` 3.0.3 in `Bridge.Storage` to fix CVE-2025-6965 (GHSA-2m69-gcr7-jv3q, high) — the transitive `lib.e_sqlite3` 2.1.11 bundled vulnerable SQLite 3.49.1, now replaced by SourceGear.sqlite3 3.50.4; verified by the EF Core round-trip tests.
 
 ## [0.1.0] — 2026-08-06
 

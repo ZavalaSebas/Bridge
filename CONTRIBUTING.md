@@ -25,9 +25,9 @@ These are **mandatory practices** for all contributions.
 ### Error Handling
 
 - Never swallow exceptions silently (no empty catch blocks)
-- Always log errors with `ILogger` — no `Debug.WriteLine` (para excepción en proyectos chicos, ver nota en Logging)
+- Always log errors with `ILogger` — no `Debug.WriteLine` (exception for small solo projects, see the note under Logging)
 - User-facing errors should notify the user appropriately
-- Use custom exceptions for domain-specific errors
+- Use custom exceptions for domain-specific errors (Bridge currently uses built-in `InvalidOperationException`/`NotSupportedException` — introduce a custom exception only when it adds real value)
 
 ### Logging
 
@@ -38,7 +38,7 @@ These are **mandatory practices** for all contributions.
   - `LogError` — failures
 - Include relevant context in log messages (e.g., IDs, names)
 
-> **Nota para proyectos chicos:** Si el proyecto es muy pequeño o de un solo desarrollador, `Debug.WriteLine` es aceptable como decisión consciente — pero documentalo explícitamente si lo elegís, que no sea por descuido. El estándar por defecto sigue siendo `ILogger<T>`.
+> **Note for small projects:** If the project is very small or single-developer, `Debug.WriteLine` is acceptable as a conscious decision — but document it explicitly if you choose it, so it's not an oversight. The default standard remains `ILogger<T>`.
 
 ### Async Patterns
 
@@ -73,7 +73,7 @@ These practices are **recommended** under certain conditions. Apply them when re
 
 | Practice | Activation Condition |
 |---|---|
-| **Mocking framework** (e.g., Moq) | If services have external dependencies that need mocking in tests |
+| **Mocking framework** (e.g., Moq) | If services have external dependencies that need mocking in tests (Bridge's metadata tests use a hand-written `FakeHttpMessageHandler` — follow that pattern unless a mock library genuinely helps) |
 | **Pre-commit hooks** | Only if working in a team |
 | **Code style analyzers** (e.g., StyleCop, Roslyn analyzers) | Only if working in a team or if strict style consistency is desired |
 | **Structured logging** | Recommended for most projects; consider if logs need machine-parseable output |

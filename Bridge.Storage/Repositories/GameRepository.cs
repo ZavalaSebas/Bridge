@@ -29,9 +29,9 @@ public class GameRepository(BridgeDbContext context) : Repository<Game>(context)
     // Runtime-only flags (IsInstalling/IsUninstalling/IsLaunching/IsRunning) are
     // transient — Game.cs assigns Bridge.Storage's load path the responsibility
     // of resetting them to false, mirroring Playnite's crash recovery (see the
-    // doc comment on Game.cs and PLAN.md's TransientFlags todo). Without this, a
-    // crash or a forced close mid-game leaves IsRunning=true persisted, and the
-    // next session starts showing the game as "running" forever.
+    // doc comment on Game.cs). Without this, a crash or a forced close mid-game
+    // leaves IsRunning=true persisted, and the next session starts showing the
+    // game as "running" forever.
     private void ResetTransientFlags(Game? game)
     {
         if (game is null ||

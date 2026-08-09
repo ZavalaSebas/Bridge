@@ -38,8 +38,11 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         try
         {
             var reviews = await GetAppReviewsAsync(steamAppId, cancellationToken);
-            if (reviews is { TotalReviews: > 0 })
+            if (reviews is { TotalReviews: > 0 } &&
+                reviews.TotalPositive + reviews.TotalNegative > 0)
+            {
                 communityScore = CalculateCommunityScore(reviews.TotalPositive, reviews.TotalNegative);
+            }
         }
         catch
         {
@@ -155,7 +158,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (data.Categories is { Count: > 0 })
             metadata.Features = data.Categories.Select(c => c.Description).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
 
-        // Background from last screenshot (path_full, removing Query String)
+        // Background from first screenshot (path_full, stripping the query string)
         if (data.Screenshots is { Count: > 0 })
         {
             var qsIndex = data.Screenshots[0].PathFull.IndexOf('?');
@@ -164,11 +167,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
                 : data.Screenshots[0].PathFull;
         }
 
-        // Header image as fallback background
         if (!string.IsNullOrWhiteSpace(data.HeaderImage) && string.IsNullOrWhiteSpace(metadata.BackgroundImage))
             metadata.BackgroundImage = data.HeaderImage;
 
-        // Links: store page
         metadata.Links.Add(new Link
         {
             Name = "Steam Store",
@@ -180,7 +181,14 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
 
     private static int CalculateCommunityScore(int totalPositive, int totalNegative)
     {
+        // Reviews can be "mixed" with zero explicit positive/negative counts —
+        // guard against the NaN/int.MinValue that the raw division would produce.
         var totalVotes = totalPositive + totalNegative;
+        if (totalVotes <= 0)
+        {
+            return 0;
+        }
+
         double average = (double)totalPositive / totalVotes;
         double score = average - (average - 0.5) * Math.Pow(2, -Math.Log10(totalVotes + 1));
         return (int)(score * 100);
@@ -198,7 +206,6 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             return new ReleaseDate(date.Year, date.Month, date.Day);
         }
 
-        // Fallback: try general parse
         if (DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, out var fallback))
             return new ReleaseDate(fallback.Year, fallback.Month, fallback.Day);
 

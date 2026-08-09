@@ -1,33 +1,10 @@
 using System.Globalization;
 using System.Windows.Data;
-using System.Windows.Media.Imaging;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Statistics;
 
 namespace Bridge.Converters;
-
-[ValueConversion(typeof(string), typeof(BitmapImage))]
-public class ImageUrlConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is not string url || string.IsNullOrWhiteSpace(url))
-            return null;
-
-        try
-        {
-            return new BitmapImage(new Uri(url));
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => throw new NotSupportedException();
-}
 
 [ValueConversion(typeof(Bridge.Core.Entities.ReleaseDate?), typeof(string))]
 public class ReleaseDateConverter : IValueConverter

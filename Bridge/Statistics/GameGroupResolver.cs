@@ -19,17 +19,20 @@ public class GameGroupResolver
     private readonly IReadOnlyDictionary<Guid, string> _platformNames;
     private readonly IReadOnlyDictionary<Guid, string> _genreNames;
     private readonly IReadOnlyDictionary<Guid, string> _sourceNames;
+    private readonly IReadOnlyDictionary<Guid, string> _completionStatusNames;
 
     public GameGroupResolver(
         IReadOnlyDictionary<Guid, string>? companyNames = null,
         IReadOnlyDictionary<Guid, string>? platformNames = null,
         IReadOnlyDictionary<Guid, string>? genreNames = null,
-        IReadOnlyDictionary<Guid, string>? sourceNames = null)
+        IReadOnlyDictionary<Guid, string>? sourceNames = null,
+        IReadOnlyDictionary<Guid, string>? completionStatusNames = null)
     {
         _companyNames = companyNames ?? new Dictionary<Guid, string>();
         _platformNames = platformNames ?? new Dictionary<Guid, string>();
         _genreNames = genreNames ?? new Dictionary<Guid, string>();
         _sourceNames = sourceNames ?? new Dictionary<Guid, string>();
+        _completionStatusNames = completionStatusNames ?? new Dictionary<Guid, string>();
     }
 
     public string GetGroupKey(Game game, GameGroupField field) => field switch
@@ -41,7 +44,9 @@ public class GameGroupResolver
         GameGroupField.Platform => FirstName(game.PlatformIds, _platformNames),
         GameGroupField.Genre => FirstName(game.GenreIds, _genreNames),
         GameGroupField.IsInstalled => game.IsInstalled ? "Installed" : "Not installed",
-        GameGroupField.CompletionStatus => game.PlaytimeSeconds > 0 ? "Played" : "Not Played",
+        GameGroupField.CompletionStatus => game.CompletionStatusId == Guid.Empty
+            ? "None"
+            : ResolveName(game.CompletionStatusId, _completionStatusNames, "Unknown"),
         GameGroupField.PlaytimeSeconds => PlaytimeBucket(game.PlaytimeSeconds),
         GameGroupField.PlayCount => PlayCountBucket(game.PlayCount),
         GameGroupField.InstallSizeBytes => InstallSizeBucket(game.IsInstalled, game.InstallSizeBytes),

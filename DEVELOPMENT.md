@@ -24,11 +24,11 @@ When making changes, consider:
 
 | Principle | Application |
 |-----------|-------------|
-| **Precisión sobre velocidad** | Un solo error factual hace que todo el documento pierda credibilidad |
-| **Mínimo cambio** | Corrige únicamente inconsistencias objetivas; no reorganices por preferencia |
-| **Preserva contexto histórico** | Si algo cambió, marca el estado anterior como "was/used to" |
-| **Código = Verdad** | Si la docs dice una cosa y el código otra, la docs está wrong — arréglala |
-| **Testeado** | Si no está documentado, no existe para un nuevo contributor |
+| **Precision over speed** | One factual error makes the whole document lose credibility |
+| **Minimal change** | Fix only objective inconsistencies; don't reorganize out of preference |
+| **Preserve historical context** | If something changed, mark the previous state as "was/used to" |
+| **Code = Truth** | If the docs say one thing and the code another, the docs are wrong — fix the docs |
+| **Tested** | If it's not documented, it doesn't exist for a new contributor |
 
 ---
 
@@ -59,7 +59,7 @@ Core                                                 │ Domain
 └─────────────────────────────────────────────────┘
 ```
 
-`App` depends on everything below it; `Import`/`Metadata`/`Emulation` depend on `Core` and `Storage`; `Storage` depends on `Core`; `Core` depends on nothing else in the solution. This is enforced by project references, not convention — see [ARCHITECTURE.md ADR-5](ARCHITECTURE.md#adr-5-internal-modularity-only--no-runtime-module-boundaries).
+`App` depends on everything below it; `Storage` depends on `Core`; `Import` and `Metadata` depend on `Core` only (neither references `Bridge.Storage` — importers and metadata providers are pure, persistence comes from the caller); `Core` depends on nothing else in the solution. There is no `Bridge.Emulation` project — emulator/ROM logic lives in `Bridge/Services` (see Project Structure). All of this is enforced by project references, not convention — see [ARCHITECTURE.md ADR-5](ARCHITECTURE.md#adr-5-internal-modularity-only--no-runtime-module-boundaries).
 
 ### Key Design Decisions
 
@@ -147,7 +147,7 @@ Verified at runtime (not just compiled) against a real SQLite database file: cre
 
 ```
 Bridge.Metadata/
-├── IgdbSettings.cs          # Client ID/Secret DTO — never hardcoded, see IgdbSettingsStore in Bridge/
+├── IgdbSettings.cs          # Client ID/Secret DTO — never hardcoded, see Bridge/Settings/IgdbSettingsStore.cs
 ├── IgdbAuthClient.cs        # Twitch OAuth2 client-credentials flow, caches the token
 ├── IgdbGame.cs              # raw IGDB /v4/games response shape (only the fields this MVP uses)
 ├── IgdbMetadataProvider.cs  # SearchAsync(name) -> GameMetadata?, implements IGameMetadataProvider
@@ -186,13 +186,13 @@ The sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Br
 
 ### Shell architecture
 
-The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), divided into 3 rows:
+The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), laid out as 3 rows:
 
-1. **Top Panel** (`ui:TitleBar`, 50px): Logo button (opens main menu with Add Game, Import Steam, Scan ROMs, Configure Emulator, IGDB Settings, Statistics, Settings, Exit) + Search `TextBox` (260px, binds `SearchText`) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (List/Grid/Details, segmented control) + placeholder buttons (Random game, Explorer, Filter panel).
+1. **Top Panel** (`ui:TitleBar`, 50px): Logo button (opens main menu with Add Game, Import Steam, Scan ROMs, Configure Emulator, IGDB Settings, Statistics, Settings, Exit) + Search `TextBox` (260px, binds `SearchText`) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (List/Covers/Details, segmented control) + placeholder buttons (Random game, Explorer, Filter panel).
 
-2. **Sidebar** (left, 44px icon rail): Two icon buttons — **Library** (resets to game list view) and **Statistics** (shows the statistics dashboard overlay). Navigation handled via `NavigationSection` enum in `MainViewModel`.
+2. **Content Area** (`*`): an inner `Grid` with 5 columns — **Sidebar** (44px icon rail with **Library** and **Statistics** buttons; navigation via the `NavigationSection` enum in `Bridge.Core.Enums`) + separator (1px) + game list (360px, `MinWidth=200`) + `GridSplitter` + detail panel (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans the last 3 columns.
 
-3. **Content Area** (remaining width, 3 columns): Sidebar (44px) + separator (1px) + game list (360px) + GridSplitter + detail panel (* remaining). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans columns 2-4.
+3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it.
 
 View modes switch via 3 toggle buttons in the Top Panel:
 - **List** (`ViewMode.List`): `ListBox` with 28×28 icons + white game names (grouped via `GamesView`). Double-click launches the game.
@@ -203,13 +203,13 @@ Detail panel (right): `CoverImage` 200px + title/scores/checkboxes + Play (Emera
 
 ### Selection / Hover pattern (unified)
 
-All list-based views (List, Table, Statistics Top Played) use the same visual treatment on selection:
+All list-based views (List, Details, Statistics Top Played) use the same visual treatment on selection:
 - `IsMouseOver`: `Background="{StaticResource Bridge.Card.Hover}"` (#333333)
 - `IsSelected`: `Background="Transparent"` (suppresses `SystemColors.HighlightBrush` from default control template), `BorderThickness="3,0,0,0"` + `BorderBrush="{StaticResource Bridge.SystemAccentBrush}"` (#007ACC left accent bar)
 
 Covers uses a similar pattern through a custom `ControlTemplate` with a `SelectionRing` `Border` and `DataTrigger` on `TemplatedParent.IsSelected`.
 
-### Tipografía y tema
+### Typography & Theme
 
 All styling is defined in `Bridge/Styles/Theme.xaml` (dark palette #1E1E1E/#252526/#2D2D2D/#333333, Inter Variable font via `pack://application:,,,/Fonts/#Inter`, spacing and corner radius tokens, motion durations). The dictionary overrides WPF-UI's semantic tokens in Color+Brush pairs — see ADR-3 in ARCHITECTURE.md for the full decision record.
 
@@ -355,13 +355,13 @@ MAJOR.MINOR.PATCH
 
 ## Release Process (CI/CD)
 
-On push to `main`, `.github/workflows/release.yml` runs:
+On push or PR to `main` (and on manual `workflow_dispatch`), `.github/workflows/release.yml` runs:
 
 1. **Check version change** — compares `<Version>` in HEAD vs HEAD~1
-2. **Build** — `dotnet build Bridge.slnx -c Release`
-3. **Test** — `dotnet test Bridge.slnx -c Release --no-restore` (uses `--no-restore`, **not** `--no-build` — each job runs on its own fresh runner and the build job's artifacts aren't shared with the test job, so `--no-build` would always fail; see the comment in `release.yml`)
+2. **Build** — `dotnet restore Bridge.slnx` then `dotnet build Bridge.slnx -c Release --no-restore`
+3. **Test** — `dotnet test Bridge.slnx -c Release --verbosity normal` (no `--no-build`: each job runs on its own fresh runner, so there's no build output to reuse and `--no-build` would always fail — see the comment in `release.yml`)
 4. **CodeQL** — security scanning
-5. **NuGet Audit** — vulnerability check
+5. **NuGet Audit** — `dotnet nuget audit` (vulnerability check, `continue-on-error`)
 6. **Release** (only if version changed):
    - `dotnet publish` as self-contained single-file
    - Generate body from commit message
@@ -452,7 +452,7 @@ When you make a change, consult this table to know which documents to update:
 | **An error-handling pattern** (custom exception, global handler change) | `DEVELOPMENT.md` (Error Handling) | Add the new exception class or update the requirements / examples |
 | **The contribution workflow itself** (PR process, branch naming, review policy) | `CONTRIBUTING.md` (Workflow) | Update the numbered steps, commit format, or branch naming conventions |
 
-> This table ships as part of `DEVELOPMENT.template.md`, i.e. it becomes each consumer project's own `DEVELOPMENT.md`. It intentionally has no row for "bootstrapping a new project from this template" → `NEW_PROJECT_CHECKLIST.md`: that checklist is meant to be deleted from the consumer project once setup is done (see its own closing note), and the consumer project is never itself a template other projects bootstrap from. That guidance belongs in `NEW_PROJECT_CHECKLIST.md` itself (§3, "Something changed in the checklist steps" is inherently self-referential there), not in a table that ships downstream into every project created from this template.
+> This table has no row for "bootstrapping a new project from a template" — that flow belonged to a checklist that was deleted once this project's setup finished, and it doesn't apply downstream.
 
 **Rule:** Before marking a code change as complete, review this table and decide whether any document needs updating accordingly. Document updates are part of the change, not an afterthought — include them before closing the work.
 
@@ -482,7 +482,8 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 66 tests, all passing
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
 - `Storage/RepositoryTests.cs` — `GetOrCreateByName` dedup, including case-insensitivity.
-- `Import/SteamLibraryImporterTests.cs` — VDF parsing, library folder detection, StateFlags filtering, re-scan update behavior.
+- `Import/SteamLibraryImporterTests.cs` — library folder detection, StateFlags filtering, re-scan update behavior (test content shaped exactly like real Steam files, verified against a real install, `PROJECT_FOUNDATION.md` §28.26).
+- `Import/VdfParserTests.cs` — the hand-rolled VDF tokenizer/parser: key/value pairs, nested blocks, escape sequences, unquoted-junk tolerance.
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
 - `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
 - `Services/RomScannerTests.cs` — extension filtering, dedup-by-existing-ROM-path, missing-directory error.
@@ -808,18 +809,18 @@ feat: add new feature
 
 ### Git Hooks
 
-> **Los git hooks NO se versionan automáticamente.** La carpeta `.git/hooks/` es local y no se comparte. Si el proyecto define hooks para verificaciones pre-commit, deben instalarse manualmente:
+> **Git hooks are NOT versioned automatically.** The `.git/hooks/` folder is local and not shared. If the project defines hooks for pre-commit checks, they must be installed manually:
 
 ```bash
-# Opción A: hooks versionados en hooks/ (crear carpeta si no existe)
+# Option A: version hooks in hooks/ (create the folder if it doesn't exist)
 git config core.hooksPath hooks/
 
-# Opción B: copiar manualmente
+# Option B: copy manually
 cp hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-Ninguna validación pre-commit está activa por defecto — cada desarrollador debe decidir instalarla. La regla **3 (verificar build/test local)** aplica siempre, haya o no hooks instalados.
+No pre-commit validation is active by default — each developer decides whether to install it. Rule **3 (verify local build/test)** always applies, whether or not hooks are installed.
 
 ---
 
@@ -875,7 +876,7 @@ dotnet run --project Bridge/Bridge.csproj
 
 ## Branding & Sponsorship
 
-> **Not implemented** — pattern reference only. There is no status bar in the app, no `OpenSponsorCommand`, no `Config.SponsorUrl`, and no `CreditsWindow`. These snippets are templates to use if/when branding is added.
+> **Not implemented** — pattern reference only. There is a minimal status strip in `MainWindow` (row 2, 28px: `StatisticsSummary` + `StatusMessage`), but no sponsor heart, `OpenSponsorCommand`, `Config.SponsorUrl`, or `CreditsWindow`. These snippets are templates to use if/when branding is added.
 
 ### Heart Icon in Status Bar
 
@@ -1014,7 +1015,7 @@ public partial class CreditsWindow : Window
 ```
 
 ```csharp
-// Trigger desde MainWindow
+// Trigger from MainWindow
 private void ShowCredits_Click(object sender, RoutedEventArgs e)
 {
     var credits = new CreditsWindow { Owner = this };

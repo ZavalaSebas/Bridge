@@ -73,7 +73,7 @@ public static class VdfParser
                     i++;
                 }
 
-                i++; // closing quote
+                i++;
                 tokens.Add(sb.ToString());
                 continue;
             }

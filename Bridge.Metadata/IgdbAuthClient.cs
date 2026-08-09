@@ -16,6 +16,7 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
 
     private string? _accessToken;
     private DateTimeOffset _expiresAt = DateTimeOffset.MinValue;
+    private readonly SemaphoreSlim _tokenLock = new(1, 1);
 
     public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
@@ -24,24 +25,41 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
             return _accessToken;
         }
 
-        if (!settings.IsConfigured)
+        // Guard the refresh so two concurrent callers don't both hit the token
+        // endpoint (and so the second one uses the token the first one fetched).
+        await _tokenLock.WaitAsync(cancellationToken);
+        try
         {
-            throw new InvalidOperationException("IGDB Client ID/Secret are not configured.");
+            // Re-check after acquiring the lock — another caller may have
+            // refreshed while we waited.
+            if (_accessToken is not null && DateTimeOffset.UtcNow < _expiresAt)
+            {
+                return _accessToken;
+            }
+
+            if (!settings.IsConfigured)
+            {
+                throw new InvalidOperationException("IGDB Client ID/Secret are not configured.");
+            }
+
+            var url = $"{TokenUrl}?client_id={Uri.EscapeDataString(settings.ClientId)}" +
+                       $"&client_secret={Uri.EscapeDataString(settings.ClientSecret)}" +
+                       "&grant_type=client_credentials";
+
+            using var response = await httpClient.PostAsync(url, content: null, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var payload = await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken: cancellationToken)
+                ?? throw new InvalidOperationException("Twitch token endpoint returned an empty response.");
+
+            _accessToken = payload.AccessToken;
+            _expiresAt = DateTimeOffset.UtcNow.AddSeconds(payload.ExpiresIn - 60);
+            return _accessToken;
         }
-
-        var url = $"{TokenUrl}?client_id={Uri.EscapeDataString(settings.ClientId)}" +
-                   $"&client_secret={Uri.EscapeDataString(settings.ClientSecret)}" +
-                   "&grant_type=client_credentials";
-
-        using var response = await httpClient.PostAsync(url, content: null, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var payload = await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken: cancellationToken)
-            ?? throw new InvalidOperationException("Twitch token endpoint returned an empty response.");
-
-        _accessToken = payload.AccessToken;
-        _expiresAt = DateTimeOffset.UtcNow.AddSeconds(payload.ExpiresIn - 60);
-        return _accessToken;
+        finally
+        {
+            _tokenLock.Release();
+        }
     }
 
     private class TwitchTokenResponse

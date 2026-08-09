@@ -22,14 +22,12 @@ namespace Bridge
             DetailColumn.Width = new GridLength(collapsed ? 1 : 0, GridUnitType.Star);
         }
 
-        // Toggles sort direction (Ascending/Descending).
         private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
                 vm.SortDescending = !vm.SortDescending;
         }
 
-        // View mode toggle buttons in the top panel.
         private void SetViewModeList_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
@@ -135,7 +133,6 @@ namespace Bridge
             }
         }
 
-        // Double-click on a list item launches the game.
         private void List_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (sender is System.Windows.Controls.ListBox listBox
@@ -146,7 +143,6 @@ namespace Bridge
             }
         }
 
-        // Top panel: filter preset context menu handler.
         private void FilterPresetMenu_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm
@@ -163,7 +159,6 @@ namespace Bridge
             }
         }
 
-        // Top panel: sort field context menu handler.
         private void SortFieldMenu_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm
@@ -185,7 +180,6 @@ namespace Bridge
             }
         }
 
-        // Top panel: group field context menu handler.
         private void GroupFieldMenu_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm
@@ -208,17 +202,33 @@ namespace Bridge
             }
         }
 
-        // Stub: select random game from current view.
-        private void SelectRandomGame_Click(object sender, RoutedEventArgs e) { }
+        // Selects a random game from whatever the current view shows
+        // (respects the active search/filter/sort).
+        private void SelectRandomGame_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not ViewModels.MainViewModel vm)
+                return;
 
-        // Stub: toggle explorer panel.
-        private void ToggleExplorerPanel_Click(object sender, RoutedEventArgs e) { }
+            var visible = vm.GamesView.OfType<Bridge.Core.Entities.Game>().ToList();
+            if (visible.Count == 0)
+            {
+                return;
+            }
 
-        // Stub: toggle filter panel.
-        private void ToggleFilterPanel_Click(object sender, RoutedEventArgs e) { }
+            vm.SelectedGame = visible[Random.Shared.Next(visible.Count)];
+        }
 
-        // Edit game: focuses the name TextBox (or opens a full editor in future).
-        private void EditGame_Click(object sender, RoutedEventArgs e) { }
+        // Edit game: focuses the name TextBox in the detail panel so the user
+        // can rename in place (the TextBox itself saves on focus loss via the
+        // existing TwoWay binding).
+        private void EditGame_Click(object sender, RoutedEventArgs e)
+        {
+            if (GameNameEditor is { } editor)
+            {
+                editor.Focus();
+                editor.SelectAll();
+            }
+        }
 
         // Window construction stays in code-behind, matching DEVELOPMENT.md's
         // own "Credits / About Dialog" pattern — not every dialog needs a
