@@ -20,7 +20,7 @@ namespace Bridge
         private void ToggleDetailPanel_Click(object sender, RoutedEventArgs e)
         {
             bool collapsed = DetailColumn.Width.Value <= 0;
-            DetailColumn.Width = new GridLength(collapsed ? 380 : 0);
+            DetailColumn.Width = new GridLength(collapsed ? 1 : 0, GridUnitType.Star);
         }
 
         // Playnite-style sidebar: toggles sort direction (Ascending/Descending).
@@ -247,6 +247,9 @@ namespace Bridge
 
         // Stub: toggle filter panel.
         private void ToggleFilterPanel_Click(object sender, RoutedEventArgs e) { }
+
+        // Edit game: focuses the name TextBox (or opens a full editor in future).
+        private void EditGame_Click(object sender, RoutedEventArgs e) { }
 
         // Window construction stays in code-behind, matching DEVELOPMENT.md's
         // own "Credits / About Dialog" pattern — not every dialog needs a
