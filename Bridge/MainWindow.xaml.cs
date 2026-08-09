@@ -119,17 +119,6 @@ namespace Bridge
 
         private bool _suppressTableResize;
 
-        // Opens the overflow menu anchored to the top-bar button. ContextMenu is
-        // not part of the visual tree, so it must be opened explicitly.
-        private void OverflowMenu_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.FrameworkElement element && element.ContextMenu is { } menu)
-            {
-                menu.PlacementTarget = element;
-                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-                menu.IsOpen = true;
-            }
-        }
 
         private void ShowLibrary_Click(object sender, RoutedEventArgs e)
         {
@@ -225,17 +214,6 @@ namespace Bridge
                     "ReleaseYear" => Bridge.Core.Enums.GameGroupField.ReleaseYear,
                     _ => Bridge.Core.Enums.GameGroupField.None
                 };
-            }
-        }
-
-        // Sidebar logo button (same as overflow menu - opens main menu programmatically).
-        private void ShowMenu_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.FrameworkElement element && element.ContextMenu is { } menu)
-            {
-                menu.PlacementTarget = element;
-                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-                menu.IsOpen = true;
             }
         }
 
