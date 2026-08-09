@@ -1,18 +1,32 @@
 namespace Bridge.Import.Steam;
 
 /// <summary>
-/// Resolves the square 32x32 clienticon Steam keeps on disk for the library —
-/// the same artwork Playnite shows (PROJECT_FOUNDATION.md §28.26). Steam stores
-/// it as a 40-hex-character file inside appcache\librarycache\{appid}\ next to
-/// the wide header.jpg / library_*.jpg art. Returns null when Steam isn't
-/// installed or that app has no cached icon (downloads aren't guaranteed for
-/// every app), so callers fall back to a web-sourced icon.
+/// Resolves the artwork Steam keeps on disk for the library —
+/// appcache\librarycache\{appid}\ — the same images Playnite shows
+/// (PROJECT_FOUNDATION.md §28.26): the square 32x32 clienticon (a
+/// 40-hex-character .jpg), the vertical cover (library_600x900.jpg) and the
+/// widescreen hero background (library_hero.jpg). Wide header.jpg and
+/// logo.png also live alongside them but aren't used. Returns null when Steam
+/// isn't installed or that app has no cached file (downloads aren't guaranteed
+/// for every app), so callers fall back to web-sourced art.
 /// </summary>
 public static class SteamLocalIconResolver
 {
     private const int ClientIconHashLength = 40;
 
     public static string? TryGetLocalIconPath(string appId, string? steamInstallPath = null)
+        => TryGetArtworkPath(appId, steamInstallPath,
+            f => Path.GetFileNameWithoutExtension(f).Length == ClientIconHashLength);
+
+    public static string? TryGetLocalCoverPath(string appId, string? steamInstallPath = null)
+        => TryGetArtworkPath(appId, steamInstallPath,
+            f => Path.GetFileName(f).Equals("library_600x900.jpg", StringComparison.OrdinalIgnoreCase));
+
+    public static string? TryGetLocalBackgroundPath(string appId, string? steamInstallPath = null)
+        => TryGetArtworkPath(appId, steamInstallPath,
+            f => Path.GetFileName(f).Equals("library_hero.jpg", StringComparison.OrdinalIgnoreCase));
+
+    private static string? TryGetArtworkPath(string appId, string? steamInstallPath, Func<string, bool> match)
     {
         if (!uint.TryParse(appId, out _))
             return null;
@@ -25,9 +39,6 @@ public static class SteamLocalIconResolver
         if (!Directory.Exists(cacheDir))
             return null;
 
-        // The 40-hex-char .jpg is the clienticon (32x32). header.jpg,
-        // library_*.jpg, and logo.png live alongside it — skip them.
-        return Directory.GetFiles(cacheDir, "*.jpg")
-            .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Length == ClientIconHashLength);
+        return Directory.GetFiles(cacheDir, "*.jpg").FirstOrDefault(match);
     }
 }

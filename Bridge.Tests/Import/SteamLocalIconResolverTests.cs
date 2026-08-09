@@ -71,6 +71,66 @@ public class SteamLocalIconResolverTests : IDisposable
         Assert.Null(result);
     }
 
+    [Fact]
+    public void TryGetLocalCoverPath_WithCachedCover_ReturnsItsPath()
+    {
+        var steamRoot = Path.Combine(_tempDir, "Steam");
+        var cacheDir = Path.Combine(steamRoot, "appcache", "librarycache", "431960");
+        Directory.CreateDirectory(cacheDir);
+
+        File.WriteAllText(Path.Combine(cacheDir, "header.jpg"), "header");
+        var coverPath = Path.Combine(cacheDir, "library_600x900.jpg");
+        File.WriteAllText(coverPath, "cover");
+
+        var result = SteamLocalIconResolver.TryGetLocalCoverPath("431960", steamRoot);
+
+        Assert.Equal(coverPath, result);
+    }
+
+    [Fact]
+    public void TryGetLocalCoverPath_NoCachedCover_ReturnsNull()
+    {
+        var steamRoot = Path.Combine(_tempDir, "Steam");
+        var cacheDir = Path.Combine(steamRoot, "appcache", "librarycache", "431960");
+        Directory.CreateDirectory(cacheDir);
+
+        File.WriteAllText(Path.Combine(cacheDir, "header.jpg"), "header");
+
+        var result = SteamLocalIconResolver.TryGetLocalCoverPath("431960", steamRoot);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void TryGetLocalBackgroundPath_WithCachedHero_ReturnsItsPath()
+    {
+        var steamRoot = Path.Combine(_tempDir, "Steam");
+        var cacheDir = Path.Combine(steamRoot, "appcache", "librarycache", "431960");
+        Directory.CreateDirectory(cacheDir);
+
+        File.WriteAllText(Path.Combine(cacheDir, "library_600x900.jpg"), "cover");
+        var heroPath = Path.Combine(cacheDir, "library_hero.jpg");
+        File.WriteAllText(heroPath, "hero");
+
+        var result = SteamLocalIconResolver.TryGetLocalBackgroundPath("431960", steamRoot);
+
+        Assert.Equal(heroPath, result);
+    }
+
+    [Fact]
+    public void TryGetLocalBackgroundPath_NoCachedHero_ReturnsNull()
+    {
+        var steamRoot = Path.Combine(_tempDir, "Steam");
+        var cacheDir = Path.Combine(steamRoot, "appcache", "librarycache", "431960");
+        Directory.CreateDirectory(cacheDir);
+
+        File.WriteAllText(Path.Combine(cacheDir, "library_600x900.jpg"), "cover");
+
+        var result = SteamLocalIconResolver.TryGetLocalBackgroundPath("431960", steamRoot);
+
+        Assert.Null(result);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
