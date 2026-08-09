@@ -27,12 +27,14 @@
 
 <h2>Features</h2>
 <ul>
-  <li>Manual game library: add, edit, delete, favorite/hidden flags.</li>
-  <li>Launch games via <code>GameAction</code> and track playtime with poll-based monitoring.</li>
-  <li>Steam library import (registry → <code>libraryfolders.vdf</code> → <code>appmanifest*.acf</code>).</li>
+  <li>Manual game library: add, edit, delete, favorite/hidden flags, local SQLite persistence.</li>
+  <li>Launch games and track playtime automatically — Steam games launch via <code>steam://rungameid</code> with directory-based tracking, no per-game setup.</li>
+  <li>Automatic Steam library import on startup (registry → <code>libraryfolders.vdf</code> → <code>appmanifest*.acf</code>), deduped by <code>(ExternalId, SourceId)</code>.</li>
+  <li>Metadata from IGDB and the Steam Store (auto-downloaded for imported Steam games), plus Steam client icons.</li>
   <li>ROM folder scanning and emulator setup with <code>{RomPath}</code> substitution.</li>
-  <li>Metadata download from IGDB (Name, Description, Release Date, Cover Image, Genres).</li>
-  <li>Library statistics (playtime, playcount, last activity).</li>
+  <li>Three view modes (List, Covers, Details) with search, filter presets, sorting, and grouping.</li>
+  <li>Statistics dashboard (library counts, playtime, completion status, top played).</li>
+  <li>WPF-UI dark theme with Mica backdrop, sidebar navigation, and Inter variable font.</li>
 </ul>
 
 <h2>Getting Started</h2>

@@ -27,7 +27,15 @@ public class JsonValueConverter<T> : ValueConverter<T, string>
     {
         if (string.IsNullOrEmpty(json))
         {
-            return default!;
+            // An empty JSON column means "no data". For collection properties
+            // (the common case — List<GameAction>, List<Guid>, ...) that must
+            // round-trip as an empty list, not null: a null list violates the
+            // entities' "always non-null collections" contract and NREs on
+            // callers like MainViewModel's GameActions.FirstOrDefault. For
+            // non-collection values (ReleaseDate?) null is the correct result.
+            return typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)
+                ? (T)Activator.CreateInstance(typeof(T))!
+                : default!;
         }
 
         return JsonSerializer.Deserialize<T>(json, JsonOptions)!;

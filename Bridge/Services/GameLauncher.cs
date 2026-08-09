@@ -192,6 +192,9 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     private async Task TrackDirectoryAsync(Game game, int initialDelayMs, int frequencyMs)
     {
         var stopwatch = Stopwatch.StartNew();
+        var sessionStart = stopwatch.Elapsed;
+        bool launched = false;
+
         try
         {
             if (initialDelayMs > 0)
@@ -199,10 +202,22 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 await Task.Delay(initialDelayMs);
             }
 
+            // Wait for the game's process to appear. If it never does (Steam fails
+            // to start it, a bad InstallDirectory, offline mode, ...), don't hang
+            // forever: give up after DirectoryLaunchTimeout so IsRunning clears and
+            // no phantom playtime gets recorded.
             while (!HasProcessInDirectory(game.InstallDirectory))
             {
+                if (stopwatch.Elapsed >= DirectoryLaunchTimeout)
+                {
+                    return;
+                }
+
                 await Task.Delay(frequencyMs);
             }
+
+            launched = true;
+            sessionStart = stopwatch.Elapsed;
 
             while (HasProcessInDirectory(game.InstallDirectory))
             {
@@ -212,12 +227,18 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         finally
         {
             stopwatch.Stop();
-            var sessionSeconds = (ulong)stopwatch.Elapsed.TotalSeconds;
             game.IsRunning = false;
-            game.PlaytimeSeconds += sessionSeconds;
-            GameStopped?.Invoke(game, sessionSeconds);
+
+            if (launched)
+            {
+                var sessionSeconds = (ulong)(stopwatch.Elapsed - sessionStart).TotalSeconds;
+                game.PlaytimeSeconds += sessionSeconds;
+                GameStopped?.Invoke(game, sessionSeconds);
+            }
         }
     }
+
+    private static readonly TimeSpan DirectoryLaunchTimeout = TimeSpan.FromMinutes(5);
 
     private static bool HasProcessInDirectory(string installDirectory)
     {
@@ -231,11 +252,21 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             try
             {
                 var path = process.MainModule?.FileName;
-                if (!string.IsNullOrWhiteSpace(path) &&
-                    path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrWhiteSpace(path) ||
+                    !path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
                 {
-                    return true;
+                    continue;
                 }
+
+                // Path-prefix boundary check: "C:\Games\Steam2\game.exe" must not
+                // match an install dir of "C:\Games\Steam".
+                if (path.Length > installDirectory.Length &&
+                    path[installDirectory.Length] is not ('\\' or '/'))
+                {
+                    continue;
+                }
+
+                return true;
             }
             catch
             {

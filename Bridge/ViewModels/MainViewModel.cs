@@ -217,19 +217,6 @@ public partial class MainViewModel : ObservableObject
         LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
     }
 
-    // "Label: value1, value2" — or empty string when there's nothing to show
-    // (the XAML collapses empty lines via a DataTrigger).
-    private static string FormatField<T>(string label, IEnumerable<Guid> ids, IRepository<T> repo)
-        where T : DatabaseObject
-    {
-        var names = ids
-            .Select(id => repo.Get(id)?.Name)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
-            .ToList();
-
-        return names.Count == 0 ? string.Empty : $"{label}: {string.Join(", ", names)}";
-    }
-
     private static string JoinNames<T>(IEnumerable<Guid> ids, IRepository<T> repo)
         where T : DatabaseObject
         => string.Join(", ", ids
