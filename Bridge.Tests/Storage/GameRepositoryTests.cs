@@ -131,6 +131,25 @@ public class GameRepositoryTests : IDisposable
         Assert.Null(_repository.Get(game.Id));
     }
 
+    [Fact]
+    public void GetAll_ResetsTransientRuntimeFlags()
+    {
+        // A crash or forced close mid-game leaves IsRunning=true persisted (the
+        // Game doc comment assigns Bridge.Storage's load path the reset). The
+        // next session must not show the game as running forever.
+        var game = new Game { Name = "Crashed mid-game", IsRunning = true, IsLaunching = true };
+        _repository.Add(game);
+
+        using var freshContext = new BridgeDbContext(_options);
+        var reloaded = new GameRepository(freshContext).GetAll();
+
+        var loaded = Assert.Single(reloaded);
+        Assert.False(loaded.IsRunning);
+        Assert.False(loaded.IsLaunching);
+        Assert.False(loaded.IsInstalling);
+        Assert.False(loaded.IsUninstalling);
+    }
+
     public void Dispose()
     {
         _context.Dispose();

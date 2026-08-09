@@ -34,7 +34,7 @@ When making changes, consider:
 
 ## Why Bridge?
 
-Bridge is an original game library manager: one local, self-contained catalog for games from external libraries, manual entries, and emulated ROMs. It keeps what makes a good library manager functionally useful (incremental import, local metadata/image caching, virtualized list views, emulation support) and drops what exists purely to support runtime extensibility — no plugin architecture, no dual desktop/fullscreen frontends. [Playnite](https://playnite.link/) is an *inspiration*: its observed behavior informs how Bridge's features should feel, but Bridge is designed independently — different module layout, different persistence, different UI, no shared code. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the behavioral notes used during development, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the specific decisions (ADR-1 through ADR-5) that follow from this direction.
+Bridge is an original game library manager: one local, self-contained catalog for games from external libraries, manual entries, and emulated ROMs. It keeps what makes a good library manager functionally useful (incremental import, local metadata/image caching, virtualized list views, emulation support) and drops what exists purely to support runtime extensibility — no plugin architecture, no dual desktop/fullscreen frontends. [Playnite](https://playnite.link/) is an *inspiration*: its observed behavior informs how Bridge's features should feel, but Bridge is designed independently — different module layout, different persistence, different UI, no shared code. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the behavioral notes used during development, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the specific decisions (ADR-1 through ADR-12) that follow from this direction.
 
 ---
 
@@ -45,7 +45,11 @@ App (Bridge)                                        │ WPF
 │  MainWindow, ViewModels, Views, Controls, DI root
 ├─────────────────────────────────────────────────┤
 Import / Metadata / Emulation                       │ Use-case modules
-│  Bridge.Import, Bridge.Metadata, Bridge.Emulation
+│  Bridge.Import, Bridge.Metadata, Bridge.Emulation │  (Bridge.Emulation has no
+│                                                    │   project — RomScanner and
+│                                                    │   the emulator-launch half of
+│                                                    │   GameLauncher live in
+│                                                    │   Bridge/Services, see PLAN.md)
 ├─────────────────────────────────────────────────┤
 Storage                                              │ Persistence
 │  Bridge.Storage — repositories, DB context, file/image cache
@@ -63,8 +67,8 @@ Core                                                 │ Domain
 |----------|--------|-----|
 | Plugin system | None in v1 | See [ADR-1](ARCHITECTURE.md#adr-1-no-plugin-system-in-v1) |
 | Frontend | Single desktop app, no fullscreen mode | See [ADR-2](ARCHITECTURE.md#adr-2-single-application-no-separate-fullscreen-frontend-in-v1) |
-| Theming | Single built-in theme, WPF UI introduced in Fase 7 | See [ADR-3](ARCHITECTURE.md#adr-3-single-theme-initially-wpf-ui-introduced-later) |
-| Storage engine | Not yet decided (SQLite vs LiteDB) | See [ADR-4](ARCHITECTURE.md#adr-4-local-storage-engine--sqlite-vs-litedb) — blocks Fase 1 |
+| Theming | WPF-UI 4.3.0 (migrated from plain WPF in Fase 7), single built-in dark theme | See [ADR-3](ARCHITECTURE.md#adr-3-wpf-ui-430-for-the-visual-overhaul-supersedes-the-original-plain-wpf-first-adr) |
+| Storage engine | SQLite via EF Core — decided and implemented in `Bridge.Storage` | See [ADR-4](ARCHITECTURE.md#adr-4-local-storage-engine--sqlite-vs-litedb) |
 | Module boundaries | Internal-only, compile-time enforced | See [ADR-5](ARCHITECTURE.md#adr-5-internal-modularity-only--no-runtime-module-boundaries) |
 
 ---
@@ -80,7 +84,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # created — 65 tests, all passing (see below)
+└── Bridge.Tests/        # created — 66 tests, all passing (see below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -178,7 +182,7 @@ The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of 
 - **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling).
 - **Grouping** — `GroupField` (`GameGroupField`, 21 fields, "Don't group" off) adds a `PropertyGroupDescription` (with a null property name so the item itself flows through a `GameGroupConverter`) to `GroupDescriptions`. `GameGroupResolver` is pure and unit-tested: buckets for playtime/install size/scores, drive letter, release year, coarse date buckets ("Never/Last 7 days/..."), reference names via lookups. Group headers render via the `ListBox.GroupStyle`.
 
-UI: `EnumValues` exposes the enums to XAML; `EnumDescriptionConverter` turns `[Description]` labels into readable ComboBox text ("Time Played", not "PlaytimeSeconds"). This is UI, not domain logic — the sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF.
+The sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF; the XAML only binds them through `GameGroupConverter`/`GameSortComparer` (see `Bridge/Converters/MetadataConverters.cs`).
 
 ### Shell architecture
 
@@ -234,7 +238,7 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (dark palette #1E1E1E/#2525
 ```
 
 - `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.1.0.0`)
-- **Updater pattern** (optional): fetch `https://api.github.com/repos/{owner}/{repo}/releases/latest`, compare `Version.TryParse(tag.TrimStart('v'))` against `Config.AssemblyVersion`. If remote is newer, download the `.exe` asset.
+- **Updater pattern** (optional — **not implemented**, this is a pattern reference, not a shipped feature): fetch `https://api.github.com/repos/{owner}/{repo}/releases/latest`, compare `Version.TryParse(tag.TrimStart('v'))` against `Config.AssemblyVersion`. If remote is newer, download the `.exe` asset.
 
   The most critical part is the **safe executable swap** — never overwrite the running `.exe` directly:
 
@@ -257,6 +261,8 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (dark palette #1E1E1E/#2525
 **To bump the version**: edit `<Version>` in the csproj, commit with a descriptive message, push to `main`.
 
 ### Welcome Sentinel
+
+> **Not implemented** — pattern reference only. `Config.WelcomeSentinelFile`, `Config.ShouldShowWelcome()` and `WelcomeWindow` do not exist in the codebase; nothing on this page creates `welcome_sentinel.txt`.
 
 Show a welcome dialog on first launch or after a version change:
 
@@ -285,6 +291,8 @@ if (ShouldShowWelcome())
 When the user dismisses the dialog with "Don't show again", write the current version to the sentinel file so it won't show again until the version changes.
 
 ### Constants Pattern (`Config.cs`)
+
+> **Partially implemented** — the real `Bridge/Config.cs` only contains `AppName`, `AppDataPath`, and `DatabasePath`. `GitHubApiUrl`, `RequestTimeoutSeconds`, and any URL/timeout constants below do **not** exist yet; add them here when the updater/branding features are actually built.
 
 **Prefer keeping constants centralized** in a dedicated `Config.cs` file rather than scattered across classes.
 
@@ -351,7 +359,7 @@ On push to `main`, `.github/workflows/release.yml` runs:
 
 1. **Check version change** — compares `<Version>` in HEAD vs HEAD~1
 2. **Build** — `dotnet build Bridge.slnx -c Release`
-3. **Test** — `dotnet test Bridge.slnx -c Release --no-build`
+3. **Test** — `dotnet test Bridge.slnx -c Release --no-restore` (uses `--no-restore`, **not** `--no-build` — each job runs on its own fresh runner and the build job's artifacts aren't shared with the test job, so `--no-build` would always fail; see the comment in `release.yml`)
 4. **CodeQL** — security scanning
 5. **NuGet Audit** — vulnerability check
 6. **Release** (only if version changed):
@@ -469,7 +477,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 65 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release` — 66 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
@@ -744,9 +752,10 @@ public static class Config
 | `ARCHITECTURE.md` | ADRs — the "why" behind structural decisions |
 | `Bridge.Core/Entities/Game.cs` | The central domain entity — start here to understand the data model |
 | `Bridge.Core/Import/GameMetadata.cs` | What an importer produces before it becomes a `Game` |
-| `Bridge.Core/Contracts/IGameRepository.cs` | The persistence contract `Bridge.Storage` needs to implement in Fase 1 |
-
-> `App.xaml.cs`, `Config.cs`, and the DB context don't exist yet (see [Project Structure](#project-structure)) — add rows for them as they're created, don't let this table fall behind once Fase 1's `Bridge.Storage` work starts.
+| `Bridge.Core/Contracts/IGameRepository.cs` | The persistence contract `Bridge.Storage` implements |
+| `Bridge/App.xaml.cs` | Composition root — DI setup, theme dictionaries, logging |
+| `Bridge/Config.cs` | App constants (AppName, paths) |
+| `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via `EnsureCreated()`, no migrations yet) |
 
 ---
 
@@ -865,6 +874,8 @@ dotnet run --project Bridge/Bridge.csproj
 ---
 
 ## Branding & Sponsorship
+
+> **Not implemented** — pattern reference only. There is no status bar in the app, no `OpenSponsorCommand`, no `Config.SponsorUrl`, and no `CreditsWindow`. These snippets are templates to use if/when branding is added.
 
 ### Heart Icon in Status Bar
 

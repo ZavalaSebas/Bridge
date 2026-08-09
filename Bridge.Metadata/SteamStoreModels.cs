@@ -157,9 +157,3 @@ internal sealed class SteamQuerySummary
     [JsonPropertyName("total_reviews")]
     public int TotalReviews { get; set; }
 }
-
-internal sealed class SteamSearchEntry
-{
-    public string AppId { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-}

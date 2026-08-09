@@ -17,9 +17,9 @@ public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : D
     protected readonly BridgeDbContext Context = context;
     protected readonly DbSet<T> Set = context.Set<T>();
 
-    public T? Get(Guid id) => Set.Find(id);
+    public virtual T? Get(Guid id) => Set.Find(id);
 
-    public IReadOnlyList<T> GetAll() => Set.ToList();
+    public virtual IReadOnlyList<T> GetAll() => Set.ToList();
 
     public void Add(T item)
     {
