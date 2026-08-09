@@ -131,6 +131,29 @@ namespace Bridge
             }
         }
 
+        private void ShowLibrary_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Library;
+        }
+
+        private void ShowStatistics_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Statistics;
+        }
+
+        // Playnite: double-click on a list item launches the game.
+        private void List_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ListBox listBox
+                && listBox.SelectedItem is Game game
+                && DataContext is ViewModels.MainViewModel vm)
+            {
+                vm.PlayGameCommand.Execute(game);
+            }
+        }
+
         // Window construction stays in code-behind, matching DEVELOPMENT.md's
         // own "Credits / About Dialog" pattern — not every dialog needs a
         // MainViewModel command just to open it.
