@@ -154,6 +154,88 @@ namespace Bridge
             }
         }
 
+        // Playnite-style TopPanel: filter preset menu items.
+        private void FilterPresetMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm
+                && sender is System.Windows.Controls.MenuItem item
+                && item.Tag is string tag)
+            {
+                vm.FilterPreset = tag switch
+                {
+                    "Favorite" => Bridge.Core.Enums.LibraryFilterPreset.Favorite,
+                    "MostPlayed" => Bridge.Core.Enums.LibraryFilterPreset.MostPlayed,
+                    "RecentlyPlayed" => Bridge.Core.Enums.LibraryFilterPreset.RecentlyPlayed,
+                    _ => Bridge.Core.Enums.LibraryFilterPreset.All
+                };
+            }
+        }
+
+        // Playnite-style TopPanel: sort field menu items.
+        private void SortFieldMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm
+                && sender is System.Windows.Controls.MenuItem item
+                && item.Tag is string tag)
+            {
+                vm.SortField = tag switch
+                {
+                    "PlaytimeSeconds" => Bridge.Core.Enums.GameSortField.PlaytimeSeconds,
+                    "PlayCount" => Bridge.Core.Enums.GameSortField.PlayCount,
+                    "RecentActivity" => Bridge.Core.Enums.GameSortField.LastPlayed,
+                    "ReleaseDate" => Bridge.Core.Enums.GameSortField.ReleaseDate,
+                    "Developer" => Bridge.Core.Enums.GameSortField.Developer,
+                    "Publisher" => Bridge.Core.Enums.GameSortField.Publisher,
+                    "Source" => Bridge.Core.Enums.GameSortField.Source,
+                    "CriticScore" => Bridge.Core.Enums.GameSortField.CriticScore,
+                    _ => Bridge.Core.Enums.GameSortField.Name
+                };
+            }
+        }
+
+        // Playnite-style TopPanel: group field menu items.
+        private void GroupFieldMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm
+                && sender is System.Windows.Controls.MenuItem item
+                && item.Tag is string tag)
+            {
+                vm.GroupField = tag switch
+                {
+                    "Library" => Bridge.Core.Enums.GameGroupField.Library,
+                    "Developer" => Bridge.Core.Enums.GameGroupField.Developer,
+                    "Publisher" => Bridge.Core.Enums.GameGroupField.Publisher,
+                    "Platform" => Bridge.Core.Enums.GameGroupField.Platform,
+                    "Genre" => Bridge.Core.Enums.GameGroupField.Genre,
+                    "IsInstalled" => Bridge.Core.Enums.GameGroupField.IsInstalled,
+                    "CompletionStatus" => Bridge.Core.Enums.GameGroupField.CompletionStatus,
+                    "PlaytimeSeconds" => Bridge.Core.Enums.GameGroupField.PlaytimeSeconds,
+                    "ReleaseYear" => Bridge.Core.Enums.GameGroupField.ReleaseYear,
+                    _ => Bridge.Core.Enums.GameGroupField.None
+                };
+            }
+        }
+
+        // Sidebar logo button (same as overflow menu - opens main menu programmatically).
+        private void ShowMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.FrameworkElement element && element.ContextMenu is { } menu)
+            {
+                menu.PlacementTarget = element;
+                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                menu.IsOpen = true;
+            }
+        }
+
+        // Stub: select random game from current view.
+        private void SelectRandomGame_Click(object sender, RoutedEventArgs e) { }
+
+        // Stub: toggle explorer panel.
+        private void ToggleExplorerPanel_Click(object sender, RoutedEventArgs e) { }
+
+        // Stub: toggle filter panel.
+        private void ToggleFilterPanel_Click(object sender, RoutedEventArgs e) { }
+
         // Window construction stays in code-behind, matching DEVELOPMENT.md's
         // own "Credits / About Dialog" pattern — not every dialog needs a
         // MainViewModel command just to open it.
