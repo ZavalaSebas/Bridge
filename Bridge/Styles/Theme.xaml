@@ -26,6 +26,20 @@
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
 
+    <!-- Accent brush propio de Bridge (reemplazable en runtime por el ThemeManager). -->
+    <SolidColorBrush x:Key="Bridge.SystemAccentBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+
+    <!-- Overrides de los accent brushes de Wpf.Ui (los usan Slider/CheckBox/Button/
+         selection, etc.). Al apuntar al Color token de Bridge, el ThemeManager puede
+         reemplazarlos y todo el acento cambia junto. -->
+    <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
+
     <!-- Fondos: tinte azul/indigo (como el MainColor de Playnite #2C3A67) en vez
          de gris puro, para darle personalidad a la paleta dark. -->
     <Color x:Key="Bridge.Background.Primary.Color">#151A28</Color>
@@ -212,7 +226,7 @@
                                 <Thumb Focusable="False" IsTabStop="False">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border x:Name="ThumbBorder" CornerRadius="5" Margin="2,1" Background="{StaticResource SystemAccentColorPrimaryBrush}" Opacity="0.5">
+                                            <Border x:Name="ThumbBorder" CornerRadius="5" Margin="2,1" Background="{DynamicResource SystemAccentColorPrimaryBrush}" Opacity="0.5">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Style.Triggers>

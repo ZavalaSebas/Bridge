@@ -38,7 +38,10 @@ namespace Bridge
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.
             // No StartupUri in App.xaml — this is the one and only place MainWindow
-            // gets created.
+            // gets created. The saved theme accent is applied before the window
+            // loads so the first render already uses it.
+            ThemeManager.Load();
+
             var mainWindow = new MainWindow
             {
                 DataContext = Services.GetRequiredService<MainViewModel>()
