@@ -51,6 +51,11 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private LibraryFilterPreset _filterPreset;
 
+    // Covers-view zoom (0.6x - 1.6x). Scales the cover cards so the wrapping
+    // grid reflows to fit more/fewer columns.
+    [ObservableProperty]
+    private double _zoom = 1.0;
+
     [ObservableProperty]
     private LibraryStatistics? _statistics;
 
