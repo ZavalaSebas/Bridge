@@ -14,14 +14,6 @@ namespace Bridge
             InitializeComponent();
         }
 
-        // Collapses/expands the detail panel. Width 0 = collapsed; the
-        // GridSplitter still lets the user drag it back open.
-        private void ToggleDetailPanel_Click(object sender, RoutedEventArgs e)
-        {
-            bool collapsed = DetailColumn.Width.Value <= 0;
-            DetailColumn.Width = new GridLength(collapsed ? 1 : 0, GridUnitType.Star);
-        }
-
         private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MainViewModel vm)
@@ -43,11 +35,7 @@ namespace Bridge
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Grid;
                 CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
-                ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
-                DetailColumn.MinWidth = 0;
-                DetailColumn.Width = new GridLength(0);
-                DetailSeparator.Visibility = System.Windows.Visibility.Collapsed;
-                DetailSplitter.Visibility = System.Windows.Visibility.Collapsed;
+                HideDetailPanel();
             }
         }
 
@@ -56,12 +44,12 @@ namespace Bridge
             if (DataContext is ViewModels.MainViewModel vm)
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Table;
-                ShowFullWidthDetail();
+                HideDetailPanel();
             }
         }
 
-        // List/Table views keep the full detail panel on the right; the covers
-        // (Grid) view runs full-screen and only opens the compact info panel.
+        // The Details view keeps the full detail panel on the right; the covers
+        // (Grid) and the List (Table) views run full-screen without it.
         private void ShowFullWidthDetail()
         {
             ViewsColumn.Width = new GridLength(360);
@@ -69,6 +57,15 @@ namespace Bridge
             DetailColumn.Width = new GridLength(1, GridUnitType.Star);
             DetailSeparator.Visibility = System.Windows.Visibility.Visible;
             DetailSplitter.Visibility = System.Windows.Visibility.Visible;
+        }
+
+        private void HideDetailPanel()
+        {
+            ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
+            DetailColumn.MinWidth = 0;
+            DetailColumn.Width = new GridLength(0);
+            DetailSeparator.Visibility = System.Windows.Visibility.Collapsed;
+            DetailSplitter.Visibility = System.Windows.Visibility.Collapsed;
         }
 
         private void CloseCompactInfo_Click(object sender, RoutedEventArgs e)
@@ -321,6 +318,12 @@ namespace Bridge
             {
                 viewModel.SelectedGame = game;
                 CompactInfoPanel.Visibility = System.Windows.Visibility.Visible;
+
+                // The panel shrinks the covers area and the wrap reflows, so a
+                // cover near the end of a row can end up out of view — bring the
+                // selected one back into the viewport (after the layout settles).
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                    new Action(() => CoversList.ScrollIntoView(game)));
             }
         }
     }
