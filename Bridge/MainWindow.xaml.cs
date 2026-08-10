@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Diagnostics;
 using Bridge.Core.Entities;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,12 +74,6 @@ namespace Bridge
             CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
         }
 
-        private void ShowSettings_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is ViewModels.MainViewModel vm)
-                vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Settings;
-        }
-
         // Table view: rows bind to GameDetailRow (not Game directly), so
         // SelectedItem needs an explicit handler to sync SelectedGame.
         private void TableList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -135,6 +130,144 @@ namespace Bridge
 
         private bool _suppressTableResize;
 
+
+        // Opens the Support menu links (Ko-fi / GitHub Sponsors) in the browser.
+        private void OpenSupportLink_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem { Tag: string url } && !string.IsNullOrWhiteSpace(url))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                }
+                catch
+                {
+                    // Missing browser/URL — nothing to do.
+                }
+            }
+        }
+
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new AboutWindow { Owner = this };
+            window.ShowDialog();
+        }
+
+        private string _sidebarPosition = "Left";
+
+        // View > Sidebar: show/hide the sidebar (and its divider).
+        private void ToggleSidebar_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem { IsChecked: bool shown })
+            {
+                SidebarHost.Visibility = shown ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+                SidebarSeparator.Visibility = shown ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            }
+        }
+
+        // Keeps both Sidebar menus (main menu + right-click) in sync with the
+        // actual sidebar state when they open.
+        private void SidebarMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ContextMenu menu)
+            {
+                SyncSidebarMenu(menu);
+            }
+        }
+
+        private void MainMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ContextMenu menu)
+            {
+                var sidebar = menu.Items.OfType<System.Windows.Controls.MenuItem>()
+                    .FirstOrDefault(i => i.Header?.ToString() == "Sidebar");
+                if (sidebar is not null)
+                {
+                    SyncSidebarMenu(sidebar);
+                }
+            }
+        }
+
+        private void SyncSidebarMenu(System.Windows.Controls.ItemsControl menu)
+        {
+            foreach (var child in menu.Items.OfType<System.Windows.Controls.MenuItem>())
+            {
+                if (child.Header?.ToString() == "Show Sidebar")
+                {
+                    child.IsChecked = SidebarHost.Visibility == System.Windows.Visibility.Visible;
+                }
+                else if (child.Header?.ToString() == "Position")
+                {
+                    foreach (var position in child.Items.OfType<System.Windows.Controls.MenuItem>())
+                    {
+                        position.IsChecked = position.Tag?.ToString() == _sidebarPosition;
+                    }
+                }
+            }
+        }
+
+        // View > Sidebar > Position: dock the sidebar on any edge. The sidebar
+        // stays a vertical rail for Left/Right and becomes a horizontal bar for
+        // Top/Bottom; the divider follows to the facing edge.
+        private void SetSidebarPosition_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.MenuItem { Tag: string position } item)
+            {
+                return;
+            }
+
+            if (item.Parent is System.Windows.Controls.MenuItem positionMenu)
+            {
+                foreach (var child in positionMenu.Items.OfType<System.Windows.Controls.MenuItem>())
+                {
+                    child.IsChecked = false;
+                }
+
+                item.IsChecked = true;
+            }
+
+            _sidebarPosition = position;
+
+            switch (position)
+            {
+                case "Right":
+                    DockPanel.SetDock(SidebarHost, Dock.Right);
+                    DockPanel.SetDock(SidebarSeparator, Dock.Right);
+                    SidebarHost.Width = 52;
+                    SidebarHost.Height = double.NaN;
+                    SidebarSeparator.Width = 1;
+                    SidebarSeparator.Height = double.NaN;
+                    SidebarStack.Orientation = Orientation.Vertical;
+                    break;
+                case "Top":
+                    DockPanel.SetDock(SidebarHost, Dock.Top);
+                    DockPanel.SetDock(SidebarSeparator, Dock.Top);
+                    SidebarHost.Height = 52;
+                    SidebarHost.Width = double.NaN;
+                    SidebarSeparator.Height = 1;
+                    SidebarSeparator.Width = double.NaN;
+                    SidebarStack.Orientation = Orientation.Horizontal;
+                    break;
+                case "Bottom":
+                    DockPanel.SetDock(SidebarHost, Dock.Bottom);
+                    DockPanel.SetDock(SidebarSeparator, Dock.Bottom);
+                    SidebarHost.Height = 52;
+                    SidebarHost.Width = double.NaN;
+                    SidebarSeparator.Height = 1;
+                    SidebarSeparator.Width = double.NaN;
+                    SidebarStack.Orientation = Orientation.Horizontal;
+                    break;
+                default: // Left
+                    DockPanel.SetDock(SidebarHost, Dock.Left);
+                    DockPanel.SetDock(SidebarSeparator, Dock.Left);
+                    SidebarHost.Width = 52;
+                    SidebarHost.Height = double.NaN;
+                    SidebarSeparator.Width = 1;
+                    SidebarSeparator.Height = double.NaN;
+                    SidebarStack.Orientation = Orientation.Vertical;
+                    break;
+            }
+        }
 
         private void ShowLibrary_Click(object sender, RoutedEventArgs e)
         {
