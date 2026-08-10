@@ -48,6 +48,12 @@ public partial class FadeImage : UserControl
     private Image? activeImage;
     private string? currentUrl;
 
+    /// <summary>Raised after the visible image changes (so hosts can adapt layout).</summary>
+    public event EventHandler? ImageChanged;
+
+    /// <summary>Width/Height of the currently loaded image, or null.</summary>
+    public double? ImageAspect { get; private set; }
+
     public FadeImage()
     {
         InitializeComponent();
@@ -91,6 +97,9 @@ public partial class FadeImage : UserControl
     // the fade-in completes so a rapid selection change never blanks the screen.
     private void ShowImage(BitmapSource image)
     {
+        ImageAspect = image.PixelWidth / (double)image.PixelHeight;
+        ImageChanged?.Invoke(this, EventArgs.Empty);
+
         var next = activeImage is null || ReferenceEquals(activeImage, Image2) ? Image1 : Image2;
         var previous = activeImage;
         activeImage = next;
