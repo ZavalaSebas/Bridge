@@ -271,6 +271,19 @@ namespace Bridge
                     SidebarStack.Orientation = Orientation.Vertical;
                     break;
             }
+
+            // The active-item indicator border follows the sidebar edge.
+            var indicator = position switch
+            {
+                "Right" => new Thickness(0, 0, 3, 0),
+                "Top" => new Thickness(0, 3, 0, 0),
+                "Bottom" => new Thickness(0, 0, 0, 3),
+                _ => new Thickness(3, 0, 0, 0)
+            };
+            foreach (var button in SidebarStack.Children.OfType<System.Windows.Controls.Button>())
+            {
+                button.BorderThickness = indicator;
+            }
         }
 
         private void ShowLibrary_Click(object sender, RoutedEventArgs e)
