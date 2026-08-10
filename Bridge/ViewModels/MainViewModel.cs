@@ -56,6 +56,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private double _zoom = 1.0;
 
+    // Sidebar visibility (View > Sidebar > Show Sidebar); the window applies it.
+    [ObservableProperty]
+    private bool _sidebarVisible = true;
+
     [ObservableProperty]
     private LibraryStatistics? _statistics;
 

@@ -155,14 +155,22 @@ namespace Bridge
 
         private string _sidebarPosition = "Left";
 
-        // View > Sidebar: show/hide the sidebar (and its divider).
+        // View > Sidebar: show/hide the sidebar (and its divider). The state
+        // lives in the VM so the menus' icons (Eye / EyeOff) reflect it.
         private void ToggleSidebar_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.MenuItem { IsChecked: bool shown })
+            if (DataContext is MainViewModel vm)
             {
-                SidebarHost.Visibility = shown ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-                SidebarSeparator.Visibility = shown ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+                vm.SidebarVisible = !vm.SidebarVisible;
+                ApplySidebarVisibility();
             }
+        }
+
+        private void ApplySidebarVisibility()
+        {
+            var visible = (DataContext as MainViewModel)?.SidebarVisible ?? true;
+            SidebarHost.Visibility = visible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            SidebarSeparator.Visibility = visible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
         }
 
         // Keeps both Sidebar menus (main menu + right-click) in sync with the
@@ -192,11 +200,7 @@ namespace Bridge
         {
             foreach (var child in menu.Items.OfType<System.Windows.Controls.MenuItem>())
             {
-                if (child.Header?.ToString() == "Show Sidebar")
-                {
-                    child.IsChecked = SidebarHost.Visibility == System.Windows.Visibility.Visible;
-                }
-                else if (child.Header?.ToString() == "Position")
+                if (child.Header?.ToString() == "Position")
                 {
                     foreach (var position in child.Items.OfType<System.Windows.Controls.MenuItem>())
                     {
