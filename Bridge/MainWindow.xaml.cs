@@ -378,15 +378,26 @@ namespace Bridge
             vm.SelectedGame = visible[Random.Shared.Next(visible.Count)];
         }
 
-        // Edit game: focuses the name TextBox in the detail panel so the user
-        // can rename in place (the TextBox itself saves on focus loss via the
-        // existing TwoWay binding).
+        // Edit game: opens the dedicated edit window (Playnite-style). No more
+        // inline editing — the details panel fields are read-only.
         private void EditGame_Click(object sender, RoutedEventArgs e)
         {
-            if (GameNameEditor is { } editor)
+            if (DataContext is not MainViewModel mainVm || mainVm.SelectedGame is not { } game)
             {
-                editor.Focus();
-                editor.SelectAll();
+                return;
+            }
+
+            var editViewModel = new ViewModels.GameEditViewModel(
+                game,
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IGameRepository>(),
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Genre>>(),
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Company>>(),
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Platform>>());
+
+            var window = new GameEditWindow(editViewModel) { Owner = this };
+            if (window.ShowDialog() == true)
+            {
+                mainVm.RefreshGameDisplay(game);
             }
         }
 
