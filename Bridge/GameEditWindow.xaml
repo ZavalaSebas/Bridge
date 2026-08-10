@@ -90,7 +90,7 @@
                     <StackPanel Margin="8">
                         <TextBlock Text="Icon" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,6"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Border Width="48" Height="48" Background="#252526" CornerRadius="4" Margin="0,0,10,0">
+                            <Border Width="48" Height="48" Background="#1B2132" CornerRadius="4" Margin="0,0,10,0">
                                 <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" RenderOptions.BitmapScalingMode="Fant"/>
                             </Border>
                             <TextBox Width="400" VerticalAlignment="Center" Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>
@@ -99,7 +99,7 @@
 
                         <TextBlock Text="Cover Image" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,6"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Border Width="40" Height="60" Background="#252526" CornerRadius="4" Margin="0,0,10,0">
+                            <Border Width="40" Height="60" Background="#1B2132" CornerRadius="4" Margin="0,0,10,0">
                                 <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding CoverImage}" RenderOptions.BitmapScalingMode="Fant"/>
                             </Border>
                             <TextBox Width="400" VerticalAlignment="Center" Text="{Binding CoverImage, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>
@@ -108,7 +108,7 @@
 
                         <TextBlock Text="Background Image" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,6"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Border Width="80" Height="44" Background="#252526" CornerRadius="4" Margin="0,0,10,0">
+                            <Border Width="80" Height="44" Background="#1B2132" CornerRadius="4" Margin="0,0,10,0">
                                 <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding BackgroundImage}" RenderOptions.BitmapScalingMode="Fant"/>
                             </Border>
                             <TextBox Width="400" VerticalAlignment="Center" Text="{Binding BackgroundImage, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>

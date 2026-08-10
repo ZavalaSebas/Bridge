@@ -26,11 +26,12 @@
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
 
-    <!-- Fondos -->
-    <Color x:Key="Bridge.Background.Primary.Color">#1E1E1E</Color>
-    <Color x:Key="Bridge.Background.Secondary.Color">#252526</Color>
-    <Color x:Key="Bridge.Background.Tertiary.Color">#2D2D2D</Color>
-    <Color x:Key="Bridge.Background.Quaternary.Color">#333333</Color>
+    <!-- Fondos: tinte azul/indigo (como el MainColor de Playnite #2C3A67) en vez
+         de gris puro, para darle personalidad a la paleta dark. -->
+    <Color x:Key="Bridge.Background.Primary.Color">#151A28</Color>
+    <Color x:Key="Bridge.Background.Secondary.Color">#1B2132</Color>
+    <Color x:Key="Bridge.Background.Tertiary.Color">#232B40</Color>
+    <Color x:Key="Bridge.Background.Quaternary.Color">#2C3550</Color>
 
     <!-- Texto -->
     <Color x:Key="Bridge.Text.Primary.Color">#E0E0E0</Color>
@@ -99,14 +100,14 @@
     <SolidColorBrush x:Key="ControlAltFillColorTertiaryBrush" Color="{StaticResource Bridge.Background.Tertiary.Color}" />
 
     <!-- Borders -->
-    <Color x:Key="ControlStrokeColorDefault">#3A3A3A</Color>
-    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="#3A3A3A" />
-    <Color x:Key="ControlStrokeColorSecondary">#4A4A4A</Color>
-    <SolidColorBrush x:Key="ControlStrokeColorSecondaryBrush" Color="#4A4A4A" />
-    <Color x:Key="ControlStrongFillColorDefault">#4A4A4A</Color>
-    <SolidColorBrush x:Key="ControlStrongFillColorDefaultBrush" Color="#4A4A4A" />
-    <Color x:Key="SurfaceStrokeColorDefault">#3A3A3A</Color>
-    <SolidColorBrush x:Key="SurfaceStrokeColorDefaultBrush" Color="#3A3A3A" />
+    <Color x:Key="ControlStrokeColorDefault">#3A4668</Color>
+    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="#3A4668" />
+    <Color x:Key="ControlStrokeColorSecondary">#4A5878</Color>
+    <SolidColorBrush x:Key="ControlStrokeColorSecondaryBrush" Color="#4A5878" />
+    <Color x:Key="ControlStrongFillColorDefault">#4A5878</Color>
+    <SolidColorBrush x:Key="ControlStrongFillColorDefaultBrush" Color="#4A5878" />
+    <Color x:Key="SurfaceStrokeColorDefault">#3A4668</Color>
+    <SolidColorBrush x:Key="SurfaceStrokeColorDefaultBrush" Color="#3A4668" />
 
     <!-- Status -->
     <Color x:Key="SystemFillColorSuccess">{StaticResource Bridge.Status.Success.Color}</Color>
@@ -182,10 +183,13 @@
     <sys:Double x:Key="Bridge.Background.BlurRadius">40</sys:Double>
     <SolidColorBrush x:Key="Bridge.Background.DarkOverlay" Color="#B2000000" />
 
-    <SolidColorBrush x:Key="Bridge.SeparatorBrush" Color="#3A3A3A" />
+    <SolidColorBrush x:Key="Bridge.SeparatorBrush" Color="#34415F" />
 
     <!-- Pilares de fondo para filas / tarjetas -->
     <SolidColorBrush x:Key="Bridge.Card.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" />
     <SolidColorBrush x:Key="Bridge.Card.Hover" Color="{StaticResource Bridge.Background.Quaternary.Color}" />
+
+    <!-- Acento-tinted hover para filas seleccionables (estilo Playnite HoverColor) -->
+    <SolidColorBrush x:Key="Bridge.Accent.Hover" Color="#1F4E79" />
 
 </ResourceDictionary>
