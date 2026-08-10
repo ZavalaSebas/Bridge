@@ -861,4 +861,12 @@ public partial class MainViewModel : ObservableObject
             SelectedGame = game;
         }
     }
+
+    // Public hook for the edit window: after a game's fields are saved, re-render
+    // its row and the detail panel and refresh the statistics.
+    public void RefreshGameDisplay(Game game)
+    {
+        RefreshListDisplay(game);
+        RefreshStatistics();
+    }
 }
