@@ -187,12 +187,26 @@ namespace Bridge
         {
             if (sender is System.Windows.Controls.ContextMenu menu)
             {
-                var sidebar = menu.Items.OfType<System.Windows.Controls.MenuItem>()
-                    .FirstOrDefault(i => i.Header?.ToString() == "Sidebar");
-                if (sidebar is not null)
+                foreach (var child in menu.Items.OfType<System.Windows.Controls.MenuItem>())
                 {
-                    SyncSidebarMenu(sidebar);
+                    if (child.Header?.ToString() == "Sidebar")
+                    {
+                        SyncSidebarMenu(child);
+                    }
+                    else if (child.Header?.ToString() == "Theme")
+                    {
+                        SyncThemeMenu(child);
+                    }
                 }
+            }
+        }
+
+        private void SyncThemeMenu(System.Windows.Controls.ItemsControl themeMenu)
+        {
+            var current = Services.ThemeManager.ToHex(Services.ThemeManager.CurrentAccent);
+            foreach (var item in themeMenu.Items.OfType<System.Windows.Controls.MenuItem>())
+            {
+                item.IsChecked = item.Tag?.ToString() == current;
             }
         }
 
@@ -284,6 +298,23 @@ namespace Bridge
             {
                 button.BorderThickness = indicator;
             }
+        }
+
+        // Theme menu: apply a preset accent (the whole palette recomputes).
+        private void SetThemeColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem { Tag: string hex }
+                && Services.ThemeManager.TryParseHex(hex, out var color))
+            {
+                Services.ThemeManager.Apply(color);
+            }
+        }
+
+        // Theme menu: open the custom color picker.
+        private void CustomThemeColor_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new ThemeColorWindow { Owner = this };
+            window.ShowDialog();
         }
 
         private void ShowLibrary_Click(object sender, RoutedEventArgs e)

@@ -6,7 +6,7 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Width="620" Height="680"
-        Background="{StaticResource ApplicationBackgroundBrush}"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
         Foreground="{StaticResource TextFillColorPrimaryBrush}"
         ShowInTaskbar="False">
     <Grid Margin="16">

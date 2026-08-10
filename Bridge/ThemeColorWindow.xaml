@@ -1,0 +1,15 @@
+<Window x:Class="Bridge.ThemeColorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Custom Theme Color"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Width="420" Height="380"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+        ShowInTaskbar="False">
+    <StackPanel Margin="20">
+        <TextBlock Text="Pick an accent color — the whole theme recomputes from it." TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,14"/>
+        <WrapPanel x:Name="SwatchPanel" />
+    </StackPanel>
+</Window>
