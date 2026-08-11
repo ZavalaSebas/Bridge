@@ -468,15 +468,24 @@ namespace Bridge
 
         private void AddGame_Click(object sender, RoutedEventArgs e)
         {
-            var window = new AddGameWindow { Owner = this };
-            if (window.ShowDialog() != true)
+            if (DataContext is not MainViewModel mainVm)
             {
                 return;
             }
 
-            if (DataContext is MainViewModel viewModel)
+            var game = new Bridge.Core.Entities.Game();
+            var editViewModel = new ViewModels.GameEditViewModel(
+                game,
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IGameRepository>(),
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Genre>>(),
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Company>>(),
+                App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Platform>>(),
+                isNew: true);
+
+            var window = new GameEditWindow(editViewModel) { Owner = this };
+            if (window.ShowDialog() == true)
             {
-                viewModel.AddGameCommand.Execute(window.GameName);
+                mainVm.AddGameToLibrary(game);
             }
         }
 
