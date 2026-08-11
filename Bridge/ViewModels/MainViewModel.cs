@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Data;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
@@ -25,10 +26,17 @@ public partial class MainViewModel : ObservableObject
     private readonly IRepository<Platform> _platformRepository;
     private readonly IRepository<GameSource> _sourceRepository;
     private readonly IRepository<CompletionStatus> _completionStatusRepository;
+    private readonly IRepository<Category> _categoryRepository;
+    private readonly IRepository<Tag> _tagRepository;
+    private readonly IRepository<GameFeature> _featureRepository;
+    private readonly IRepository<Series> _seriesRepository;
+    private readonly IRepository<AgeRating> _ageRatingRepository;
+    private readonly IRepository<Region> _regionRepository;
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
     private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
     private readonly SteamMetadataProvider _steamMetadataProvider;
+    private readonly IgdbMetadataProvider _igdbMetadataProvider;
     private readonly SteamLibraryImporter _steamImporter;
 
     public ObservableCollection<Game> Games { get; } = [];
@@ -206,6 +214,59 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _libraryText = string.Empty;
 
+    [ObservableProperty]
+    private string _categoriesText = string.Empty;
+
+    [ObservableProperty]
+    private string _tagsText = string.Empty;
+
+    [ObservableProperty]
+    private string _featuresText = string.Empty;
+
+    [ObservableProperty]
+    private string _seriesText = string.Empty;
+
+    [ObservableProperty]
+    private string _ageRatingsText = string.Empty;
+
+    [ObservableProperty]
+    private string _regionsText = string.Empty;
+
+    [ObservableProperty]
+    private string _completionStatusText = string.Empty;
+
+    [ObservableProperty]
+    private string _versionText = string.Empty;
+
+    [ObservableProperty]
+    private string _installSizeText = string.Empty;
+
+    [ObservableProperty]
+    private string _addedText = string.Empty;
+
+    [ObservableProperty]
+    private string _lastPlayedText = string.Empty;
+
+    [ObservableProperty]
+    private string _userScoreText = string.Empty;
+
+    // Opens a game link (Steam store page, official site, ...) in the default browser.
+    [RelayCommand]
+    private static void OpenLink(Link link)
+    {
+        if (string.IsNullOrWhiteSpace(link.Url))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(link.Url) { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            // User's machine has no default handler for the URL scheme — nothing to open.
+        }
+    }
+
     partial void OnSelectedGameChanged(Game? value)
     {
         var playAction = value?.GameActions.FirstOrDefault(a => a.IsPlayAction);
@@ -222,6 +283,18 @@ public partial class MainViewModel : ObservableObject
             PlatformsText = string.Empty;
             GenresText = string.Empty;
             LibraryText = string.Empty;
+            CategoriesText = string.Empty;
+            TagsText = string.Empty;
+            FeaturesText = string.Empty;
+            SeriesText = string.Empty;
+            AgeRatingsText = string.Empty;
+            RegionsText = string.Empty;
+            CompletionStatusText = string.Empty;
+            VersionText = string.Empty;
+            InstallSizeText = string.Empty;
+            AddedText = string.Empty;
+            LastPlayedText = string.Empty;
+            UserScoreText = string.Empty;
             return;
         }
 
@@ -232,8 +305,30 @@ public partial class MainViewModel : ObservableObject
         PublishersText = JoinNames(game.PublisherIds, _companyRepository);
         PlatformsText = JoinNames(game.PlatformIds, _platformRepository);
         GenresText = JoinNames(game.GenreIds, _genreRepository);
+        CategoriesText = JoinNames(game.CategoryIds, _categoryRepository);
+        TagsText = JoinNames(game.TagIds, _tagRepository);
+        FeaturesText = JoinNames(game.FeatureIds, _featureRepository);
+        SeriesText = JoinNames(game.SeriesIds, _seriesRepository);
+        AgeRatingsText = JoinNames(game.AgeRatingIds, _ageRatingRepository);
+        RegionsText = JoinNames(game.RegionIds, _regionRepository);
         LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
+        CompletionStatusText = game.CompletionStatusId != Guid.Empty
+            ? _completionStatusRepository.Get(game.CompletionStatusId)?.Name ?? string.Empty
+            : string.Empty;
+        VersionText = game.Version;
+        InstallSizeText = game.InstallSizeBytes is { } bytes ? FormatBytes(bytes) : string.Empty;
+        AddedText = game.Added is { } added ? added.ToString("d") : string.Empty;
+        LastPlayedText = game.LastActivity is { } last ? last.ToString("d") : string.Empty;
+        UserScoreText = game.UserScore is { } user ? user.ToString() : string.Empty;
     }
+
+    private static string FormatBytes(ulong bytes) => bytes switch
+    {
+        >= 1L << 40 => $"{bytes / (double)(1L << 40):0.#} TB",
+        >= 1L << 30 => $"{bytes / (double)(1L << 30):0.#} GB",
+        >= 1L << 20 => $"{bytes / (double)(1L << 20):0.#} MB",
+        _ => $"{bytes / 1024.0:0} KB"
+    };
 
     private static string JoinNames<T>(IEnumerable<Guid> ids, IRepository<T> repo)
         where T : DatabaseObject
@@ -271,10 +366,17 @@ public partial class MainViewModel : ObservableObject
         IRepository<Platform> platformRepository,
         IRepository<GameSource> sourceRepository,
         IRepository<CompletionStatus> completionStatusRepository,
+        IRepository<Category> categoryRepository,
+        IRepository<Tag> tagRepository,
+        IRepository<GameFeature> featureRepository,
+        IRepository<Series> seriesRepository,
+        IRepository<AgeRating> ageRatingRepository,
+        IRepository<Region> regionRepository,
         GameLauncher launcher,
         RomScanner romScanner,
         IEnumerable<IGameMetadataProvider> metadataProviders,
         SteamMetadataProvider steamMetadataProvider,
+        IgdbMetadataProvider igdbMetadataProvider,
         SteamLibraryImporter steamImporter)
     {
         _gameRepository = gameRepository;
@@ -284,10 +386,17 @@ public partial class MainViewModel : ObservableObject
         _platformRepository = platformRepository;
         _sourceRepository = sourceRepository;
         _completionStatusRepository = completionStatusRepository;
+        _categoryRepository = categoryRepository;
+        _tagRepository = tagRepository;
+        _featureRepository = featureRepository;
+        _seriesRepository = seriesRepository;
+        _ageRatingRepository = ageRatingRepository;
+        _regionRepository = regionRepository;
         _launcher = launcher;
         _romScanner = romScanner;
         _metadataProviders = metadataProviders;
         _steamMetadataProvider = steamMetadataProvider;
+        _igdbMetadataProvider = igdbMetadataProvider;
         _steamImporter = steamImporter;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
@@ -565,6 +674,7 @@ public partial class MainViewModel : ObservableObject
                         ExternalId = metadata.ExternalId,
                         SourceId = steamSourceId,
                         InstallDirectory = metadata.InstallDirectory,
+                        InstallSizeBytes = metadata.InstallSizeBytes,
                         IsInstalled = metadata.IsInstalled
                     };
                     // Resolve the locally-cached Steam artwork (icon, cover,
@@ -584,6 +694,7 @@ public partial class MainViewModel : ObservableObject
                     // Name, Description, etc. are left alone on existing games.
                     existing.IsInstalled = metadata.IsInstalled;
                     existing.InstallDirectory = metadata.InstallDirectory;
+                    existing.InstallSizeBytes = metadata.InstallSizeBytes;
                     _gameRepository.Update(existing);
                     updated++;
                 }
@@ -653,6 +764,23 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Playnite merges metadata from multiple sources: the library plugin
+        // (Steam) provides store/community links while the metadata provider
+        // (IGDB) adds the social links (YouTube, Reddit, Twitter, ...). When
+        // Steam was the main source, enrich the links with IGDB's if available.
+        if (providerName == _steamMetadataProvider.Name)
+        {
+            try
+            {
+                if (await _igdbMetadataProvider.SearchAsync(gameName) is { } igdbMetadata)
+                    metadata.Links.AddRange(igdbMetadata.Links);
+            }
+            catch
+            {
+                // IGDB optional (may be unconfigured) — Steam links alone are fine
+            }
+        }
+
         ApplyMetadata(game, metadata);
         ApplyMetadataReferences(game, metadata);
         ApplySteamLocalArtwork(game);
@@ -687,6 +815,25 @@ public partial class MainViewModel : ObservableObject
 
         if (metadata.CommunityScore.HasValue)
             game.CommunityScore = metadata.CommunityScore;
+
+        if (metadata.UserScore.HasValue)
+            game.UserScore = metadata.UserScore;
+
+        if (!string.IsNullOrWhiteSpace(metadata.Version))
+            game.Version = metadata.Version;
+
+        // Merge links instead of replacing: Playnite shows the library links
+        // (Steam store, community, ...) together with the social ones a
+        // metadata provider adds (YouTube, Reddit, ...). Dedupe by URL.
+        if (metadata.Links is { Count: > 0 })
+        {
+            var known = new HashSet<string>(game.Links.Select(l => l.Url), StringComparer.OrdinalIgnoreCase);
+            foreach (var link in metadata.Links.Where(l => !string.IsNullOrWhiteSpace(l.Url)))
+            {
+                if (known.Add(link.Url))
+                    game.Links.Add(link);
+            }
+        }
     }
 
     // Resolve metadata names into real reference-entity ids (Genre/Company/
@@ -732,6 +879,66 @@ public partial class MainViewModel : ObservableObject
                 var platform = _platformRepository.GetOrCreateByName(name);
                 if (!game.PlatformIds.Contains(platform.Id))
                     game.PlatformIds.Add(platform.Id);
+            }
+        }
+
+        if (metadata.Categories is { Count: > 0 })
+        {
+            foreach (var name in metadata.Categories)
+            {
+                var category = _categoryRepository.GetOrCreateByName(name);
+                if (!game.CategoryIds.Contains(category.Id))
+                    game.CategoryIds.Add(category.Id);
+            }
+        }
+
+        if (metadata.Tags is { Count: > 0 })
+        {
+            foreach (var name in metadata.Tags)
+            {
+                var tag = _tagRepository.GetOrCreateByName(name);
+                if (!game.TagIds.Contains(tag.Id))
+                    game.TagIds.Add(tag.Id);
+            }
+        }
+
+        if (metadata.Features is { Count: > 0 })
+        {
+            foreach (var name in metadata.Features)
+            {
+                var feature = _featureRepository.GetOrCreateByName(name);
+                if (!game.FeatureIds.Contains(feature.Id))
+                    game.FeatureIds.Add(feature.Id);
+            }
+        }
+
+        if (metadata.Series is { Count: > 0 })
+        {
+            foreach (var name in metadata.Series)
+            {
+                var series = _seriesRepository.GetOrCreateByName(name);
+                if (!game.SeriesIds.Contains(series.Id))
+                    game.SeriesIds.Add(series.Id);
+            }
+        }
+
+        if (metadata.AgeRatings is { Count: > 0 })
+        {
+            foreach (var name in metadata.AgeRatings)
+            {
+                var ageRating = _ageRatingRepository.GetOrCreateByName(name);
+                if (!game.AgeRatingIds.Contains(ageRating.Id))
+                    game.AgeRatingIds.Add(ageRating.Id);
+            }
+        }
+
+        if (metadata.Regions is { Count: > 0 })
+        {
+            foreach (var name in metadata.Regions)
+            {
+                var region = _regionRepository.GetOrCreateByName(name);
+                if (!game.RegionIds.Contains(region.Id))
+                    game.RegionIds.Add(region.Id);
             }
         }
     }

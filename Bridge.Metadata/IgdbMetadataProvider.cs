@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using Bridge.Core.Contracts;
+using Bridge.Core.Entities;
 using Bridge.Core.Import;
 using ReleaseDate = Bridge.Core.Entities.ReleaseDate;
 
@@ -25,7 +26,7 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
         using var request = new HttpRequestMessage(HttpMethod.Post, GamesEndpoint)
         {
             Content = new StringContent(
-                $"""search "{EscapeApicalypseString(gameName)}"; fields name,summary,first_release_date,cover.url,genres.name; limit 1;""",
+                $"""search "{EscapeApicalypseString(gameName)}"; fields name,summary,first_release_date,cover.url,genres.name,websites.url,websites.category; limit 1;""",
                 Encoding.UTF8,
                 "text/plain")
         };
@@ -67,8 +68,55 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
                 .ToList();
         }
 
+        // IGDB websites are the source of the social links Playnite shows in
+        // its details view (YouTube, Reddit, Twitter, ...). The category id is
+        // IGDB's website_category enum — Playnite uses the "type_expanded" name
+        // for the link label, so we map ids to those same readable names here.
+        if (game.Websites is { Count: > 0 })
+        {
+            foreach (var website in game.Websites)
+            {
+                if (string.IsNullOrWhiteSpace(website.Url))
+                    continue;
+
+                metadata.Links.Add(new Link
+                {
+                    Name = WebsiteCategoryName(website.Category),
+                    Url = website.Url.StartsWith("//") ? "https:" + website.Url : website.Url
+                });
+            }
+        }
+
         return metadata;
     }
+
+    // IGDB website_category enum → readable label (same set Playnite shows via
+    // type_expanded). Unknown ids fall back to "Website".
+    internal static string WebsiteCategoryName(int category) => category switch
+    {
+        1 => "Official",
+        2 => "Wikia",
+        3 => "Wikipedia",
+        4 => "Facebook",
+        5 => "Twitter",
+        6 => "Twitch",
+        8 => "Instagram",
+        9 => "YouTube",
+        10 => "iPhone",
+        11 => "iPad",
+        12 => "Android",
+        13 => "Steam",
+        14 => "Reddit",
+        15 => "Itch.io",
+        16 => "Epic Games",
+        17 => "GOG",
+        18 => "Discord",
+        20 => "Google Play",
+        21 => "App Store",
+        22 => "Direct Download",
+        23 => "Google Plus",
+        _ => "Website"
+    };
 
     // IGDB returns protocol-relative thumbnail URLs like
     // "//images.igdb.com/igdb/image/upload/t_thumb/abc123.jpg" — needs

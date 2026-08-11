@@ -19,6 +19,9 @@ public class IgdbGame
 
     [JsonPropertyName("genres")]
     public List<IgdbGenre>? Genres { get; set; }
+
+    [JsonPropertyName("websites")]
+    public List<IgdbWebsite>? Websites { get; set; }
 }
 
 public class IgdbCover
@@ -31,4 +34,13 @@ public class IgdbGenre
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
+}
+
+public class IgdbWebsite
+{
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
+
+    [JsonPropertyName("category")]
+    public int Category { get; set; }
 }

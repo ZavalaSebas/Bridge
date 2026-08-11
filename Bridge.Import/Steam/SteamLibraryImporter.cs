@@ -125,11 +125,22 @@ public class SteamLibraryImporter
             ? string.Empty
             : Path.Combine(steamAppsDir, "common", installDirName);
 
+        // SizeOnDisk is the on-disk size in bytes that Steam writes to the
+        // .acf — the same field Playnite's Steam plugin reads for Install Size.
+        ulong? sizeOnDisk = null;
+        if (appState.TryGetValue("SizeOnDisk", out var sizeObj) &&
+            sizeObj is string sizeStr &&
+            ulong.TryParse(sizeStr, out var parsedSize))
+        {
+            sizeOnDisk = parsedSize;
+        }
+
         return new GameMetadata
         {
             ExternalId = appId,
             Name = name,
             InstallDirectory = Directory.Exists(installDirectory) ? installDirectory : string.Empty,
+            InstallSizeBytes = sizeOnDisk,
             IsInstalled = true
         };
     }

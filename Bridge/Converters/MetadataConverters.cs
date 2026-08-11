@@ -72,3 +72,35 @@ public class ShortDateConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
+
+/// <summary>Collapses the bound element when an int count is zero (used to hide the Links row when a game has no links).</summary>
+public class NonZeroToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is int count && count > 0 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+/// <summary>
+/// Collapses the bound element when the value is null/empty/whitespace —
+/// matches Playnite's details view, which hides rows that have no data.
+/// Non-string values (scores, dates) are only hidden when null.
+/// </summary>
+public class EmptyToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is null)
+            return System.Windows.Visibility.Collapsed;
+
+        if (value is string text)
+            return string.IsNullOrWhiteSpace(text) ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+
+        return System.Windows.Visibility.Visible;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}

@@ -168,11 +168,29 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         // consistente para todos los juegos.
         metadata.BackgroundImage = string.Format(HeroUrl, appId);
 
-        metadata.Links.Add(new Link
+        // Same link set as Playnite's Steam library plugin
+        // (PlayniteExtensions SteamLibrary/SteamShared/MetadataProvider.cs):
+        // Community Hub, Discussions, Guides, News, Store Page and PCGamingWiki,
+        // plus Achievements/Workshop only when the game has them (category id 22
+        // and 30 respectively).
+        metadata.Links.AddRange(new[]
         {
-            Name = "Steam Store",
-            Url = $"https://store.steampowered.com/app/{appId}/"
+            new Link { Name = "Community Hub", Url = $"https://steamcommunity.com/app/{appId}" },
+            new Link { Name = "Discussions", Url = $"https://steamcommunity.com/app/{appId}/discussions/" },
+            new Link { Name = "Guides", Url = $"https://steamcommunity.com/app/{appId}/guides/" },
+            new Link { Name = "News", Url = $"https://store.steampowered.com/news/?appids={appId}" },
+            new Link { Name = "Steam Store", Url = $"https://store.steampowered.com/app/{appId}" },
+            new Link { Name = "PCGamingWiki", Url = $"https://pcgamingwiki.com/api/appid.php?appid={appId}" }
         });
+
+        if (data.Categories is { Count: > 0 } categories)
+        {
+            if (categories.Any(c => c.Id == 22))
+                metadata.Links.Add(new Link { Name = "Achievements", Url = $"https://steamcommunity.com/stats/{appId}/achievements" });
+
+            if (categories.Any(c => c.Id == 30))
+                metadata.Links.Add(new Link { Name = "Workshop", Url = $"https://steamcommunity.com/app/{appId}/workshop/" });
+        }
 
         return metadata;
     }
