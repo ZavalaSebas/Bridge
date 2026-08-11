@@ -259,8 +259,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
     // Splits the description HTML into ordered text/image blocks so the details
     // view can render screenshots interleaved with the text — in the same place
     // the source put them — instead of a plain-text paragraph plus a strip of
-    // images at the bottom. Consecutive images are kept as separate blocks; the
-    // UI is free to wrap them.
+    // images at the bottom. Text chunks are further split by block tags into
+    // paragraphs, headings, subheadings and bullet lists so the source's
+    // formatting (titles, sizes, list order) survives into the UI.
     private static List<DescriptionBlock> ParseDescriptionBlocks(string html)
     {
         var blocks = new List<DescriptionBlock>();
@@ -272,21 +273,82 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
 
         foreach (Match match in matches)
         {
-            var text = StripHtml(html[lastIndex..match.Index]);
-            if (!string.IsNullOrWhiteSpace(text))
-                blocks.Add(new DescriptionBlock { Text = text });
-
+            blocks.AddRange(ParseTextBlocks(html[lastIndex..match.Index]));
             blocks.Add(new DescriptionBlock { IsImage = true, Url = match.Groups[1].Value });
-
             lastIndex = match.Index + match.Length;
         }
 
-        var trailing = StripHtml(html[lastIndex..]);
+        blocks.AddRange(ParseTextBlocks(html[lastIndex..]));
+        return blocks;
+    }
+
+    // Turns a text-only HTML fragment into typed DescriptionBlocks. Splits on
+    // headings (h2/h3) and lists (ul/li/ol) first so the source order and
+    // structure are preserved; leftover runs become paragraphs.
+    private static List<DescriptionBlock> ParseTextBlocks(string html)
+    {
+        var blocks = new List<DescriptionBlock>();
+        if (string.IsNullOrWhiteSpace(html))
+            return blocks;
+
+        var pending = html;
+        var position = 0;
+
+        foreach (Match match in BlockStartRegex().Matches(html))
+        {
+            var preceding = StripHtml(pending[position..match.Index]);
+            if (!string.IsNullOrWhiteSpace(preceding))
+                blocks.Add(new DescriptionBlock { Text = preceding });
+
+            position = match.Index + match.Length;
+
+            var inner = match.Groups[2].Value;
+            var innerText = StripHtml(inner);
+            if (string.IsNullOrWhiteSpace(innerText))
+                continue;
+
+            var tag = match.Groups[1].Value.ToLowerInvariant();
+            switch (tag)
+            {
+                case "h2":
+                    blocks.Add(new DescriptionBlock { Kind = DescriptionBlockKind.Heading, Text = innerText });
+                    break;
+                case "h3":
+                    blocks.Add(new DescriptionBlock { Kind = DescriptionBlockKind.Subheading, Text = innerText });
+                    break;
+                case "ul":
+                case "ol": // each li becomes a bullet item
+                    foreach (Match item in ListItemRegex().Matches(inner))
+                    {
+                        var itemText = StripHtml(item.Groups[1].Value);
+                        if (!string.IsNullOrWhiteSpace(itemText))
+                            blocks.Add(new DescriptionBlock
+                            {
+                                Kind = DescriptionBlockKind.List,
+                                Text = itemText
+                            });
+                    }
+                    break;
+                default: // p / div — a plain paragraph
+                    blocks.Add(new DescriptionBlock { Text = innerText });
+                    break;
+            }
+        }
+
+        var trailing = StripHtml(pending[position..]);
         if (!string.IsNullOrWhiteSpace(trailing))
             blocks.Add(new DescriptionBlock { Text = trailing });
 
         return blocks;
     }
+
+    // Matches a block-level element (h2/h3/ul/ol) and captures its inner HTML.
+    // H2/H3 are grouped so "h3" text stays with the tag we switch on.
+    [GeneratedRegex(@"<(h2|h3|ul|ol|p|div)[^>]*>(.*?)</\1>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
+    private static partial Regex BlockStartRegex();
+
+    [GeneratedRegex(@"<li[^>]*>(.*?)</li>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
+    private static partial Regex ListItemRegex();
 
     [GeneratedRegex(@"<img[^>]*src=""([^""]+)""[^>]*>", RegexOptions.IgnoreCase)]
     private static partial Regex ImgSrcRegex();
