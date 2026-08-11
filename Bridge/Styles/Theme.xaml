@@ -146,7 +146,7 @@
     <sys:Double x:Key="Bridge.FontSize.Heading">15</sys:Double>
     <sys:Double x:Key="Bridge.FontSize.Title">20</sys:Double>
     <sys:Double x:Key="Bridge.FontSize.TitleLarge">24</sys:Double>
-    <sys:Double x:Key="Bridge.FontSize.Display">28</sys:Double>
+    <sys:Double x:Key="Bridge.FontSize.Display">34</sys:Double>
 
     <FontWeight x:Key="Bridge.FontWeight.Normal">400</FontWeight>
     <FontWeight x:Key="Bridge.FontWeight.Medium">500</FontWeight>
