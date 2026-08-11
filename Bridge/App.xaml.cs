@@ -37,9 +37,10 @@ namespace Bridge
             dbContext.Database.EnsureCreated();
 
             // Mini-migration: EnsureCreated won't alter an existing database, so
-            // add the DescriptionImages column (added later than the schema) if a
-            // pre-existing DB is missing it. Raw text column defaulting to an
-            // empty JSON list — JsonValueConverter reads it as an empty list.
+            // add columns added after the initial schema (DescriptionImages, then
+            // DescriptionBlocks) if a pre-existing DB is missing them. Raw text
+            // columns defaulting to an empty JSON list — JsonValueConverter reads
+            // those as empty lists.
             try
             {
                 dbContext.Database.ExecuteSqlRaw("SELECT DescriptionImages FROM Games LIMIT 1");
@@ -47,6 +48,15 @@ namespace Bridge
             catch
             {
                 dbContext.Database.ExecuteSqlRaw("ALTER TABLE Games ADD COLUMN DescriptionImages TEXT NOT NULL DEFAULT '[]'");
+            }
+
+            try
+            {
+                dbContext.Database.ExecuteSqlRaw("SELECT DescriptionBlocks FROM Games LIMIT 1");
+            }
+            catch
+            {
+                dbContext.Database.ExecuteSqlRaw("ALTER TABLE Games ADD COLUMN DescriptionBlocks TEXT NOT NULL DEFAULT '[]'");
             }
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the

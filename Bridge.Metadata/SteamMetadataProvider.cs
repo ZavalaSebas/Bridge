@@ -122,6 +122,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             Name = data.Name,
             Description = StripHtml(data.AboutTheGame),
             DescriptionImages = ExtractImageUrls(data.AboutTheGame),
+            DescriptionBlocks = ParseDescriptionBlocks(data.AboutTheGame),
             CoverImage = string.Format(CoverVerticalUrl, appId)
         };
 
@@ -255,7 +256,39 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             .ToList();
     }
 
-    [GeneratedRegex(@"<img[^>]+src=""([^""]+)""", RegexOptions.IgnoreCase)]
+    // Splits the description HTML into ordered text/image blocks so the details
+    // view can render screenshots interleaved with the text — in the same place
+    // the source put them — instead of a plain-text paragraph plus a strip of
+    // images at the bottom. Consecutive images are kept as separate blocks; the
+    // UI is free to wrap them.
+    private static List<DescriptionBlock> ParseDescriptionBlocks(string html)
+    {
+        var blocks = new List<DescriptionBlock>();
+        if (string.IsNullOrWhiteSpace(html))
+            return blocks;
+
+        var matches = ImgSrcRegex().Matches(html);
+        var lastIndex = 0;
+
+        foreach (Match match in matches)
+        {
+            var text = StripHtml(html[lastIndex..match.Index]);
+            if (!string.IsNullOrWhiteSpace(text))
+                blocks.Add(new DescriptionBlock { Text = text });
+
+            blocks.Add(new DescriptionBlock { IsImage = true, Url = match.Groups[1].Value });
+
+            lastIndex = match.Index + match.Length;
+        }
+
+        var trailing = StripHtml(html[lastIndex..]);
+        if (!string.IsNullOrWhiteSpace(trailing))
+            blocks.Add(new DescriptionBlock { Text = trailing });
+
+        return blocks;
+    }
+
+    [GeneratedRegex(@"<img[^>]*src=""([^""]+)""[^>]*>", RegexOptions.IgnoreCase)]
     private static partial Regex ImgSrcRegex();
 
     [GeneratedRegex(@"<a[^>]*?\s*(data-ds-packageid|data-ds-appid)=""(\d+)""[^>]*?>.*?<span class=""title"">([^<]+)</span>", RegexOptions.Singleline)]

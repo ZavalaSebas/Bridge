@@ -798,6 +798,9 @@ public partial class MainViewModel : ObservableObject
         if (metadata.DescriptionImages.Count > 0)
             game.DescriptionImages = metadata.DescriptionImages;
 
+        if (metadata.DescriptionBlocks.Count > 0)
+            game.DescriptionBlocks = metadata.DescriptionBlocks;
+
         if (metadata.ReleaseDate is { } releaseDate)
             game.ReleaseDate = releaseDate;
 
