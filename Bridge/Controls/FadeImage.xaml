@@ -5,9 +5,11 @@
     <Grid x:Name="ImageHolder">
         <Image x:Name="Image1"
                Stretch="{Binding Stretch, ElementName=ControlRoot}"
+               VerticalAlignment="{Binding VerticalAlignment, ElementName=ControlRoot}"
                RenderOptions.BitmapScalingMode="Fant" />
         <Image x:Name="Image2"
                Stretch="{Binding Stretch, ElementName=ControlRoot}"
+               VerticalAlignment="{Binding VerticalAlignment, ElementName=ControlRoot}"
                RenderOptions.BitmapScalingMode="Fant"
                Opacity="0" />
     </Grid>

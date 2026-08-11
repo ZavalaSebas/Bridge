@@ -14,6 +14,11 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
     private const string SearchUrl = "https://store.steampowered.com/search/?term={0}&ignore_preferences=1&category1=998&ndl=1";
     private const string CoverVerticalUrl = "https://steamcdn-a.akamaihd.net/steam/apps/{0}/library_600x900_2x.jpg";
 
+    // El "hero" de Steam (1920x620) es el fondo estándar de la librería — usarlo
+    // siempre mantiene la proporción consistente (3.1:1) entre juegos, en vez de
+    // mezclar heroes con screenshots (1920x1080) que alteran el alto del hero.
+    private const string HeroUrl = "https://steamcdn-a.akamaihd.net/steam/apps/{0}/library_hero.jpg";
+
     public string Name => "Steam Store";
 
     public async Task<GameMetadata?> SearchAsync(string gameName, CancellationToken cancellationToken = default)
@@ -158,17 +163,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (data.Categories is { Count: > 0 })
             metadata.Features = data.Categories.Select(c => c.Description).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
 
-        // Background from first screenshot (path_full, stripping the query string)
-        if (data.Screenshots is { Count: > 0 })
-        {
-            var qsIndex = data.Screenshots[0].PathFull.IndexOf('?');
-            metadata.BackgroundImage = qsIndex >= 0
-                ? data.Screenshots[0].PathFull[..qsIndex]
-                : data.Screenshots[0].PathFull;
-        }
-
-        if (!string.IsNullOrWhiteSpace(data.HeaderImage) && string.IsNullOrWhiteSpace(metadata.BackgroundImage))
-            metadata.BackgroundImage = data.HeaderImage;
+        // Fondo estándar de Steam: el library_hero (1920x620), proporción
+        // consistente para todos los juegos.
+        metadata.BackgroundImage = string.Format(HeroUrl, appId);
 
         metadata.Links.Add(new Link
         {
