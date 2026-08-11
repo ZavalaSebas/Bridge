@@ -121,6 +121,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         {
             Name = data.Name,
             Description = StripHtml(data.AboutTheGame),
+            DescriptionImages = ExtractImageUrls(data.AboutTheGame),
             CoverImage = string.Format(CoverVerticalUrl, appId)
         };
 
@@ -222,6 +223,22 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         var noTags = HtmlTagRegex().Replace(withLineBreaks, string.Empty);
         return noTags.Trim();
     }
+
+    // Steam's store description embeds <img src="..."> (screenshots). Keep those
+    // URLs so the UI can show them under the description text.
+    private static List<string> ExtractImageUrls(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return [];
+
+        return ImgSrcRegex().Matches(html)
+            .Select(m => m.Groups[1].Value)
+            .Distinct()
+            .ToList();
+    }
+
+    [GeneratedRegex(@"<img[^>]+src=""([^""]+)""", RegexOptions.IgnoreCase)]
+    private static partial Regex ImgSrcRegex();
 
     [GeneratedRegex(@"<a[^>]*?\s*(data-ds-packageid|data-ds-appid)=""(\d+)""[^>]*?>.*?<span class=""title"">([^<]+)</span>", RegexOptions.Singleline)]
     private static partial Regex SearchEntryRegex();

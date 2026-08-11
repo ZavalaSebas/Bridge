@@ -68,7 +68,8 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
             e.Property(g => g.Links).HasConversion(new JsonValueConverter<List<Link>>());
             e.Property(g => g.ReleaseDate).HasConversion(new JsonValueConverter<ReleaseDate?>());
 
-            e.Property(g => g.GenreIds).HasConversion(new JsonValueConverter<List<Guid>>());
+                e.Property(g => g.GenreIds).HasConversion(new JsonValueConverter<List<Guid>>());
+                e.Property(g => g.DescriptionImages).HasConversion(new JsonValueConverter<List<string>>());
             e.Property(g => g.DeveloperIds).HasConversion(new JsonValueConverter<List<Guid>>());
             e.Property(g => g.PublisherIds).HasConversion(new JsonValueConverter<List<Guid>>());
             e.Property(g => g.CategoryIds).HasConversion(new JsonValueConverter<List<Guid>>());

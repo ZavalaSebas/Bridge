@@ -19,6 +19,7 @@ public class Game : DatabaseObject
 
     public string SortingName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public List<string> DescriptionImages { get; set; } = [];
     public string Notes { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public ReleaseDate? ReleaseDate { get; set; }

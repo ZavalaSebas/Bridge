@@ -667,6 +667,9 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(metadata.Description))
             game.Description = metadata.Description;
 
+        if (metadata.DescriptionImages.Count > 0)
+            game.DescriptionImages = metadata.DescriptionImages;
+
         if (metadata.ReleaseDate is { } releaseDate)
             game.ReleaseDate = releaseDate;
 
