@@ -16,9 +16,19 @@ public partial class GameEditViewModel : ObservableObject
 {
     private readonly Game _game;
     private readonly IGameRepository _gameRepository;
+    private readonly IRepository<Genre> _genreRepository;
+    private readonly IRepository<Company> _companyRepository;
+    private readonly IRepository<Platform> _platformRepository;
+
+    /// <summary>True when the window opened for a brand-new manual game (so Save
+    /// inserts instead of updating and the caller adds it to the library).</summary>
+    public bool IsNewGame { get; }
 
     [ObservableProperty]
     private string _name;
+
+    [ObservableProperty]
+    private string _sortingName;
 
     [ObservableProperty]
     private string _releaseDateText;
@@ -60,12 +70,18 @@ public partial class GameEditViewModel : ObservableObject
         IGameRepository gameRepository,
         IRepository<Genre> genreRepository,
         IRepository<Company> companyRepository,
-        IRepository<Platform> platformRepository)
+        IRepository<Platform> platformRepository,
+        bool isNew = false)
     {
         _game = game;
         _gameRepository = gameRepository;
+        _genreRepository = genreRepository;
+        _companyRepository = companyRepository;
+        _platformRepository = platformRepository;
+        IsNewGame = isNew;
 
         Name = game.Name;
+        SortingName = game.SortingName;
         ReleaseDateText = FormatReleaseDate(game.ReleaseDate);
         CriticScoreText = game.CriticScore?.ToString() ?? string.Empty;
         CommunityScoreText = game.CommunityScore?.ToString() ?? string.Empty;
@@ -86,9 +102,44 @@ public partial class GameEditViewModel : ObservableObject
     private static ObservableCollection<SelectableItem> ToSelectable(IEnumerable<DatabaseObject> all, IReadOnlyCollection<Guid> selected)
         => new(all.Select(x => new SelectableItem(x.Id, x.Name, selected.Contains(x.Id))).OrderBy(x => x.Name));
 
+    // Create-on-the-fly: persist a new reference entity (genre/company/platform)
+    // and add it to its checkbox list, selected. Returns false when the name is
+    // empty — the caller keeps focus on the input.
+    public bool CreateNewGenre(string name)
+    {
+        var entity = _genreRepository.GetOrCreateByName(name);
+        if (Genres.Any(x => x.Id == entity.Id))
+            return true;
+        Genres.Add(new SelectableItem(entity.Id, entity.Name, isSelected: true));
+        return true;
+    }
+
+    public bool CreateNewDeveloper(string name) => AddCompany(name, Developers);
+
+    public bool CreateNewPublisher(string name) => AddCompany(name, Publishers);
+
+    private bool AddCompany(string name, ObservableCollection<SelectableItem> list)
+    {
+        var company = _companyRepository.GetOrCreateByName(name);
+        if (list.Any(x => x.Id == company.Id))
+            return true;
+        list.Add(new SelectableItem(company.Id, company.Name, isSelected: true));
+        return true;
+    }
+
+    public bool CreateNewPlatform(string name)
+    {
+        var entity = _platformRepository.GetOrCreateByName(name);
+        if (Platforms.Any(x => x.Id == entity.Id))
+            return true;
+        Platforms.Add(new SelectableItem(entity.Id, entity.Name, isSelected: true));
+        return true;
+    }
+
     public bool Save()
     {
         _game.Name = Name;
+        _game.SortingName = SortingName;
         _game.ReleaseDate = ParseReleaseDate(ReleaseDateText);
         _game.CriticScore = ParseNullableInt(CriticScoreText);
         _game.CommunityScore = ParseNullableInt(CommunityScoreText);
@@ -105,7 +156,16 @@ public partial class GameEditViewModel : ObservableObject
         _game.PlatformIds = Platforms.Where(x => x.IsSelected).Select(x => x.Id).ToList();
         _game.Modified = DateTime.Now;
 
-        _gameRepository.Update(_game);
+        if (IsNewGame)
+        {
+            _game.Added = DateTime.Now;
+            _gameRepository.Add(_game);
+        }
+        else
+        {
+            _gameRepository.Update(_game);
+        }
+
         return true;
     }
 

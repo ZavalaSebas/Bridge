@@ -541,6 +541,14 @@ public partial class MainViewModel : ObservableObject
 
         var game = new Game { Name = name.Trim() };
         _gameRepository.Add(game);
+        AddGameToLibrary(game);
+    }
+
+    // Adds an already-persisted game to the in-memory library and selects it.
+    // Used after the edit window saves a brand-new manual game (AddGame would
+    // create a second one).
+    public void AddGameToLibrary(Game game)
+    {
         AddGameSorted(game);
         SelectedGame = game;
         RefreshStatistics();
