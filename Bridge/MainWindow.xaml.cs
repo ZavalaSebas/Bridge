@@ -13,25 +13,6 @@ namespace Bridge
         public MainWindow()
         {
             InitializeComponent();
-            HeroHeader.SizeChanged += (_, _) => UpdateHeroHeight();
-            HeroImage.ImageChanged += (_, _) => UpdateHeroHeight();
-        }
-
-        // The hero image always fills the header's width; if its natural height
-        // (at that width) exceeds the fixed header height, the overflow is
-        // clipped at the bottom (covered by the fade) instead of growing the
-        // header or showing side bars.
-        private void UpdateHeroHeight()
-        {
-            if (HeroImage.ImageAspect is not { } aspect || HeroHeader.ActualWidth <= 0)
-            {
-                return;
-            }
-
-            // The image fills the header's width; its height is the natural one
-            // at that width. If it's shorter than the header, the fade covers the
-            // rest below; if taller, the fixed header clips the bottom overflow.
-            HeroImage.Height = HeroHeader.ActualWidth / aspect;
         }
 
         private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
