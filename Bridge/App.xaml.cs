@@ -33,7 +33,21 @@ namespace Bridge
 
             // Fase 1 MVP: EnsureCreated, not real migrations — see DEVELOPMENT.md
             // "Bridge.Storage — what's in it" for why, and when to switch.
-            Services.GetRequiredService<BridgeDbContext>().Database.EnsureCreated();
+            var dbContext = Services.GetRequiredService<BridgeDbContext>();
+            dbContext.Database.EnsureCreated();
+
+            // Mini-migration: EnsureCreated won't alter an existing database, so
+            // add the DescriptionImages column (added later than the schema) if a
+            // pre-existing DB is missing it. Raw text column defaulting to an
+            // empty JSON list — JsonValueConverter reads it as an empty list.
+            try
+            {
+                dbContext.Database.ExecuteSqlRaw("SELECT DescriptionImages FROM Games LIMIT 1");
+            }
+            catch
+            {
+                dbContext.Database.ExecuteSqlRaw("ALTER TABLE Games ADD COLUMN DescriptionImages TEXT NOT NULL DEFAULT '[]'");
+            }
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.

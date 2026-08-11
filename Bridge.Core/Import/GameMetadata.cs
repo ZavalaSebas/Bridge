@@ -17,6 +17,7 @@ public class GameMetadata
     public string Name { get; set; } = string.Empty;
     public string ExternalId { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public List<string> DescriptionImages { get; set; } = [];
     public string InstallDirectory { get; set; } = string.Empty;
     public bool IsInstalled { get; set; }
     public ulong? InstallSizeBytes { get; set; }
