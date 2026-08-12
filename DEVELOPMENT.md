@@ -84,7 +84,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # created — 66 tests, all passing (see below)
+└── Bridge.Tests/        # created — 102 tests, all passing (see below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -101,6 +101,7 @@ Bridge.Core/
 │   ├── GameAction.cs
 │   ├── GameRom.cs
 │   ├── Link.cs
+│   ├── DescriptionBlock.cs     # ordered description chunks (paragraph/heading/subheading/list text + images), stored as JSON on Game
 │   ├── Emulator.cs            # Emulator + EmulatorProfile
 │   ├── GameScannerConfig.cs
 │   ├── Company.cs             # one entity, no Developer/Publisher subclasses — see ADR-7
@@ -114,6 +115,7 @@ Bridge.Core/
 │   ├── LibraryFilterPreset.cs   # All/Favorite/MostPlayed/RecentlyPlayed list presets
 │   ├── GameSortField.cs         # 22 sortable fields, Description attribute = display label
 │   ├── GameGroupField.cs        # 21 groupable fields, Description attribute = display label
+│   ├── NavigationSection.cs     # sidebar sections: Library/Favorites/Sources/Statistics/Settings
 │   └── ViewMode.cs              # List / Covers / Details main-content views
 ├── Import/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
@@ -129,7 +131,7 @@ Every entity's field shape is traced directly to `PROJECT_FOUNDATION.md` §28's 
 
 ```
 Bridge.Storage/
-├── BridgeDbContext.cs          # EF Core DbContext — one DbSet per entity, OnModelCreating wires up JSON converters
+├── BridgeDbContext.cs          # EF Core DbContext — one DbSet per top-level entity (GameAction/GameRom/Link/DescriptionBlock have no DbSet: they're JSON columns on Game), OnModelCreating wires up JSON converters
 ├── Converters/
 │   └── JsonValueConverter.cs   # generic EF value converter: List<T>/ReleaseDate <-> JSON text column
 └── Repositories/
@@ -137,11 +139,11 @@ Bridge.Storage/
     └── GameRepository.cs       # IGameRepository impl, adds FindByExternalId
 ```
 
-Uses `Microsoft.EntityFrameworkCore.Sqlite` (see [ADR-4](ARCHITECTURE.md#adr-4-local-storage-engine--sqlite-vs-litedb)). Every `List<T>`/`ReleaseDate` property on an entity is stored as a JSON text column rather than a separate EF owned-entity table — a deliberate simplicity tradeoff, see the comment at the top of `JsonValueConverter.cs` for why, and `BridgeDbContext.OnModelCreating` for exactly which properties use it. There is no migrations setup yet — `Database.EnsureCreated()` is what creates the schema for now; switch to real EF migrations (`dotnet ef migrations add ...`) once the schema is stable enough that "just drop and recreate" stops being acceptable (almost certainly before Fase 9, likely as soon as real user data needs to survive a schema change).
+Uses `Microsoft.EntityFrameworkCore.Sqlite` (see [ADR-4](ARCHITECTURE.md#adr-4-local-storage-engine--sqlite-vs-litedb)). Every `List<T>`/`ReleaseDate` property on an entity is stored as a JSON text column rather than a separate EF owned-entity table — a deliberate simplicity tradeoff, see the comment at the top of `JsonValueConverter.cs` for why, and `BridgeDbContext.OnModelCreating` for exactly which properties use it. There is no EF migrations setup yet — `Database.EnsureCreated()` creates the schema for a fresh DB, and `Bridge/App.xaml.cs` runs two raw-SQL mini-migrations (`EnsureColumn`) right after it to add `DescriptionImages` and `DescriptionBlocks` to a pre-existing DB that predates those columns (each `ALTER TABLE` step is guarded so a missing column can't crash startup). Switch to real EF migrations (`dotnet ef migrations add ...`) once the schema is stable enough that "just drop and recreate" stops being acceptable (almost certainly before Fase 9, likely as soon as real user data needs to survive a schema change).
 
 Verified at runtime (not just compiled) against a real SQLite database file: create → save a `Game` with populated `GameActions`/`Roms`/`Links`/`GenreIds`/`ReleaseDate` → close the context → reopen a fresh context pointing at the same file → every field reads back correctly, including the dedup lookup by `(ExternalId, SourceId)`.
 
-**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` and every repository are registered `Singleton`, matching this doc's own Lifetime Guidelines for WPF), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `Database.EnsureCreated()`. Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` — minimal, not the full `ILogger`-based error handling `CONTRIBUTING.md` eventually requires; upgrade it once real services/ViewModels exist to log into.
+**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` and every repository are registered `Singleton`, matching this doc's own Lifetime Guidelines for WPF), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `Database.EnsureCreated()` (plus the `EnsureColumn` mini-migrations for `DescriptionImages`/`DescriptionBlocks` on a pre-existing DB). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\errors.log` via `App.LogException` — minimal, deliberately not a full `ILogger` setup (see Logging).
 
 ### `Bridge.Metadata` — what's in it
 
@@ -155,7 +157,7 @@ Bridge.Metadata/
 └── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
 ```
 
-See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. On startup, `MainViewModel.DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all newly imported Steam games. No local image caching yet — cover/background URLs are stored as-is.
+See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. On startup, `MainViewModel.DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all newly imported Steam games. Cover/background URLs are stored as-is on the Game, and rendered through an in-memory cache of decoded (frozen) bitmaps — `Bridge/Converters/RemoteImageCache.cs`, bounded at 512 entries, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix).
 
 ### `Bridge.Import` — what's in it
 
@@ -182,36 +184,38 @@ The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of 
 - **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling).
 - **Grouping** — `GroupField` (`GameGroupField`, 21 fields, "Don't group" off) adds a `PropertyGroupDescription` (with a null property name so the item itself flows through a `GameGroupConverter`) to `GroupDescriptions`. `GameGroupResolver` is pure and unit-tested: buckets for playtime/install size/scores, drive letter, release year, coarse date buckets ("Never/Last 7 days/..."), reference names via lookups. Group headers render via the `ListBox.GroupStyle`.
 
-The sort/group field enums and comparer/resolver live in `Bridge.Core.Enums`/`Bridge.Statistics` so they're testable without WPF; the XAML only binds them through `GameGroupConverter`/`GameSortComparer` (see `Bridge/Converters/MetadataConverters.cs`).
+The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver live in the app project under `Bridge/Statistics` (namespace `Bridge.Statistics`). They avoid WPF types but ship inside the WPF app, and they're unit-testable only because `Bridge.Tests` targets `net10.0-windows` (it references `Bridge`). The XAML binds them through `GameGroupConverter`/`GameSortComparer` (see `Bridge/Converters/MetadataConverters.cs`).
 
 ### Shell architecture
 
 The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), laid out as 3 rows:
 
-1. **Top Panel** (`ui:TitleBar`, 50px): Logo button (opens main menu with Add Game, Import Steam, Scan ROMs, Configure Emulator, IGDB Settings, Statistics, Settings, Exit) + Search `TextBox` (260px, binds `SearchText`) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (List/Covers/Details, segmented control) + placeholder buttons (Random game, Explorer, Filter panel).
+1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (List/Covers/Details, segmented control) + a Random-game placeholder button.
 
-2. **Content Area** (`*`): an inner `Grid` with 5 columns — **Sidebar** (44px icon rail with **Library** and **Statistics** buttons; navigation via the `NavigationSection` enum in `Bridge.Core.Enums`) + separator (1px) + game list (360px, `MinWidth=200`) + `GridSplitter` + detail panel (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans the last 3 columns.
+2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail, **Library**/**Statistics** buttons via the `NavigationSection` enum in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Details views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns.
 
 3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it.
 
 View modes switch via 3 toggle buttons in the Top Panel:
 - **List** (`ViewMode.List`): `ListBox` with 28×28 icons + white game names (grouped via `GamesView`). Double-click launches the game.
-- **Covers** (`ViewMode.Grid`): `ListBox` + `WrapPanel` of 200×300px cards with hover intent (scale 1.03x + drop shadow + overlay fade, 120ms `CubicEase EaseOut`).
-- **Details** (`ViewMode.Table`): `ListView`/`GridView` with 7 themed columns. Name column dynamically fills remaining space via `SizeChanged` handler.
+- **Covers** (`ViewMode.Grid`): `ListBox` whose `ItemsPanel` is `controls:CenteringWrapPanel` (a custom control) with 200×300px cards (base size, driven through the `ZoomToSize` converter) with hover intent (scale 1.03x + drop shadow + overlay fade, 120ms `CubicEase EaseOut`).
+- **Details** (`ViewMode.Table`): `ListView`/`GridView` with 6 columns — Name, Release, Genre, Last Played, Time Played, Library. Name column dynamically fills remaining space via `SizeChanged` handler.
 
-Detail panel (right): `CoverImage` 200px + title/scores/checkboxes + Play (Emerald, `CornerRadius="2"`) / More (ContextMenu with Save/Download Metadata/Delete) / Edit buttons. Below: Details (label/value pairs in accent blue) + Description (editable). Background image (`SelectedGame.BackgroundImage`) fills the panel at 60% opacity with dark overlay.
+Detail panel (right): `CoverImage` 200px + title/scores/checkboxes + Play (uses `SystemAccentColorPrimaryBrush`, `#007ACC`, `CornerRadius="2"`) / More (ContextMenu with Save/Download Metadata/Delete) / Edit buttons. Below: Details (label/value pairs in accent blue) + Description (read-only here — editable via the Edit window, `GameEditWindow`). Background image (`SelectedGame.BackgroundImage`) fills the panel at 60% opacity with dark overlay.
 
 ### Selection / Hover pattern (unified)
 
 All list-based views (List, Details, Statistics Top Played) use the same visual treatment on selection:
-- `IsMouseOver`: `Background="{StaticResource Bridge.Card.Hover}"` (#333333)
+- `IsMouseOver`: `Background="{StaticResource Bridge.Card.Hover}"` (#2C3550)
 - `IsSelected`: `Background="Transparent"` (suppresses `SystemColors.HighlightBrush` from default control template), `BorderThickness="3,0,0,0"` + `BorderBrush="{StaticResource Bridge.SystemAccentBrush}"` (#007ACC left accent bar)
+
+The Details table row (`ListViewItem`) highlights with `Bridge.Accent.Hover` (#1F4E79).
 
 Covers uses a similar pattern through a custom `ControlTemplate` with a `SelectionRing` `Border` and `DataTrigger` on `TemplatedParent.IsSelected`.
 
 ### Typography & Theme
 
-All styling is defined in `Bridge/Styles/Theme.xaml` (dark palette #1E1E1E/#252526/#2D2D2D/#333333, Inter Variable font via `pack://application:,,,/Fonts/#Inter`, spacing and corner radius tokens, motion durations). The dictionary overrides WPF-UI's semantic tokens in Color+Brush pairs — see ADR-3 in ARCHITECTURE.md for the full decision record.
+All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette #151A28/#1B2132/#232B40/#2C3550, Inter Variable font via `pack://application:,,,/Fonts/#Inter`, spacing and corner radius tokens, motion durations). The dictionary overrides WPF-UI's semantic tokens in Color+Brush pairs — see ADR-3 in ARCHITECTURE.md for the full decision record.
 
 ### DataTrigger + DataContext convention (detail panel / hero zone)
 
@@ -477,7 +481,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 66 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release` — 102 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
@@ -491,6 +495,10 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 66 tests, all passing
 - `Statistics/GameSortComparerTests.cs` — `GameSortComparer` sort-by-field logic: ascending/descending by name, playtime, last activity, favorite, plus reference resolution (Developer, Source) through the name lookups and the "empty values sort last in both directions" rule.
 - `Statistics/GameGroupResolverTests.cs` — `GameGroupResolver` group-key logic: first-letter Name groups, reference-name resolution (Developer/Library), install/completion buckets, playtime/install-size buckets, drive letter, release year, and the empty key for "Don't group".
 - `Metadata/IgdbAuthClientTests.cs`, `Metadata/IgdbMetadataProviderTests.cs` — the whole IGDB flow (OAuth token fetch + caching, request format, response mapping, error paths) against a fake `HttpMessageHandler` (`Metadata/FakeHttpMessageHandler.cs`) — not real IGDB credentials, see [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why that's a real, flagged limitation and not silently glossed over.
+- `Metadata/SteamDescriptionBlocksTests.cs` — `SteamMetadataProvider.ParseDescriptionBlocks` (via reflection over the non-public static): paragraphs/headings/subheadings/lists/images kept in order and mapped to `DescriptionBlockKind`, inline markup stripped but text kept.
+- `Metadata/SteamSearchRegexTests.cs` — the Steam Store search-result regex: `data-ds-appid` captured even when `data-ds-packageid` comes first, bundle links without an appid don't match.
+- `Services/InstalledGameDetectorTests.cs` — `InstalledGameDetector.ScanFolder` against a temp folder: `.exe`/`.bat` found, unrelated extensions ignored, installers/helpers (setup/unins/vc_redist/UnityCrashHandler/python) filtered out, recursive scan, missing folder throws.
+- `ViewModels/GameEditViewModelTests.cs` — `GameEditViewModel.Save` against a real SQLite DB: empty-name rejection, name trim + persist, new-game `Added` set, existing-game `Added` preserved, `SortingName` persisted.
 
 **Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). The Steam play action *resolution* is covered (`SteamPlayActionsTests`) since it's pure logic, but the real `steam.exe -silent "steam://..."` invocation and directory-based process watching are not. If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`.
 
@@ -510,46 +518,14 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 66 tests, all passing
 
 ## Logging
 
-This project uses `Microsoft.Extensions.Logging` with ILogger injection.
+The project does **not** use `Microsoft.Extensions.Logging` / `ILogger` — that was aspirational. The real logging is a single entry point: `App.LogException(Exception)` in `Bridge/App.xaml.cs`, which appends a timestamped full-exception dump to `%LOCALAPPDATA%\Bridge\logs\errors.log` (creating the `logs` folder on demand). It's called from the global `DispatcherUnhandledException` handler (before the `MessageBox`) and from the catch blocks of fire-and-forget paths that never reach the dispatcher, so failures aren't silently swallowed.
 
 ### Requirements
 
-- **ILogger must be injected** in all services and ViewModels via constructor
-- **Log levels must be used appropriately**:
-  - `LogInformation` — normal operations, user actions
-  - `LogWarning` — recoverable issues, unexpected but handled states
-  - `LogError` — failures that affect operation
-- **No `Debug.WriteLine`** — use ILogger
-- **No silent exception swallowing** — log errors with context
-
-### Example
-
-```csharp
-public class MyService
-{
-    private readonly ILogger<MyService> _logger;
-
-    public MyService(ILogger<MyService> logger)
-    {
-        _logger = logger;
-    }
-
-    public async Task DoSomethingAsync()
-    {
-        _logger.LogInformation("Starting operation for {Item}", itemId);
-        try
-        {
-            await _client.SendAsync(itemId);
-            _logger.LogInformation("Operation completed for {Item}", itemId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Operation failed for {Item}", itemId);
-            throw;
-        }
-    }
-}
-```
+- **Route exceptions through `App.LogException`** — the one place unhandled errors reach disk
+- **Never swallow exceptions silently** — code that catches and continues (e.g. the per-column `EnsureColumn` guards in `App.xaml.cs`, `RemoteImageCache`'s decode catch) must still call `App.LogException`
+- **No `Debug.WriteLine`** — `App.LogException` is the only logging surface
+- **Logging must never crash the app** — `App.LogException` swallows its own failures by design
 
 ---
 
@@ -559,12 +535,12 @@ public class MyService
 
 1. **Never swallow exceptions silently** — always log or notify the user
 2. **Global exception handler** in `App.xaml.cs` for unhandled exceptions
-3. **Use custom exceptions** when they add context (see `Exceptions/` folder)
+3. **Use custom exceptions** when they add context
 4. **User-facing errors** should update StatusMessage or show a dialog
 
 ### Custom Exceptions
 
-Define domain-specific exceptions in `Exceptions/` folder:
+Define domain-specific exceptions in code when a custom type adds context:
 
 ```csharp
 public class BridgeException : Exception
@@ -756,7 +732,7 @@ public static class Config
 | `Bridge.Core/Contracts/IGameRepository.cs` | The persistence contract `Bridge.Storage` implements |
 | `Bridge/App.xaml.cs` | Composition root — DI setup, theme dictionaries, logging |
 | `Bridge/Config.cs` | App constants (AppName, paths) |
-| `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via `EnsureCreated()`, no migrations yet) |
+| `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via `EnsureCreated()` + `EnsureColumn` raw-SQL mini-migrations in `App.xaml.cs`, no EF migrations yet) |
 
 ---
 
@@ -876,7 +852,7 @@ dotnet run --project Bridge/Bridge.csproj
 
 ## Branding & Sponsorship
 
-> **Not implemented** — pattern reference only. There is a minimal status strip in `MainWindow` (row 2, 28px: `StatisticsSummary` + `StatusMessage`), but no sponsor heart, `OpenSponsorCommand`, `Config.SponsorUrl`, or `CreditsWindow`. These snippets are templates to use if/when branding is added.
+> **Partially implemented.** There's a **Support** submenu in the logo menu (Ko-fi + GitHub Sponsors, heart icon) that opens the links in the browser, and an **About Bridge...** item opening `Bridge/AboutWindow.xaml` (version, repo/license links, its own Support section). What's still missing: `Config.SponsorUrl` / `OpenSponsorCommand` don't exist — the URLs are hard-coded in `MainWindow.xaml`/`AboutWindow.xaml` (including the placeholder `https://ko-fi.com/YOUR_KOFI`). The status-bar heart and `CreditsWindow` snippets below remain templates for that remaining gap.
 
 ### Heart Icon in Status Bar
 
