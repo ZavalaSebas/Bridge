@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Threading;
+using Bridge.Converters;
 using Bridge.Core.Contracts;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
@@ -25,6 +26,11 @@ namespace Bridge
 
             DispatcherUnhandledException += OnDispatcherUnhandledException;
 
+            // The UI thread's task scheduler, captured once so RemoteImageCache's
+            // decode continuations always marshal callbacks back to the UI thread
+            // (setting an HTTP UriSource on a pool thread never completes).
+            RemoteImageCache.UiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+
             Directory.CreateDirectory(Config.AppDataPath);
 
             var services = new ServiceCollection();
@@ -40,24 +46,11 @@ namespace Bridge
             // add columns added after the initial schema (DescriptionImages, then
             // DescriptionBlocks) if a pre-existing DB is missing them. Raw text
             // columns defaulting to an empty JSON list — JsonValueConverter reads
-            // those as empty lists.
-            try
-            {
-                dbContext.Database.ExecuteSqlRaw("SELECT DescriptionImages FROM Games LIMIT 1");
-            }
-            catch
-            {
-                dbContext.Database.ExecuteSqlRaw("ALTER TABLE Games ADD COLUMN DescriptionImages TEXT NOT NULL DEFAULT '[]'");
-            }
-
-            try
-            {
-                dbContext.Database.ExecuteSqlRaw("SELECT DescriptionBlocks FROM Games LIMIT 1");
-            }
-            catch
-            {
-                dbContext.Database.ExecuteSqlRaw("ALTER TABLE Games ADD COLUMN DescriptionBlocks TEXT NOT NULL DEFAULT '[]'");
-            }
+            // those as empty lists. Each step is individually guarded so a DB
+            // corruption issue can't crash startup (the app still runs; the
+            // missing column just stays empty).
+            EnsureColumn(dbContext, "DescriptionImages");
+            EnsureColumn(dbContext, "DescriptionBlocks");
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.
@@ -144,10 +137,42 @@ namespace Bridge
             e.Handled = true;
         }
 
+        // Adds a column to Games when it's missing, logging (not throwing) on any
+        // failure so a schema problem never blocks startup. column is validated
+        // against a compile-time whitelist before being interpolated into SQL.
+        private static void EnsureColumn(BridgeDbContext dbContext, string column)
+        {
+            if (column is not ("DescriptionImages" or "DescriptionBlocks"))
+            {
+                LogException(new InvalidOperationException($"Unknown migration column: {column}"));
+                return;
+            }
+
+            // EF1002: interpolated SQL is normally an injection risk, but column
+            // is whitelisted above (two compile-time constants), never user input.
+#pragma warning disable EF1002
+            try
+            {
+                dbContext.Database.ExecuteSqlRaw($"SELECT {column} FROM Games LIMIT 1");
+            }
+            catch
+            {
+                try
+                {
+                    dbContext.Database.ExecuteSqlRaw($"ALTER TABLE Games ADD COLUMN {column} TEXT NOT NULL DEFAULT '[]'");
+                }
+                catch (Exception ex)
+                {
+                    LogException(ex);
+                }
+            }
+#pragma warning restore EF1002
+        }
+
         // Errors from the fire-and-forget tasks (_ = ...) never reach the
-        // dispatcher, but every UI-thread exception does — log it so bugs aren't
+        // dispatcher, but every UI-thread exception does - log it so bugs aren't
         // silently swallowed by the MessageBox-and-continue handler above.
-        private static void LogException(Exception exception)
+        internal static void LogException(Exception exception)
         {
             try
             {

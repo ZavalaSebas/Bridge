@@ -31,7 +31,7 @@ public sealed class InstalledGameDetector
     private static readonly string[] FolderExceptions =
     [
         @"\Accessibility\", @"\Accessories\", @"\Administrative Tools\",
-        @"\Maintenance\", @"\StartUp\", @"\Windows ", @"\Microsoft ",
+        @"\Maintenance\", @"\StartUp\", @"\Windows\", @"\Microsoft\",
         @"\system32\", @"\windows\"
     ];
 

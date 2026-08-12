@@ -20,23 +20,31 @@ internal static class ShellLink
         {
             var shellLink = (IShellLinkW)new ShellLinkComObject();
             var persistFileIid = IPersistFileIid;
-            if (Marshal.QueryInterface(Marshal.GetIUnknownForObject(shellLink), ref persistFileIid, out var persistFile) != 0)
-            {
-                return null;
-            }
-
+            var unknown = Marshal.GetIUnknownForObject(shellLink);
             try
             {
-                var file = (IPersistFile)Marshal.GetObjectForIUnknown(persistFile);
-                file.Load(lnkPath, (int)STGM_READ);
+                if (Marshal.QueryInterface(unknown, in persistFileIid, out var persistFile) != 0)
+                {
+                    return null;
+                }
 
-                var path = new StringBuilder(260);
-                shellLink.GetPath(path, path.Capacity, IntPtr.Zero, SLGP_RAWPATH);
-                return path.Length > 0 ? path.ToString() : null;
+                try
+                {
+                    var file = (IPersistFile)Marshal.GetObjectForIUnknown(persistFile);
+                    file.Load(lnkPath, (int)STGM_READ);
+
+                    var path = new StringBuilder(260);
+                    shellLink.GetPath(path, path.Capacity, IntPtr.Zero, SLGP_RAWPATH);
+                    return path.Length > 0 ? path.ToString() : null;
+                }
+                finally
+                {
+                    Marshal.Release(persistFile);
+                }
             }
             finally
             {
-                Marshal.Release(persistFile);
+                Marshal.Release(unknown);
             }
         }
         catch

@@ -117,6 +117,11 @@ public static class ThemeManager
         Replace(resources, "ControlStrongFillColorDefaultBrush", stroke2);
 
         Save();
+
+        // DynamicResource in Style triggers (hover/selected/sidebar border) isn't
+        // re-evaluated on resource change; restyle the open window so the new
+        // accent is visible everywhere immediately. No-op during startup Load.
+        RefreshWindow();
     }
 
     /// <summary>Restores the saved accent (or the default) at startup.</summary>

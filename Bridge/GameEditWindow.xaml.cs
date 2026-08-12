@@ -20,7 +20,12 @@ namespace Bridge
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.Save();
+            if (!_viewModel.Save())
+            {
+                MessageBox.Show(this, "Name is required.", "Save", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             DialogResult = true;
         }
 
