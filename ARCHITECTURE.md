@@ -1,4 +1,4 @@
-# Architecture Decision Records
+﻿# Architecture Decision Records
 
 This document records architectural decisions made during the development of Bridge.
 
@@ -112,13 +112,13 @@ The original ADR-3 (2026-08-05) planned to ship with plain WPF and introduce WPF
 
 **Decision:**
 
-1. **Library:** `WPF-UI` (with hyphen) **4.3.0** from lepoco, target `net10.0-windows7.0`. Controls: `FluentWindow` (Mica via `WindowBackdropType`), `TitleBar` (3-zone: Icon + Header + Caption), `SymbolIcon/SymbolRegular` (Fluent System Icons v1.1.316), `ui:Button`, `ui:ThemesDictionary`/`ui:ControlsDictionary`.
+1. **Library:** `WPF-UI` (with hyphen) **4.3.0** from lepoco, target `net10.0-windows`. Controls: `FluentWindow` (Mica via `WindowBackdropType`), `TitleBar` (3-zone: Icon + Header + Caption), `SymbolIcon/SymbolRegular` (Fluent System Icons v1.1.316), `ui:Button`, `ui:ThemesDictionary`/`ui:ControlsDictionary`.
 
-2. **Shell architecture (3-zone):** `TitleBar` (search, ViewMode selector, overflow menu) + sidebar (hamburger-collapsible `NavigationSection` nav: Library/Favorites/Sources/Statistics/Settings) + Content Area (placeholder in Fase 1, filled across Fases 2-5).
+2. **Shell architecture (3-zone):** `TitleBar` (search, ViewMode selector, overflow menu) + sidebar (52px icon rail with Library and Statistics buttons — collapsible and re-positionable via right-click; Favorites/Sources/Settings exist in the `NavigationSection` enum but have no UI) + Content Area (placeholder in Fase 1, filled across Fases 2-5).
 
 3. **Palette (dark-first):** `Bridge/Styles/Theme.xaml` overrides WPF-UI 3.x semantic tokens (`Color`+`Brush` paired, because WPF-UI brushes reference their colors via `StaticResource`). Primary accent `#007ACC` (nav/focus/selection). Secondary accent `#10B981` (Emerald) **exclusive** to Play/CTA buttons.
 
-4. **Typography:** Inter Variable (`InterVariable.ttf` embedded in `Bridge/Fonts/`, sourced from `rsms/inter` release v4.1). Font sizes defined as tokens: Caption(11)/BodySmall(12)/Body(13)/BodyLarge(14)/Heading(15)/Title(20)/Display(28).
+4. **Typography:** Inter Variable (`InterVariable.ttf` embedded in `Bridge/Fonts/`, sourced from `rsms/inter` release v4.1). Font sizes defined as tokens: Caption(11)/BodySmall(12)/Body(13)/BodyLarge(14)/Heading(15)/Title(20)/TitleLarge(24)/Display(34).
 
 5. **Motion:** Duration tokens (`Fast` 120ms, `Normal` 150ms, `Slow` 200ms) + `EaseOut`/`EaseInOut` KeySplines defined in Theme.xaml. Used in Covers hover animations (120ms `CubicEase EaseOut`).
 
@@ -131,7 +131,7 @@ The original ADR-3 (2026-08-05) planned to ship with plain WPF and introduce WPF
 - ✅ Modern launcher look (Mica, Fluent icons, Inter) on the first user-facing build
 - ✅ Consistent visual language across all views (same tokens, same selection pattern, same hover states)
 - ✅ Sidebar navigation (`NavigationSection`) maps to existing state (`FilterPreset`/`GroupField`) via `OnNavigationSectionChanged` — no new backend plumbing
-- ❌ No runtime theme switching; the dark palette is a fixed override of WPF-UI's semantic tokens
+- ✅ Runtime theme switching — the accent/palette is dynamic at runtime, not a fixed override (this consequence supersedes the original "no runtime theme switching" one): `ThemeManager` applies 9 accent presets or a custom color picker, persisted to `theme.json`
 
 **Performance trade-off (DELIBERATE — read this before blaming the overhaul):**
 
@@ -167,7 +167,7 @@ During Fase 1, the package `Wpf.Ui` (without hyphen) was found in the NuGet cach
 
 - Publisher: "XIAMU" (Chinese metadata, `projectUrl` points to `xiamu.3vkj.vip`)
 - Description: `WPF.UI AttachProperties`
-- Target: .NET 4.5 only (no `net10.0-windows7.0`)
+- Target: .NET 4.5 only (no `net10.0-windows`)
 - No `XmlnsDefinition` for `http://schemas.lepo.co/wpfui/2022/xaml`
 - Cached at `%USERPROFILE%\.nuget\packages\wpf.ui`
 
@@ -177,7 +177,7 @@ The real library is **`WPF-UI`** (with hyphen, NuGet ID `WPF-UI`, package name `
 
 - **Alternative 1 (old ADR-3):** Ship with plain WPF, introduce WPF UI later — rejected because the UI design was ready and the functional core was stable enough for the visual overhaul to proceed immediately.
 
-- **Alternative 2:** Use `WPF-UI` 3.x (stable) instead of 4.x — rejected because 4.x targets `net10.0-windows7.0` matching the project target, and 3.x's `SystemAccentColorPrimary` token behavior is deprecated.
+- **Alternative 2:** Use `WPF-UI` 3.x (stable) instead of 4.x — rejected because 4.x targets `net10.0-windows` matching the project target, and 3.x's `SystemAccentColorPrimary` token behavior is deprecated.
 
 - **Alternative 3:** Adobe XAML Fluent theme / MahApps.Metro — rejected to keep the dependency surface small and avoid theming conflicts with a custom palette.
 
@@ -218,7 +218,9 @@ This was decided by proceeding with the standing recommendation below under real
 **Date:** 2026-08-05
 
 **Context:**
-The project is split into `Core`, `Storage`, `Import`, `Metadata`, `Emulation`, and `App` projects. It would be easy to over-interpret this as a step toward the plugin system explicitly rejected in ADR-1.
+The project is split into `Core`, `Storage`, `Import`, `Metadata`, and `App` projects. It would be easy to over-interpret this as a step toward the plugin system explicitly rejected in ADR-1.
+
+**Deviation from the original module sketch (Code = Truth):** there is no `Bridge.Emulation` project — emulation lives in `Bridge/Services` (`RomScanner`, the emulator-launch half of `GameLauncher`), the same single deviation flagged in `PLAN.md`'s Project Structure. It fell out of building the working vertical slice (UI → service → storage) ahead of the boundaries sketched before any code existed; not necessarily wrong — this ADR says boundaries are for development organization, not runtime extensibility — but worth a deliberate look before Fase 9 (consolidation).
 
 **Decision:**
 The module split exists purely for development-time organization (compile-time boundaries, testability, clear ownership of responsibilities) — not for runtime extensibility. `Core` and `Storage` must never reference `App`; `App` composes the other modules via DI, but nothing is designed to be swapped at runtime by external code.
@@ -337,7 +339,7 @@ Fase 5 was blocked from the start of implementation because Playnite's real meta
 **Decision:**
 `Bridge.Metadata` (a real separate class library project — see the note in `PLAN.md` > Project Structure about not repeating the `Bridge.Import`/`Bridge.Emulation` deviation a third time) implements a single, concrete `IgdbMetadataProvider`. Authentication is Twitch's real OAuth2 client-credentials flow (IGDB is Twitch/Amazon-owned) via `IgdbAuthClient`, requiring a user-supplied Client ID/Secret from a free Twitch Developer account — never hardcoded, stored in a local `igdb-settings.json` under `AppDataPath`, separate from `bridge.db` (the same config/library-data separation Playnite uses, §28.12).
 
-**Important limitation on how this was verified:** the assistant implementing this had no real IGDB/Twitch credentials. The OAuth flow, request construction, and response-mapping logic are verified against a fake `HttpMessageHandler` returning realistic canned responses (`Bridge.Tests/Metadata/*`, 9 tests) — this proves the code is wired correctly, but the actual live call to IGDB's real servers with real credentials has **not** been exercised. Test this for real the first time a real Client ID/Secret is entered via "IGDB Settings..." in the app.
+**Important limitation on how this was verified:** the assistant implementing this had no real IGDB/Twitch credentials. The OAuth flow, request construction, and response-mapping logic are verified against a fake `HttpMessageHandler` returning realistic canned responses (`Bridge.Tests/Metadata/*` — 10 tests across `IgdbAuthClientTests` + `IgdbMetadataProviderTests`, plus `SteamDescriptionBlocksTests` and `SteamSearchRegexTests` for the Steam-side parsing) — this proves the code is wired correctly, but the actual live call to IGDB's real servers with real credentials has **not** been exercised. Test this for real the first time a real Client ID/Secret is entered via "IGDB Settings..." in the app.
 
 **Consequences:**
 - ✅ One well-defined integration matching the user's explicit choice, not an invented one
@@ -370,7 +372,7 @@ Bridge now auto-imports Steam games on startup but they arrived with no metadata
 - `https://store.steampowered.com/appreviews/{id}?json=1` → CommunityScore (SteamDB formula: Wilson score with vote-count penalty)
 - `https://store.steampowered.com/search/?term={name}` → appid discovery for non-Steam games
 
-Images come from the Steam CDN (`steamcdn-a.akamaihd.net/steam/apps/{id}/library_600x900_2x.jpg` for covers, `/header.jpg` for backgrounds). All HTTP calls have try-catch guards (returns null on failure, never throws to the caller).
+Images come from the Steam CDN (`steamcdn-a.akamaihd.net/steam/apps/{id}/library_600x900_2x.jpg` for covers, `library_hero.jpg` for the background/hero, and `header.jpg` for the icon). All HTTP calls have try-catch guards (returns null on failure, never throws to the caller).
 
 **Update (2026-08-07) — local artwork resolution:** Steam stopped returning the `clienticon` field from `appdetails` (verified against the real API: the field is empty for current games), which is the square icon Playnite shows in its library list. Instead of pulling in SteamKit2 just for `appinfo`, Bridge reads the files Steam itself caches locally — `SteamLocalIconResolver` in `Bridge.Import/Steam` resolves the 32x32 clienticon from `appcache\librarycache\{appid}\{40-hex}.jpg`, the vertical cover from `library_600x900.jpg` and the widescreen hero from `library_hero.jpg` (verified real: 628 apps on this machine have them), with the CDN URLs as fallback. `MainViewModel.ApplySteamLocalArtwork` prefers all three on load, during Steam import (before the row binds, so a fresh install shows complete art immediately) and after every metadata download — local art wins, so the library renders from disk with no download and no half-blank state.
 
@@ -382,7 +384,7 @@ In the multi-provider chain, Steam-imported games get a guaranteed appid-direct 
 - ✅ Fallback chain handles IGDB being unconfigured or failing gracefully
 - ✅ `IGameMetadataProvider` interface extracted from this work — cleanly supports future providers
 - ❌ Rate limiting: Steam API can return 429; handled by falling through to the next provider, not by retry logic in this provider
-- ❌ HTML search scraping for non-Steam games is fragile (depends on `search_result_row` class and `data-ds-appid` attribute); acceptable for fallback-only use
+- ❌ HTML search scraping for non-Steam games is fragile (the search-result regex anchors on the `data-ds-appid` attribute, not a CSS class); acceptable for fallback-only use
 
 **Alternatives considered:**
 

@@ -51,8 +51,6 @@ The app uses [WPF-UI](https://github.com/lepoco/wpfui) 4.3.0 with a custom dark 
 
 Grab the latest `Bridge.exe` from [Releases](https://github.com/ZavalaSebas/Bridge/releases). Self-contained — no .NET required. Just run it.
 
-*(No GitHub release cut yet — the project is in active development. `dotnet publish` has been verified locally to produce a genuine single-file `Bridge.exe`, though.)*
-
 **Build from Source**
 
 ```bash
@@ -81,12 +79,13 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
 - **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
-- **Sidebar navigation** — Icon rail (44px) with Library and Statistics tabs for quick view switching
-- **Dark theme + Mica** — custom dark palette (#1E1E1E) with Inter variable font, dual accent system (#007ACC for UI/navigation, #10B981 exclusive for Play buttons), and Mica backdrop on Windows 11
-- Manual game entries with add, edit, and delete
+- **Sidebar navigation** — Icon rail (52px) with Library and Statistics shortcuts, collapsible and re-positionable
+- **Dark theme + Mica + runtime theming** — custom indigo dark palette with Inter variable font, Mica backdrop on Windows 11, and a runtime accent switcher (9 color presets + custom picker) that recolors the whole UI
+- Manual game entries with add (Playnite-style editor with Sorting Name, create-on-the-fly genres/devs/publishers/platforms, and web image search), edit, and delete
+- **Scan Automatically** — detect games installed on the PC from start-menu shortcuts, a folder, or a single executable (with installers/helpers filtered out), then import them with one click
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
-- Simple ROM folder scan with emulator matching and `{RomPath}` launching
+- Simple ROM folder scan with emulator matching and `{RomPath}` launching, with name sanitization (strips `[U]`/`[!]`/`(USA)` tags)
 - Self-contained single-file `.exe` (~155 MB) — no .NET runtime install required
 
 ---
