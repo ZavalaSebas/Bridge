@@ -52,6 +52,13 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
             var payload = await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken: cancellationToken)
                 ?? throw new InvalidOperationException("Twitch token endpoint returned an empty response.");
 
+            // A missing/blank token must not be cached as valid — that would make
+            // every subsequent request send an empty Bearer header until expiry.
+            if (string.IsNullOrWhiteSpace(payload.AccessToken))
+            {
+                throw new InvalidOperationException("Twitch token endpoint returned a blank token.");
+            }
+
             _accessToken = payload.AccessToken;
             _expiresAt = DateTimeOffset.UtcNow.AddSeconds(payload.ExpiresIn - 60);
             return _accessToken;

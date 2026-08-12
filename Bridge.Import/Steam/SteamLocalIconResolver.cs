@@ -39,6 +39,19 @@ public static class SteamLocalIconResolver
         if (!Directory.Exists(cacheDir))
             return null;
 
-        return Directory.GetFiles(cacheDir, "*.jpg").FirstOrDefault(match);
+        try
+        {
+            return Directory.GetFiles(cacheDir, "*.jpg").FirstOrDefault(match);
+        }
+        catch (IOException)
+        {
+            // Unreadable/blocked cache folder (permissions, antivirus, mid-update
+            // writes) — fall back to web-sourced art rather than crash the load.
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 }

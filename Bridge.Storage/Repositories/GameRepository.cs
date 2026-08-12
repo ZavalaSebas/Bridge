@@ -5,8 +5,12 @@ namespace Bridge.Storage.Repositories;
 
 public class GameRepository(BridgeDbContext context) : Repository<Game>(context), IGameRepository
 {
-    public Game? FindByExternalId(string externalId, Guid sourceId) =>
-        Set.FirstOrDefault(g => g.ExternalId == externalId && g.SourceId == sourceId);
+    public Game? FindByExternalId(string externalId, Guid sourceId)
+    {
+        var game = Set.FirstOrDefault(g => g.ExternalId == externalId && g.SourceId == sourceId);
+        ResetTransientFlags(game);
+        return game;
+    }
 
     public override Game? Get(Guid id)
     {

@@ -132,6 +132,36 @@ public class GameRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void GetAll_SurvivesCorruptJsonColumns()
+    {
+        // Hand-edited DB / interrupted write: a JSON column holds garbage. The
+        // load path must treat it as "no data", not crash the whole library.
+        var game1 = new Game { Name = "Corrupt", ExternalId = "c1", SourceId = Guid.NewGuid() };
+        game1.GameActions.Add(new GameAction { Name = "Play", Path = "a.exe" });
+        var game2 = new Game { Name = "Corrupt2", ExternalId = "c2", SourceId = Guid.NewGuid() };
+        game2.GenreIds.Add(Guid.NewGuid());
+        _repository.Add(game1);
+        _repository.Add(game2);
+
+        // Rewrite the JSON columns to garbage behind EF's back (no braces — EF's
+        // ExecuteSqlRaw treats {0} as a format placeholder).
+        _context.Database.ExecuteSqlRaw(
+            "UPDATE Games SET GameActions = '] broken json' WHERE Id = @p0",
+            new Microsoft.Data.Sqlite.SqliteParameter("@p0", game1.Id));
+        _context.Database.ExecuteSqlRaw(
+            "UPDATE Games SET GenreIds = ']]] broken' WHERE Id = @p0",
+            new Microsoft.Data.Sqlite.SqliteParameter("@p0", game2.Id));
+
+        using var freshContext = new BridgeDbContext(_options);
+        var games = new GameRepository(freshContext).GetAll();
+
+        Assert.Contains(games, g => g.Name == "Corrupt");
+        Assert.Contains(games, g => g.Name == "Corrupt2");
+        Assert.Empty(games.First(g => g.Name == "Corrupt").GameActions);
+        Assert.Empty(games.First(g => g.Name == "Corrupt2").GenreIds);
+    }
+
+    [Fact]
     public void GetAll_ResetsTransientRuntimeFlags()
     {
         // A crash or forced close mid-game leaves IsRunning=true persisted (the

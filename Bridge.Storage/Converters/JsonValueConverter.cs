@@ -39,7 +39,17 @@ public class JsonValueConverter<T> : ValueConverter<T, string>
             return CreateEmptyValue();
         }
 
-        return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? CreateEmptyValue();
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? CreateEmptyValue();
+        }
+        catch (JsonException)
+        {
+            // A malformed JSON cell (partial write, hand-edited DB, value from a
+            // previous schema) must not take down the whole library load — treat
+            // it as "no data" for this field and keep going.
+            return CreateEmptyValue();
+        }
     }
 
     private static T CreateEmptyValue() =>
