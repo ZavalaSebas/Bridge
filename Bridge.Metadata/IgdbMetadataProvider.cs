@@ -32,6 +32,8 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
         };
         request.Headers.Add("Client-ID", settings.ClientId);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        // IGDB rejects requests without a valid User-Agent (403).
+        request.Headers.UserAgent.ParseAdd("Bridge/0.1");
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -51,8 +53,16 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
 
         if (game.FirstReleaseDate is { } unixSeconds)
         {
-            var date = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-            metadata.ReleaseDate = new ReleaseDate(date.Year, date.Month, date.Day);
+            try
+            {
+                var date = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
+                metadata.ReleaseDate = new ReleaseDate(date.Year, date.Month, date.Day);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // A corrupt/out-of-range timestamp shouldn't discard the whole
+                // IGDB result — just leave the release date unset.
+            }
         }
 
         if (game.Cover?.Url is { } coverUrl)

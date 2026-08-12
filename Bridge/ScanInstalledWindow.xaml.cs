@@ -41,7 +41,17 @@ public partial class ScanInstalledWindow : Window
 
     private void DetectInstalled_Click(object sender, RoutedEventArgs e)
     {
-        LoadCandidates(_detector.ScanStartMenu());
+        try
+        {
+            LoadCandidates(_detector.ScanStartMenu());
+        }
+        catch (Exception ex)
+        {
+            // Start-menu enumeration can hit permission-denied subfolders on
+            // corporate machines — show a friendly message instead of a raw
+            // .NET exception to the global handler.
+            MessageBox.Show(this, $"Couldn't scan the start menu: {ex.Message}", "Scan", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void ScanFolder_Click(object sender, RoutedEventArgs e)

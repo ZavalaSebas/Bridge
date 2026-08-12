@@ -59,12 +59,24 @@ namespace Bridge
             // loads so the first render already uses it.
             ThemeManager.Load();
 
-            var mainWindow = new MainWindow
+            // If anything here throws (corrupt DB making EnsureCreated/VM fail,
+            // broken XAML), the dispatcher handler below swallows it and the app
+            // would linger invisible. Shut down instead — a usable error beats a
+            // zombie process.
+            try
             {
-                DataContext = Services.GetRequiredService<MainViewModel>()
-            };
-            MainWindow = mainWindow;
-            mainWindow.Show();
+                var mainWindow = new MainWindow
+                {
+                    DataContext = Services.GetRequiredService<MainViewModel>()
+                };
+                MainWindow = mainWindow;
+                mainWindow.Show();
+            }
+            catch (Exception ex)
+            {
+                LogException(ex);
+                Shutdown();
+            }
 
             // Fase 1 (UI overhaul): apply the Wpf.Ui Dark theme and window
             // backdrop. Mica on Win11 (WindowBackdropType.Mica); on Win10 the
@@ -135,6 +147,14 @@ namespace Bridge
             LogException(e.Exception);
             MessageBox.Show(e.Exception.Message, Config.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
+
+            // A startup exception (before MainWindow exists) leaves no window to
+            // keep the dispatcher alive — ShutdownMode.OnLastWindowClose would
+            // strand an invisible process. Exit cleanly instead.
+            if (Application.Current.MainWindow is null)
+            {
+                Shutdown();
+            }
         }
 
         // Adds a column to Games when it's missing, logging (not throwing) on any

@@ -67,10 +67,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             var matches = SearchEntryRegex().Matches(html);
             foreach (Match match in matches)
             {
-                if (match.Groups[1].Value.Contains("data-ds-packageid"))
-                    continue;
-
-                var appId = match.Groups[2].Value;
+                var appId = match.Groups[1].Value;
                 if (uint.TryParse(appId, out var id))
                     return id;
             }
@@ -216,11 +213,25 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (string.IsNullOrWhiteSpace(dateStr))
             return null;
 
-        // "21 Aug, 2016" or "Aug 2016" or "2016"
-        if (DateTime.TryParseExact(dateStr, ["d MMM, yyyy", "MMM yyyy", "yyyy"],
-                CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        // "21 Aug, 2016" / "Aug 2016" / "2016". Exact-match each format and
+        // preserve the granularity the source gave us: a bare "2016" must stay
+        // a year-only ReleaseDate, not be padded to 2016-01-01.
+        var trimmed = dateStr.Trim();
+        if (DateTime.TryParseExact(trimmed, "d MMM, yyyy",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var fullDate))
         {
-            return new ReleaseDate(date.Year, date.Month, date.Day);
+            return new ReleaseDate(fullDate.Year, fullDate.Month, fullDate.Day);
+        }
+
+        if (DateTime.TryParseExact(trimmed, "MMM yyyy",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var yearMonth))
+        {
+            return new ReleaseDate(yearMonth.Year, yearMonth.Month);
+        }
+
+        if (int.TryParse(trimmed, out var year))
+        {
+            return new ReleaseDate(year);
         }
 
         if (DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, out var fallback))
@@ -353,7 +364,10 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
     [GeneratedRegex(@"<img[^>]*src=""([^""]+)""[^>]*>", RegexOptions.IgnoreCase)]
     private static partial Regex ImgSrcRegex();
 
-    [GeneratedRegex(@"<a[^>]*?\s*(data-ds-packageid|data-ds-appid)=""(\d+)""[^>]*?>.*?<span class=""title"">([^<]+)</span>", RegexOptions.Singleline)]
+    // Each search result is an <a> carrying both data-ds-packageid and
+    // data-ds-appid (packageid comes first). Greedily match the whole tag so we
+    // land on data-ds-appid — the appid we actually need — and capture the title.
+    [GeneratedRegex(@"<a[^>]*?data-ds-appid=""(\d+)""[^>]*?>(?:.*?<span class=""title"">([^<]+)</span>)?", RegexOptions.Singleline)]
     private static partial Regex SearchEntryRegex();
 
     [GeneratedRegex(@"<br\s*/?\s*>", RegexOptions.IgnoreCase)]

@@ -549,6 +549,15 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Deleting a game that's running would strand its session (the stop
+        // handler touches a row that no longer exists) and leave "Playing..."
+        // stuck. Refuse while it's active.
+        if (SelectedGame.IsRunning)
+        {
+            StatusMessage = $"'{SelectedGame.Name}' is running — close it before deleting.";
+            return;
+        }
+
         _gameRepository.Remove(SelectedGame.Id);
         Games.Remove(SelectedGame);
         SelectedGame = null;
@@ -622,6 +631,14 @@ public partial class MainViewModel : ObservableObject
         _suspendDetailedRows = true;
         try
         {
+            // Steam not installed is a normal condition (the import is optional),
+            // not an error — skip quietly instead of surfacing a scary message.
+            if (string.IsNullOrEmpty(SteamPaths.GetInstallationPath()))
+            {
+                StatusMessage = "Steam not detected — skipped import.";
+                return;
+            }
+
             // Manifest enumeration is pure file I/O — run it on a pool thread.
             // The DB writes below stay on the UI thread (singleton DbContext).
             var found = await Task.Run(_steamImporter.GetInstalledGames);
@@ -1021,6 +1038,11 @@ public partial class MainViewModel : ObservableObject
     // here directly is safe, no Dispatcher.Invoke needed.
     private void OnGameStarted(Game game)
     {
+        // Persist the launch-side bookkeeping immediately — PlayCount/LastActivity/
+        // IsRunning only used to reach the DB via OnGameStopped, which never runs
+        // if Bridge is closed while the game is still running. Saving here means a
+        // close mid-game still records "played once / last played now".
+        _gameRepository.Update(game);
         StatusMessage = $"Playing {game.Name}...";
     }
 
