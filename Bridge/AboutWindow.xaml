@@ -16,7 +16,7 @@
                 <ui:SymbolIcon Symbol="Library24" FontSize="26" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Bridge" FontSize="30" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </StackPanel>
-            <TextBlock Text="Version 0.1.0" TextAlignment="Center" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,2,0,4"/>
+            <TextBlock Text="Version 0.2.0" TextAlignment="Center" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,2,0,4"/>
             <TextBlock Text="A local game library, unified — no plugins, no bloat, just your games."
                        TextAlignment="Center" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,0,0,20"/>
 

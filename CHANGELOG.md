@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-12
+
 ### Added
 - **Three view modes** — the main content area switches between **List** (list + collapsible detail panel), **Covers** (a cover wall where hovering a cover reveals **Play** and **Info** buttons over the artwork) and **Details** (a flat `ListView`/`GridView` with columns: Name + icon, Release Date, Genre, Last Played, Time Played, Library, and Play/Info actions). Switched with the title bar icon toggles (`ViewMode` enum; a ComboBox before the Fase 7 overhaul).
 - **Compact info panel** (`CompactInfoPanel`, inline in the main window) — opened by the hover **Info** button (in Covers view) using the hovered game, not the list selection; shows the hero, icon, name, buttons, all details and description. `PlayGameCommand` now takes the game as an optional parameter so covers/rows can launch their own game.
