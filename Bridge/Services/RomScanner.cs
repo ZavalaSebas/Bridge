@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.RegularExpressions;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 
@@ -14,7 +15,7 @@ namespace Bridge.Services;
 /// Game per unmatched file. Dedup is "does any existing game already have a
 /// Rom with this exact path" — nothing fuzzier, no checksum involved.
 /// </summary>
-public class RomScanner
+public partial class RomScanner
 {
     public IReadOnlyList<Game> Scan(string directory, Guid emulatorId, EmulatorProfile profile, IEnumerable<Game> existingGames)
     {
@@ -50,7 +51,7 @@ public class RomScanner
                 continue;
             }
 
-            var name = Path.GetFileNameWithoutExtension(file);
+            var name = SanitizeName(Path.GetFileNameWithoutExtension(file));
             var game = new Game { Name = name };
             game.Roms.Add(new GameRom { Name = name, Path = file });
             game.GameActions.Add(new GameAction
@@ -81,4 +82,20 @@ public class RomScanner
             return path;
         }
     }
+
+    // Mirrors Playnite's RomName.SanitizeName (Scanner.cs): strips bracketed
+    // group/region/language tags and parenthesized flags ("Super Mario [U][!]"
+    // -> "Super Mario"), removes trademark symbols entirely and normalizes
+    // underscores to spaces. Curly apostrophes are flattened to straight ones.
+    [GeneratedRegex(@"\[(.*?)\]|\((.*?)\)", RegexOptions.Compiled)]
+    private static partial Regex RomPropsRegex();
+
+    public static string SanitizeName(string name)
+        => RomPropsRegex().Replace(name, string.Empty)
+            .Replace('\u2019', '\'')
+            .Replace("\u2122", string.Empty) // ™
+            .Replace("\u00A9", string.Empty) // ©
+            .Replace("\u00AE", string.Empty) // ®
+            .Replace("_", " ")
+            .Trim();
 }

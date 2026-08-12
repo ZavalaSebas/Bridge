@@ -1,15 +1,29 @@
 <Window x:Class="Bridge.ScanRomWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Scan ROMs" Height="180" Width="420"
-        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
-    <StackPanel Margin="16">
-        <TextBlock Text="Folder to scan for ROMs" />
-        <TextBox x:Name="FolderBox" Margin="0,0,0,12" />
+        Title="Scan ROMs" Height="Auto" Width="520"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{StaticResource TextFillColorPrimaryBrush}">
+    <StackPanel Margin="16" MinWidth="470">
+        <TextBlock Text="Emulator" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+        <ComboBox x:Name="EmulatorBox" Margin="0,4,0,10" Padding="6,4" SelectionChanged="EmulatorBox_SelectionChanged"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Cancel" Width="80" IsCancel="True" />
-            <Button Content="Scan" Width="80" Margin="8,0,0,0" IsDefault="True" Click="Scan_Click" />
+        <TextBlock Text="Profile" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+        <ComboBox x:Name="ProfileBox" Margin="0,4,0,10" Padding="6,4"/>
+
+        <TextBlock Text="Folder to scan for ROMs" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+        <DockPanel Margin="0,4,0,0">
+            <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Padding="10,6" Margin="8,0,0,0" Click="BrowseFolder_Click"/>
+            <TextBox x:Name="FolderBox" Padding="6,4" VerticalContentAlignment="Center"/>
+        </DockPanel>
+
+        <TextBlock x:Name="ExtensionsText" Margin="0,10,0,0" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
+            <Button Content="Scan" Width="90" Margin="8,0,0,0" IsDefault="True" Padding="10,6" Click="Scan_Click"/>
         </StackPanel>
     </StackPanel>
 </Window>

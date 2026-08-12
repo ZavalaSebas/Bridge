@@ -66,6 +66,30 @@ public class RomScannerTests : IDisposable
             _scanner.Scan(missing, _emulatorId, _profile, existingGames: []));
     }
 
+    [Theory]
+    [InlineData("Super Mario [U][!]", "Super Mario")]
+    [InlineData("Zelda (USA)", "Zelda")]
+    [InlineData("Final_Fantasy_VII", "Final Fantasy VII")]
+    [InlineData("Metroid_Prime™", "Metroid Prime")]
+    [InlineData("Sonic (Europe) (Rev 1)", "Sonic")]
+    [InlineData("Mario Kart - Double Dash!!", "Mario Kart - Double Dash!!")]
+    public void SanitizeName_StripsTagsAndNormalizes(string raw, string expected)
+    {
+        Assert.Equal(expected, RomScanner.SanitizeName(raw));
+    }
+
+    [Fact]
+    public void Scan_UsesSanitizedNameForGameAndRom()
+    {
+        File.WriteAllText(Path.Combine(_tempDir, "Super Mario [U][!].nes"), "rom");
+
+        var found = _scanner.Scan(_tempDir, _emulatorId, _profile, existingGames: []);
+
+        var game = Assert.Single(found);
+        Assert.Equal("Super Mario", game.Name);
+        Assert.Equal("Super Mario", Assert.Single(game.Roms).Name);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))

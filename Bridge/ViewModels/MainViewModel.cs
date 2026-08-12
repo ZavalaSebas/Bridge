@@ -610,20 +610,21 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = $"Play action set for {SelectedGame.Name}.";
     }
 
-    [RelayCommand]
-    private void ScanRomFolder(string? romFolder)
+    public void ScanRomFolder(string? romFolder, Guid? emulatorId = null, string? profileId = null)
     {
         if (string.IsNullOrWhiteSpace(romFolder))
         {
             return;
         }
 
-        // MVP simplification (PLAN.md Fase 6 scope: "single emulator"): scans
-        // against whichever Emulator+first Profile happens to exist first.
-        // No emulator picker in the UI yet — configure one via IRepository<Emulator>
-        // before this does anything useful.
-        var emulator = _emulatorRepository.GetAll().FirstOrDefault();
-        var profile = emulator?.Profiles.FirstOrDefault();
+        // Resolve the chosen emulator/profile, falling back to the first ones
+        // configured (older callers that don't pass ids).
+        var emulator = emulatorId is { } eid
+            ? _emulatorRepository.Get(eid)
+            : _emulatorRepository.GetAll().FirstOrDefault();
+        var profile = profileId is { Length: > 0 } pid
+            ? emulator?.GetProfile(pid)
+            : emulator?.Profiles.FirstOrDefault();
         if (emulator is null || profile is null)
         {
             StatusMessage = "No emulator configured yet — nothing to scan against.";
