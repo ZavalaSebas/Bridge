@@ -45,6 +45,14 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
     public void Launch(Game game)
     {
+        if (game.IsRunning)
+        {
+            // Double-click / repeated Play while the game is already launching or
+            // running: launching a second copy duplicates process tracking (which
+            // would double-count playtime) and corrupts the running state.
+            return;
+        }
+
         var action = game.GameActions.FirstOrDefault(a => a.IsPlayAction)
             ?? TryResolveAutomaticAction(game);
 
@@ -179,19 +187,28 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         }
         catch
         {
-            // The process exited/disposed between checks (or access to its
-            // handle was denied). Tracking stops but the session is still
-            // recorded in `finally` — this is the fire-and-forget task, so
-            // swallowing here is what prevents an unobserved-task exception.
-        }
-        finally
-        {
-            stopwatch.Stop();
+            // HasExited can throw when the process was started with UseShellExecute
+            // (no usable handle) or if it exited/disposed between checks. For a
+            // shell-executed process there's no handle to poll, so record whatever
+            // elapsed rather than a phantom 0-second session. This is the
+            // fire-and-forget task — swallowing is what prevents an unobserved-task
+            // exception.
             var sessionSeconds = (ulong)stopwatch.Elapsed.TotalSeconds;
             game.IsRunning = false;
             game.PlaytimeSeconds += sessionSeconds;
             GameStopped?.Invoke(game, sessionSeconds);
+            return;
         }
+        finally
+        {
+            process.Dispose();
+        }
+
+        stopwatch.Stop();
+        var elapsed = (ulong)stopwatch.Elapsed.TotalSeconds;
+        game.IsRunning = false;
+        game.PlaytimeSeconds += elapsed;
+        GameStopped?.Invoke(game, elapsed);
     }
 
     // Directory-based tracking for the auto-resolved Steam case. Mirrors Playnite's

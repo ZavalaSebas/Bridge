@@ -46,7 +46,9 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
                        $"&client_secret={Uri.EscapeDataString(settings.ClientSecret)}" +
                        "&grant_type=client_credentials";
 
-            using var response = await httpClient.PostAsync(url, content: null, cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.UserAgent.ParseAdd("Bridge/0.1");
+            using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var payload = await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken: cancellationToken)

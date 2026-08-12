@@ -95,4 +95,16 @@ public class IgdbMetadataProviderTests
         Assert.Null(metadata.CoverImage);
         Assert.Empty(metadata.Genres);
     }
+
+    [Fact]
+    public void MapToGameMetadata_IgnoresOutOfRangeTimestamp()
+    {
+        // A corrupt first_release_date must not discard the whole result.
+        var game = new IgdbGame { Name = "Bad Date", FirstReleaseDate = long.MaxValue };
+
+        var metadata = IgdbMetadataProvider.MapToGameMetadata(game);
+
+        Assert.Equal("Bad Date", metadata.Name);
+        Assert.Null(metadata.ReleaseDate);
+    }
 }

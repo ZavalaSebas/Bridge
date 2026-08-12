@@ -19,6 +19,9 @@ public partial class ImageSearchWindow : Window
         _searchService = searchService;
         QueryBox.Text = initialQuery;
         ResultsList.ItemsSource = _results;
+        ResultsList.SelectionChanged += (_, _) =>
+            SelectButton.IsEnabled = ResultsList.SelectedItem is not null;
+        ResultsList.MouseDoubleClick += (_, _) => Select_Click(this, new RoutedEventArgs());
         Loaded += async (_, _) =>
         {
             QueryBox.Focus();

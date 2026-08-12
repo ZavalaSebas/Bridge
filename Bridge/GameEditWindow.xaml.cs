@@ -35,7 +35,7 @@ namespace Bridge
         {
             if (sender is FrameworkElement { Tag: string kind })
             {
-                var name = PromptForName(kind);
+                var name = PromptForName(this, kind);
                 if (string.IsNullOrWhiteSpace(name))
                 {
                     return;
@@ -57,16 +57,18 @@ namespace Bridge
             }
         }
 
-        private static string PromptForName(string kind)
+        private static string PromptForName(Window owner, string kind)
         {
             var input = new System.Windows.Controls.TextBox { Margin = new Thickness(0, 6, 0, 0) };
             var dialog = new Window
             {
                 Title = $"Add {kind}",
+                Owner = owner,
                 Width = 320,
                 SizeToContent = SizeToContent.Height,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ShowInTaskbar = false,
                 Background = System.Windows.Media.Brushes.White
             };
             var panel = new StackPanel { Margin = new Thickness(14) };

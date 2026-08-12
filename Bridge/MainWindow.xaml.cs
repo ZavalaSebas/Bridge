@@ -417,7 +417,12 @@ namespace Bridge
             if (DataContext is not ViewModels.MainViewModel vm)
                 return;
 
-            var visible = vm.GamesView.OfType<Bridge.Core.Entities.Game>().ToList();
+            // GamesView, when grouped, enumerates CollectionViewGroup wrappers —
+            // OfType<Game> would come up empty. Enumerate Games and apply the
+            // same filter predicate the view uses, so grouping can't break random.
+            var visible = vm.Games
+                .Where(g => vm.GamesView.Filter is null || vm.GamesView.Filter(g))
+                .ToList();
             if (visible.Count == 0)
             {
                 return;
