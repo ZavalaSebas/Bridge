@@ -30,6 +30,11 @@ public static class RemoteImageCache
     private static readonly object CallbacksLock = new();
     private static readonly Dictionary<string, List<Action>> PendingCallbacks = new();
 
+    // Captured once on the UI thread at startup and used for every decode
+    // continuation, so callbacks always marshal back to the UI thread regardless
+    // of which thread started the load (Preload/Get from the UI thread today).
+    internal static TaskScheduler UiScheduler = TaskScheduler.Default;
+
     // WPF's BitmapImage downloader needs a Dispatcher, so an HTTP UriSource on a
     // pool thread never completes (the image stays blank — "no cover loaded").
     // Downloading the bytes here and decoding from a stream keeps the whole load
@@ -125,9 +130,9 @@ public static class RemoteImageCache
                     Cache[url] = image;
                 }
 
-                // Fire the pending callbacks (this continuation runs on the UI
-                // thread via FromCurrentSynchronizationContext). Cleared even on
-                // failure so a never-resolving URL can't accumulate callbacks.
+                // Fire the pending callbacks on the UI thread (UiScheduler is
+                // captured at startup). Cleared even on failure so a never-
+                // resolving URL can't accumulate callbacks.
                 List<Action>? callbacks = null;
                 lock (CallbacksLock)
                 {
@@ -147,7 +152,7 @@ public static class RemoteImageCache
             },
             CancellationToken.None,
             TaskContinuationOptions.None,
-            TaskScheduler.FromCurrentSynchronizationContext());
+            UiScheduler);
     }
 
     private static BitmapImage? LoadSynchronously(string url)

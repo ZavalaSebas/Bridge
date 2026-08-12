@@ -46,8 +46,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     public void Launch(Game game)
     {
         var action = game.GameActions.FirstOrDefault(a => a.IsPlayAction)
-            ?? TryResolveAutomaticAction(game)
-            ?? game.GameActions.FirstOrDefault();
+            ?? TryResolveAutomaticAction(game);
 
         if (action is null)
         {

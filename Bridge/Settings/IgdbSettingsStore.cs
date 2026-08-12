@@ -26,8 +26,9 @@ public static class IgdbSettingsStore
             var json = File.ReadAllText(FilePath);
             return JsonSerializer.Deserialize<IgdbSettings>(json) ?? new IgdbSettings();
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
+            // Corrupt/unreadable settings file — never block startup over it.
             return new IgdbSettings();
         }
     }

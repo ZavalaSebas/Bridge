@@ -138,8 +138,13 @@ public partial class GameEditViewModel : ObservableObject
 
     public bool Save()
     {
-        _game.Name = Name;
-        _game.SortingName = SortingName;
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            return false;
+        }
+
+        _game.Name = Name.Trim();
+        _game.SortingName = SortingName.Trim();
         _game.ReleaseDate = ParseReleaseDate(ReleaseDateText);
         _game.CriticScore = ParseNullableInt(CriticScoreText);
         _game.CommunityScore = ParseNullableInt(CommunityScoreText);

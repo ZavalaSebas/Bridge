@@ -71,6 +71,11 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private LibraryStatistics? _statistics;
 
+    // True during bulk imports so the per-row collection changes don't each
+    // trigger a full RebuildDetailedRows (O(n²) on large libraries); the import
+    // calls RebuildDetailedRows once when it finishes.
+    private bool _suspendDetailedRows;
+
     [ObservableProperty]
     private GameSortField _sortField;
 
@@ -404,7 +409,13 @@ public partial class MainViewModel : ObservableObject
         SelectedGame = Games.FirstOrDefault();
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
-        ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) => RebuildDetailedRows();
+        ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) =>
+        {
+            if (!_suspendDetailedRows)
+            {
+                RebuildDetailedRows();
+            }
+        };
         RebuildDetailedRows();
         _ = InitializeAsync();
     }
@@ -658,6 +669,10 @@ public partial class MainViewModel : ObservableObject
 
     private async Task ImportSteamLibraryCoreAsync(Guid steamSourceId)
     {
+        // Bulk-importing one game at a time would trigger a full RebuildDetailedRows
+        // per insert (each doing per-row repo lookups) — that's O(n²). Suspend the
+        // per-change rebuild and do a single one at the end.
+        _suspendDetailedRows = true;
         try
         {
             // Manifest enumeration is pure file I/O — run it on a pool thread.
@@ -684,7 +699,8 @@ public partial class MainViewModel : ObservableObject
                         SourceId = steamSourceId,
                         InstallDirectory = metadata.InstallDirectory,
                         InstallSizeBytes = metadata.InstallSizeBytes,
-                        IsInstalled = metadata.IsInstalled
+                        IsInstalled = metadata.IsInstalled,
+                        Added = DateTime.Now
                     };
                     // Resolve the locally-cached Steam artwork (icon, cover,
                     // hero background) BEFORE the row binds so the library shows
@@ -704,17 +720,27 @@ public partial class MainViewModel : ObservableObject
                     existing.IsInstalled = metadata.IsInstalled;
                     existing.InstallDirectory = metadata.InstallDirectory;
                     existing.InstallSizeBytes = metadata.InstallSizeBytes;
+                    // Match the new-game path: refresh locally-cached artwork too,
+                    // so a re-import picks up icons/covers/heroes that have since
+                    // been cached. Missing or unchanged artwork is a no-op.
+                    ApplySteamLocalArtwork(existing);
                     _gameRepository.Update(existing);
+                    RefreshListDisplay(existing);
                     updated++;
                 }
             }
 
+            RebuildDetailedRows();
             RefreshStatistics();
             StatusMessage = $"Steam import: {added} new, {updated} updated.";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Steam import failed: {ex.Message}";
+        }
+        finally
+        {
+            _suspendDetailedRows = false;
         }
     }
 
@@ -998,23 +1024,24 @@ public partial class MainViewModel : ObservableObject
 
             try
             {
+                // This sync runs after the window is interactive — the game may
+                // have been deleted (or had its actions edited) while the awaits
+                // above were in flight. Only mutate/save what's still live.
+                if (!Games.Contains(game))
+                    continue;
+
                 ApplyMetadata(game, metadata);
                 ApplyMetadataReferences(game, metadata);
                 ApplySteamLocalArtwork(game);
-
-                // This sync runs after the window is interactive — the game may
-                // have been deleted (or had its actions edited) while the awaits
-                // above were in flight. Only save what's still live.
-                if (!Games.Contains(game))
-                    continue;
 
                 _gameRepository.Update(game);
                 RefreshListDisplay(game);
                 applied++;
             }
-            catch
+            catch (Exception ex)
             {
-                // Skip this game, try the next one
+                // One bad game shouldn't abort the whole sync — log and continue.
+                App.LogException(ex);
             }
         }
 
