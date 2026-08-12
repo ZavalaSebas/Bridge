@@ -44,4 +44,16 @@ public class IgdbAuthClientTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAccessTokenAsync());
     }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_ThrowsOnBlankToken()
+    {
+        var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"access_token":"","expires_in":3600,"token_type":"bearer"}""", Encoding.UTF8, "application/json")
+        });
+        var client = new IgdbAuthClient(new HttpClient(handler), new IgdbSettings { ClientId = "id", ClientSecret = "secret" });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAccessTokenAsync());
+    }
 }
