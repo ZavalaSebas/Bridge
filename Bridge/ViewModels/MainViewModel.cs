@@ -199,9 +199,6 @@ public partial class MainViewModel : ObservableObject
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
-    private string _executablePathInput = string.Empty;
-
-    [ObservableProperty]
     private string _statisticsSummary = string.Empty;
 
     [ObservableProperty]
@@ -252,9 +249,6 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _lastPlayedText = string.Empty;
 
-    [ObservableProperty]
-    private string _userScoreText = string.Empty;
-
     // Opens a game link (Steam store page, official site, ...) in the default browser.
     [RelayCommand]
     private static void OpenLink(Link link)
@@ -274,8 +268,6 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedGameChanged(Game? value)
     {
-        var playAction = value?.GameActions.FirstOrDefault(a => a.IsPlayAction);
-        ExecutablePathInput = playAction?.Path ?? string.Empty;
         RefreshReferenceFields(value);
     }
 
@@ -299,7 +291,6 @@ public partial class MainViewModel : ObservableObject
             InstallSizeText = string.Empty;
             AddedText = string.Empty;
             LastPlayedText = string.Empty;
-            UserScoreText = string.Empty;
             return;
         }
 
@@ -324,7 +315,6 @@ public partial class MainViewModel : ObservableObject
         InstallSizeText = game.InstallSizeBytes is { } bytes ? FormatBytes(bytes) : string.Empty;
         AddedText = game.Added is { } added ? added.ToString("d") : string.Empty;
         LastPlayedText = game.LastActivity is { } last ? last.ToString("d") : string.Empty;
-        UserScoreText = game.UserScore is { } user ? user.ToString() : string.Empty;
     }
 
     private static string FormatBytes(ulong bytes) => bytes switch
@@ -542,22 +532,8 @@ public partial class MainViewModel : ObservableObject
             $"Total playtime: {hours:0.0}h";
     }
 
-    [RelayCommand]
-    private void AddGame(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return;
-        }
-
-        var game = new Game { Name = name.Trim() };
-        _gameRepository.Add(game);
-        AddGameToLibrary(game);
-    }
-
     // Adds an already-persisted game to the in-memory library and selects it.
-    // Used after the edit window saves a brand-new manual game (AddGame would
-    // create a second one).
+    // Used after the edit window saves a brand-new manual game.
     public void AddGameToLibrary(Game game)
     {
         AddGameSorted(game);
@@ -590,35 +566,6 @@ public partial class MainViewModel : ObservableObject
         _gameRepository.Update(SelectedGame);
         RefreshListDisplay(SelectedGame);
         RefreshStatistics();
-    }
-
-    [RelayCommand]
-    private void SetPlayAction()
-    {
-        if (SelectedGame is null || string.IsNullOrWhiteSpace(ExecutablePathInput))
-        {
-            return;
-        }
-
-        var existing = SelectedGame.GameActions.FirstOrDefault(a => a.IsPlayAction);
-        if (existing is not null)
-        {
-            existing.Type = GameActionType.File;
-            existing.Path = ExecutablePathInput.Trim();
-        }
-        else
-        {
-            SelectedGame.GameActions.Add(new GameAction
-            {
-                Name = "Play",
-                Type = GameActionType.File,
-                IsPlayAction = true,
-                Path = ExecutablePathInput.Trim()
-            });
-        }
-
-        _gameRepository.Update(SelectedGame);
-        StatusMessage = $"Play action set for {SelectedGame.Name}.";
     }
 
     public void ScanRomFolder(string? romFolder, Guid? emulatorId = null, string? profileId = null)
