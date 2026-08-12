@@ -1,0 +1,60 @@
+<Window x:Class="Bridge.ScanInstalledWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:Bridge.Converters"
+        Title="Scan Automatically" Width="860" Height="560"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{StaticResource TextFillColorPrimaryBrush}">
+    <Grid Margin="14">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="Scan Folder..." Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
+            <Button DockPanel.Dock="Right" Content="Browse..." Padding="12,6" Click="Browse_Click"/>
+            <Button DockPanel.Dock="Left" Content="Detect Installed" Padding="12,6" Click="DetectInstalled_Click"/>
+            <CheckBox x:Name="HideImportedCheck" DockPanel.Dock="Right" Content="Hide already imported" VerticalAlignment="Center" Margin="14,0,0,0" IsChecked="True" Checked="RefreshFilter_Click" Unchecked="RefreshFilter_Click"/>
+        </DockPanel>
+
+        <ListBox x:Name="CandidatesList" Grid.Row="1" Background="Transparent" BorderThickness="0">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="6,4"/>
+                    <Setter Property="Margin" Value="0,1"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource Bridge.Accent.Hover}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Grid.Column="0" IsChecked="{Binding Import}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Image Grid.Column="1" Width="20" Height="20" Stretch="Uniform" Source="{Binding Icon}" RenderOptions.BitmapScalingMode="Fant" Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Path}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding Path}"/>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <TextBlock x:Name="StatusText" VerticalAlignment="Center" Margin="0,0,14,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+            <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
+            <Button Content="Add Games" Width="110" Margin="8,0,0,0" Padding="10,6" Click="AddGames_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

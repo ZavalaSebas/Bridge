@@ -489,6 +489,23 @@ namespace Bridge
             }
         }
 
+        private void ScanInstalled_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new ScanInstalledWindow { Owner = this };
+            if (window.ShowDialog() != true)
+            {
+                return;
+            }
+
+            if (DataContext is MainViewModel viewModel)
+            {
+                foreach (var game in window.CreatedGames)
+                {
+                    viewModel.AddGameToLibrary(game);
+                }
+            }
+        }
+
         private void ScanRom_Click(object sender, RoutedEventArgs e)
         {
             var window = new ScanRomWindow { Owner = this };
@@ -499,7 +516,7 @@ namespace Bridge
 
             if (DataContext is MainViewModel viewModel)
             {
-                viewModel.ScanRomFolderCommand.Execute(window.RomFolder);
+                viewModel.ScanRomFolder(window.RomFolder, window.EmulatorId, window.EmulatorProfileId);
             }
         }
 

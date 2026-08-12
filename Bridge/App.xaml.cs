@@ -111,6 +111,7 @@ namespace Bridge
             services.AddSingleton<RomScanner>();
             services.AddSingleton<SteamLibraryImporter>();
             services.AddSingleton<WebImageSearchService>();
+            services.AddSingleton<InstalledGameDetector>();
 
             // IGDB: settings loaded from disk once at startup (see
             // IgdbSettingsStore — separate JSON file, not bridge.db), then
