@@ -38,7 +38,7 @@ public partial class MainViewModel : ObservableObject
     private readonly RomScanner _romScanner;
     private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
     private readonly SteamMetadataProvider _steamMetadataProvider;
-    private readonly IgdbMetadataProvider _igdbMetadataProvider;
+    private readonly BridgeIgdbProvider _bridgeIgdbProvider;
     private readonly SteamLibraryImporter _steamImporter;
     private readonly EpicLibraryImporter _epicImporter;
 
@@ -374,7 +374,7 @@ public partial class MainViewModel : ObservableObject
         RomScanner romScanner,
         IEnumerable<IGameMetadataProvider> metadataProviders,
         SteamMetadataProvider steamMetadataProvider,
-        IgdbMetadataProvider igdbMetadataProvider,
+        BridgeIgdbProvider bridgeIgdbProvider,
         SteamLibraryImporter steamImporter,
         EpicLibraryImporter epicImporter)
     {
@@ -395,7 +395,7 @@ public partial class MainViewModel : ObservableObject
         _romScanner = romScanner;
         _metadataProviders = metadataProviders;
         _steamMetadataProvider = steamMetadataProvider;
-        _igdbMetadataProvider = igdbMetadataProvider;
+        _bridgeIgdbProvider = bridgeIgdbProvider;
         _steamImporter = steamImporter;
         _epicImporter = epicImporter;
         _launcher.GameStarted += OnGameStarted;
@@ -424,21 +424,19 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
+            // Both library imports are pure local file I/O (fast), so run them
+            // back-to-back first — Steam and Epic games appear together — then
+            // the slow per-game HTTP metadata syncs run after.
             PreloadIcons();
             var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
-            await ImportSteamLibraryCoreAsync(steamSourceId);
-            PreloadIcons();
-            await DownloadMissingSteamMetadataAsync(steamSourceId);
-            PreloadIcons();
-
             var epicSourceId = _sourceRepository.GetOrCreateByName("Epic").Id;
+            await ImportSteamLibraryCoreAsync(steamSourceId);
             await ImportEpicLibraryCoreAsync(epicSourceId);
             PreloadIcons();
-            // No automatic name-search metadata sync for Epic: Playnite disabled
-            // its Epic metadata provider because the search returns wrong results
-            // ("temporarily disabled to make sure we don't apply messed up
-            // results"). Applying a wrong cover/description to a game is worse
-            // than none — users download metadata manually when they want it.
+
+            await DownloadMissingSteamMetadataAsync(steamSourceId);
+            PreloadIcons();
+            await DownloadMissingMetadataByNameAsync([epicSourceId]);
             PreloadIcons();
         }
         catch (Exception ex)
@@ -820,18 +818,11 @@ public partial class MainViewModel : ObservableObject
         // Playnite merges metadata from multiple sources: the library plugin
         // (Steam) provides store/community links while the metadata provider
         // (IGDB) adds the social links (YouTube, Reddit, Twitter, ...). When
-        // Steam was the main source, enrich the links with IGDB's if available.
+        // Steam was the main source, enrich the links via our own IGDB Worker
+        // (zero-config) — the user-configured key is no longer required here.
         if (providerName == _steamMetadataProvider.Name)
         {
-            try
-            {
-                if (await _igdbMetadataProvider.SearchAsync(gameName) is { } igdbMetadata)
-                    metadata.Links.AddRange(igdbMetadata.Links);
-            }
-            catch
-            {
-                // IGDB optional (may be unconfigured) — Steam links alone are fine
-            }
+            await EnrichLinksFromIgdbAsync(gameName, metadata);
         }
 
         ApplyMetadata(game, metadata);
@@ -842,6 +833,32 @@ public partial class MainViewModel : ObservableObject
         RefreshListDisplay(game);
         StatusMessage = $"Metadata applied to '{game.Name}' (source: {providerName}).";
     }
+
+    // Adds IGDB social links (YouTube, Reddit, Twitter, Wikipedia, ...) to
+    // Steam-sourced metadata via our own Worker. Zero-config; if the Worker is
+    // unreachable, the Steam links alone stand.
+    private async Task EnrichLinksFromIgdbAsync(string gameName, GameMetadata metadata)
+    {
+        try
+        {
+            if (await _bridgeIgdbProvider.SearchAsync(gameName) is { } igdbMetadata)
+                metadata.Links.AddRange(igdbMetadata.Links);
+        }
+        catch
+        {
+            // Worker unreachable — Steam links alone are fine
+        }
+    }
+
+    // Steam-sourced links (store/community/guides/news/wiki) are identified by
+    // their domain; anything else (YouTube, Reddit, Wikipedia, official site,
+    // social networks) is a non-Steam link — the IGDB enrichment target.
+    private static bool IsSteamLink(string name) => name switch
+    {
+        "Community Hub" or "Discussions" or "Guides" or "News" or
+        "Steam Store" or "PCGamingWiki" or "Achievements" or "Workshop" => true,
+        _ => false
+    };
 
     private static void ApplyMetadata(Game game, GameMetadata metadata)
     {
@@ -1005,8 +1022,15 @@ public partial class MainViewModel : ObservableObject
 
     private async Task DownloadMissingSteamMetadataAsync(Guid steamSourceId)
     {
+        // Process games missing a description OR missing the IGDB social links.
+        // A Steam game's links are the store/community ones (Store, Community
+        // Hub, Guides, ...); the IGDB social links (Wikipedia, YouTube, Reddit,
+        // ...) come from the enrichment step. Detect "needs links" by the
+        // absence of any non-Steam-named link, not just Links.Count == 0.
         var candidates = _gameRepository.GetAll()
-            .Where(g => g.SourceId == steamSourceId && string.IsNullOrWhiteSpace(g.Description))
+            .Where(g => g.SourceId == steamSourceId &&
+                        (string.IsNullOrWhiteSpace(g.Description) ||
+                         !g.Links.Any(l => !IsSteamLink(l.Name))))
             .ToList();
 
         if (candidates.Count == 0)
@@ -1052,6 +1076,11 @@ public partial class MainViewModel : ObservableObject
                 if (!Games.Contains(game))
                     continue;
 
+                // Steam provides store/community links; our IGDB Worker adds the
+                // social links (YouTube, Reddit, ...) so the automatic sync is
+                // complete, not just the manual one.
+                await EnrichLinksFromIgdbAsync(game.Name, metadata);
+
                 ApplyMetadata(game, metadata);
                 ApplyMetadataReferences(game, metadata);
                 ApplySteamLocalArtwork(game);
@@ -1075,7 +1104,78 @@ public partial class MainViewModel : ObservableObject
     // Downloads metadata for games from sources without an appid-based lookup
     // (Epic, manual non-Steam games): search each provider chain by display name
     // and apply the best match. Same bounded-parallelism pattern as the Steam
-    // sync, minus the appid shortcut.
+    // sync, minus the appid shortcut. The chain starts with our own IGDB Worker,
+    // which resolves Epic-only games correctly (unlike Steam-by-name).
+    private async Task DownloadMissingMetadataByNameAsync(IReadOnlyList<Guid> sourceIds)
+    {
+        var candidates = _gameRepository.GetAll()
+            .Where(g => sourceIds.Contains(g.SourceId) && string.IsNullOrWhiteSpace(g.Description))
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            return;
+        }
+
+        StatusMessage = $"Downloading metadata for {candidates.Count} game(s)...";
+
+        using var throttle = new SemaphoreSlim(4);
+        var results = await Task.WhenAll(candidates.Select(game =>
+            Task.Run(async () =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    foreach (var provider in _metadataProviders)
+                    {
+                        try
+                        {
+                            if (await provider.SearchAsync(game.Name) is { } found)
+                                return (game, metadata: found);
+                        }
+                        catch
+                        {
+                            // Try the next provider
+                        }
+                    }
+
+                    return (game, metadata: (GameMetadata?)null);
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            })));
+
+        int applied = 0;
+        foreach (var (game, metadata) in results)
+        {
+            if (metadata is null)
+                continue;
+
+            try
+            {
+                if (!Games.Contains(game))
+                    continue;
+
+                ApplyMetadata(game, metadata);
+                ApplyMetadataReferences(game, metadata);
+
+                _gameRepository.Update(game);
+                RefreshListDisplay(game);
+                applied++;
+            }
+            catch (Exception ex)
+            {
+                App.LogException(ex);
+            }
+        }
+
+        StatusMessage = applied > 0
+            ? $"Metadata sync complete: {applied}/{candidates.Count} game(s) updated."
+            : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
+    }
+
     [RelayCommand]
     private void PlayGame(Game? game = null)
     {

@@ -33,6 +33,12 @@ public partial class FadeImage : UserControl
         typeof(FadeImage),
         new PropertyMetadata(Stretch.UniformToFill));
 
+    public static readonly DependencyProperty CoverByWidthProperty = DependencyProperty.Register(
+        nameof(CoverByWidth),
+        typeof(bool),
+        typeof(FadeImage),
+        new PropertyMetadata(false, OnCoverByWidthChanged));
+
     public string? SourceUrl
     {
         get => (string?)GetValue(SourceUrlProperty);
@@ -43,6 +49,28 @@ public partial class FadeImage : UserControl
     {
         get => (Stretch)GetValue(StretchProperty);
         set => SetValue(StretchProperty, value);
+    }
+
+    /// <summary>
+    /// When true the images are forced to fill the control's full width and their
+    /// height is set to width/aspect, so the artwork always spans the window with
+    /// no side letterbox bars and the vertical excess is clipped by the parent's
+    /// ClipToBounds (Playnite's "cover" background look). When false the normal
+    /// <see cref="Stretch"/> behavior applies. Defaults to false.
+    /// </summary>
+    public bool CoverByWidth
+    {
+        get => (bool)GetValue(CoverByWidthProperty);
+        set => SetValue(CoverByWidthProperty, value);
+    }
+
+    private static void OnCoverByWidthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (FadeImage)d;
+        if ((bool)e.NewValue)
+            control.ApplyCoverByWidthSizing();
+        else
+            control.ClearCoverByWidthSizing();
     }
 
     private Image? activeImage;
@@ -57,6 +85,15 @@ public partial class FadeImage : UserControl
     public FadeImage()
     {
         InitializeComponent();
+        // Recompute the forced cover-by-width size whenever the control's width
+        // changes (window resize): height = width / aspect so the image always
+        // fills the width and the vertical excess is clipped below — never side
+        // letterbox bars. No-op when CoverByWidth is off.
+        SizeChanged += (_, _) =>
+        {
+            if (CoverByWidth)
+                ApplyCoverByWidthSizing();
+        };
     }
 
     private static void OnSourceUrlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -98,6 +135,8 @@ public partial class FadeImage : UserControl
     private void ShowImage(BitmapSource image)
     {
         ImageAspect = image.PixelWidth / (double)image.PixelHeight;
+        if (CoverByWidth)
+            ApplyCoverByWidthSizing();
         ImageChanged?.Invoke(this, EventArgs.Empty);
 
         var next = activeImage is null || ReferenceEquals(activeImage, Image2) ? Image1 : Image2;
@@ -136,7 +175,6 @@ public partial class FadeImage : UserControl
         {
             return;
         }
-
         var target = activeImage;
         var fadeOut = new DoubleAnimation(1, 0, TransitionDuration);
         fadeOut.Completed += (_, _) =>
@@ -151,5 +189,37 @@ public partial class FadeImage : UserControl
         };
 
         target.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    // Forces the images to the control's width and height=width/aspect, so the
+    // artwork always fills the full width (no side letterbox bars, whatever the
+    // source ratio or window size) and any vertical excess is clipped below by
+    // the parent's ClipToBounds. Only used when CoverByWidth is on (the hero).
+    private void ApplyCoverByWidthSizing()
+    {
+        if (ImageAspect is not { } aspect || aspect <= 0)
+        {
+            return;
+        }
+
+        var width = Math.Max(ActualWidth, 1);
+        var height = width / aspect;
+
+        foreach (var image in new[] { Image1, Image2 })
+        {
+            image.Width = width;
+            image.Height = height;
+        }
+    }
+
+    // Restores automatic sizing (Stretch/UniformToFill) when CoverByWidth is
+    // turned off — clears the explicit Width/Height we forced on the images.
+    private void ClearCoverByWidthSizing()
+    {
+        foreach (var image in new[] { Image1, Image2 })
+        {
+            image.ClearValue(Image.WidthProperty);
+            image.ClearValue(Image.HeightProperty);
+        }
     }
 }
