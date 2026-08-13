@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using Bridge.Services;
 
 namespace Bridge.Converters;
 
@@ -42,6 +43,14 @@ public static class CachedImage
             return;
         }
 
+        // Local disk paths (Steam's cached art, an Epic game's .exe) don't go
+        // through the remote cache.
+        if (System.IO.Path.IsPathRooted(url))
+        {
+            image.Source = LoadLocalPath(url);
+            return;
+        }
+
         if (RemoteImageCache.Get(url) is { } cached)
         {
             image.Source = cached;
@@ -59,5 +68,37 @@ public static class CachedImage
                 image.Source = RemoteImageCache.Get(url);
             }
         });
+    }
+
+    // Loads a local disk path: an executable's embedded icon (Epic games store
+    // the .exe path as the icon) or a local image file (Steam's cached art).
+    private static System.Windows.Media.ImageSource? LoadLocalPath(string path)
+    {
+        try
+        {
+            var ext = System.IO.Path.GetExtension(path);
+            if (ext.Equals(".exe", System.StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".lnk", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return ExeIconLoader.GetIcon(path);
+            }
+
+            if (!System.IO.File.Exists(path))
+            {
+                return null;
+            }
+
+            var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new System.Uri(path);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

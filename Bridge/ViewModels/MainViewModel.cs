@@ -2,12 +2,14 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Windows.Data;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Core.Import;
 using Bridge.Converters;
+using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
 using Bridge.Services;
@@ -38,6 +40,7 @@ public partial class MainViewModel : ObservableObject
     private readonly SteamMetadataProvider _steamMetadataProvider;
     private readonly IgdbMetadataProvider _igdbMetadataProvider;
     private readonly SteamLibraryImporter _steamImporter;
+    private readonly EpicLibraryImporter _epicImporter;
 
     public ObservableCollection<Game> Games { get; } = [];
 
@@ -372,7 +375,8 @@ public partial class MainViewModel : ObservableObject
         IEnumerable<IGameMetadataProvider> metadataProviders,
         SteamMetadataProvider steamMetadataProvider,
         IgdbMetadataProvider igdbMetadataProvider,
-        SteamLibraryImporter steamImporter)
+        SteamLibraryImporter steamImporter,
+        EpicLibraryImporter epicImporter)
     {
         _gameRepository = gameRepository;
         _emulatorRepository = emulatorRepository;
@@ -393,6 +397,7 @@ public partial class MainViewModel : ObservableObject
         _steamMetadataProvider = steamMetadataProvider;
         _igdbMetadataProvider = igdbMetadataProvider;
         _steamImporter = steamImporter;
+        _epicImporter = epicImporter;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
@@ -424,6 +429,16 @@ public partial class MainViewModel : ObservableObject
             await ImportSteamLibraryCoreAsync(steamSourceId);
             PreloadIcons();
             await DownloadMissingSteamMetadataAsync(steamSourceId);
+            PreloadIcons();
+
+            var epicSourceId = _sourceRepository.GetOrCreateByName("Epic").Id;
+            await ImportEpicLibraryCoreAsync(epicSourceId);
+            PreloadIcons();
+            // No automatic name-search metadata sync for Epic: Playnite disabled
+            // its Epic metadata provider because the search returns wrong results
+            // ("temporarily disabled to make sure we don't apply messed up
+            // results"). Applying a wrong cover/description to a game is worse
+            // than none — users download metadata manually when they want it.
             PreloadIcons();
         }
         catch (Exception ex)
@@ -623,25 +638,59 @@ public partial class MainViewModel : ObservableObject
         await ImportSteamLibraryCoreAsync(steamSource.Id);
     }
 
+    [RelayCommand]
+    private async Task ImportEpicLibrary()
+    {
+        var epicSource = _sourceRepository.GetOrCreateByName("Epic");
+        await ImportEpicLibraryCoreAsync(epicSource.Id);
+    }
+
     private async Task ImportSteamLibraryCoreAsync(Guid steamSourceId)
     {
-        // Bulk-importing one game at a time would trigger a full RebuildDetailedRows
-        // per insert (each doing per-row repo lookups) — that's O(n²). Suspend the
-        // per-change rebuild and do a single one at the end.
+        // Steam not installed is a normal condition (the import is optional) —
+        // skip quietly instead of surfacing a scary message.
+        if (string.IsNullOrEmpty(SteamPaths.GetInstallationPath()))
+        {
+            StatusMessage = "Steam not detected — skipped import.";
+            return;
+        }
+
+        await ImportLibraryCoreAsync(
+            steamSourceId,
+            "Steam",
+            () => _steamImporter.GetInstalledGames(),
+            applyLocalArtwork: ApplySteamLocalArtwork);
+    }
+
+    private async Task ImportEpicLibraryCoreAsync(Guid epicSourceId)
+    {
+        if (!EpicPaths.IsInstalled)
+        {
+            StatusMessage = "Epic Games Launcher not detected — skipped import.";
+            return;
+        }
+
+        await ImportLibraryCoreAsync(
+            epicSourceId,
+            "Epic",
+            () => _epicImporter.GetInstalledGames(),
+            applyLocalArtwork: null);
+    }
+
+    // Shared bulk import: enumerates games (on a pool thread — pure file I/O),
+    // inserts new ones and syncs install state on existing ones, all on the UI
+    // thread (singleton DbContext). Suspend the per-change rebuild so a large
+    // library doesn't trigger O(n²) table rebuilds.
+    private async Task ImportLibraryCoreAsync(
+        Guid sourceId,
+        string sourceName,
+        Func<List<GameMetadata>> enumerate,
+        Action<Game>? applyLocalArtwork)
+    {
         _suspendDetailedRows = true;
         try
         {
-            // Steam not installed is a normal condition (the import is optional),
-            // not an error — skip quietly instead of surfacing a scary message.
-            if (string.IsNullOrEmpty(SteamPaths.GetInstallationPath()))
-            {
-                StatusMessage = "Steam not detected — skipped import.";
-                return;
-            }
-
-            // Manifest enumeration is pure file I/O — run it on a pool thread.
-            // The DB writes below stay on the UI thread (singleton DbContext).
-            var found = await Task.Run(_steamImporter.GetInstalledGames);
+            var found = await Task.Run(enumerate);
             int added = 0, updated = 0;
 
             foreach (var metadata in found)
@@ -653,24 +702,24 @@ public partial class MainViewModel : ObservableObject
                     await Task.Yield();
                 }
 
-                var existing = _gameRepository.FindByExternalId(metadata.ExternalId, steamSourceId);
+                var existing = _gameRepository.FindByExternalId(metadata.ExternalId, sourceId);
                 if (existing is null)
                 {
                     var game = new Game
                     {
                         Name = metadata.Name,
                         ExternalId = metadata.ExternalId,
-                        SourceId = steamSourceId,
+                        SourceId = sourceId,
                         InstallDirectory = metadata.InstallDirectory,
                         InstallSizeBytes = metadata.InstallSizeBytes,
+                        Icon = metadata.Icon ?? string.Empty,
                         IsInstalled = metadata.IsInstalled,
-                        Added = DateTime.Now
+                        Added = DateTime.Now,
+                        GameActions = metadata.GameActions
                     };
-                    // Resolve the locally-cached Steam artwork (icon, cover,
-                    // hero background) BEFORE the row binds so the library shows
-                    // complete art for every installed Steam game the moment it's
-                    // added — no waiting for the (slow) web metadata.
-                    ApplySteamLocalArtwork(game);
+                    // Resolve locally-cached artwork (Steam) BEFORE the row binds
+                    // so the library shows complete art the moment it's added.
+                    applyLocalArtwork?.Invoke(game);
                     _gameRepository.Add(game);
                     AddGameSorted(game);
                     added++;
@@ -679,15 +728,20 @@ public partial class MainViewModel : ObservableObject
                 {
                     // Mirrors Playnite's real re-scan behavior (PROJECT_FOUNDATION.md
                     // §28.2): a re-import only syncs install state, it never touches
-                    // fields the user (or a metadata download) may have already set —
-                    // Name, Description, etc. are left alone on existing games.
+                    // fields the user (or a metadata download) may have already set.
                     existing.IsInstalled = metadata.IsInstalled;
                     existing.InstallDirectory = metadata.InstallDirectory;
                     existing.InstallSizeBytes = metadata.InstallSizeBytes;
-                    // Match the new-game path: refresh locally-cached artwork too,
-                    // so a re-import picks up icons/covers/heroes that have since
-                    // been cached. Missing or unchanged artwork is a no-op.
-                    ApplySteamLocalArtwork(existing);
+                    // Fill a missing icon from the source (Epic exe icon, Steam
+                    // local art) without overwriting one the user set. A local
+                    // file icon (the Epic exe) always wins over a remote URL.
+                    var srcIcon = metadata.Icon;
+                    if (!string.IsNullOrWhiteSpace(srcIcon) &&
+                        (string.IsNullOrWhiteSpace(existing.Icon) || Path.IsPathRooted(srcIcon)))
+                    {
+                        existing.Icon = srcIcon;
+                    }
+                    applyLocalArtwork?.Invoke(existing);
                     _gameRepository.Update(existing);
                     RefreshListDisplay(existing);
                     updated++;
@@ -696,11 +750,11 @@ public partial class MainViewModel : ObservableObject
 
             RebuildDetailedRows();
             RefreshStatistics();
-            StatusMessage = $"Steam import: {added} new, {updated} updated.";
+            StatusMessage = $"{sourceName} import: {added} new, {updated} updated.";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Steam import failed: {ex.Message}";
+            StatusMessage = $"{sourceName} import failed: {ex.Message}";
         }
         finally
         {
@@ -806,7 +860,11 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(metadata.CoverImage))
             game.CoverImage = metadata.CoverImage;
 
-        if (!string.IsNullOrWhiteSpace(metadata.Icon))
+        // Don't overwrite an existing icon: for Epic games the importer sets the
+        // installed executable's icon (better than a cover thumbnail), and for
+        // Steam games ApplySteamLocalArtwork resolved the local clienticon. A
+        // metadata icon only fills in games that have none yet.
+        if (string.IsNullOrWhiteSpace(game.Icon) && !string.IsNullOrWhiteSpace(metadata.Icon))
             game.Icon = metadata.Icon;
 
         if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage))
@@ -1014,6 +1072,10 @@ public partial class MainViewModel : ObservableObject
             : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
     }
 
+    // Downloads metadata for games from sources without an appid-based lookup
+    // (Epic, manual non-Steam games): search each provider chain by display name
+    // and apply the best match. Same bounded-parallelism pattern as the Steam
+    // sync, minus the appid shortcut.
     [RelayCommand]
     private void PlayGame(Game? game = null)
     {
