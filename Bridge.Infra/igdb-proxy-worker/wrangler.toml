@@ -1,0 +1,8 @@
+name = "bridge-igdb"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Los secrets (TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET) se configuran con:
+#   npx wrangler secret put TWITCH_CLIENT_ID
+#   npx wrangler secret put TWITCH_CLIENT_SECRET
+# NO pongas credenciales aquí. Usa secrets para información sensible.

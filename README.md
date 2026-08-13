@@ -73,9 +73,10 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 
 - **Steam library auto-import** — detects installed Steam games automatically on startup (registry + `libraryfolders.vdf` + `appmanifest*.acf`)
 - **Steam Store metadata** — downloads name, description, release date, cover/background art, critic/community scores, genres, and more from the official Steam store (no login, no API key)
-- **IGDB metadata** — text and image metadata from IGDB (requires a free Twitch Developer account)
-- **Multi-provider fallback** — metadata search tries IGDB first, then falls back to Steam Store automatically
+- **IGDB metadata** — text and image metadata from IGDB with **zero configuration** (via Bridge's own Cloudflare Worker; a user-supplied Twitch key is optional)
+- **Multi-provider fallback** — metadata search tries Bridge's IGDB Worker first, then Playnite's proxy, then the user's IGDB key, then Steam Store automatically
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
+- **Epic Games support** — detects installed Epic games from the launcher's local files, launches via the Epic client, and shows each game's exe icon
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
 - **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
@@ -93,6 +94,8 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 ## Architecture
 
 Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata` (use cases) → `App` (WPF UI; ROM scanning + emulator launch live in `Bridge/Services`). See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
+
+**IGDB metadata without configuration:** Bridge gets IGDB metadata (cover, description, developers, genres, scores, links) for any game — including Epic-only titles like Genshin Impact — via its own [Cloudflare Worker](Bridge.Infra/igdb-proxy-worker/) that holds the IGDB credentials server-side (Worker Secrets, never in the app). Playnite's public proxy and a user-configured IGDB key act as fallbacks. See [ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend).
 
 ---
 

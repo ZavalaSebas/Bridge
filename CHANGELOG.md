@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Epic Games support** — `Bridge.Import/Epic/` detects installed Epic games from the launcher's local files (`LauncherInstalled.dat` + `.item` manifests), filters out Unreal Engine/DLC/plugins, and launches via `com.epicgames.launcher://` (tracked by directory, like Steam). The icon is extracted from the installed game's `.exe` (Playnite's approach — Epic has no icon service).
+- **Own Cloudflare Worker as the IGDB backend** — `Bridge.Infra/igdb-proxy-worker/` + `BridgeIgdbProvider` give Bridge IGDB metadata with zero user configuration, using the same architecture Playnite uses (credentials on a server, never in the app). The Worker is the first metadata provider; Playnite's public proxy, a user-configured IGDB key and Steam-by-name are fallbacks in that order. See ADR-13.
+- **Playnite's public IGDB proxy as a fallback** (`PlayniteIgdbProvider`) — used only if our own Worker is unreachable.
+- **Fixed context-menu commands in the More menu** — the menu lives in a Popup outside the visual tree, so `ElementName` bindings never resolved; commands now bind through the window's DataContext set in `MenuButton_Click`.
+
 ## [0.2.0] - 2026-08-12
 
 ### Added
