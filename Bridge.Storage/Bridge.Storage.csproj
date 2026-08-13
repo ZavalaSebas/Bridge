@@ -15,7 +15,7 @@
          release, so pin the 3.x bundle directly: it drops lib.e_sqlite3 entirely
          in favor of SourceGear.sqlite3 (SQLite 3.50.4). Verified by the EF Core
          round-trip tests, which exercise the real native SQLite binary. -->
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
   </ItemGroup>
 
   <ItemGroup>
