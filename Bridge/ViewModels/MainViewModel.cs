@@ -887,6 +887,9 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage))
             game.BackgroundImage = metadata.BackgroundImage;
 
+        if (metadata.Screenshots is { Count: > 0 })
+            game.Screenshots = metadata.Screenshots;
+
         if (metadata.CriticScore.HasValue)
             game.CriticScore = metadata.CriticScore;
 

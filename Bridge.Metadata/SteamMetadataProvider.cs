@@ -14,9 +14,10 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
     private const string SearchUrl = "https://store.steampowered.com/search/?term={0}&ignore_preferences=1&category1=998&ndl=1";
     private const string CoverVerticalUrl = "https://steamcdn-a.akamaihd.net/steam/apps/{0}/library_600x900_2x.jpg";
 
-    // El "hero" de Steam (1920x620) es el fondo estándar de la librería — usarlo
-    // siempre mantiene la proporción consistente (3.1:1) entre juegos, en vez de
-    // mezclar heroes con screenshots (1920x1080) que alteran el alto del hero.
+    // Fondo estándar de Steam: el library_hero (1920x620, 3.1:1). Es la imagen
+    // oficial de la librería y en el hero de Bridge casi no se recorta nada — se
+    // ve completa y consistente entre juegos. Las screenshots (16:9) recortan
+    // ~25% de su alto en pantallas anchas, así que quedan para otra sección.
     private const string HeroUrl = "https://steamcdn-a.akamaihd.net/steam/apps/{0}/library_hero.jpg";
 
     public string Name => "Steam Store";
@@ -162,9 +163,20 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (data.Categories is { Count: > 0 })
             metadata.Features = data.Categories.Select(c => c.Description).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
 
-        // Fondo estándar de Steam: el library_hero (1920x620), proporción
-        // consistente para todos los juegos.
+        // Fondo estándar de Steam: el library_hero (1920x620).
         metadata.BackgroundImage = string.Format(HeroUrl, appId);
+
+        // Galería de screenshots: las path_full (1920x1080) sin el query string
+        // que Steam añade para redimensionar. Son el contenido real del juego —
+        // se muestran como galería en el detalle.
+        if (data.Screenshots is { Count: > 0 })
+        {
+            metadata.Screenshots = data.Screenshots
+                .Select(s => s.PathFull)
+                .Select(StripQueryString)
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .ToList();
+        }
 
         // Same link set as Playnite's Steam library plugin
         // (PlayniteExtensions SteamLibrary/SteamShared/MetadataProvider.cs):
@@ -242,6 +254,12 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
 
     private static bool IsPlaceholder(string value) =>
         string.IsNullOrWhiteSpace(value) || value.Equals("N/A", StringComparison.OrdinalIgnoreCase);
+
+    private static string StripQueryString(string url)
+    {
+        var qsIndex = url.IndexOf('?');
+        return qsIndex >= 0 ? url[..qsIndex] : url;
+    }
 
     private static string StripHtml(string html)
     {

@@ -52,6 +52,7 @@ namespace Bridge
             // missing column just stays empty).
             EnsureColumn(dbContext, "DescriptionImages");
             EnsureColumn(dbContext, "DescriptionBlocks");
+            EnsureColumn(dbContext, "Screenshots");
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.
@@ -179,7 +180,7 @@ namespace Bridge
         // against a compile-time whitelist before being interpolated into SQL.
         private static void EnsureColumn(BridgeDbContext dbContext, string column)
         {
-            if (column is not ("DescriptionImages" or "DescriptionBlocks"))
+            if (column is not ("DescriptionImages" or "DescriptionBlocks" or "Screenshots"))
             {
                 LogException(new InvalidOperationException($"Unknown migration column: {column}"));
                 return;

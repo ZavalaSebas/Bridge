@@ -1,0 +1,163 @@
+<UserControl x:Class="Bridge.Controls.ScreenshotGallery"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Bridge.Controls"
+             xmlns:converters="clr-namespace:Bridge.Converters"
+             x:Name="Root"
+             mc:Ignorable="d"
+             d:DesignHeight="420" d:DesignWidth="900">
+    <UserControl.Resources>
+        <converters:FractionConverter x:Key="Fraction" />
+    </UserControl.Resources>
+    <UserControl.InputBindings>
+        <KeyBinding Key="Left" Command="{x:Static controls:ScreenshotGalleryCommands.PreviousCommand}" />
+        <KeyBinding Key="Right" Command="{x:Static controls:ScreenshotGalleryCommands.NextCommand}" />
+    </UserControl.InputBindings>
+
+    <Grid x:Name="GalleryContent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,20,0,10">
+            <TextBlock Text="Screenshots" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding CounterText, ElementName=Root, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Vista principal: fondo frosted (la misma screenshot borrosa) + imagen grande con crossfade -->
+        <Border Grid.Row="1" CornerRadius="10" ClipToBounds="True" Background="#151A28" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+            <Grid>
+                <Image x:Name="BackdropImage" Stretch="UniformToFill" Margin="-60" Opacity="0.45"
+                       RenderOptions.BitmapScalingMode="Fant" IsHitTestVisible="False"/>
+                <Border Background="#66000000" IsHitTestVisible="False"/>
+
+                <Button x:Name="MainImageHost" Click="MainImage_Click" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        ToolTip="Click para ampliar">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <ContentPresenter/>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <controls:FadeImage x:Name="MainImage"
+                                        Stretch="Uniform"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        MaxHeight="{Binding ActualHeight, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.72}"
+                                        MaxWidth="{Binding ActualWidth, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.82}"
+                                        RenderOptions.BitmapScalingMode="Fant"/>
+                </Button>
+
+                <!-- Flechas -->
+                <Button x:Name="PrevButton" Click="Prev_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="14,0" ToolTip="Anterior (←)" Padding="0">
+                    <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}" Padding="0"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#B3000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
+                    <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </Button>
+                <Button x:Name="NextButton" Click="Next_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="14,0" ToolTip="Siguiente (→)" Padding="0">
+                    <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}" Padding="0"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#B3000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
+                    <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Strip de miniaturas -->
+        <ScrollViewer x:Name="ThumbScroll" Grid.Row="2" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Margin="0,12,0,0" Padding="0,0,0,16" PreviewMouseMove="ThumbScroll_MouseMove" PreviewMouseLeftButtonDown="ThumbScroll_MouseLeftButtonDown" PreviewMouseLeftButtonUp="ThumbScroll_MouseLeftButtonUp" MouseLeave="ThumbScroll_MouseLeave" Cursor="Hand">
+            <ItemsControl x:Name="ThumbnailStrip">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Click="Thumbnail_Click" Tag="{Binding}" Padding="0" Margin="0,0,8,0" Background="Transparent" BorderThickness="2" Cursor="Hand" ToolTip="Ver screenshot">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="ThumbBorder" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Background="#151A28" Width="150" Height="84">
+                                        <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" RenderOptions.BitmapScalingMode="Fant"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Overlay dentro de la ventana: fondo oscuro translúcido que cubre toda
+             la ventana + panel de galería más pequeño centrado (borde visible) -->
+        <Popup x:Name="FullscreenPopup" AllowsTransparency="True" Placement="Center" StaysOpen="True"
+               IsHitTestVisible="True" Focusable="True" KeyDown="Fullscreen_KeyDown">
+            <Popup.Child>
+                <Border x:Name="FullscreenRoot" Background="#B3000000" BorderBrush="Transparent" BorderThickness="0"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Border.InputBindings>
+                        <KeyBinding Key="Escape" Command="{x:Static controls:ScreenshotGalleryCommands.CloseFullscreenCommand}" />
+                    </Border.InputBindings>
+                    <Grid Margin="50">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" CornerRadius="10" ClipToBounds="True" Background="#141622" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+                            <!-- Zona de imagen -->
+                            <Grid>
+                                <controls:FadeImage x:Name="FullscreenImage"
+                                                    Stretch="Uniform"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    RenderOptions.BitmapScalingMode="Fant"/>
+                                <TextBlock x:Name="FullscreenCounter" Text="{Binding CounterText, ElementName=Root, Mode=OneWay}"
+                                           FontSize="14" Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                                           VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                                <Button x:Name="FullscreenClose" Click="CloseFullscreen_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16,16" ToolTip="Cerrar (Esc)" Padding="0">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
+                                    <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
+                                </Button>
+                                <Button x:Name="FullscreenPrev" Click="Prev_Click" Width="48" Height="48" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="18,0,0,0" ToolTip="Anterior (←)" Padding="0">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="24" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
+                                    <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="22"/>
+                                </Button>
+                                <Button x:Name="FullscreenNext" Click="Next_Click" Width="48" Height="48" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,18,0" ToolTip="Siguiente (→)" Padding="0">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="24" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
+                                    <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="22"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <!-- Strip de miniaturas fullscreen -->
+                        <ScrollViewer x:Name="FullscreenThumbScroll" Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Padding="0,0,0,16" Margin="0,8,0,0" PreviewMouseMove="FullscreenThumbScroll_MouseMove" PreviewMouseLeftButtonDown="FullscreenThumbScroll_MouseLeftButtonDown" PreviewMouseLeftButtonUp="FullscreenThumbScroll_MouseLeftButtonUp" MouseLeave="FullscreenThumbScroll_MouseLeave" Cursor="Hand">
+                            <ItemsControl x:Name="FullscreenThumbs">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Click="Thumbnail_Click" Tag="{Binding}" Padding="0" Margin="0,0,8,0" Background="Transparent" BorderThickness="2" Cursor="Hand" ToolTip="Ver screenshot">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="ThumbBorder" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Background="#151A28" Width="130" Height="73">
+                                                        <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" RenderOptions.BitmapScalingMode="Fant"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Popup.Child>
+        </Popup>
+    </Grid>
+</UserControl>
