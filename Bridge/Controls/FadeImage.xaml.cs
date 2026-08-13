@@ -164,6 +164,19 @@ public partial class FadeImage : UserControl
             ApplyCoverByWidthSizing();
             ApplyShortFrameFade();
         }
+        else if (Stretch == Stretch.Uniform && Height > 0)
+        {
+            // Cover-style sizing (e.g. the 170px cover over the hero): keep both
+            // frames at the INCOMING image's size (width = Height * aspect) from
+            // the very start of the cross-fade. The Grid then never resizes mid-
+            // transition, so switching between different-ratio covers (Genshin's
+            // wide art vs Steam's 2:3) shows no black bars and no layout jump —
+            // the incoming frame fills its box exactly, the outgoing one just
+            // fades away inside the same box.
+            var coverWidth = Height * aspect;
+            ApplyCoverHeightSizingTo(Image1, coverWidth, Height);
+            ApplyCoverHeightSizingTo(Image2, coverWidth, Height);
+        }
         ImageChanged?.Invoke(this, EventArgs.Empty);
 
         next.Source = image;
@@ -176,15 +189,29 @@ public partial class FadeImage : UserControl
         };
         fadeIn.Completed += (_, _) =>
         {
-            // Leave the outgoing frame in place (at opacity 0) instead of
-            // clearing its Source. Clearing it at the exact end of the fade makes
-            // the composited frosted/blur effect re-render in one frame — a
-            // visible "pop" right when the animation finishes. The slot gets
-            // reused next time this Image becomes the incoming frame.
             if (previous is not null && !ReferenceEquals(previous, activeImage))
             {
                 previous.BeginAnimation(OpacityProperty, null);
                 previous.Opacity = 0;
+                // Clear the outgoing frame's source deferred to the next
+                // dispatcher pass. Two things depend on it:
+                //  - Clearing it at the exact end of the fade made the frosted
+                //    blur re-render in one frame (a visible pop), so we defer
+                //    until after that render.
+                //  - Leaving it forever kept the shared Grid at the old frame's
+                //    size, so a different-ratio cover (e.g. Genshin's wide art)
+                //    left black bars around the next, narrower cover. After the
+                //    fade the Grid collapses to the new frame and the cover
+                //    fits edge-to-edge.
+                Dispatcher.BeginInvoke(() =>
+                {
+                    // Only clear if this frame wasn't reused for a new image
+                    // while the deferred clear was pending.
+                    if (previous.Source is not null && ReferenceEquals(previous, activeImage) is false)
+                    {
+                        previous.Source = null;
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         };
 
@@ -240,6 +267,19 @@ public partial class FadeImage : UserControl
 
         image.Width = width;
         image.Height = width / aspect;
+    }
+
+    // Cover-style sizing: sets both frames to a fixed height with width derived
+    // from the incoming image's aspect, so the Grid is stable across the fade.
+    private static void ApplyCoverHeightSizingTo(Image image, double width, double height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        image.Width = width;
+        image.Height = height;
     }
 
     // The hero's shared OpacityMask (in MainWindow) fades the bottom of the hero
