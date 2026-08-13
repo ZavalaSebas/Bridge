@@ -68,13 +68,21 @@ public partial class FadeImage : UserControl
     {
         var control = (FadeImage)d;
         if ((bool)e.NewValue)
+        {
             control.ApplyCoverByWidthSizing();
+            control.ApplyShortFrameFade();
+        }
         else
+        {
             control.ClearCoverByWidthSizing();
+            control.ClearShortFrameFade();
+        }
     }
 
     private Image? activeImage;
     private string? currentUrl;
+    private double image1Aspect;
+    private double image2Aspect;
 
     /// <summary>Raised after the visible image changes (so hosts can adapt layout).</summary>
     public event EventHandler? ImageChanged;
@@ -92,7 +100,10 @@ public partial class FadeImage : UserControl
         SizeChanged += (_, _) =>
         {
             if (CoverByWidth)
+            {
                 ApplyCoverByWidthSizing();
+                ApplyShortFrameFade();
+            }
         };
     }
 
@@ -130,18 +141,30 @@ public partial class FadeImage : UserControl
         });
     }
 
-    // Cross-fades to the other Image. The previous image keeps its frame until
-    // the fade-in completes so a rapid selection change never blanks the screen.
+    // Smooth crossfade between the two Image frames. Each image keeps its own
+    // aspect-based size and its own bottom fade, so two different-sized sources
+    // blend without a hard edge: the shorter frame's bottom is faded out by its
+    // own per-image mask instead of ending in a hard line.
     private void ShowImage(BitmapSource image)
     {
-        ImageAspect = image.PixelWidth / (double)image.PixelHeight;
-        if (CoverByWidth)
-            ApplyCoverByWidthSizing();
-        ImageChanged?.Invoke(this, EventArgs.Empty);
+        var aspect = image.PixelWidth / (double)image.PixelHeight;
+        ImageAspect = aspect;
 
         var next = activeImage is null || ReferenceEquals(activeImage, Image2) ? Image1 : Image2;
         var previous = activeImage;
         activeImage = next;
+
+        if (ReferenceEquals(next, Image1))
+            image1Aspect = aspect;
+        else
+            image2Aspect = aspect;
+
+        if (CoverByWidth)
+        {
+            ApplyCoverByWidthSizing();
+            ApplyShortFrameFade();
+        }
+        ImageChanged?.Invoke(this, EventArgs.Empty);
 
         next.Source = image;
         next.BeginAnimation(OpacityProperty, null);
@@ -153,9 +176,13 @@ public partial class FadeImage : UserControl
         };
         fadeIn.Completed += (_, _) =>
         {
+            // Leave the outgoing frame in place (at opacity 0) instead of
+            // clearing its Source. Clearing it at the exact end of the fade makes
+            // the composited frosted/blur effect re-render in one frame — a
+            // visible "pop" right when the animation finishes. The slot gets
+            // reused next time this Image becomes the incoming frame.
             if (previous is not null && !ReferenceEquals(previous, activeImage))
             {
-                previous.Source = null;
                 previous.BeginAnimation(OpacityProperty, null);
                 previous.Opacity = 0;
             }
@@ -191,24 +218,71 @@ public partial class FadeImage : UserControl
         target.BeginAnimation(OpacityProperty, fadeOut);
     }
 
-    // Forces the images to the control's width and height=width/aspect, so the
+    // Forces each image to the control's width and height=width/aspect, so the
     // artwork always fills the full width (no side letterbox bars, whatever the
     // source ratio or window size) and any vertical excess is clipped below by
     // the parent's ClipToBounds. Only used when CoverByWidth is on (the hero).
+    // Each image uses its own aspect so the fade between different-ratio sources
+    // never makes the outgoing image jump size.
     private void ApplyCoverByWidthSizing()
     {
-        if (ImageAspect is not { } aspect || aspect <= 0)
+        var width = Math.Max(ActualWidth, 1);
+        ApplyCoverByWidthSizingTo(Image1, image1Aspect, width);
+        ApplyCoverByWidthSizingTo(Image2, image2Aspect, width);
+    }
+
+    private static void ApplyCoverByWidthSizingTo(Image image, double aspect, double width)
+    {
+        if (aspect <= 0)
         {
             return;
         }
 
-        var width = Math.Max(ActualWidth, 1);
-        var height = width / aspect;
+        image.Width = width;
+        image.Height = width / aspect;
+    }
+
+    // The hero's shared OpacityMask (in MainWindow) fades the bottom of the hero
+    // from 35% of the hero height down. Taller frames reach that fade zone and
+    // are fully handled by the shared mask. A frame SHORTER than the hero ends
+    // above that zone with a hard bottom edge — this gives those frames their
+    // own fade, anchored to the same absolute start (35% of the hero height) so
+    // the blur edge stays consistent across games.
+    private void ApplyShortFrameFade()
+    {
+        var heroHeight = Math.Max(ActualHeight, 1);
+        var heroFadeStart = 0.35 * heroHeight;
 
         foreach (var image in new[] { Image1, Image2 })
         {
-            image.Width = width;
-            image.Height = height;
+            var imageHeight = image.Height;
+            if (imageHeight <= 0 || imageHeight >= heroHeight)
+            {
+                image.OpacityMask = null;
+                continue;
+            }
+
+            var fadeStart = Math.Min(heroFadeStart / imageHeight, 0.999);
+
+            image.OpacityMask = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops =
+                {
+                    new GradientStop(Colors.Black, 0.0),
+                    new GradientStop(Colors.Black, fadeStart),
+                    new GradientStop(Colors.Transparent, 1.0)
+                }
+            };
+        }
+    }
+
+    private void ClearShortFrameFade()
+    {
+        foreach (var image in new[] { Image1, Image2 })
+        {
+            image.OpacityMask = null;
         }
     }
 
