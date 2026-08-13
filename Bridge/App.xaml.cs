@@ -128,16 +128,20 @@ namespace Bridge
             services.AddSingleton(IgdbSettingsStore.Load());
             services.AddSingleton<HttpClient>();
 
-            // IGDB via Playnite's public proxy: zero-config (Playnite embeds the
-            // IGDB key server-side). First in the chain so Epic/manual games get
-            // IGDB metadata without the user configuring anything. If the proxy is
-            // ever unavailable, the chain continues to the other providers.
+            // Bridge's own IGDB proxy (Cloudflare Worker): the IGDB/Twitch
+            // credentials live as Worker Secrets server-side, so Bridge gets
+            // IGDB metadata with zero user configuration — the same architecture
+            // Playnite uses, but our own infra. First in the chain.
+            services.AddSingleton<BridgeIgdbProvider>();
+            services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<BridgeIgdbProvider>());
+
+            // Fallback: Playnite's public IGDB proxy (same zero-config behavior)
+            // in case our own Worker is unreachable.
             services.AddSingleton<PlayniteIgdbProvider>();
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<PlayniteIgdbProvider>());
 
-            // User-configured IGDB (optional): only used if the proxy above fails
-            // or returns nothing — its own key takes a back seat to the
-            // zero-config one.
+            // User-configured IGDB (optional): only used if both proxies fail
+            // or return nothing.
             services.AddSingleton<IgdbAuthClient>();
             services.AddSingleton<IgdbMetadataProvider>();
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<IgdbMetadataProvider>());

@@ -733,6 +733,37 @@ public static class Config
 | `Bridge/App.xaml.cs` | Composition root — DI setup, theme dictionaries, logging |
 | `Bridge/Config.cs` | App constants (AppName, paths) |
 | `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via `EnsureCreated()` + `EnsureColumn` raw-SQL mini-migrations in `App.xaml.cs`, no EF migrations yet) |
+| `Bridge.Metadata/BridgeIgdbProvider.cs` | IGDB metadata via Bridge's own Cloudflare Worker (zero-config) — first in the metadata chain |
+| `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via Playnite's public proxy — fallback if the Worker is unreachable |
+| `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
+| `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
+| `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
+
+## IGDB Metadata Infrastructure
+
+Bridge gets IGDB metadata with **zero user configuration** via its own
+Cloudflare Worker (`Bridge.Infra/igdb-proxy-worker/`). See
+[ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend)
+for the rationale.
+
+**Provider chain (first hit wins):**
+1. `BridgeIgdbProvider` — Bridge's own Worker (`https://bridge-igdb.<account>.workers.dev/metadata`). Credentials live as Worker Secrets in Cloudflare, never in code.
+2. `PlayniteIgdbProvider` — Playnite's public proxy (fallback if our Worker is down).
+3. `IgdbMetadataProvider` — the user's own Twitch key, if configured.
+4. Steam by name — last resort (can match a wrong game, especially for games only on Epic).
+
+**Deploying/updating the Worker** (see `Bridge.Infra/igdb-proxy-worker/README.md`):
+```bash
+cd Bridge.Infra/igdb-proxy-worker
+npm install
+npx wrangler login
+npx wrangler secret put TWITCH_CLIENT_ID
+npx wrangler secret put TWITCH_CLIENT_SECRET
+npx wrangler deploy
+```
+
+**Security note:** the Worker secrets are the project owner's own Twitch app
+credentials. Never commit them; the `.gitignore` excludes `.dev.vars`/`.env`/`.wrangler`.
 
 ---
 

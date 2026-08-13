@@ -414,10 +414,72 @@ Built the same detection flow into a new `Bridge.Import` project — the first t
 - ❌ The VDF parser is deliberately minimal — untested against edge cases Steam's real format might have that didn't appear in this one real library (e.g. unusual escape sequences); treat it as "known to work for the common case," not exhaustively hardened
 - ❌ Epic Games Store detection was not investigated in this pass (not in the `PlayniteExtensions` checkout that was reviewed) — still open if requested later
 
+**Update (2026-08-13):** Epic Games support was implemented — see ADR-13 and
+`Bridge.Import/Epic/` (EpicLibraryImporter reads `LauncherInstalled.dat` +
+`.item` manifests, launches via `com.epicgames.launcher://`, icon from the
+installed exe).
+
 **Alternatives considered:**
 
 - **Alternative 1: `SteamKit2` NuGet package** (what Playnite's real extension uses) — rejected as overkill; it's a full Steam client-protocol library (networking, auth, game data) when only its `KeyValue` VDF reader was needed.
 - **Alternative 2: Steam Web API** (network-based, needs an API key + the user's SteamID) — rejected; the user asked for *installed* games specifically, and the real Playnite extension's own approach (local files, no key) is simpler and matches what was asked.
+
+---
+
+## ADR-13: Own Cloudflare Worker as the IGDB metadata backend
+
+**Status:** Accepted
+
+**Date:** 2026-08-13
+
+**Context:**
+IGDB requires OAuth (Twitch `client_credentials`) with a Client ID + Client
+Secret. The secret can't live in a desktop app — anyone who downloads the exe
+could extract it. Bridge needs IGDB metadata (cover, description, developers,
+genres, scores, links) with **zero user configuration**, so games imported from
+sources without an appid-based lookup (Epic, manual entries) get proper
+metadata automatically.
+
+Playnite solves this by running its own backend (api2.playnite.link) with the
+IGDB key embedded server-side; its desktop client calls that proxy. Initially
+Bridge consumed Playnite's public proxy directly (`PlayniteIgdbProvider`) —
+technically public, but it's Playnite's infrastructure, not sanctioned for
+third-party use, and it made Bridge's dependency on Playnite obvious in the
+code.
+
+**Decision:**
+Operate our own **Cloudflare Worker** (`Bridge.Infra/igdb-proxy-worker`) as the
+primary IGDB metadata backend:
+
+- The Worker holds the Twitch/IGDB credentials as **Worker Secrets** (encrypted
+  in Cloudflare, never in code or in the repo).
+- `POST /metadata` receives `{ "name", "releaseYear? }`, obtains a Twitch
+  app token (`grant_type=client_credentials`, cached in-memory), queries IGDB
+  (`api.igdb.com/v4/games`) and returns the raw IGDB shape.
+- `Bridge.Metadata/BridgeIgdbProvider.cs` consumes it as the **first** provider
+  in the metadata chain; Bridge falls back to the Playnite proxy
+  (`PlayniteIgdbProvider`) if the Worker is unreachable, then to a
+  user-configured IGDB key (`IgdbMetadataProvider`), then Steam by name.
+
+Why this over the alternatives:
+- **Playnite's proxy directly** — rejected as the primary: it's Playnite's
+  infrastructure, may change or be rate-limited/blocked at any time, and
+  embeds Bridge's dependency on Playnite in the code.
+- **Embedding a shared IGDB key in Bridge.exe** — rejected: the key would be
+  extractable from the binary, and shared quota would be exhausted fast.
+- **Requiring the user to configure IGDB** — rejected: the goal is zero-config
+  (Epic games imported with no setup, matching Playnite's default experience).
+
+**Consequences:**
+- Bridge no longer depends on Playnite's infrastructure for its primary
+  metadata path; Playnite's proxy is only a fallback.
+- Deploying/updating the Worker requires Cloudflare + wrangler (`npm install &&
+  wrangler login && wrangler secret put TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET &&
+  wrangler deploy`) — see `Bridge.Infra/igdb-proxy-worker/README.md`.
+- The Worker's credentials are the project owner's own Twitch app; if quota is
+  reached, raise it or rotate keys.
+- The Worker `POST /auth` endpoint returns the token — keep it diagnostic-only;
+  do not expose it in production without protection.
 
 ---
 
