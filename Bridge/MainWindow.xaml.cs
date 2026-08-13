@@ -337,6 +337,11 @@ namespace Bridge
             {
                 menu.PlacementTarget = element;
                 menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                // The context menu lives in a Popup outside the visual tree, so
+                // ElementName bindings can't reach the window. Feed it the
+                // window's DataContext (the MainViewModel) explicitly — the
+                // buttons live under panels whose DataContext is SelectedGame.
+                menu.DataContext = Window.GetWindow(element)?.DataContext;
                 menu.IsOpen = true;
             }
         }
