@@ -713,7 +713,9 @@ public partial class MainViewModel : ObservableObject
                         Icon = metadata.Icon ?? string.Empty,
                         IsInstalled = metadata.IsInstalled,
                         Added = DateTime.Now,
-                        GameActions = metadata.GameActions
+                        GameActions = metadata.GameActions,
+                        PlaytimeSeconds = metadata.PlaytimeSeconds,
+                        LastActivity = metadata.LastActivity
                     };
                     // Resolve locally-cached artwork (Steam) BEFORE the row binds
                     // so the library shows complete art the moment it's added.
@@ -730,6 +732,16 @@ public partial class MainViewModel : ObservableObject
                     existing.IsInstalled = metadata.IsInstalled;
                     existing.InstallDirectory = metadata.InstallDirectory;
                     existing.InstallSizeBytes = metadata.InstallSizeBytes;
+                    // Steam's locally-recorded playtime fills in the real number
+                    // without ever shrinking what Bridge already tracked (the two
+                    // overlap, so taking the max can't double-count), and
+                    // LastActivity only moves forward.
+                    existing.PlaytimeSeconds = Math.Max(existing.PlaytimeSeconds, metadata.PlaytimeSeconds);
+                    if (metadata.LastActivity is { } steamPlayed &&
+                        (existing.LastActivity is null || steamPlayed > existing.LastActivity))
+                    {
+                        existing.LastActivity = steamPlayed;
+                    }
                     // Fill a missing icon from the source (Epic exe icon, Steam
                     // local art) without overwriting one the user set. A local
                     // file icon (the Epic exe) always wins over a remote URL.
