@@ -27,8 +27,11 @@ Recibe el nombre (y opcionalmente año) del juego:
 ```
 Devuelve la metadata de IGDB en su formato crudo:
 `id, name, summary, first_release_date, cover.url, artworks[].url,
-genres[].name, involved_companies[].company.name, rating,
+screenshots[].url, genres[].name, involved_companies[].company.name, rating,
 aggregated_rating, websites[].url, websites[].type`
+
+Los `screenshots[].url` son las capturas reales (16:9) del juego — Bridge las
+muestra como galería en el detalle para juegos no-Steam (Epic, manuales).
 
 ### `POST /auth` (solo diagnóstico)
 Obtiene un token OAuth de Twitch. **No lo expongas en producción sin
