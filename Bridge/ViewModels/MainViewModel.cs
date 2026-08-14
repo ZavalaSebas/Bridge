@@ -272,6 +272,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedGameChanged(Game? value)
     {
         RefreshReferenceFields(value);
+        OnPropertyChanged(nameof(FavoriteMenuText));
     }
 
     private void RefreshReferenceFields(Game? game)
@@ -589,6 +590,29 @@ public partial class MainViewModel : ObservableObject
         RefreshListDisplay(SelectedGame);
         RefreshStatistics();
     }
+
+    // Flips the favorite flag and persists it immediately (the hero star and
+    // the More menu share this state). The label shows the action the menu
+    // item would take, not the current state. No list refresh here: the row
+    // doesn't render the flag, and re-inserting the item would clear the
+    // selection mid-menu.
+    [RelayCommand]
+    private void ToggleFavorite()
+    {
+        if (SelectedGame is null)
+        {
+            return;
+        }
+
+        SelectedGame.Favorite = !SelectedGame.Favorite;
+        _gameRepository.Update(SelectedGame);
+        RefreshStatistics();
+        OnPropertyChanged(nameof(FavoriteMenuText));
+    }
+
+    public string FavoriteMenuText => SelectedGame?.Favorite == true
+        ? "Remove from Favorites"
+        : "Add to Favorites";
 
     public void ScanRomFolder(string? romFolder, Guid? emulatorId = null, string? profileId = null)
     {
@@ -1226,12 +1250,25 @@ public partial class MainViewModel : ObservableObject
     private void OnGameStopped(Game game, ulong sessionSeconds)
     {
         _gameRepository.Update(game);
-        RefreshListDisplay(game);
 
         // Re-applies the active CustomSort comparer so the game re-positions
-        // when the user sorted by Playtime/PlayCount/LastActivity — the
-        // CollectionChanged(Replace) from RefreshListDisplay doesn't do that.
+        // when the user sorted by Playtime/PlayCount/LastActivity.
         GamesView.Refresh();
+
+        // The table view renders playtime through GameDetailRow wrappers (plain
+        // POCOs) — rebuild them so the updated session time shows, without
+        // removing the game from Games (that would drop the ListBox selection).
+        RebuildDetailedRows();
+
+        // Re-binds the detail panel so the updated playtime/last-played render
+        // (Game is a POCO — no INPC). Setting the same SelectedGame reference
+        // after the refresh re-asserts the ListBox selection too: the row is
+        // never removed/re-inserted here, so the selection survives.
+        if (SelectedGame == game)
+        {
+            SelectedGame = null;
+            SelectedGame = game;
+        }
 
         RefreshStatistics();
         StatusMessage = $"{game.Name} — session: {sessionSeconds}s, total: {game.PlaytimeSeconds}s";
