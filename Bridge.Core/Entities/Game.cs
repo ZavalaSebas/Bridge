@@ -11,7 +11,7 @@ namespace Bridge.Core.Entities;
 /// crash-recovery behavior (§28.10, finding 5) — Bridge.Storage's load path is
 /// responsible for that reset, not this class.
 /// </summary>
-public class Game : DatabaseObject
+public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 {
     public string ExternalId { get; set; } = string.Empty;
     public Guid SourceId { get; set; } = GameSource.ManualId;
@@ -61,7 +61,26 @@ public class Game : DatabaseObject
     public bool UseGlobalGameStartedScript { get; set; } = true;
 
     public bool Hidden { get; set; }
-    public bool Favorite { get; set; }
+
+    // Property-changed notification so the hero star (and anything else bound
+    // to Favorite) reacts to a programmatic toggle from the More menu — the
+    // entity stays a POCO otherwise.
+    public bool Favorite
+    {
+        get => _favorite;
+        set
+        {
+            if (_favorite == value)
+                return;
+            _favorite = value;
+            System.ComponentModel.PropertyChangedEventHandler? handler = PropertyChanged;
+            handler?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Favorite)));
+        }
+    }
+
+    private bool _favorite;
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
     public int? UserScore { get; set; }
     public int? CriticScore { get; set; }
