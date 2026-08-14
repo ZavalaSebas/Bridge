@@ -30,16 +30,19 @@ public class GameRepository(BridgeDbContext context) : Repository<Game>(context)
         return games;
     }
 
-    // Runtime-only flags (IsInstalling/IsUninstalling/IsLaunching/IsRunning) are
-    // transient — Game.cs assigns Bridge.Storage's load path the responsibility
-    // of resetting them to false, mirroring Playnite's crash recovery (see the
-    // doc comment on Game.cs). Without this, a crash or a forced close mid-game
-    // leaves IsRunning=true persisted, and the next session starts showing the
-    // game as "running" forever.
+    // Runtime-only flags (IsInstalling/IsUninstalling/IsLaunching) are transient —
+    // Game.cs assigns Bridge.Storage's load path the responsibility of resetting
+    // them, mirroring Playnite's crash recovery (see the doc comment on Game.cs).
+    // IsRunning is deliberately NOT reset here: it's a live flag set by
+    // GameLauncher when the user launches a game, and ResetTransientFlags runs on
+    // every GetAll/Get/FindByExternalId — including the background metadata sync
+    // that can overlap a just-started game, where resetting IsRunning would flip
+    // the hero button back to Play mid-game. The stale-IsRunning crash reset
+    // happens once, in MainViewModel.LoadGames on startup.
     private void ResetTransientFlags(Game? game)
     {
         if (game is null ||
-            (!game.IsInstalling && !game.IsUninstalling && !game.IsLaunching && !game.IsRunning))
+            (!game.IsInstalling && !game.IsUninstalling && !game.IsLaunching))
         {
             return;
         }
@@ -47,7 +50,6 @@ public class GameRepository(BridgeDbContext context) : Repository<Game>(context)
         game.IsInstalling = false;
         game.IsUninstalling = false;
         game.IsLaunching = false;
-        game.IsRunning = false;
         Context.SaveChanges();
     }
 }

@@ -162,19 +162,23 @@ public class GameRepositoryTests : IDisposable
     }
 
     [Fact]
-    public void GetAll_ResetsTransientRuntimeFlags()
+    public void GetAll_ResetsTransientRuntimeFlags_ButPreservesIsRunning()
     {
-        // A crash or forced close mid-game leaves IsRunning=true persisted (the
-        // Game doc comment assigns Bridge.Storage's load path the reset). The
-        // next session must not show the game as running forever.
-        var game = new Game { Name = "Crashed mid-game", IsRunning = true, IsLaunching = true };
+        // A crash or forced close mid-game leaves IsRunning=true persisted. The
+        // stale-flag reset for IsRunning now happens once, in
+        // MainViewModel.LoadGames on startup — ResetTransientFlags must NOT reset
+        // IsRunning here, because the background metadata sync calls GetAll while
+        // a game the user just launched has IsRunning=true (resetting it would
+        // flip the hero button back to Play mid-game). The other transient flags
+        // are still reset on every read.
+        var game = new Game { Name = "Running right now", IsRunning = true, IsLaunching = true };
         _repository.Add(game);
 
         using var freshContext = new BridgeDbContext(_options);
         var reloaded = new GameRepository(freshContext).GetAll();
 
         var loaded = Assert.Single(reloaded);
-        Assert.False(loaded.IsRunning);
+        Assert.True(loaded.IsRunning); // preserved — it's a live launcher flag
         Assert.False(loaded.IsLaunching);
         Assert.False(loaded.IsInstalling);
         Assert.False(loaded.IsUninstalling);

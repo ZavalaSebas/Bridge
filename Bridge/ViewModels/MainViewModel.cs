@@ -463,6 +463,19 @@ public partial class MainViewModel : ObservableObject
             AddGameSorted(game);
         }
 
+        // Crash recovery: a previous session may have been force-closed while a
+        // game was running, leaving IsRunning=true persisted. Reset it here — this
+        // is the startup load, before the user can launch anything, so it can't
+        // clobber a legitimate in-session IsRunning (the background metadata sync
+        // must not reset it, see GameRepository.ResetTransientFlags).
+        foreach (var game in Games)
+        {
+            if (!game.IsRunning)
+                continue;
+            game.IsRunning = false;
+            _gameRepository.Update(game);
+        }
+
         RefreshStatistics();
     }
 
@@ -1232,6 +1245,21 @@ public partial class MainViewModel : ObservableObject
         {
             StatusMessage = $"Couldn't launch '{target.Name}': {ex.Message}";
         }
+    }
+
+    // Kills the running game's processes (the Play button turns into Stop while
+    // the game runs). The launcher's tracking loop sees the processes die and
+    // finalizes playtime/IsRunning through GameStopped — no bookkeeping here.
+    [RelayCommand]
+    private void StopGame()
+    {
+        if (SelectedGame is null)
+        {
+            return;
+        }
+
+        _launcher.Stop(SelectedGame);
+        StatusMessage = $"Stopping '{SelectedGame.Name}'...";
     }
 
     // See the threading note on GameLauncher.TrackAsync — both handlers below
