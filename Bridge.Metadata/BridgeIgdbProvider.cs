@@ -89,6 +89,18 @@ public sealed class BridgeIgdbProvider(HttpClient httpClient) : IGameMetadataPro
             metadata.BackgroundImage = IgdbMetadataProvider.UpgradeImageUrl(artworkUrl, "t_1080p");
         }
 
+        // Galería de screenshots: IGDB guarda las capturas reales de cada juego
+        // (16:9), igual que Steam. Igual que con Steam, se muestran como galería
+        // en el detalle — solo los juegos con al menos 2 screenshots muestran la
+        // galería (ScreenshotGallery se auto-colapsa si no hay).
+        if (game.Screenshots is { Count: > 0 } screenshots)
+        {
+            metadata.Screenshots = screenshots
+                .Where(s => !string.IsNullOrWhiteSpace(s.Url))
+                .Select(s => IgdbMetadataProvider.UpgradeImageUrl(s.Url!, "t_1080p"))
+                .ToList();
+        }
+
         if (game.InvolvedCompanies is { Count: > 0 } companies)
         {
             metadata.Developers = companies
@@ -161,6 +173,9 @@ internal sealed class WorkerGame
 
     [JsonPropertyName("artworks")]
     public List<WorkerArtwork>? Artworks { get; set; }
+
+    [JsonPropertyName("screenshots")]
+    public List<WorkerArtwork>? Screenshots { get; set; }
 
     [JsonPropertyName("involved_companies")]
     public List<WorkerCompany>? InvolvedCompanies { get; set; }
