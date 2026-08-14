@@ -162,6 +162,12 @@ public partial class FadeImage : UserControl
         if (CoverByWidth)
         {
             ApplyCoverByWidthSizing();
+            // Apply the per-frame fade to BOTH frames up front (each with its
+            // own aspect-based height): the incoming short frame already carries
+            // its diffused edge from the first frame of the cross-fade, and the
+            // outgoing tall frame keeps whatever fade applies to it. Pre-fading
+            // both is what makes switching tall→short reveal the blur edge
+            // smoothly instead of popping it in once the fade finishes.
             ApplyShortFrameFade();
         }
         else if (Stretch == Stretch.Uniform && Height > 0)
@@ -193,25 +199,24 @@ public partial class FadeImage : UserControl
             {
                 previous.BeginAnimation(OpacityProperty, null);
                 previous.Opacity = 0;
-                // Clear the outgoing frame's source deferred to the next
-                // dispatcher pass. Two things depend on it:
-                //  - Clearing it at the exact end of the fade made the frosted
-                //    blur re-render in one frame (a visible pop), so we defer
-                //    until after that render.
-                //  - Leaving it forever kept the shared Grid at the old frame's
-                //    size, so a different-ratio cover (e.g. Genshin's wide art)
-                //    left black bars around the next, narrower cover. After the
-                //    fade the Grid collapses to the new frame and the cover
-                //    fits edge-to-edge.
-                Dispatcher.BeginInvoke(() =>
+                // The hero (CoverByWidth) sizes both frames to the full width and
+                // their own aspect heights, so its Grid stays correctly sized on
+                // its own — clearing the outgoing source would collapse the Grid
+                // mid-transition and make the diffused edge jump. Only the
+                // fixed-height cover needs the stale frame cleared (deferred, so
+                // the frosted blur doesn't re-render in a visible pop), because
+                // otherwise it keeps the previous cover's wider ratio and leaves
+                // black bars around the next, narrower one.
+                if (!CoverByWidth)
                 {
-                    // Only clear if this frame wasn't reused for a new image
-                    // while the deferred clear was pending.
-                    if (previous.Source is not null && ReferenceEquals(previous, activeImage) is false)
+                    Dispatcher.BeginInvoke(() =>
                     {
-                        previous.Source = null;
-                    }
-                }, System.Windows.Threading.DispatcherPriority.Loaded);
+                        if (previous.Source is not null && ReferenceEquals(previous, activeImage) is false)
+                        {
+                            previous.Source = null;
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }
             }
         };
 
@@ -287,34 +292,66 @@ public partial class FadeImage : UserControl
     // are fully handled by the shared mask. A frame SHORTER than the hero ends
     // above that zone with a hard bottom edge — this gives those frames their
     // own fade, anchored to the same absolute start (35% of the hero height) so
-    // the blur edge stays consistent across games.
+    // the blur edge stays consistent across games. Applied to BOTH frames up
+    // front (no animation) so the incoming short frame already carries its
+    // diffused edge from the first frame of the cross-fade.
     private void ApplyShortFrameFade()
+    {
+        ApplyShortFrameFadeTo(Image1, animate: false);
+        ApplyShortFrameFadeTo(Image2, animate: false);
+    }
+
+    private void ApplyShortFrameFadeTo(Image image, bool animate = true)
     {
         var heroHeight = Math.Max(ActualHeight, 1);
         var heroFadeStart = 0.35 * heroHeight;
 
-        foreach (var image in new[] { Image1, Image2 })
+        var imageHeight = image.Height;
+        if (imageHeight <= 0 || imageHeight >= heroHeight)
         {
-            var imageHeight = image.Height;
-            if (imageHeight <= 0 || imageHeight >= heroHeight)
+            image.OpacityMask = null;
+            return;
+        }
+
+        // Fade the per-frame mask in GRADUALLY as the frame gets shorter than
+        // the hero. Without this, resizing the window until the frame no longer
+        // overflows the hero's bottom flips the mask from "off" to "on" in one
+        // step — a visible jump of the blur edge. blend goes 0 (frame just under
+        // the hero → shared hero mask already fades its bottom, no extra mask
+        // needed) to 1 (frame clearly shorter → full per-frame fade), ramping
+        // over the first 25% of the hero's height.
+        var shortage = (heroHeight - imageHeight) / heroHeight;
+        var blend = Math.Clamp(shortage / 0.25, 0.0, 1.0);
+
+        var fullFadeStart = Math.Min(heroFadeStart / imageHeight, 0.999);
+        var fadeStart = fullFadeStart + (1.0 - fullFadeStart) * (1.0 - blend);
+
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0, 1),
+            GradientStops =
             {
-                image.OpacityMask = null;
-                continue;
+                new GradientStop(Colors.Black, 0.0),
+                new GradientStop(Colors.Black, fadeStart),
+                new GradientStop(Colors.Transparent, 1.0)
             }
+        };
+        image.OpacityMask = brush;
 
-            var fadeStart = Math.Min(heroFadeStart / imageHeight, 0.999);
-
-            image.OpacityMask = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0),
-                EndPoint = new Point(0, 1),
-                GradientStops =
+        if (animate)
+        {
+            // Develop the diffused edge from the bottom of the frame up to its
+            // target position over the cross-fade duration — the incoming short
+            // frame's fade grows smoothly instead of snapping in once the tall
+            // frame it replaced is gone.
+            var fadeStop = brush.GradientStops[1];
+            fadeStop.BeginAnimation(
+                GradientStop.OffsetProperty,
+                new DoubleAnimation(1.0, fadeStart, TransitionDuration)
                 {
-                    new GradientStop(Colors.Black, 0.0),
-                    new GradientStop(Colors.Black, fadeStart),
-                    new GradientStop(Colors.Transparent, 1.0)
-                }
-            };
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                });
         }
     }
 
