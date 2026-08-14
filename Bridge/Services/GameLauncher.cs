@@ -24,9 +24,11 @@ namespace Bridge.Services;
 ///   {InstallDir}/{PlayniteDir}/etc. tokens yet.
 /// - Steam tracking uses TrackingMode.Directory (watch processes whose
 ///   binary lives under the game's InstallDirectory — Playnite's
-///   WatchDirectoryProcesses, §28.9). Everything else tracks the exact
-///   launched process only (behaves like Playnite's OriginalProcess for every
-///   TrackingMode value) — no process-tree walking yet.
+///   WatchDirectoryProcesses, §28.9). File/Emulator actions with the default
+///   tracking use process-tree walking (Playnite's MonitorProcessTree, §28.10)
+///   so launcher-based games (Genshin's launcher.exe, Epic/GOG frontends) keep
+///   tracking after the launcher spawns the real game and exits. Other modes
+///   track the exact launched process only (Playnite's OriginalProcess).
 ///
 /// Automatic Steam play action: mirrors Playnite's SteamPlayController
 /// (SteamGameController.cs:160-204, verified against the real extension and
@@ -74,13 +76,36 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         game.PlayCount++;
         GameStarted?.Invoke(game);
 
-        if (action.TrackingMode == TrackingMode.Directory)
+        switch (action.TrackingMode)
         {
-            _ = TrackDirectoryAsync(game, action.InitialTrackingDelayMs, action.TrackingFrequencyMs);
-        }
-        else
-        {
-            _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+            case TrackingMode.Directory:
+                _ = TrackDirectoryAsync(game, action.InitialTrackingDelayMs, action.TrackingFrequencyMs);
+                break;
+
+            // Process-tree tracking: the launched process AND every descendant it
+            // spawns (the launcher-spawns-game-and-exits case — Genshin's
+            // launcher.exe, Epic/GOG frontends). Default auto-chooses the tree
+            // for File/Emulator actions, matching Playnite's automatic choice.
+            case TrackingMode.Process:
+            case TrackingMode.Default when action.Type is GameActionType.File or GameActionType.Emulator:
+                try
+                {
+                    var pid = process.Id;
+                    process.Dispose();
+                    _ = TrackProcessTreeAsync(game, pid, action.TrackingFrequencyMs);
+                }
+                catch
+                {
+                    process.Dispose();
+                    // No usable handle/Id for the started process — fall back to
+                    // exact-process tracking rather than losing the session.
+                    _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+                }
+                break;
+
+            default:
+                _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+                break;
         }
     }
 
@@ -230,11 +255,18 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 await Task.Delay(initialDelayMs);
             }
 
+            // Executables under the install directory, matched by process name as a
+            // fallback: some launchers (Genshin's HYP.exe/HYPHelper.exe) run elevated
+            // or otherwise protected, so MainModule.FileName is unreadable even though
+            // the process is running from that directory. Build the name set once per
+            // session — the directory doesn't change mid-session.
+            var executableNames = GetExecutableNames(game.InstallDirectory);
+
             // Wait for the game's process to appear. If it never does (Steam fails
             // to start it, a bad InstallDirectory, offline mode, ...), don't hang
             // forever: give up after DirectoryLaunchTimeout so IsRunning clears and
             // no phantom playtime gets recorded.
-            while (!await HasProcessInDirectoryAsync(game.InstallDirectory))
+            while (!await HasProcessInDirectoryAsync(game.InstallDirectory, executableNames))
             {
                 if (stopwatch.Elapsed >= DirectoryLaunchTimeout)
                 {
@@ -247,8 +279,31 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             launched = true;
             sessionStart = stopwatch.Elapsed;
 
-            while (await HasProcessInDirectoryAsync(game.InstallDirectory))
+            // Grace period for launcher transitions: some games (Genshin) launch a
+            // non-elevated launcher that asks for admin rights (UAC) and then
+            // relaunches elevated, or exit after spawning the real game — leaving a
+            // gap of a few seconds with no process under the install directory. If
+            // we ended the session the moment the processes vanished, the session
+            // would last only as long as the user took to approve the UAC prompt.
+            // Instead, keep polling: only end once the directory stays empty for
+            // DirectoryIdleTimeout in a row.
+            var idleSince = TimeSpan.MaxValue;
+
+            while (true)
             {
+                if (await HasProcessInDirectoryAsync(game.InstallDirectory, executableNames))
+                {
+                    idleSince = TimeSpan.MaxValue;
+                }
+                else if (idleSince == TimeSpan.MaxValue)
+                {
+                    idleSince = stopwatch.Elapsed;
+                }
+                else if (stopwatch.Elapsed - idleSince >= DirectoryIdleTimeout)
+                {
+                    break;
+                }
+
                 await Task.Delay(frequencyMs);
             }
         }
@@ -275,14 +330,115 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
     private static readonly TimeSpan DirectoryLaunchTimeout = TimeSpan.FromMinutes(5);
 
+    // How long the install directory must stay empty before an already-launched
+    // session ends. Covers launcher transitions with a gap (Genshin's UAC
+    // relaunch, a launcher exiting before the game's process appears).
+    private static readonly TimeSpan DirectoryIdleTimeout = TimeSpan.FromSeconds(10);
+
+    // Process-tree tracking for the launcher-spawns-child-and-exits case (Genshin's
+    // launcher.exe, Epic/GOG frontends). Mirrors Playnite's MonitorProcessTree
+    // (§28.10): start with the launched PID, then every poll expand the tree to
+    // include any process whose parent is already in it, and prune to the ones
+    // still alive. The launcher may exit after spawning the game — the game stays
+    // in the tree as a descendant, so the session survives until the game itself
+    // closes. Gives up after DirectoryLaunchTimeout if nothing ever appears.
+    private async Task TrackProcessTreeAsync(Game game, int launchedPid, int frequencyMs)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var tree = new HashSet<int> { launchedPid };
+        bool launched = false;
+
+        try
+        {
+            if (!await IsProcessTreeRunningAsync(tree))
+            {
+                if (stopwatch.Elapsed >= DirectoryLaunchTimeout)
+                {
+                    return;
+                }
+            }
+
+            while (await IsProcessTreeRunningAsync(tree))
+            {
+                // Wait for at least one poll where the tree is alive, then keep
+                // tracking until it's gone.
+                if (!launched)
+                {
+                    launched = true;
+                    stopwatch.Restart();
+                }
+
+                await Task.Delay(frequencyMs);
+            }
+        }
+        catch
+        {
+            // Swallow — this is a fire-and-forget task; the session is still
+            // finalized in `finally`. Nothing here should throw in practice
+            // (the snapshot/expansion catch internally), this is purely
+            // defensive against an unobserved-task exception.
+        }
+        finally
+        {
+            stopwatch.Stop();
+            game.IsRunning = false;
+
+            if (launched)
+            {
+                var sessionSeconds = (ulong)stopwatch.Elapsed.TotalSeconds;
+                game.PlaytimeSeconds += sessionSeconds;
+                GameStopped?.Invoke(game, sessionSeconds);
+            }
+        }
+    }
+
+    private static async Task<bool> IsProcessTreeRunningAsync(HashSet<int> tree)
+    {
+        // Process enumeration takes 100-300ms — offload to a pool thread like
+        // HasProcessInDirectoryAsync; the continuation stays on the UI thread.
+        var snapshot = await Task.Run(() => ProcessTreeSnapshot.Collect());
+        var next = ProcessTreeExpander.ExpandAndPrune(tree, snapshot);
+        tree.Clear();
+        tree.UnionWith(next);
+        return tree.Count > 0;
+    }
+
     // Enumerating every running process can take 100-300ms on a loaded system.
     // The tracking loops run on the UI thread (see the note above TrackAsync),
     // so the enumeration itself must not — offload it to a pool thread and keep
     // only the (cheap) continuation on the UI thread.
-    private static Task<bool> HasProcessInDirectoryAsync(string installDirectory) =>
-        Task.Run(() => HasProcessInDirectory(installDirectory));
+    private static Task<bool> HasProcessInDirectoryAsync(string installDirectory, IReadOnlySet<string> executableNames) =>
+        Task.Run(() => HasProcessInDirectory(installDirectory, executableNames));
 
-    private static bool HasProcessInDirectory(string installDirectory)
+    // Executable file names (without .exe) under the install directory, used to
+    // match running processes whose MainModule is unreadable (elevated/protected
+    // launchers like Genshin's HYP.exe). Recursive so the real game's exe in a
+    // nested games\ folder is included too.
+    private static HashSet<string> GetExecutableNames(string installDirectory)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(installDirectory) || !Directory.Exists(installDirectory))
+        {
+            return names;
+        }
+
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(installDirectory, "*.exe", SearchOption.AllDirectories))
+            {
+                names.Add(Path.GetFileNameWithoutExtension(file));
+            }
+        }
+        catch
+        {
+            // Unreadable subfolder (permissions) — the path check alone still works
+            // for the processes whose MainModule is readable.
+        }
+
+        return names;
+    }
+
+    private static bool HasProcessInDirectory(string installDirectory, IReadOnlySet<string> executableNames)
     {
         if (string.IsNullOrWhiteSpace(installDirectory) || !Directory.Exists(installDirectory))
         {
@@ -304,28 +460,49 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         {
             foreach (var process in processes)
             {
+                // MainModule.FileName THROWS (Win32 access denied) for elevated or
+                // protected processes (Genshin's HYP.exe) instead of returning null,
+                // so it must be read in its own try/catch — otherwise the catch below
+                // swallows it and the name fallback never runs.
+                string? path = null;
                 try
                 {
-                    var path = process.MainModule?.FileName;
-                    if (string.IsNullOrWhiteSpace(path) ||
-                        !path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    // Path-prefix boundary check: "C:\Games\Steam2\game.exe" must not
-                    // match an install dir of "C:\Games\Steam".
-                    if (path.Length > installDirectory.Length &&
-                        path[installDirectory.Length] is not ('\\' or '/'))
-                    {
-                        continue;
-                    }
-
-                    return true;
+                    path = process.MainModule?.FileName;
                 }
                 catch
                 {
-                    // Access denied or the process exited mid-iteration — skip it.
+                    // Elevated/protected process — path unreadable, fall back to name.
+                }
+
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    if (path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Path-prefix boundary check: "C:\Games\Steam2\game.exe" must not
+                        // match an install dir of "C:\Games\Steam".
+                        if (path.Length == installDirectory.Length ||
+                            path[installDirectory.Length] is ('\\' or '/'))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    // Path unreadable (elevated launcher like Genshin's HYP.exe) — the
+                    // process name alone is still readable. Match it against the
+                    // executables under the install directory.
+                    try
+                    {
+                        if (executableNames.Contains(process.ProcessName))
+                        {
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Process exited between enumeration and name read — skip it.
+                    }
                 }
             }
 
