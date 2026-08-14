@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Playnite's public IGDB proxy as a fallback** (`PlayniteIgdbProvider`) — used only if our own Worker is unreachable.
 - **Fixed context-menu commands in the More menu** — the menu lives in a Popup outside the visual tree, so `ElementName` bindings never resolved; commands now bind through the window's DataContext set in `MenuButton_Click`.
 
+### Known issues
+- **Hero cross-fade blur edge pops when switching tall→short backgrounds** — in the Details view, switching from a tall game background (height ≥ the 510px hero) to a short one shows the short frame's bottom fade snapping in once the cross-fade completes instead of revealing smoothly. Left as-is for now (pre-fading both frames up front + not clearing the hero's outgoing Source already fixes the worst of it); full detail and candidate fixes in `DEVELOPMENT.md` under the screenshot gallery section.
+
 ## [0.2.0] - 2026-08-12
 
 ### Added
