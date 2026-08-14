@@ -25,12 +25,21 @@ public partial class ScreenshotGallery : UserControl
     // never runs when there's only one screenshot.
     private readonly DispatcherTimer _autoTimer;
     private bool _autoPaused;
+    private DateTime _lastManualChange = DateTime.MinValue;
+    private static readonly TimeSpan ManualChangeCooldown = TimeSpan.FromSeconds(5);
 
     public ScreenshotGallery()
     {
         InitializeComponent();
         _autoTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
-        _autoTimer.Tick += (_, _) => { if (!_autoPaused) ShowAt(_index + 1); };
+        // Give the carousel a breather after a manual navigation: the user just
+        // picked a specific screenshot, so hold the auto-advance for a cooldown
+        // before it starts sliding again.
+        _autoTimer.Tick += (_, _) =>
+        {
+            if (!_autoPaused && DateTime.UtcNow - _lastManualChange >= ManualChangeCooldown)
+                ShowAt(_index + 1);
+        };
         // React to the selected game changing, not just the ItemsSource binding:
         // when SelectedGame swaps the control's DataContext is briefly null, and
         // relying on the binding alone leaves the gallery showing the previous
@@ -46,8 +55,8 @@ public partial class ScreenshotGallery : UserControl
         // inspecting it), resume on leave. Drag also pauses via _autoPaused.
         MainImageHost.MouseEnter += (_, _) => _autoPaused = true;
         MainImageHost.MouseLeave += (_, _) => _autoPaused = false;
-        CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.PreviousCommand, (_, _) => ShowAt(_index - 1)));
-        CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.NextCommand, (_, _) => ShowAt(_index + 1)));
+        CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.PreviousCommand, (_, _) => { MarkManualChange(); ShowAt(_index - 1); }));
+        CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.NextCommand, (_, _) => { MarkManualChange(); ShowAt(_index + 1); }));
         CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.CloseFullscreenCommand, (_, _) => CloseFullscreen()));
     }
 
@@ -179,9 +188,17 @@ public partial class ScreenshotGallery : UserControl
         return null;
     }
 
-    private void Prev_Click(object sender, RoutedEventArgs e) => ShowAt(_index - 1);
+    private void Prev_Click(object sender, RoutedEventArgs e)
+    {
+        MarkManualChange();
+        ShowAt(_index - 1);
+    }
 
-    private void Next_Click(object sender, RoutedEventArgs e) => ShowAt(_index + 1);
+    private void Next_Click(object sender, RoutedEventArgs e)
+    {
+        MarkManualChange();
+        ShowAt(_index + 1);
+    }
 
     private void Thumbnail_Click(object sender, RoutedEventArgs e)
     {
@@ -190,10 +207,16 @@ public partial class ScreenshotGallery : UserControl
             var idx = _urls.IndexOf(url);
             if (idx >= 0)
             {
+                MarkManualChange();
                 ShowAt(idx);
             }
         }
     }
+
+    // Any user-driven navigation (arrows, thumbnails, keyboard) restarts the
+    // auto-advance cooldown so the slide doesn't move on right after the user
+    // manually picked a screenshot.
+    private void MarkManualChange() => _lastManualChange = DateTime.UtcNow;
 
     private void MainImage_Click(object sender, RoutedEventArgs e)
     {
@@ -238,10 +261,12 @@ public partial class ScreenshotGallery : UserControl
         switch (e.Key)
         {
             case Key.Left:
+                MarkManualChange();
                 ShowAt(_index - 1);
                 e.Handled = true;
                 break;
             case Key.Right:
+                MarkManualChange();
                 ShowAt(_index + 1);
                 e.Handled = true;
                 break;

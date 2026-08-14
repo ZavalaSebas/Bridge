@@ -45,8 +45,8 @@
                                         Stretch="Uniform"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        MaxHeight="{Binding ActualHeight, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.72}"
-                                        MaxWidth="{Binding ActualWidth, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.82}"
+                                        MaxHeight="{Binding ActualHeight, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.82}"
+                                        MaxWidth="{Binding ActualWidth, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.92}"
                                         RenderOptions.BitmapScalingMode="Fant"/>
                 </Button>
 
