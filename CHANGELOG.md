@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Buttons in the Details hero no longer get cut off by the cover when the window is shrunk** — the Play/More/Edit row (`CompactButtonsRow`) was a horizontal `StackPanel`, so when the window got narrow enough the cover (fixed 170px height) left less space than the buttons' minimum widths, overflowing underneath it. The row is now a `WrapPanel`, so the buttons wrap onto additional lines instead of being covered.
+- **Epic games now get their screenshot gallery from IGDB** — the own Cloudflare Worker now requests `screenshots.image_id/screenshots.url` on its game query, and `BridgeIgdbProvider` maps them to `GameMetadata.Screenshots` (upgraded to `t_1080p`, same as Steam's `path_full`), so the Details gallery appears for Epic/IGDB games too instead of only Steam ones.
 
 ### Known issues
 - **Hero cross-fade blur edge pops when switching tall→short backgrounds** — in the Details view, switching from a tall game background (height ≥ the 510px hero) to a short one shows the short frame's bottom fade snapping in once the cross-fade completes instead of revealing smoothly. Left as-is for now (pre-fading both frames up front + not clearing the hero's outgoing Source already fixes the worst of it); full detail and candidate fixes in `DEVELOPMENT.md` under the screenshot gallery section.

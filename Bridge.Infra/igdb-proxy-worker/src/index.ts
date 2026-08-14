@@ -119,7 +119,8 @@ function buildGameQuery(name: string, releaseYear?: number): string {
 
   return [
     "fields id,name,summary,first_release_date,cover.image_id,cover.url,",
-    "artworks.image_id,artworks.url,genres.name,involved_companies.company.name,",
+    "artworks.image_id,artworks.url,screenshots.image_id,screenshots.url,",
+    "genres.name,involved_companies.company.name,",
     "involved_companies.publisher,involved_companies.developer,",
     "rating,rating_count,aggregated_rating,aggregated_rating_count,",
     "total_rating,total_rating_count,websites.url,websites.type;",
