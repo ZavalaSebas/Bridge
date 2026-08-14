@@ -26,6 +26,10 @@ public class SteamLibraryImporter
             throw new InvalidOperationException("Steam installation not found (no HKCU\\Software\\Valve\\Steam registry key, or the path it points to doesn't exist).");
         }
 
+        // Steam's locally-recorded playtime (userdata\*\config\localconfig.vdf)
+        // — resolved once so every game below gets the same snapshot.
+        var playtimes = SteamLocalPlaytimeResolver.GetPlaytimes(installPath);
+
         var games = new List<GameMetadata>();
         var seenAppIds = new HashSet<string>();
 
@@ -42,12 +46,24 @@ public class SteamLibraryImporter
                 var game = ParseManifest(manifestFile, steamAppsDir);
                 if (game is not null && seenAppIds.Add(game.ExternalId))
                 {
+                    ApplyPlaytime(game, playtimes);
                     games.Add(game);
                 }
             }
         }
 
         return games;
+    }
+
+    private static void ApplyPlaytime(GameMetadata game, Dictionary<string, SteamLocalPlaytime>? playtimes)
+    {
+        if (playtimes is null || !playtimes.TryGetValue(game.ExternalId, out var playtime))
+        {
+            return;
+        }
+
+        game.PlaytimeSeconds = playtime.PlaytimeSeconds;
+        game.LastActivity = playtime.LastActivity;
     }
 
     internal static List<string> GetLibraryFolders(string steamInstallPath)

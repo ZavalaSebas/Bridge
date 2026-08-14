@@ -52,7 +52,7 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 The MVP defined in the foundation notes:
 - Open the app, create/save/load/edit games, delete
 - Add games manually
-- **Detect and import installed Steam games automatically on startup** — `Bridge.Import`/`SteamLibraryImporter`, see [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Verified against a real Steam installation (29 real games, 2 library folders) before writing synthetic tests
+- **Detect and import installed Steam games automatically on startup** — `Bridge.Import`/`SteamLibraryImporter`, see [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Verified against a real Steam installation (29 real games, 2 library folders) before writing synthetic tests. Since 2026-08-14 the import also brings **real Steam playtime** from `userdata\*\config\localconfig.vdf` via `SteamLocalPlaytimeResolver` (zero-config, local-only — see ADR-11)
 - **Steam Store metadata on import** — newly imported Steam games auto-download metadata from the official Steam store (name, description, release date, cover/background art, critic/community scores, developers, publishers, genres, platforms, features, links — all via public HTTP endpoints, no login, no API key). Manual metadata search tries IGDB first, then falls back to Steam Store for non-Steam games.
 - **Steam icons in the library list** — each Steam game shows the square 32x32 clienticon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when no cached icon exists — the same icon Playnite displays.
 - List + detail views with basic selection
@@ -95,7 +95,7 @@ Bridge/
 │                        #           ScanRomWindow, EmulatorSetupWindow, IgdbSettingsWindow
 ├── Bridge.Core/         # Domain entities, contracts — created
 ├── Bridge.Storage/      # EF Core DbContext, repositories — created
-├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamPlayActions, VdfParser, SteamPaths
+├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider/IgdbAuthClient/IgdbSettings
 ├── Bridge.Emulation/    # not created — see note below
 └── Bridge.Tests/        # created — 102 tests, all passing (dotnet test Bridge.slnx)

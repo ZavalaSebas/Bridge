@@ -421,6 +421,15 @@ Built the same detection flow into a new `Bridge.Import` project — the first t
 `.item` manifests, launches via `com.epicgames.launcher://`, icon from the
 installed exe).
 
+**Update (2026-08-14):** real Steam playtime is imported the same local-only
+way — `SteamLocalPlaytimeResolver` reads `userdata\{steamid}\config\localconfig.vdf`
+(`Software\Valve\Steam\apps\{appid}` → `Playtime` minutes + `LastPlayed` unix),
+merged across accounts (max playtime, latest activity) and applied on import
+(new games take it; existing games merge without shrinking Bridge's own tracked
+time). This keeps the zero-config, no-login philosophy of ADR-11 — Playnite's
+online playtime path (Steam Web API) requires connecting an account and stays
+out of scope (see PROJECT_FOUNDATION.md §28.27.A).
+
 **Alternatives considered:**
 
 - **Alternative 1: `SteamKit2` NuGet package** (what Playnite's real extension uses) — rejected as overkill; it's a full Steam client-protocol library (networking, auth, game data) when only its `KeyValue` VDF reader was needed.
