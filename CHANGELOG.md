@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Playnite's public IGDB proxy as a fallback** (`PlayniteIgdbProvider`) — used only if our own Worker is unreachable.
 - **Fixed context-menu commands in the More menu** — the menu lives in a Popup outside the visual tree, so `ElementName` bindings never resolved; commands now bind through the window's DataContext set in `MenuButton_Click`.
 
+### Fixed
+- **Buttons in the Details hero no longer get cut off by the cover when the window is shrunk** — the Play/More/Edit row (`CompactButtonsRow`) was a horizontal `StackPanel`, so when the window got narrow enough the cover (fixed 170px height) left less space than the buttons' minimum widths, overflowing underneath it. The row is now a `WrapPanel`, so the buttons wrap onto additional lines instead of being covered.
+
 ### Known issues
 - **Hero cross-fade blur edge pops when switching tall→short backgrounds** — in the Details view, switching from a tall game background (height ≥ the 510px hero) to a short one shows the short frame's bottom fade snapping in once the cross-fade completes instead of revealing smoothly. Left as-is for now (pre-fading both frames up front + not clearing the hero's outgoing Source already fixes the worst of it); full detail and candidate fixes in `DEVELOPMENT.md` under the screenshot gallery section.
 
