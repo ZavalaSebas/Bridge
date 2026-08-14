@@ -45,6 +45,20 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     public event Action<Game>? GameStarted;
     public event Action<Game, ulong>? GameStopped;
 
+    // Tracks the launched PID (tree mode) or install directory (directory mode)
+    // per game so Stop() knows what to kill. Guarded by a lock — the tracking
+    // tasks run on the UI thread, but Stop() can be called from a command while
+    // a task is mid-loop.
+    private readonly object _activeLock = new();
+    private readonly Dictionary<Guid, ActiveTracking> _active = [];
+
+    private sealed class ActiveTracking
+    {
+        public int LaunchedPid = -1;
+        public string InstallDirectory = string.Empty;
+        public CancellationTokenSource Cancellation = new();
+    }
+
     public void Launch(Game game)
     {
         if (game.IsRunning)
@@ -79,7 +93,13 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         switch (action.TrackingMode)
         {
             case TrackingMode.Directory:
-                _ = TrackDirectoryAsync(game, action.InitialTrackingDelayMs, action.TrackingFrequencyMs);
+                ActiveTracking directoryTracking;
+                lock (_activeLock)
+                {
+                    directoryTracking = new ActiveTracking { InstallDirectory = game.InstallDirectory };
+                    _active[game.Id] = directoryTracking;
+                }
+                _ = TrackDirectoryAsync(game, directoryTracking.Cancellation.Token, action.InitialTrackingDelayMs, action.TrackingFrequencyMs);
                 break;
 
             // Process-tree tracking: the launched process AND every descendant it
@@ -92,21 +112,251 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 {
                     var pid = process.Id;
                     process.Dispose();
-                    _ = TrackProcessTreeAsync(game, pid, action.TrackingFrequencyMs);
+                    ActiveTracking treeTracking;
+                    lock (_activeLock)
+                    {
+                        treeTracking = new ActiveTracking { LaunchedPid = pid };
+                        _active[game.Id] = treeTracking;
+                    }
+                    _ = TrackProcessTreeAsync(game, pid, treeTracking.Cancellation.Token, action.TrackingFrequencyMs);
                 }
                 catch
                 {
                     process.Dispose();
                     // No usable handle/Id for the started process — fall back to
                     // exact-process tracking rather than losing the session.
-                    _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+                    _ = TrackAsync(game, process, CancellationToken.None, action.TrackingFrequencyMs);
                 }
                 break;
 
             default:
-                _ = TrackAsync(game, process, action.TrackingFrequencyMs);
+                ActiveTracking exactTracking;
+                lock (_activeLock)
+                {
+                    exactTracking = new ActiveTracking { LaunchedPid = GetProcessId(process) };
+                    _active[game.Id] = exactTracking;
+                }
+                _ = TrackAsync(game, process, exactTracking.Cancellation.Token, action.TrackingFrequencyMs);
                 break;
         }
+    }
+
+    private static int GetProcessId(Process process)
+    {
+        try
+        {
+            return process.Id;
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    private void UnregisterActive(Game game)
+    {
+        lock (_activeLock)
+        {
+            _active.Remove(game.Id);
+        }
+    }
+
+    // Kills the processes Bridge launched for this game and forces the tracking
+    // loop to finalize the session immediately (GameStopped → IsRunning=false),
+    // so the Stop button always reverts to Play even if the process can't be
+    // killed (elevated launcher). Directory mode kills everything under the
+    // install directory (the launched process is a launcher, not the game);
+    // tree/exact mode kills the launched PID's process tree.
+    public void Stop(Game game)
+    {
+        ActiveTracking tracking;
+        lock (_activeLock)
+        {
+            if (!_active.TryGetValue(game.Id, out tracking!))
+            {
+                return;
+            }
+        }
+
+        // Cancel first: the tracking loop's Delay throws immediately, the session
+        // finalizes in its finally (GameStopped → IsRunning=false) and the button
+        // reverts to Play regardless of whether the kill below succeeds.
+        tracking.Cancellation.Cancel();
+
+        bool killedAny;
+        if (!string.IsNullOrWhiteSpace(tracking.InstallDirectory))
+        {
+            // Same name fallback the tracker uses: Genshin's launcher (HYP.exe)
+            // runs elevated, so MainModule.FileName is unreadable and path-only
+            // matching would miss it — the launcher must be killed by name too.
+            var names = GetExecutableNames(tracking.InstallDirectory);
+            killedAny = KillProcessesInDirectory(tracking.InstallDirectory, names);
+        }
+        else if (tracking.LaunchedPid > 0)
+        {
+            killedAny = KillProcessTree(tracking.LaunchedPid);
+        }
+        else
+        {
+            killedAny = false;
+        }
+
+        // The game's process may not have spawned yet (a launcher that takes a
+        // few seconds, or a quick Stop right after Play). Keep watching for a
+        // short window and kill it the moment it appears — otherwise the game
+        // opens right after Stop and runs untracked.
+        if (!killedAny)
+        {
+            _ = KillWhenAppearsAsync(tracking);
+        }
+    }
+
+    // Watches the tracking target (install directory or launched PID) for a
+    // short grace window, killing the game's processes as soon as they appear.
+    // Fire-and-forget: it runs after Stop has already reverted the button, so it
+    // never touches the UI — pure process management.
+    private static async Task KillWhenAppearsAsync(ActiveTracking tracking)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.Elapsed < StopKillGrace)
+        {
+            bool killed;
+            if (!string.IsNullOrWhiteSpace(tracking.InstallDirectory))
+            {
+                var names = GetExecutableNames(tracking.InstallDirectory);
+                killed = KillProcessesInDirectory(tracking.InstallDirectory, names);
+            }
+            else if (tracking.LaunchedPid > 0)
+            {
+                killed = KillProcessTree(tracking.LaunchedPid);
+            }
+            else
+            {
+                return;
+            }
+
+            if (killed)
+            {
+                return;
+            }
+
+            await Task.Delay(500);
+        }
+    }
+
+    private static readonly TimeSpan StopKillGrace = TimeSpan.FromSeconds(15);
+
+    private static bool KillProcessTree(int pid)
+    {
+        // The launched PID may already be gone (a launcher that spawned the game
+        // and exited), so expand the tree from the snapshot and kill every live
+        // member — the game itself is a descendant. Returns true if anything
+        // was actually killed.
+        var snapshot = ProcessTreeSnapshot.Collect();
+        var tree = new HashSet<int> { pid };
+        bool changed;
+        do
+        {
+            changed = false;
+            foreach (var entry in snapshot)
+            {
+                if (tree.Contains(entry.ParentPid) && tree.Add(entry.Pid))
+                {
+                    changed = true;
+                }
+            }
+        } while (changed);
+
+        var alive = new HashSet<int>(snapshot.Select(e => e.Pid));
+        bool killedAny = false;
+        foreach (var candidate in tree)
+        {
+            if (!alive.Contains(candidate))
+            {
+                continue;
+            }
+
+            try
+            {
+                using var process = Process.GetProcessById(candidate);
+                process.Kill(entireProcessTree: true);
+                killedAny = true;
+            }
+            catch
+            {
+                // Process already exited, or access denied (elevated process) —
+                // try the next one; the tracking loop finalizes the session either way.
+            }
+        }
+
+        return killedAny;
+    }
+
+    private static bool KillProcessesInDirectory(string installDirectory, IReadOnlySet<string> executableNames)
+    {
+        Process[] processes;
+        try
+        {
+            processes = Process.GetProcesses();
+        }
+        catch
+        {
+            return false;
+        }
+
+        bool killedAny = false;
+        try
+        {
+            foreach (var process in processes)
+            {
+                bool matches = false;
+
+                string? path = null;
+                try
+                {
+                    path = process.MainModule?.FileName;
+                }
+                catch
+                {
+                    // Elevated/protected — path unreadable; fall back to name below.
+                }
+
+                if (!string.IsNullOrWhiteSpace(path) &&
+                    path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches = true;
+                }
+                else if (executableNames.Contains(process.ProcessName))
+                {
+                    // Name fallback for elevated launchers (Genshin's HYP.exe).
+                    matches = true;
+                }
+
+                if (!matches)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                    killedAny = true;
+                }
+                catch
+                {
+                    // Already exited or access denied — ignore.
+                }
+            }
+        }
+        finally
+        {
+            foreach (var process in processes)
+            {
+                process.Dispose();
+            }
+        }
+
+        return killedAny;
     }
 
     private static GameAction? TryResolveAutomaticAction(Game game)
@@ -200,27 +450,27 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     // not thread-safe) BridgeDbContext-backed repository from the GameStopped
     // handler without any extra marshaling. If this method is ever called
     // from a background thread, that assumption breaks silently.
-    private async Task TrackAsync(Game game, Process process, int frequencyMs)
+    private async Task TrackAsync(Game game, Process process, CancellationToken token, int frequencyMs)
     {
         var stopwatch = Stopwatch.StartNew();
         try
         {
             while (!process.HasExited)
             {
-                await Task.Delay(frequencyMs);
+                await Task.Delay(frequencyMs, token);
             }
         }
         catch
         {
             // HasExited can throw when the process was started with UseShellExecute
-            // (no usable handle) or if it exited/disposed between checks. For a
-            // shell-executed process there's no handle to poll, so record whatever
-            // elapsed rather than a phantom 0-second session. This is the
-            // fire-and-forget task — swallowing is what prevents an unobserved-task
-            // exception.
+            // (no usable handle) or if it exited/disposed between checks; the token
+            // throws when Stop() cancels. Either way, record whatever elapsed rather
+            // than a phantom 0-second session. This is the fire-and-forget task —
+            // swallowing is what prevents an unobserved-task exception.
             var sessionSeconds = (ulong)stopwatch.Elapsed.TotalSeconds;
             game.IsRunning = false;
             game.PlaytimeSeconds += sessionSeconds;
+            UnregisterActive(game);
             GameStopped?.Invoke(game, sessionSeconds);
             return;
         }
@@ -233,6 +483,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         var elapsed = (ulong)stopwatch.Elapsed.TotalSeconds;
         game.IsRunning = false;
         game.PlaytimeSeconds += elapsed;
+        UnregisterActive(game);
         GameStopped?.Invoke(game, elapsed);
     }
 
@@ -242,7 +493,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     // game's InstallDirectory instead of tracking a PID. Waits for at least one such
     // process to appear (InitialTrackingDelayMs grace period for Steam to spin up),
     // then for all of them to exit.
-    private async Task TrackDirectoryAsync(Game game, int initialDelayMs, int frequencyMs)
+    private async Task TrackDirectoryAsync(Game game, CancellationToken token, int initialDelayMs, int frequencyMs)
     {
         var stopwatch = Stopwatch.StartNew();
         var sessionStart = stopwatch.Elapsed;
@@ -252,7 +503,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         {
             if (initialDelayMs > 0)
             {
-                await Task.Delay(initialDelayMs);
+                await Task.Delay(initialDelayMs, token);
             }
 
             // Executables under the install directory, matched by process name as a
@@ -273,7 +524,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                     return;
                 }
 
-                await Task.Delay(frequencyMs);
+                await Task.Delay(frequencyMs, token);
             }
 
             launched = true;
@@ -286,7 +537,10 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             // we ended the session the moment the processes vanished, the session
             // would last only as long as the user took to approve the UAC prompt.
             // Instead, keep polling: only end once the directory stays empty for
-            // DirectoryIdleTimeout in a row.
+            // the idle timeout in a row. The timeout is longer during the launch
+            // window (a gap right after Play is the launcher still spawning the
+            // game — slow when the app just started) and shortens after, so the
+            // close is still detected quickly once the game has been running.
             var idleSince = TimeSpan.MaxValue;
 
             while (true)
@@ -299,25 +553,27 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 {
                     idleSince = stopwatch.Elapsed;
                 }
-                else if (stopwatch.Elapsed - idleSince >= DirectoryIdleTimeout)
+                else if (stopwatch.Elapsed - idleSince >= IdleTimeoutFor(stopwatch.Elapsed - sessionStart))
                 {
                     break;
                 }
 
-                await Task.Delay(frequencyMs);
+                await Task.Delay(frequencyMs, token);
             }
         }
         catch
         {
             // Swallow — this is a fire-and-forget task; the session is still
             // finalized in `finally`. Nothing here should throw in practice
-            // (HasProcessInDirectoryAsync catches internally), this is purely
+            // (HasProcessInDirectoryAsync catches internally; a Stop cancellation
+            // is exactly the token's TaskCanceledException), this is purely
             // defensive against an unobserved-task exception.
         }
         finally
         {
             stopwatch.Stop();
             game.IsRunning = false;
+            UnregisterActive(game);
 
             if (launched)
             {
@@ -330,10 +586,19 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
     private static readonly TimeSpan DirectoryLaunchTimeout = TimeSpan.FromMinutes(5);
 
-    // How long the install directory must stay empty before an already-launched
-    // session ends. Covers launcher transitions with a gap (Genshin's UAC
-    // relaunch, a launcher exiting before the game's process appears).
-    private static readonly TimeSpan DirectoryIdleTimeout = TimeSpan.FromSeconds(10);
+    // How long the install directory / process tree must stay empty before an
+    // already-launched session ends. Covers launcher transitions with a gap
+    // (Genshin's UAC relaunch, a launcher exiting before the game's process
+    // appears). The timeout is longer during the launch window (the gap right
+    // after Play is the launcher still spawning the game — slow right after the
+    // app starts) and shortens once the session has been running, so the close
+    // is still detected quickly.
+    private static readonly TimeSpan DirectoryIdleTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan DirectoryLaunchIdleTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan DirectoryLaunchIdleWindow = TimeSpan.FromSeconds(30);
+
+    private static TimeSpan IdleTimeoutFor(TimeSpan sessionAge) =>
+        sessionAge < DirectoryLaunchIdleWindow ? DirectoryLaunchIdleTimeout : DirectoryIdleTimeout;
 
     // Process-tree tracking for the launcher-spawns-child-and-exits case (Genshin's
     // launcher.exe, Epic/GOG frontends). Mirrors Playnite's MonitorProcessTree
@@ -342,50 +607,73 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     // still alive. The launcher may exit after spawning the game — the game stays
     // in the tree as a descendant, so the session survives until the game itself
     // closes. Gives up after DirectoryLaunchTimeout if nothing ever appears.
-    private async Task TrackProcessTreeAsync(Game game, int launchedPid, int frequencyMs)
+    private async Task TrackProcessTreeAsync(Game game, int launchedPid, CancellationToken token, int frequencyMs)
     {
         var stopwatch = Stopwatch.StartNew();
         var tree = new HashSet<int> { launchedPid };
         bool launched = false;
+        var sessionStart = stopwatch.Elapsed;
 
         try
         {
-            if (!await IsProcessTreeRunningAsync(tree))
+            // Wait for the game's process to appear. The launched PID can take a
+            // moment to spawn (or is a launcher that spawns the real game), so this
+            // must be a poll loop — a single check would see "not running yet" and
+            // end the session before the game ever appears. Gives up after
+            // DirectoryLaunchTimeout like the directory tracker.
+            while (!await IsProcessTreeRunningAsync(tree))
             {
                 if (stopwatch.Elapsed >= DirectoryLaunchTimeout)
                 {
                     return;
                 }
+
+                await Task.Delay(frequencyMs, token);
             }
 
-            while (await IsProcessTreeRunningAsync(tree))
+            launched = true;
+            sessionStart = stopwatch.Elapsed;
+
+            // Same graceful idle as the directory tracker: a gap in the tree right
+            // after Play is the launcher still spawning the game (or the snapshot
+            // missing a just-spawned process), not a close. Only end once the tree
+            // stays empty for the (launch-aware) idle timeout.
+            var idleSince = TimeSpan.MaxValue;
+            while (true)
             {
-                // Wait for at least one poll where the tree is alive, then keep
-                // tracking until it's gone.
-                if (!launched)
+                if (await IsProcessTreeRunningAsync(tree))
                 {
-                    launched = true;
-                    stopwatch.Restart();
+                    idleSince = TimeSpan.MaxValue;
+                }
+                else if (idleSince == TimeSpan.MaxValue)
+                {
+                    idleSince = stopwatch.Elapsed;
+                }
+                else if (stopwatch.Elapsed - idleSince >= IdleTimeoutFor(stopwatch.Elapsed - sessionStart))
+                {
+                    break;
                 }
 
-                await Task.Delay(frequencyMs);
+                await Task.Delay(frequencyMs, token);
             }
         }
         catch
         {
             // Swallow — this is a fire-and-forget task; the session is still
             // finalized in `finally`. Nothing here should throw in practice
-            // (the snapshot/expansion catch internally), this is purely
+            // (the snapshot/expansion catch internally; a Stop cancellation is
+            // exactly the token's TaskCanceledException), this is purely
             // defensive against an unobserved-task exception.
         }
         finally
         {
             stopwatch.Stop();
             game.IsRunning = false;
+            UnregisterActive(game);
 
             if (launched)
             {
-                var sessionSeconds = (ulong)stopwatch.Elapsed.TotalSeconds;
+                var sessionSeconds = (ulong)(stopwatch.Elapsed - sessionStart).TotalSeconds;
                 game.PlaytimeSeconds += sessionSeconds;
                 GameStopped?.Invoke(game, sessionSeconds);
             }

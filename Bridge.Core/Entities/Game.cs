@@ -6,10 +6,12 @@ namespace Bridge.Core.Entities;
 /// PluginId and IncludeLibraryPluginAction are gone. GameId is renamed ExternalId
 /// to read correctly now that it's paired with SourceId instead of a PluginId
 /// (dedup key becomes (ExternalId, SourceId) — see GameSource.cs and ADR-6 in
-/// ARCHITECTURE.md). Runtime-only flags (IsInstalling/IsUninstalling/IsLaunching/
-/// IsRunning) must be reset to false on every load, mirroring Playnite's own
-/// crash-recovery behavior (§28.10, finding 5) — Bridge.Storage's load path is
-/// responsible for that reset, not this class.
+/// ARCHITECTURE.md). The install/launch flags (IsInstalling/IsUninstalling/
+/// IsLaunching) are reset on every read by Bridge.Storage's load path, mirroring
+/// Playnite's crash-recovery behavior (§28.10, finding 5). IsRunning is a live
+/// flag set by GameLauncher when the user launches a game, so it is NOT reset on
+/// read — the stale-IsRunning crash reset happens once in
+/// MainViewModel.LoadGames at startup (see GameRepository.ResetTransientFlags).
 /// </summary>
 public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 {
@@ -37,7 +39,24 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public bool IsInstalling { get; set; }
     public bool IsUninstalling { get; set; }
     public bool IsLaunching { get; set; }
-    public bool IsRunning { get; set; }
+
+    // Property-changed notification so the Play button can switch to Stop while
+    // the game runs — the entity stays a POCO otherwise.
+    public bool IsRunning
+    {
+        get => _isRunning;
+        set
+        {
+            if (_isRunning == value)
+                return;
+            _isRunning = value;
+            System.ComponentModel.PropertyChangedEventHandler? handler = PropertyChanged;
+            handler?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsRunning)));
+        }
+    }
+
+    private bool _isRunning;
+
     public bool OverrideInstallState { get; set; }
     public string InstallDirectory { get; set; } = string.Empty;
     public ulong? InstallSizeBytes { get; set; }

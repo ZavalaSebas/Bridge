@@ -29,6 +29,10 @@
     <!-- Accent brush propio de Bridge (reemplazable en runtime por el ThemeManager). -->
     <SolidColorBrush x:Key="Bridge.SystemAccentBrush" Color="{StaticResource SystemAccentColorPrimary}" />
 
+    <!-- Rojo fijo del botón Stop: más claro que el preset "Red" del tema (#EF4444)
+         para que el estado Stop siempre contraste con el accent, sea cual sea. -->
+    <SolidColorBrush x:Key="Bridge.StopBrush" Color="#F87171" />
+
     <!-- Overrides de los accent brushes de Wpf.Ui (los usan Slider/CheckBox/Button/
          selection, etc.). Al apuntar al Color token de Bridge, el ThemeManager puede
          reemplazarlos y todo el acento cambia junto. -->
