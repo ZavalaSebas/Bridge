@@ -372,7 +372,7 @@ Bridge now auto-imports Steam games on startup but they arrived with no metadata
 - `https://store.steampowered.com/appreviews/{id}?json=1` → CommunityScore (SteamDB formula: Wilson score with vote-count penalty)
 - `https://store.steampowered.com/search/?term={name}` → appid discovery for non-Steam games
 
-Images come from the Steam CDN (`steamcdn-a.akamaihd.net/steam/apps/{id}/library_600x900_2x.jpg` for covers, `library_hero.jpg` for the background/hero, and `header.jpg` for the icon). The screenshots from `data.screenshots[].path_full` (1920×1080, query string stripped) are also collected into `GameMetadata.Screenshots`/`Game.Screenshots` and rendered as a gallery in the Details view. All HTTP calls have try-catch guards (returns null on failure, never throws to the caller).
+Images come from the Steam CDN (`steamcdn-a.akamaihd.net/steam/apps/{id}/library_600x900_2x.jpg` for covers, `library_hero.jpg` for the background/hero, and `header.jpg` for the icon). The screenshots from `data.screenshots[].path_full` (1920×1080, query string stripped) are also collected into `GameMetadata.Screenshots`/`Game.Screenshots` and rendered as a gallery in the Details view. IGDB-sourced games (Epic, manual — via the own Worker, see ADR-13) feed the same `Game.Screenshots` column from IGDB's `screenshots` field at `t_1080p`, so the gallery is source-agnostic. All HTTP calls have try-catch guards (returns null on failure, never throws to the caller).
 
 The hero background is rendered "cover-by-width": `FadeImage.CoverByWidth` sizes the artwork to always fill the window's full width (height = width/aspect, vertical excess clipped by the parent's `ClipToBounds`), so Steam's `library_hero` (3.1:1) and any other source ratio show edge-to-edge with no side letterbox bars at any window size — this is what made it safe to use a consistent `library_hero` for the Steam background rather than mixing in 16:9 screenshots. See `Bridge/Controls/FadeImage.xaml.cs`.
 
@@ -457,11 +457,16 @@ primary IGDB metadata backend:
   in Cloudflare, never in code or in the repo).
 - `POST /metadata` receives `{ "name", "releaseYear? }`, obtains a Twitch
   app token (`grant_type=client_credentials`, cached in-memory), queries IGDB
-  (`api.igdb.com/v4/games`) and returns the raw IGDB shape.
+  (`api.igdb.com/v4/games`) and returns the raw IGDB shape. The query requests
+  `screenshots.image_id/screenshots.url` alongside the artwork/cover fields, so
+  the response carries the game's real 16:9 screenshots.
 - `Bridge.Metadata/BridgeIgdbProvider.cs` consumes it as the **first** provider
   in the metadata chain; Bridge falls back to the Playnite proxy
   (`PlayniteIgdbProvider`) if the Worker is unreachable, then to a
-  user-configured IGDB key (`IgdbMetadataProvider`), then Steam by name.
+  user-configured IGDB key (`IgdbMetadataProvider`), then Steam by name. IGDB's
+  `screenshots` are mapped to `GameMetadata.Screenshots` (upgraded to `t_1080p`,
+  same 1920×1080 as Steam's `path_full`) so non-Steam games (Epic, manual) get
+  the Details screenshot gallery from the same JSON column as Steam games.
 
 Why this over the alternatives:
 - **Playnite's proxy directly** — rejected as the primary: it's Playnite's

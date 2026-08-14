@@ -96,7 +96,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 
 Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata` (use cases) → `App` (WPF UI; ROM scanning + emulator launch live in `Bridge/Services`). See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
 
-**IGDB metadata without configuration:** Bridge gets IGDB metadata (cover, description, developers, genres, scores, links) for any game — including Epic-only titles like Genshin Impact — via its own [Cloudflare Worker](Bridge.Infra/igdb-proxy-worker/) that holds the IGDB credentials server-side (Worker Secrets, never in the app). Playnite's public proxy and a user-configured IGDB key act as fallbacks. See [ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend).
+**IGDB metadata without configuration:** Bridge gets IGDB metadata (cover, description, developers, genres, scores, links, **screenshots**) for any game — including Epic-only titles like Genshin Impact — via its own [Cloudflare Worker](Bridge.Infra/igdb-proxy-worker/) that holds the IGDB credentials server-side (Worker Secrets, never in the app). Playnite's public proxy and a user-configured IGDB key act as fallbacks. The Worker returns IGDB's real screenshots too, so Epic/manual games get the same Details screenshot gallery as Steam games. See [ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend).
 
 ---
 
