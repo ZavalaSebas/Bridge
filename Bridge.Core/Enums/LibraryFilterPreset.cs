@@ -1,14 +1,15 @@
 namespace Bridge.Core.Enums;
 
 /// <summary>
-/// Library filter presets (All / Favorite / Most Played / Recently Played),
-/// combinable with the name search box. Sort-based presets drive
-/// SortDescriptions on the list view; Favorite adds a filter predicate.
+/// Library filter presets — pure predicates that decide WHICH games show,
+/// combinable with the name search box. Ordering is a separate concern
+/// (SortField/SortDescending); a preset never touches the sort.
 /// </summary>
 public enum LibraryFilterPreset
 {
     All,
     Favorite,
-    MostPlayed,
+    Installed,
+    NotPlayed,
     RecentlyPlayed
 }

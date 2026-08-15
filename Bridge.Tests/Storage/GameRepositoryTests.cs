@@ -184,6 +184,42 @@ public class GameRepositoryTests : IDisposable
         Assert.False(loaded.IsUninstalling);
     }
 
+    [Fact]
+    public void Update_PersistsFavoriteAndHidden()
+    {
+        var game = new Game { Name = "Flag Test" };
+        _repository.Add(game);
+
+        var loaded = _repository.Get(game.Id)!;
+        loaded.Favorite = true;
+        loaded.Hidden = true;
+        _repository.Update(loaded);
+
+        using var freshContext = new BridgeDbContext(_options);
+        var reloaded = new GameRepository(freshContext).Get(game.Id)!;
+
+        Assert.True(reloaded.Favorite);
+        Assert.True(reloaded.Hidden);
+    }
+
+    [Fact]
+    public void Update_PersistsUnfavoriting()
+    {
+        var game = new Game { Name = "Unfav Test", Favorite = true, Hidden = true };
+        _repository.Add(game);
+
+        var loaded = _repository.Get(game.Id)!;
+        loaded.Favorite = false;
+        loaded.Hidden = false;
+        _repository.Update(loaded);
+
+        using var freshContext = new BridgeDbContext(_options);
+        var reloaded = new GameRepository(freshContext).Get(game.Id)!;
+
+        Assert.False(reloaded.Favorite);
+        Assert.False(reloaded.Hidden);
+    }
+
     public void Dispose()
     {
         _context.Dispose();
