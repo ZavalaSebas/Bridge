@@ -112,7 +112,7 @@ Bridge.Core/
 │   └── ReferenceEntities.cs   # Genre, Category, Tag, Series, AgeRating, GameFeature
 ├── Enums/
 │   ├── GameActionType.cs, TrackingMode.cs, ScannerPlayActionMode.cs, CompletionStatusKind.cs
-│   ├── LibraryFilterPreset.cs   # All/Favorite/MostPlayed/RecentlyPlayed list presets
+│   ├── LibraryFilterPreset.cs   # All/Favorite/Installed/NotPlayed/RecentlyPlayed filter predicates
 │   ├── GameSortField.cs         # 22 sortable fields, Description attribute = display label
 │   ├── GameGroupField.cs        # 21 groupable fields, Description attribute = display label
 │   ├── NavigationSection.cs     # sidebar sections: Library/Favorites/Sources/Statistics/Settings
@@ -183,8 +183,8 @@ See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--loc
 The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of the raw collection, so all concerns stay in one place:
 
 - **Search** — `SearchText` observable bound to a text box; `GameMatchesSearch` filters on a case-insensitive name substring.
-- **Presets** — `FilterPreset` (`LibraryFilterPreset`: All/Favorite/MostPlayed/RecentlyPlayed) adds a predicate (`Favorite`/`RecentlyPlayed` filter); `MostPlayed`/`RecentlyPlayed` also fix the sort field. Combinable with the search box.
-- **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling).
+- **Presets** — `FilterPreset` (`LibraryFilterPreset`: All/Favorite/Installed/NotPlayed/RecentlyPlayed) adds a **pure predicate** (`GameMatchesSearch`) that decides which games show. Presets never touch the sort or grouping — those are independent concerns, so switching a filter and back to All always keeps the sort you had. Combinable with the search box.
+- **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling). The sort menu shows the active field with a checkmark and a direction toggle entry.
 - **Grouping** — `GroupField` (`GameGroupField`, 21 fields, "Don't group" off) adds a `PropertyGroupDescription` (with a null property name so the item itself flows through a `GameGroupConverter`) to `GroupDescriptions`. `GameGroupResolver` is pure and unit-tested: buckets for playtime/install size/scores, drive letter, release year, coarse date buckets ("Never/Last 7 days/..."), reference names via lookups. Group headers render via the `ListBox.GroupStyle`.
 
 The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver live in the app project under `Bridge/Statistics` (namespace `Bridge.Statistics`). They avoid WPF types but ship inside the WPF app, and they're unit-testable only because `Bridge.Tests` targets `net10.0-windows` (it references `Bridge`). The XAML binds them through `GameGroupConverter`/`GameSortComparer` (see `Bridge/Converters/MetadataConverters.cs`).

@@ -135,7 +135,11 @@ public partial class MainViewModel : ObservableObject
     partial void OnSortDescendingChanged(bool value)
     {
         ApplySort();
+        OnPropertyChanged(nameof(SortDirectionText));
     }
+
+    // Sort menu's direction entry label: shows what toggling will switch to.
+    public string SortDirectionText => SortDescending ? "Ascending (A-Z)" : "Descending (Z-A)";
 
     partial void OnGroupFieldChanged(GameGroupField value)
     {
@@ -193,18 +197,9 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyFilterPreset()
     {
-        switch (FilterPreset)
-        {
-            case LibraryFilterPreset.MostPlayed:
-                SortField = GameSortField.PlaytimeSeconds;
-                SortDescending = true;
-                break;
-            case LibraryFilterPreset.RecentlyPlayed:
-                SortField = GameSortField.RecentActivity;
-                SortDescending = true;
-                break;
-        }
-
+        // Filter presets are pure predicates (see GameMatchesSearch) — they
+        // never mutate the sort. Changing one only re-evaluates which games
+        // are visible, leaving the active sort/group untouched.
         GamesView.Refresh();
     }
 
@@ -552,6 +547,8 @@ public partial class MainViewModel : ObservableObject
         return FilterPreset switch
         {
             LibraryFilterPreset.Favorite => game.Favorite,
+            LibraryFilterPreset.Installed => game.IsInstalled,
+            LibraryFilterPreset.NotPlayed => game.PlaytimeSeconds == 0 && !game.LastActivity.HasValue,
             LibraryFilterPreset.RecentlyPlayed => game.LastActivity.HasValue,
             _ => true
         };
@@ -705,6 +702,21 @@ public partial class MainViewModel : ObservableObject
     public string FavoriteMenuText => SelectedGame?.Favorite == true
         ? "Remove from Favorites"
         : "Add to Favorites";
+
+    // Persists the hero star's favorite state. The star binds IsChecked TwoWay
+    // straight to Game.Favorite (changing the object in memory), so on its own
+    // a click never reaches the DB — the More menu path goes through
+    // ToggleFavorite, this keeps the star path equivalent. No list refresh: the
+    // row doesn't render the flag, and re-inserting would clear the selection.
+    public void PersistFavorite()
+    {
+        if (SelectedGame is null)
+            return;
+
+        _gameRepository.Update(SelectedGame);
+        RefreshStatistics();
+        OnPropertyChanged(nameof(FavoriteMenuText));
+    }
 
     // Flips the Hidden flag and persists it immediately. Hidden games vanish
     // from the library (the filter drops them) unless ShowHidden is active, so

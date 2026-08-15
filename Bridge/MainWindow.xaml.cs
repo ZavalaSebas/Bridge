@@ -57,7 +57,10 @@ namespace Bridge
             // Only pop on a real click — a favorited game picked from the list
             // also fires Checked via binding, and popping then would be noise.
             if (CoverFavoriteButton.IsMouseOver)
+            {
                 PlayFavoritePop();
+                PersistFavorite();
+            }
         }
 
         private void CoverFavorite_Unchecked(object sender, RoutedEventArgs e)
@@ -66,6 +69,17 @@ namespace Bridge
             // unchecking while hovering would hide the very thing being hovered.
             if (CoverHost.IsMouseOver is false)
                 AnimateFavoriteStar(inView: false);
+
+            // Same guard as Checked: binding fires this on game selection too,
+            // so only persist an actual user click.
+            if (CoverFavoriteButton.IsMouseOver)
+                PersistFavorite();
+        }
+
+        private void PersistFavorite()
+        {
+            if (DataContext is ViewModels.MainViewModel vm)
+                vm.PersistFavorite();
         }
 
         private void AnimateFavoriteStar(bool inView)
@@ -450,7 +464,8 @@ namespace Bridge
                 vm.FilterPreset = tag switch
                 {
                     "Favorite" => Bridge.Core.Enums.LibraryFilterPreset.Favorite,
-                    "MostPlayed" => Bridge.Core.Enums.LibraryFilterPreset.MostPlayed,
+                    "Installed" => Bridge.Core.Enums.LibraryFilterPreset.Installed,
+                    "NotPlayed" => Bridge.Core.Enums.LibraryFilterPreset.NotPlayed,
                     "RecentlyPlayed" => Bridge.Core.Enums.LibraryFilterPreset.RecentlyPlayed,
                     _ => Bridge.Core.Enums.LibraryFilterPreset.All
                 };
@@ -467,7 +482,7 @@ namespace Bridge
                 {
                     "PlaytimeSeconds" => Bridge.Core.Enums.GameSortField.PlaytimeSeconds,
                     "PlayCount" => Bridge.Core.Enums.GameSortField.PlayCount,
-                    "RecentActivity" => Bridge.Core.Enums.GameSortField.LastPlayed,
+                    "LastPlayed" => Bridge.Core.Enums.GameSortField.LastPlayed,
                     "ReleaseDate" => Bridge.Core.Enums.GameSortField.ReleaseDate,
                     "Developer" => Bridge.Core.Enums.GameSortField.Developer,
                     "Publisher" => Bridge.Core.Enums.GameSortField.Publisher,
@@ -494,10 +509,43 @@ namespace Bridge
                     "IsInstalled" => Bridge.Core.Enums.GameGroupField.IsInstalled,
                     "CompletionStatus" => Bridge.Core.Enums.GameGroupField.CompletionStatus,
                     "PlaytimeSeconds" => Bridge.Core.Enums.GameGroupField.PlaytimeSeconds,
+                    "PlayCount" => Bridge.Core.Enums.GameGroupField.PlayCount,
                     "ReleaseYear" => Bridge.Core.Enums.GameGroupField.ReleaseYear,
+                    "LastPlayed" => Bridge.Core.Enums.GameGroupField.LastPlayed,
                     _ => Bridge.Core.Enums.GameGroupField.None
                 };
             }
+        }
+
+        // The shared right-click menu (Bridge.GameContextMenu) is one instance
+        // shared by every row in the three list views. Its PlacementTarget is the
+        // row that was right-clicked; resolve the clicked game from its
+        // DataContext (Game in List/Covers, GameDetailRow in Table) so the menu
+        // commands act on THAT game, not whatever was last selected. Feeding the
+        // menu the window's DataContext makes the command bindings resolve — a
+        // ContextMenu lives in a Popup outside the visual tree, so ElementName
+        // bindings can't reach the window on their own.
+        private void GameContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.ContextMenu menu
+                || menu.PlacementTarget is not System.Windows.FrameworkElement row
+                || DataContext is not ViewModels.MainViewModel vm)
+            {
+                return;
+            }
+
+            var game = row.DataContext switch
+            {
+                Game g => g,
+                GameDetailRow detail => detail.Game,
+                _ => null
+            };
+            if (game is not null)
+            {
+                vm.SelectedGame = game;
+            }
+
+            menu.DataContext = DataContext;
         }
 
         // Opens a game link from a More-menu "Links" submenu item. The submenu
