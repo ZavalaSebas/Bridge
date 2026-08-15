@@ -500,6 +500,30 @@ namespace Bridge
             }
         }
 
+        // Opens a game link from a More-menu "Links" submenu item. The submenu
+        // items are generated from SelectedGameLinks, so the item's DataContext
+        // is the Link itself.
+        private void OpenLinkMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm
+                && sender is System.Windows.Controls.MenuItem { DataContext: Link link })
+            {
+                vm.OpenLinkCommand.Execute(link);
+            }
+        }
+
+        // Applies a completion status from the More-menu submenu. The items are
+        // generated from CompletionStatuses, so the DataContext is the status
+        // name string.
+        private void CompletionStatusMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ViewModels.MainViewModel vm
+                && sender is System.Windows.Controls.MenuItem { DataContext: string status })
+            {
+                vm.SetCompletionStatusCommand.Execute(status);
+            }
+        }
+
         // Selects a random game from whatever the current view shows
         // (respects the active search/filter/sort).
         private void SelectRandomGame_Click(object sender, RoutedEventArgs e)
