@@ -82,6 +82,36 @@ namespace Bridge
                 vm.PersistFavorite();
         }
 
+        // Same persistence pattern as the hero star, for the compact panel's
+        // favorite star: binding fires Checked/Unchecked on game selection too,
+        // so only persist an actual user click (IsMouseOver on the star). The
+        // pop plays only on a real click for the same reason.
+        private void CompactFavorite_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!CompactFavoriteButton.IsMouseOver)
+                return;
+
+            PlayCompactFavoritePop();
+            PersistFavorite();
+        }
+
+        private void CompactFavorite_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (CompactFavoriteButton.IsMouseOver)
+                PersistFavorite();
+        }
+
+        // Same spring-back "pop" as the hero star (reuses BuildPopAnimation).
+        private void PlayCompactFavoritePop()
+        {
+            if (CompactFavoriteScale is null)
+                return;
+
+            var pop = BuildPopAnimation();
+            CompactFavoriteScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+            CompactFavoriteScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+        }
+
         private void AnimateFavoriteStar(bool inView)
         {
             if (CoverFavoriteButton is null)
@@ -469,6 +499,12 @@ namespace Bridge
                     "RecentlyPlayed" => Bridge.Core.Enums.LibraryFilterPreset.RecentlyPlayed,
                     _ => Bridge.Core.Enums.LibraryFilterPreset.All
                 };
+
+                // A checkable MenuItem toggles its own IsChecked on click even
+                // when the source value doesn't change (clicking the already
+                // active entry), which would visually untick it while the filter
+                // stays on. Re-assert every entry's check from the real state.
+                ReassertMenuChecks(item, tag);
             }
         }
 
@@ -490,6 +526,8 @@ namespace Bridge
                     "CriticScore" => Bridge.Core.Enums.GameSortField.CriticScore,
                     _ => Bridge.Core.Enums.GameSortField.Name
                 };
+
+                ReassertMenuChecks(item, tag);
             }
         }
 
@@ -514,6 +552,30 @@ namespace Bridge
                     "LastPlayed" => Bridge.Core.Enums.GameGroupField.LastPlayed,
                     _ => Bridge.Core.Enums.GameGroupField.None
                 };
+
+                ReassertMenuChecks(item, tag);
+            }
+        }
+
+        // A checkable MenuItem toggles its own IsChecked on click even when the
+        // bound source value doesn't change (e.g. clicking the already-active
+        // filter/sort/group). That would visually untick the active entry while
+        // it stays applied. Re-assert the check on every sibling entry from the
+        // tag of the one that was just clicked.
+        private static void ReassertMenuChecks(System.Windows.Controls.MenuItem clicked, string activeTag)
+        {
+            // Find the ItemsControl (ContextMenu or submenu) that owns the
+            // clicked item, then tick exactly the entry whose Tag matches.
+            System.Windows.Controls.ItemsControl? owner =
+                System.Windows.Controls.ItemsControl.ItemsControlFromItemContainer(clicked);
+            if (owner is null)
+            {
+                return;
+            }
+
+            foreach (System.Windows.Controls.MenuItem sibling in owner.Items.OfType<System.Windows.Controls.MenuItem>())
+            {
+                sibling.IsChecked = sibling.Tag is string siblingTag && siblingTag == activeTag;
             }
         }
 
