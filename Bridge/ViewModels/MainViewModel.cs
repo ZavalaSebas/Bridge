@@ -62,6 +62,16 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private LibraryFilterPreset _filterPreset;
 
+    // When true, games flagged Hidden stay visible in the library so they can
+    // be un-hidden from the More menu; when false (default) they're filtered out.
+    [ObservableProperty]
+    private bool _showHidden;
+
+    partial void OnShowHiddenChanged(bool value)
+    {
+        GamesView.Refresh();
+    }
+
     // Covers-view zoom (0.6x - 1.6x). Scales the cover cards so the wrapping
     // grid reflows to fit more/fewer columns.
     [ObservableProperty]
@@ -254,7 +264,7 @@ public partial class MainViewModel : ObservableObject
 
     // Opens a game link (Steam store page, official site, ...) in the default browser.
     [RelayCommand]
-    private static void OpenLink(Link link)
+    private void OpenLink(Link link)
     {
         if (string.IsNullOrWhiteSpace(link.Url))
             return;
@@ -273,6 +283,8 @@ public partial class MainViewModel : ObservableObject
     {
         RefreshReferenceFields(value);
         OnPropertyChanged(nameof(FavoriteMenuText));
+        OnPropertyChanged(nameof(HiddenMenuText));
+        OnPropertyChanged(nameof(SelectedGameLinks));
     }
 
     private void RefreshReferenceFields(Game? game)
@@ -402,7 +414,7 @@ public partial class MainViewModel : ObservableObject
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
-        SelectedGame = Games.FirstOrDefault();
+        SelectedGame = SelectInitialGame(Games);
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
         ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) =>
@@ -434,6 +446,15 @@ public partial class MainViewModel : ObservableObject
             await ImportSteamLibraryCoreAsync(steamSourceId);
             await ImportEpicLibraryCoreAsync(epicSourceId);
             PreloadIcons();
+
+            // First run: the constructor's SelectInitialGame ran against an empty
+            // library, so nothing got selected. Pick the initial game now that the
+            // imports have populated Games — only if the user hasn't already chosen
+            // something (they may have clicked while the import was running).
+            if (SelectedGame is null)
+            {
+                SelectedGame = SelectInitialGame(Games);
+            }
 
             await DownloadMissingSteamMetadataAsync(steamSourceId);
             PreloadIcons();
@@ -479,6 +500,20 @@ public partial class MainViewModel : ObservableObject
         RefreshStatistics();
     }
 
+    // Startup selection: resume where the user left off. On a fresh app start the
+    // first game is selected; on subsequent starts the most recently played game
+    // is selected (LastActivity is persisted when a game is launched). Falls back
+    // to the first game when nothing has been played yet. Pure so it can be
+    // unit-tested without constructing the whole MainViewModel.
+    public static Game? SelectInitialGame(IEnumerable<Game> games)
+    {
+        var lastPlayed = games
+            .Where(g => g.LastActivity.HasValue)
+            .OrderByDescending(g => g.LastActivity)
+            .FirstOrDefault();
+        return lastPlayed ?? games.FirstOrDefault();
+    }
+
     // Inserts into Games keeping the collection ordered by name (ordinal,
     // case-insensitive) — binary-search find the insert position instead of
     // sorting the whole collection after every add. SortingName is never
@@ -505,6 +540,9 @@ public partial class MainViewModel : ObservableObject
     private bool GameMatchesSearch(object item)
     {
         if (item is not Game game)
+            return false;
+
+        if (!ShowHidden && game.Hidden)
             return false;
 
         if (!string.IsNullOrWhiteSpace(SearchText)
@@ -591,6 +629,47 @@ public partial class MainViewModel : ObservableObject
         RefreshStatistics();
     }
 
+    // Runs the game's real uninstaller (Steam/Epic launcher or the Windows
+    // registry entry) and, once the game provably left (install folder gone for
+    // Steam/manual, gone from LauncherInstalled.dat for Epic), marks it as not
+    // installed. Refuses while the game is running — same reason DeleteGame does.
+    [RelayCommand]
+    private async Task UninstallGameAsync()
+    {
+        if (SelectedGame is null)
+        {
+            return;
+        }
+
+        var game = SelectedGame;
+        if (game.IsRunning)
+        {
+            StatusMessage = $"'{game.Name}' is running — close it before uninstalling.";
+            return;
+        }
+
+        var sourceName = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
+        var command = GameUninstaller.Resolve(game, sourceName);
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            StatusMessage = $"No uninstaller found for '{game.Name}'.";
+            return;
+        }
+
+        StatusMessage = $"Launching uninstaller for '{game.Name}'...";
+        var completed = await GameUninstaller.RunAsync(command, game, sourceName);
+
+        // The folder is gone (or was never tracked) — mark not installed. Keep
+        // the override off: the source import may re-detect it later.
+        game.IsInstalled = false;
+        _gameRepository.Update(game);
+        RefreshListDisplay(game);
+        RefreshStatistics();
+        StatusMessage = completed
+            ? $"'{game.Name}' uninstalled."
+            : $"Uninstaller for '{game.Name}' finished but the game is still detected as installed.";
+    }
+
     [RelayCommand]
     private void SaveGame()
     {
@@ -626,6 +705,81 @@ public partial class MainViewModel : ObservableObject
     public string FavoriteMenuText => SelectedGame?.Favorite == true
         ? "Remove from Favorites"
         : "Add to Favorites";
+
+    // Flips the Hidden flag and persists it immediately. Hidden games vanish
+    // from the library (the filter drops them) unless ShowHidden is active, so
+    // no re-insert here — the item just leaves the view.
+    [RelayCommand]
+    private void ToggleHidden()
+    {
+        if (SelectedGame is null)
+        {
+            return;
+        }
+
+        SelectedGame.Hidden = !SelectedGame.Hidden;
+        _gameRepository.Update(SelectedGame);
+        GamesView.Refresh();
+        RefreshStatistics();
+        OnPropertyChanged(nameof(HiddenMenuText));
+    }
+
+    public string HiddenMenuText => SelectedGame?.Hidden == true
+        ? "Show Game"
+        : "Hide Game";
+
+    // The built-in completion status set (Playnite's defaults). Statuses are
+    // reference rows created on first use via GetOrCreateByName; the menu just
+    // applies whichever one the user picks.
+    public IReadOnlyList<string> CompletionStatuses { get; } =
+    [
+        "Abandoned", "Beaten", "Completed", "Not Played",
+        "On Hold", "Plan to Play", "Played", "Playing"
+    ];
+
+    [RelayCommand]
+    private void SetCompletionStatus(string? statusName)
+    {
+        if (SelectedGame is null || string.IsNullOrWhiteSpace(statusName))
+        {
+            return;
+        }
+
+        var status = _completionStatusRepository.GetOrCreateByName(statusName);
+        SelectedGame.CompletionStatusId = status.Id;
+        _gameRepository.Update(SelectedGame);
+        RefreshReferenceFields(SelectedGame);
+        RefreshStatistics();
+    }
+
+    // Opens the selected game's install folder in Explorer.
+    [RelayCommand]
+    private void OpenGameLocation()
+    {
+        if (SelectedGame is null)
+        {
+            return;
+        }
+
+        var dir = SelectedGame.InstallDirectory;
+        if (string.IsNullOrWhiteSpace(dir))
+        {
+            StatusMessage = $"'{SelectedGame.Name}' has no install directory.";
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            StatusMessage = $"Couldn't open '{dir}'.";
+        }
+    }
+
+    // All web links the selected game has (Steam store, official site, IGDB...).
+    public IReadOnlyList<Link> SelectedGameLinks => SelectedGame?.Links ?? [];
 
     public void ScanRomFolder(string? romFolder, Guid? emulatorId = null, string? profileId = null)
     {
@@ -1312,6 +1466,12 @@ public partial class MainViewModel : ObservableObject
     // adding change notification to the entity itself.
     private void RefreshListDisplay(Game game)
     {
+        // Capture selection BEFORE removing: the RemoveAt below fires
+        // CollectionChanged, and WPF's ListBox clears SelectedItem → SelectedGame
+        // becomes null via the TwoWay binding. Comparing after the fact (like the
+        // old `if (SelectedGame == game)`) would miss it and leave the selection
+        // lost. Restore by reference instead.
+        var wasSelected = ReferenceEquals(SelectedGame, game);
         var index = Games.IndexOf(game);
         if (index >= 0)
         {
@@ -1319,7 +1479,7 @@ public partial class MainViewModel : ObservableObject
             Games.Insert(index, game);
         }
 
-        if (SelectedGame == game)
+        if (wasSelected)
         {
             SelectedGame = null;
             SelectedGame = game;
