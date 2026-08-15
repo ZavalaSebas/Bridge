@@ -85,6 +85,47 @@ public partial class ScreenshotGallery : UserControl
         set => SetValue(CounterTextProperty, value);
     }
 
+    public static readonly DependencyProperty CompactModeProperty = DependencyProperty.Register(
+        nameof(CompactMode),
+        typeof(bool),
+        typeof(ScreenshotGallery),
+        new PropertyMetadata(false, OnCompactModeChanged));
+
+    /// <summary>
+    /// Compact layout for the covers view's info panel: hides the header and the
+    /// large main image, showing only the thumbnail strip. Clicking a thumbnail
+    /// opens the fullscreen preview directly.
+    /// </summary>
+    public bool CompactMode
+    {
+        get => (bool)GetValue(CompactModeProperty);
+        set => SetValue(CompactModeProperty, value);
+    }
+
+    private static void OnCompactModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var gallery = (ScreenshotGallery)d;
+        gallery.ApplyCompactMode((bool)e.NewValue);
+    }
+
+    private void ApplyCompactMode(bool compact)
+    {
+        var collapsed = compact ? Visibility.Collapsed : Visibility.Visible;
+        GalleryHeader.Visibility = collapsed;
+        MainViewBorder.Visibility = collapsed;
+        if (compact)
+        {
+            _autoTimer.Stop();
+            ThumbScroll.Margin = new Thickness(0);
+            ThumbScroll.Padding = new Thickness(0, 0, 0, 0);
+        }
+        else
+        {
+            ThumbScroll.Margin = new Thickness(0, 12, 0, 0);
+            ThumbScroll.Padding = new Thickness(0, 0, 0, 16);
+        }
+    }
+
     private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var gallery = (ScreenshotGallery)d;
@@ -107,8 +148,9 @@ public partial class ScreenshotGallery : UserControl
         GalleryContent.Visibility = _urls.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ShowAt(0);
 
-        // Auto-advance only makes sense with multiple screenshots.
-        if (_urls.Count > 1)
+        // Auto-advance only makes sense with multiple screenshots and never in
+        // compact mode (the hidden main image would slide for no one).
+        if (!CompactMode && _urls.Count > 1)
         {
             _autoPaused = false;
             _autoTimer.Start();
@@ -209,6 +251,12 @@ public partial class ScreenshotGallery : UserControl
             {
                 MarkManualChange();
                 ShowAt(idx);
+                // In compact mode the large image is hidden, so a thumbnail tap
+                // jumps straight to the fullscreen preview.
+                if (CompactMode)
+                {
+                    OpenFullscreen();
+                }
             }
         }
     }
@@ -219,6 +267,16 @@ public partial class ScreenshotGallery : UserControl
     private void MarkManualChange() => _lastManualChange = DateTime.UtcNow;
 
     private void MainImage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_urls.Count == 0)
+        {
+            return;
+        }
+
+        OpenFullscreen();
+    }
+
+    private void OpenFullscreen()
     {
         if (_urls.Count == 0)
         {

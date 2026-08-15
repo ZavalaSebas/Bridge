@@ -22,13 +22,13 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,20,0,10">
+        <StackPanel x:Name="GalleryHeader" Grid.Row="0" Orientation="Horizontal" Margin="0,20,0,10">
             <TextBlock Text="Screenshots" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding CounterText, ElementName=Root, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- Vista principal: fondo frosted (la misma screenshot borrosa) + imagen grande con crossfade -->
-        <Border Grid.Row="1" CornerRadius="10" ClipToBounds="True" Background="#151A28" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+        <Border x:Name="MainViewBorder" Grid.Row="1" CornerRadius="10" ClipToBounds="True" Background="#151A28" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
             <Grid>
                 <Image x:Name="BackdropImage" Stretch="UniformToFill" Margin="-60" Opacity="0.45"
                        RenderOptions.BitmapScalingMode="Fant" IsHitTestVisible="False"/>
@@ -80,6 +80,10 @@
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
                                         </Trigger>
+                                        <DataTrigger Binding="{Binding CompactMode, RelativeSource={RelativeSource AncestorType=controls:ScreenshotGallery}}" Value="True">
+                                            <Setter TargetName="ThumbBorder" Property="Width" Value="110"/>
+                                            <Setter TargetName="ThumbBorder" Property="Height" Value="62"/>
+                                        </DataTrigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
