@@ -20,6 +20,10 @@ namespace Bridge
         private static readonly TimeSpan FavoriteStarMotion = TimeSpan.FromMilliseconds(180);
         private readonly DispatcherTimer _favoriteHideTimer;
 
+        // The covers ItemsPanel workaround only needs to run once (first entry
+        // into Grid on a fresh library); see SetViewModeGrid_Click.
+        private bool _coversPanelWorkaroundApplied;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -180,6 +184,7 @@ namespace Bridge
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.List;
                 ApplyViewModeLayout();
+                ReassertSelection(vm);
             }
         }
 
@@ -196,14 +201,38 @@ namespace Bridge
                 // ItemsSource forces the ListBox to re-apply its
                 // ItemsPanelTemplate, which wraps the covers into columns.
                 // Root cause still open — see CHANGELOG known issues.
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
+                //
+                // The fix is only needed the FIRST time (the panel is applied
+                // correctly afterwards), and every re-assignment re-renders the
+                // whole cover wall — a visible flicker on every switch back to
+                // Grid. So it runs once per session, not per view change.
+                if (!_coversPanelWorkaroundApplied)
                 {
-                    var source = CoversList.ItemsSource;
-                    CoversList.ItemsSource = null;
-                    CoversList.UpdateLayout();
-                    CoversList.ItemsSource = source;
-                    CoversList.UpdateLayout();
-                });
+                    _coversPanelWorkaroundApplied = true;
+
+                    // Capture the selection BEFORE the ItemsSource cycle below —
+                    // the ListBox's SelectedItem binding is TwoWay, so setting
+                    // ItemsSource = null writes SelectedGame = null into the VM,
+                    // destroying the selection we'd otherwise re-assert.
+                    var selected = vm.SelectedGame;
+
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
+                    {
+                        var source = CoversList.ItemsSource;
+                        CoversList.ItemsSource = null;
+                        CoversList.UpdateLayout();
+                        CoversList.ItemsSource = source;
+                        CoversList.UpdateLayout();
+                        ReassertSelection(vm, selected);
+                    });
+                }
+                else
+                {
+                    // The panel is already correct, but a collapsed Grid view can
+                    // still drop the visual selection on switch-back — re-assert
+                    // it without touching the ItemsSource.
+                    ReassertSelection(vm);
+                }
             }
         }
 
@@ -213,7 +242,26 @@ namespace Bridge
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Table;
                 ApplyViewModeLayout();
+                ReassertSelection(vm);
             }
+        }
+
+        // The view's ListBox/ListView binds SelectedItem to SelectedGame, but
+        // collapsing a view can drop its visual selection and the newly-shown
+        // view won't re-pick it up if the VM's SelectedGame didn't change. Re-apply
+        // by cycling null→game so the TwoWay binding pushes the selection into the
+        // visible control (and ScrollToSelectedGame runs via PropertyChanged).
+        // `game` is passed explicitly because in some flows (the covers ItemsSource
+        // workaround) the VM's SelectedGame is already null by the time we run.
+        private static void ReassertSelection(ViewModels.MainViewModel vm, Game? game = null)
+        {
+            if (game is null)
+            {
+                return;
+            }
+
+            vm.SelectedGame = null;
+            vm.SelectedGame = game;
         }
 
         // Applies the per-view layout the click handlers used to hard-code:
