@@ -9,6 +9,7 @@ using Bridge.Core.Enums;
 using Bridge.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
+using Wpf.Ui.Controls;
 
 namespace Bridge;
 
@@ -40,38 +41,38 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         InitializeComponent();
     }
 
-    private void DetectInstalled_Click(object sender, RoutedEventArgs e)
+    private async void DetectInstalled_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            LoadCandidates(_detector.ScanStartMenu());
+            await ScanAsync(() => _detector.ScanStartMenu());
         }
         catch (Exception ex)
         {
             // Start-menu enumeration can hit permission-denied subfolders on
             // corporate machines — show a friendly message instead of a raw
             // .NET exception to the global handler.
-            MessageBox.Show(this, $"Couldn't scan the start menu: {ex.Message}", "Scan", MessageBoxButton.OK, MessageBoxImage.Warning);
+            await ShowMessageAsync($"Couldn't scan the start menu: {ex.Message}", "Scan");
         }
     }
 
-    private void ScanFolder_Click(object sender, RoutedEventArgs e)
+    private async void ScanFolder_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFolderDialog { Title = "Select folder to scan for games" };
         if (dialog.ShowDialog(this) == true)
         {
             try
             {
-                LoadCandidates(_detector.ScanFolder(dialog.FolderName));
+                await ScanAsync(() => _detector.ScanFolder(dialog.FolderName));
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Scan", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await ShowMessageAsync(ex.Message, "Scan");
             }
         }
     }
 
-    private void Browse_Click(object sender, RoutedEventArgs e)
+    private async void Browse_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
@@ -80,16 +81,46 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         };
         if (dialog.ShowDialog(this) == true)
         {
-            var candidate = _detector.FromFile(dialog.FileName);
+            var candidate = await Task.Run(() => _detector.FromFile(dialog.FileName));
             if (candidate is null)
             {
-                MessageBox.Show(this, "Not a valid executable.", "Add game", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await ShowMessageAsync("Not a valid executable.", "Add game");
                 return;
             }
 
             LoadCandidates([candidate]);
         }
     }
+
+    // Runs the scan off the UI thread with a visible loading indicator and the
+    // scan buttons disabled, so a slow folder walk doesn't freeze the window or
+    // let the user start two scans at once.
+    private async Task ScanAsync(Func<IReadOnlyList<InstalledGameCandidate>> scan)
+    {
+        SetScanning(true);
+        try
+        {
+            var candidates = await Task.Run(scan);
+            LoadCandidates(candidates);
+        }
+        finally
+        {
+            SetScanning(false);
+        }
+    }
+
+    private void SetScanning(bool scanning)
+    {
+        ScanProgress.Visibility = scanning ? Visibility.Visible : Visibility.Collapsed;
+        StatusText.Text = scanning ? "Scanning..." : StatusText.Text;
+        DetectInstalledButton.IsEnabled = !scanning;
+        ScanFolderButton.IsEnabled = !scanning;
+        BrowseButton.IsEnabled = !scanning;
+    }
+
+    // The app's styled message dialog (custom FluentWindow, follows the theme).
+    private static async Task ShowMessageAsync(string message, string title)
+        => await MessageDialogWindow.ShowAsync(message, title);
 
     private void LoadCandidates(IReadOnlyList<InstalledGameCandidate> candidates)
     {
@@ -212,12 +243,12 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
     // the in-memory library without re-querying.
     public IReadOnlyList<Game> CreatedGames { get; private set; } = [];
 
-    private void AddGames_Click(object sender, RoutedEventArgs e)
+    private async void AddGames_Click(object sender, RoutedEventArgs e)
     {
         var selected = _allCandidates.Where(c => c.Import).ToList();
         if (selected.Count == 0)
         {
-            MessageBox.Show(this, "No games selected.", "Add games", MessageBoxButton.OK, MessageBoxImage.Information);
+            await ShowMessageAsync("No games selected.", "Add games");
             return;
         }
 
@@ -268,12 +299,9 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         {
             var preview = string.Join(", ", skipped.Take(3));
             var more = skipped.Count > 3 ? $", +{skipped.Count - 3} more" : string.Empty;
-            MessageBox.Show(
-                this,
+            await ShowMessageAsync(
                 $"Already in your library ({skipped.Count}): {preview}{more}. They were skipped.",
-                "Add games",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                "Add games");
         }
     }
 }

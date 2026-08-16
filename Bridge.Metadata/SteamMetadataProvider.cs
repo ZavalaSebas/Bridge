@@ -65,12 +65,25 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             var url = string.Format(SearchUrl, Uri.EscapeDataString(gameName));
             var html = await httpClient.GetStringAsync(url, cancellationToken);
 
+            var queryWords = Tokenize(gameName);
             var matches = SearchEntryRegex().Matches(html);
             foreach (Match match in matches)
             {
                 var appId = match.Groups[1].Value;
-                if (uint.TryParse(appId, out var id))
-                    return id;
+                if (!uint.TryParse(appId, out var id))
+                    continue;
+
+                // The store's search can rank a totally unrelated game first
+                // ("Genshin Impact" → "Dream of Corpse Lady", appid 2842800 —
+                // Genshin isn't on Steam at all). Only accept a result whose
+                // title actually contains the searched words, so a mismatch
+                // falls through to the next provider instead of grabbing the
+                // wrong game's metadata.
+                var title = match.Groups[2].Value;
+                if (queryWords.Count > 0 && !TitleContains(queryWords, title))
+                    continue;
+
+                return id;
             }
 
             return null;
@@ -79,6 +92,40 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         {
             return null;
         }
+    }
+
+    // Splits a game name into lowercase content words, dropping common English
+    // filler ("of the", "and", ...) so "Fallout 3 - Game of the Year" still
+    // matches "Fallout 3". Short tokens are kept on purpose: "2" in "Risk of
+    // Rain 2" and "V" in "Grand Theft Auto V" are what tell it apart from the
+    // original release. The title on the store page must contain every one of
+    // these words for the result to be accepted.
+    private static List<string> Tokenize(string name)
+    {
+        var stopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "the", "a", "an", "of", "and", "or", "for", "with", "in", "on",
+            "at", "to", "by", "vs", "edition", "game"
+        };
+
+        return [.. name
+            .Split([' ', '-', '_', ':', '.', '(', ')', '\'', '"', '™', '®'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => !stopWords.Contains(w))
+            .Select(w => w.ToLowerInvariant())
+            .Distinct()];
+    }
+
+    private static bool TitleContains(IReadOnlyCollection<string> queryWords, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return false;
+
+        var titleWords = title
+            .Split([' ', '-', '_', ':', '.', '(', ')', '\'', '"'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => w.ToLowerInvariant())
+            .ToHashSet(StringComparer.Ordinal);
+
+        return queryWords.All(titleWords.Contains);
     }
 
     private async Task<SteamAppDetailsData?> GetAppDetailsAsync(uint appId, CancellationToken cancellationToken)
