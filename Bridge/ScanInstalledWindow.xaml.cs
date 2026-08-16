@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -22,7 +23,7 @@ public class InstalledGameEntry
     public bool Import { get; set; } = true;
 }
 
-public partial class ScanInstalledWindow : Window
+public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
 {
     private readonly InstalledGameDetector _detector;
     private readonly IGameRepository _gameRepository;
@@ -92,14 +93,25 @@ public partial class ScanInstalledWindow : Window
 
     private void LoadCandidates(IReadOnlyList<InstalledGameCandidate> candidates)
     {
-        var importedPaths = _gameRepository.GetAll()
-            .SelectMany(g => g.GameActions.Where(a => a.Type == GameActionType.File))
-            .Select(a => a.Path)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
         _allCandidates.Clear();
-        foreach (var candidate in candidates)
+        var existing = _gameRepository.GetAll();
+
+        // A game often ships several executables that all report the same name
+        // (MGS V: mgsvmgo.exe + mgsvtpp.exe, The Last of Us II: tlou-ii.exe +
+        // tlou-ii-l.exe). Collapse them to the one that's most likely the real
+        // game — the largest binary — so the picker shows a single entry.
+        // Grouping is by install folder + name, never name alone: two different
+        // games can share a generic product name ("Everything" is reported by
+        // both Marathon and Where Winds Meet) and must not be merged.
+        var deduped = candidates
+            .GroupBy(c => (
+                Name: InstalledNameNormalizer.Normalize(c.Name),
+                Folder: c.WorkingDirectory?.TrimEnd('\\', '/').ToLowerInvariant() ?? string.Empty))
+            .Select(g => g.OrderByDescending(ExeSize).First());
+
+        foreach (var candidate in deduped)
         {
+            var (alreadyImported, _) = IsAlreadyImported(existing, candidate.Name, candidate.ExecutablePath);
             _allCandidates.Add(new InstalledGameEntry
             {
                 Name = candidate.Name,
@@ -107,7 +119,7 @@ public partial class ScanInstalledWindow : Window
                 Arguments = candidate.Arguments,
                 WorkingDirectory = candidate.WorkingDirectory,
                 Icon = ExeIconLoader.GetIcon(candidate.IconPath ?? candidate.ExecutablePath),
-                Import = !importedPaths.Contains(candidate.ExecutablePath)
+                Import = !alreadyImported
             });
         }
 
@@ -115,20 +127,77 @@ public partial class ScanInstalledWindow : Window
         StatusText.Text = $"{_allCandidates.Count} found";
     }
 
+    private static long ExeSize(InstalledGameCandidate c)
+    {
+        try
+        {
+            return File.Exists(c.ExecutablePath) ? new FileInfo(c.ExecutablePath).Length : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    // Already-imported detection covers both a file play action matching the
+    // exact executable AND a normalized game name — the name match catches
+    // Steam/Epic games (their play action is a URL, not a File), so a start-menu
+    // shortcut for a game Bridge already imported from a store doesn't show as
+    // new. Names are normalized so "AlanWake.exe" / "Genshin Impact game" match
+    // "Alan Wake" / "Genshin Impact" in the library.
+    private (bool IsImported, string Reason) IsAlreadyImported(
+        IReadOnlyList<Game> existing, string name, string executablePath)
+    {
+        var pathMatch = existing
+            .SelectMany(g => g.GameActions.Where(a => a.Type == GameActionType.File))
+            .Any(a => a.Path.Equals(executablePath, StringComparison.OrdinalIgnoreCase));
+        if (pathMatch)
+            return (true, "file action path match");
+
+        // The candidate exe lives inside the install folder of an already
+        // imported game (e.g. Steam's steamapps/common/<game>). Catches games
+        // whose product name differs from the library name — "Murdered" vs
+        // "MURDERED: SOUL SUSPECT", the UE "-Shipping" executables, etc.
+        var candidateDir = Path.GetDirectoryName(executablePath) ?? string.Empty;
+        var dirMatch = existing
+            .Where(g => !string.IsNullOrWhiteSpace(g.InstallDirectory))
+            .Any(g => candidateDir.StartsWith(g.InstallDirectory.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
+        if (dirMatch)
+            return (true, "install directory match");
+
+        var normalized = InstalledNameNormalizer.Normalize(name);
+        var nameMatch = existing.Any(g => InstalledNameNormalizer.Normalize(g.Name) == normalized);
+        if (nameMatch)
+            return (true, $"normalized name '{normalized}'");
+
+        return (false, string.Empty);
+    }
+
     private void RefreshFilter_Click(object sender, RoutedEventArgs e) => RefreshFilter();
+
+    private void SelectAll_Click(object sender, RoutedEventArgs e)
+        => SetAllSelected(selected: true);
+
+    private void SelectNone_Click(object sender, RoutedEventArgs e)
+        => SetAllSelected(selected: false);
+
+    private void SetAllSelected(bool selected)
+    {
+        foreach (var candidate in _allCandidates)
+        {
+            candidate.Import = selected;
+        }
+
+        RefreshFilter();
+    }
 
     private void RefreshFilter()
     {
         var hideImported = HideImportedCheck is { IsChecked: true };
-        var importedPaths = hideImported
-            ? _gameRepository.GetAll()
-                .SelectMany(g => g.GameActions.Where(a => a.Type == GameActionType.File))
-                .Select(a => a.Path)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase)
-            : null;
 
+        var existing = hideImported ? _gameRepository.GetAll() : null;
         var filtered = _allCandidates
-            .Where(c => importedPaths is null || !importedPaths.Contains(c.Path))
+            .Where(c => !hideImported || !IsAlreadyImported(existing!, c.Name, c.Path).IsImported)
             .ToList();
 
         // The Checked event fires during InitializeComponent, before the ListBox
@@ -152,13 +221,20 @@ public partial class ScanInstalledWindow : Window
             return;
         }
 
+        var existing = _gameRepository.GetAll();
+        var skipped = new List<string>();
         var added = new List<Game>();
         foreach (var entry in selected)
         {
-            var existing = _gameRepository.GetAll()
-                .FirstOrDefault(g => g.GameActions.Any(a => a.Type == GameActionType.File && a.Path.Equals(entry.Path, StringComparison.OrdinalIgnoreCase)));
-            if (existing is not null)
+            // Duplicate check covers both the exact executable (manual games, a
+            // File action) and the game name (Steam/Epic games, a URL action) —
+            // so re-adding something Bridge already has is caught either way.
+            bool isDuplicate = existing.Any(g =>
+                g.GameActions.Any(a => a.Type == GameActionType.File && a.Path.Equals(entry.Path, StringComparison.OrdinalIgnoreCase))
+                || g.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase));
+            if (isDuplicate)
             {
+                skipped.Add(entry.Name);
                 continue;
             }
 
@@ -185,5 +261,19 @@ public partial class ScanInstalledWindow : Window
 
         CreatedGames = added;
         DialogResult = true;
+
+        // Let the user know why some of their selections weren't added — the
+        // dialog closes immediately, so surface it before returning.
+        if (skipped.Count > 0)
+        {
+            var preview = string.Join(", ", skipped.Take(3));
+            var more = skipped.Count > 3 ? $", +{skipped.Count - 3} more" : string.Empty;
+            MessageBox.Show(
+                this,
+                $"Already in your library ({skipped.Count}): {preview}{more}. They were skipped.",
+                "Add games",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
     }
 }
