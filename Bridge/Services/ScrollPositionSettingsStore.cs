@@ -13,7 +13,33 @@ public static class ScrollPositionSettingsStore
 {
     private static string SettingsFile => Path.Combine(Config.AppDataPath, "scrollpositions.txt");
 
+    // The Table view's auto-fill Name column width is persisted too, so opening
+    // Bridge straight into Table already has the correct column size from the
+    // first frame instead of resizing visibly on startup. Keyed separately from
+    // the per-view scroll offsets (it isn't a view name).
+    private const string TableNameWidthKey = "TableNameWidth";
+
     public static double Load(string view)
+    {
+        return LoadValue(view);
+    }
+
+    public static void Save(string view, double offset)
+    {
+        SaveValue(view, offset);
+    }
+
+    public static double LoadTableNameWidth()
+    {
+        return LoadValue(TableNameWidthKey);
+    }
+
+    public static void SaveTableNameWidth(double width)
+    {
+        SaveValue(TableNameWidthKey, width);
+    }
+
+    private static double LoadValue(string key)
     {
         try
         {
@@ -24,34 +50,34 @@ public static class ScrollPositionSettingsStore
             {
                 var idx = line.IndexOf('=');
                 if (idx > 0
-                    && line[..idx].Equals(view, StringComparison.OrdinalIgnoreCase)
+                    && line[..idx].Equals(key, StringComparison.OrdinalIgnoreCase)
                     && double.TryParse(line[(idx + 1)..], System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture, out var offset))
+                        System.Globalization.CultureInfo.InvariantCulture, out var value))
                 {
-                    return offset;
+                    return value;
                 }
             }
         }
         catch
         {
-            // Corrupt/missing settings — fall back to the top.
+            // Corrupt/missing settings — fall back to the default.
         }
 
         return 0;
     }
 
-    public static void Save(string view, double offset)
+    private static void SaveValue(string key, double value)
     {
         try
         {
-            if (offset < 0)
+            if (value < 0)
                 return;
 
             Directory.CreateDirectory(Config.AppDataPath);
             var lines = File.Exists(SettingsFile)
-                ? File.ReadAllLines(SettingsFile).Where(l => !l.StartsWith(view + "=", StringComparison.OrdinalIgnoreCase)).ToList()
+                ? File.ReadAllLines(SettingsFile).Where(l => !l.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase)).ToList()
                 : [];
-            lines.Add($"{view}={offset.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            lines.Add($"{key}={value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
             File.WriteAllLines(SettingsFile, lines);
         }
         catch

@@ -37,10 +37,21 @@ namespace Bridge
                 // to the selected game on a fresh library (no saved position yet).
                 if (DataContext is ViewModels.MainViewModel vm)
                 {
+                    RestoreTableNameWidth(vm.ViewMode);
                     RestoreScrollPosition(vm.ViewMode);
                     if (ScrollPositionSettingsStore.Load(vm.ViewMode.ToString()) <= 0)
                         ScrollToSelectedGame();
                 }
+            };
+
+            // Persist the Table view's Name-column width and the current view's
+            // scroll position on close, so the next open (straight into the same
+            // view) restores exactly where you left it instead of jumping.
+            Closing += (_, _) =>
+            {
+                SaveTableNameWidth();
+                if (DataContext is ViewModels.MainViewModel vm)
+                    SaveScrollPosition(vm.ViewMode);
             };
 
             // Debounce the tuck-away: hovering near the seam between the star
@@ -224,18 +235,46 @@ namespace Bridge
             ScrollPositionSettingsStore.Save(mode.ToString(), offset.Value);
         }
 
-        // Restores a view's saved scroll offset once its layout has settled.
+        // Restores a view's saved scroll offset. Runs synchronously from Loaded
+        // (before the window's first paint), so opening back into a view lands on
+        // the saved position without a visible jump from the top.
         private void RestoreScrollPosition(Bridge.Core.Enums.ViewMode mode)
         {
             var offset = ScrollPositionSettingsStore.Load(mode.ToString());
             if (offset <= 0)
                 return;
 
-            // Deferred so the view's items are realized before we scroll.
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-            {
-                SetScrollOffset(mode, offset);
-            });
+            SetScrollOffset(mode, offset);
+        }
+
+        // Applies the Table view's saved Name-column width before the first
+        // render, so opening straight into Table doesn't visibly resize the
+        // column from its XAML default. Runs in Loaded, which fires before the
+        // window is first painted.
+        private void RestoreTableNameWidth(Bridge.Core.Enums.ViewMode mode)
+        {
+            if (mode != Bridge.Core.Enums.ViewMode.Table
+                || TableList.View is not System.Windows.Controls.GridView gridView
+                || gridView.Columns.Count < 1)
+                return;
+
+            var width = ScrollPositionSettingsStore.LoadTableNameWidth();
+            if (width <= 0)
+                return;
+
+            gridView.Columns[0].Width = width;
+        }
+
+        // Persists the Table view's current Name-column width, so the last used
+        // width is what the next open restores. Called on close; the auto-fill
+        // resize also persists as it adjusts.
+        private void SaveTableNameWidth()
+        {
+            if (TableList.View is not System.Windows.Controls.GridView gridView
+                || gridView.Columns.Count < 1)
+                return;
+
+            ScrollPositionSettingsStore.SaveTableNameWidth(gridView.Columns[0].Width);
         }
 
         private double? GetScrollOffset(Bridge.Core.Enums.ViewMode mode)
@@ -301,10 +340,11 @@ namespace Bridge
 
         // After startup selects the last-played game, the Covers (Grid) view may
         // open scrolled to the top with the selection out of view (it can be
-        // hundreds of rows down). Bring it into the viewport once the layout has
-        // settled. Only Grid is scrolled here — List/Table restore their saved
-        // scroll position (ScrollPositionSettingsStore), and forcing layout on
-        // them at startup can mis-size the Table's auto-fill Name column.
+        // hundreds of rows down). Bring it into the viewport before the first
+        // paint, so the selected cover is already visible without a visible
+        // scroll from the top. Only Grid is scrolled here — List/Table restore
+        // their saved scroll position (ScrollPositionSettingsStore), and forcing
+        // layout on them at startup can mis-size the Table's auto-fill Name column.
         private void ScrollToSelectedGame()
         {
             if (DataContext is not ViewModels.MainViewModel vm
@@ -314,10 +354,7 @@ namespace Bridge
                 return;
             }
 
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-            {
-                CoversList.ScrollIntoView(game);
-            });
+            CoversList.ScrollIntoView(game);
         }
 
         // The Details view keeps the full detail panel on the right; the covers
@@ -399,6 +436,9 @@ namespace Bridge
                     new Action(() =>
                     {
                         nameColumn.Width = capture;
+                        // Persist so the next open (straight into Table) starts
+                        // with this width instead of resizing visibly.
+                        ScrollPositionSettingsStore.SaveTableNameWidth(capture);
                         _suppressTableResize = false;
                     }));
             }
