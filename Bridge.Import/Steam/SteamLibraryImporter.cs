@@ -95,8 +95,7 @@ public class SteamLibraryImporter
     }
 
     internal static GameMetadata? ParseManifest(string manifestPath, string steamAppsDir)
-    {
-        Dictionary<string, object> appState;
+    {        Dictionary<string, object> appState;
         try
         {
             var root = VdfParser.Parse(File.ReadAllText(manifestPath));
@@ -157,7 +156,26 @@ public class SteamLibraryImporter
             Name = name,
             InstallDirectory = Directory.Exists(installDirectory) ? installDirectory : string.Empty,
             InstallSizeBytes = sizeOnDisk,
-            IsInstalled = true
+            IsInstalled = true,
+            // Deterministic store/community links — built from the appid with no
+            // network call, so a fresh import shows the Links section filled in
+            // immediately. The metadata provider adds the same links (plus
+            // Achievements/Workshop when present) later; ApplyMetadata merges
+            // them by URL, so this is just a head start, not a duplicate.
+            Links = BuildDefaultLinks(appId)
         };
     }
+
+    // The Steam links that depend only on the appid, matching the names the
+    // SteamMetadataProvider uses (ApplyMetadata dedupes by URL). Public so the
+    // app can seed existing games at load.
+    public static List<Bridge.Core.Entities.Link> BuildDefaultLinks(string appId) =>
+    [
+        new() { Name = "Community Hub", Url = $"https://steamcommunity.com/app/{appId}" },
+        new() { Name = "Discussions", Url = $"https://steamcommunity.com/app/{appId}/discussions/" },
+        new() { Name = "Guides", Url = $"https://steamcommunity.com/app/{appId}/guides/" },
+        new() { Name = "News", Url = $"https://store.steampowered.com/news/?appids={appId}" },
+        new() { Name = "Steam Store", Url = $"https://store.steampowered.com/app/{appId}" },
+        new() { Name = "PCGamingWiki", Url = $"https://pcgamingwiki.com/api/appid.php?appid={appId}" }
+    ];
 }

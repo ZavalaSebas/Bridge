@@ -99,7 +99,12 @@ public partial class MainViewModel : ObservableObject
     private GameGroupField _groupField;
 
     [ObservableProperty]
-    private ViewMode _viewMode;
+    private ViewMode _viewMode = ViewModeSettingsStore.Load();
+
+    partial void OnViewModeChanged(ViewMode value)
+    {
+        ViewModeSettingsStore.Save(value);
+    }
 
     // Fase 1 (UI overhaul): sidebar navigation. This is the single allowed
     // ViewModel change for that phase — an additive property that maps sidebar
@@ -581,6 +586,16 @@ public partial class MainViewModel : ObservableObject
         var background = SteamLocalIconResolver.TryGetLocalBackgroundPath(game.ExternalId);
         if (!string.IsNullOrWhiteSpace(background))
             game.BackgroundImage = background;
+
+        // Deterministic store/community links fill in immediately for games
+        // imported before this was added (new imports get them in the metadata).
+        // Merge only the missing URLs so a metadata download that added
+        // Achievements/Workshop isn't clobbered.
+        foreach (var link in SteamLibraryImporter.BuildDefaultLinks(game.ExternalId))
+        {
+            if (!game.Links.Any(l => l.Url.Equals(link.Url, StringComparison.OrdinalIgnoreCase)))
+                game.Links.Add(link);
+        }
     }
 
     private void RefreshStatistics()
@@ -917,6 +932,7 @@ public partial class MainViewModel : ObservableObject
                         IsInstalled = metadata.IsInstalled,
                         Added = DateTime.Now,
                         GameActions = metadata.GameActions,
+                        Links = metadata.Links,
                         PlaytimeSeconds = metadata.PlaytimeSeconds,
                         LastActivity = metadata.LastActivity
                     };
@@ -1075,7 +1091,7 @@ public partial class MainViewModel : ObservableObject
         _ => false
     };
 
-    private static void ApplyMetadata(Game game, GameMetadata metadata)
+    private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
     {
         if (!string.IsNullOrWhiteSpace(metadata.Description))
             game.Description = metadata.Description;
@@ -1089,7 +1105,13 @@ public partial class MainViewModel : ObservableObject
         if (metadata.ReleaseDate is { } releaseDate)
             game.ReleaseDate = releaseDate;
 
-        if (!string.IsNullOrWhiteSpace(metadata.CoverImage))
+        // The manual "Download Metadata" action (overwrite: true) refreshes every
+        // image, even ones already set. The startup sync (overwrite: false) only
+        // fills images that are missing — these are re-downloaded rarely and
+        // unlikely to change, so an existing image is kept rather than clobbered
+        // on every app open.
+        if (!string.IsNullOrWhiteSpace(metadata.CoverImage) &&
+            (overwrite || string.IsNullOrWhiteSpace(game.CoverImage)))
             game.CoverImage = metadata.CoverImage;
 
         // Don't overwrite an existing icon: for Epic games the importer sets the
@@ -1099,10 +1121,12 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(game.Icon) && !string.IsNullOrWhiteSpace(metadata.Icon))
             game.Icon = metadata.Icon;
 
-        if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage))
+        if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage) &&
+            (overwrite || string.IsNullOrWhiteSpace(game.BackgroundImage)))
             game.BackgroundImage = metadata.BackgroundImage;
 
-        if (metadata.Screenshots is { Count: > 0 })
+        if (metadata.Screenshots is { Count: > 0 } &&
+            (overwrite || game.Screenshots.Count == 0))
             game.Screenshots = metadata.Screenshots;
 
         if (metadata.CriticScore.HasValue)
@@ -1240,83 +1264,113 @@ public partial class MainViewModel : ObservableObject
 
     private async Task DownloadMissingSteamMetadataAsync(Guid steamSourceId)
     {
-        // Process games missing a description OR missing the IGDB social links.
-        // A Steam game's links are the store/community ones (Store, Community
-        // Hub, Guides, ...); the IGDB social links (Wikipedia, YouTube, Reddit,
-        // ...) come from the enrichment step. Detect "needs links" by the
-        // absence of any non-Steam-named link, not just Links.Count == 0.
-        var candidates = _gameRepository.GetAll()
-            .Where(g => g.SourceId == steamSourceId &&
-                        (string.IsNullOrWhiteSpace(g.Description) ||
-                         !g.Links.Any(l => !IsSteamLink(l.Name))))
+        var allSteam = _gameRepository.GetAll()
+            .Where(g => g.SourceId == steamSourceId)
             .ToList();
 
-        if (candidates.Count == 0)
-        {
-            return;
-        }
-
-        StatusMessage = $"Downloading metadata for {candidates.Count} game(s)...";
-
-        // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
-        // requests are the slow part, and firing all of them at once would trip
-        // Steam's store throttling (429s → "partial" metadata). Task.Run puts
-        // the work on pool threads so the HTTP continuations don't come back to
-        // the UI thread; only reads (game.ExternalId) happen off the UI thread
-        // here — entity mutation and the DbContext saves stay on the UI thread
-        // in the loop below.
-        using var throttle = new SemaphoreSlim(4);
-        var results = await Task.WhenAll(candidates.Select(game =>
-            Task.Run(async () =>
-            {
-                await throttle.WaitAsync();
-                try
-                {
-                    return (game, metadata: await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId));
-                }
-                finally
-                {
-                    throttle.Release();
-                }
-            })));
+        // Two distinct needs, handled differently so we don't re-download a
+        // game's full Steam metadata on every open just to fetch a missing link:
+        //  - Missing a description → fetch the full Steam metadata (+ IGDB links).
+        //  - Has a description but no IGDB social links → only call our IGDB
+        //    Worker for the links; no Steam re-download.
+        var needMetadata = allSteam
+            .Where(g => string.IsNullOrWhiteSpace(g.Description))
+            .ToList();
+        var needLinksOnly = allSteam
+            .Where(g => !string.IsNullOrWhiteSpace(g.Description) &&
+                        !g.Links.Any(l => !IsSteamLink(l.Name)))
+            .ToList();
 
         int applied = 0;
-        foreach (var (game, metadata) in results)
+        if (needMetadata.Count > 0)
         {
-            if (metadata is null)
-                continue;
+            StatusMessage = $"Downloading metadata for {needMetadata.Count} game(s)...";
 
+            // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
+            // requests are the slow part, and firing all of them at once would trip
+            // Steam's store throttling (429s → "partial" metadata). Task.Run puts
+            // the work on pool threads so the HTTP continuations don't come back to
+            // the UI thread; only reads (game.ExternalId) happen off the UI thread
+            // here — entity mutation and the DbContext saves stay on the UI thread
+            // in the loop below.
+            using var throttle = new SemaphoreSlim(4);
+            var results = await Task.WhenAll(needMetadata.Select(game =>
+                Task.Run(async () =>
+                {
+                    await throttle.WaitAsync();
+                    try
+                    {
+                        return (game, metadata: await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId));
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                    }
+                })));
+
+            foreach (var (game, metadata) in results)
+            {
+                if (metadata is null)
+                    continue;
+
+                try
+                {
+                    // This sync runs after the window is interactive — the game may
+                    // have been deleted (or had its actions edited) while the awaits
+                    // above were in flight. Only mutate/save what's still live.
+                    if (!Games.Contains(game))
+                        continue;
+
+                    // Steam provides store/community links; our IGDB Worker adds the
+                    // social links (YouTube, Reddit, ...) so the automatic sync is
+                    // complete, not just the manual one.
+                    await EnrichLinksFromIgdbAsync(game.Name, metadata);
+
+                    ApplyMetadata(game, metadata, overwrite: false);
+                    ApplyMetadataReferences(game, metadata);
+                    ApplySteamLocalArtwork(game);
+
+                    _gameRepository.Update(game);
+                    RefreshListDisplay(game);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    // One bad game shouldn't abort the whole sync — log and continue.
+                    App.LogException(ex);
+                }
+            }
+        }
+
+        // Games that already have their description but never got the IGDB social
+        // links (e.g. the Worker was unreachable on a previous run). Add just the
+        // links — a light IGDB call, no Steam metadata re-download.
+        foreach (var game in needLinksOnly)
+        {
             try
             {
-                // This sync runs after the window is interactive — the game may
-                // have been deleted (or had its actions edited) while the awaits
-                // above were in flight. Only mutate/save what's still live.
                 if (!Games.Contains(game))
                     continue;
 
-                // Steam provides store/community links; our IGDB Worker adds the
-                // social links (YouTube, Reddit, ...) so the automatic sync is
-                // complete, not just the manual one.
+                var metadata = new GameMetadata();
                 await EnrichLinksFromIgdbAsync(game.Name, metadata);
+                if (metadata.Links.Count == 0)
+                    continue;
 
-                ApplyMetadata(game, metadata);
-                ApplyMetadataReferences(game, metadata);
-                ApplySteamLocalArtwork(game);
-
+                ApplyMetadata(game, metadata, overwrite: false);
                 _gameRepository.Update(game);
                 RefreshListDisplay(game);
                 applied++;
             }
             catch (Exception ex)
             {
-                // One bad game shouldn't abort the whole sync — log and continue.
                 App.LogException(ex);
             }
         }
 
         StatusMessage = applied > 0
-            ? $"Metadata sync complete: {applied}/{candidates.Count} game(s) updated."
-            : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
+            ? $"Metadata sync complete: {applied}/{needMetadata.Count + needLinksOnly.Count} game(s) updated."
+            : $"Metadata sync complete: no updates ({needMetadata.Count + needLinksOnly.Count} game(s) checked).";
     }
 
     // Downloads metadata for games from sources without an appid-based lookup
@@ -1376,7 +1430,7 @@ public partial class MainViewModel : ObservableObject
                 if (!Games.Contains(game))
                     continue;
 
-                ApplyMetadata(game, metadata);
+                ApplyMetadata(game, metadata, overwrite: false);
                 ApplyMetadataReferences(game, metadata);
 
                 _gameRepository.Update(game);
