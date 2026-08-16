@@ -99,6 +99,16 @@ public partial class GameEditViewModel : ObservableObject
         Platforms = ToSelectable(platformRepository.GetAll(), game.PlatformIds);
     }
 
+    // Steam-imported games are kept in sync with the store by the startup sync,
+    // so their metadata fields (name, description, genres, ...) are read-only in
+    // the editor. Only the artwork the user can customize is left editable
+    // (icon/cover/background) — those aren't re-fetched if already present.
+    public bool IsSteamManaged =>
+        // A Steam game: has an appid as ExternalId and isn't a manual entry.
+        uint.TryParse(_game?.ExternalId, out _) && _game?.SourceId != GameSource.ManualId;
+
+    public bool CanEditMetadata => !IsSteamManaged;
+
     private static ObservableCollection<SelectableItem> ToSelectable(IEnumerable<DatabaseObject> all, IReadOnlyCollection<Guid> selected)
         => new(all.Select(x => new SelectableItem(x.Id, x.Name, selected.Contains(x.Id))).OrderBy(x => x.Name));
 
@@ -141,6 +151,29 @@ public partial class GameEditViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(Name))
         {
             return false;
+        }
+
+        // Steam-imported games: only the artwork the user customized is written
+        // back. Metadata (name, description, scores, genres, ...) stays managed
+        // by the startup sync — editing it here would just be overwritten.
+        if (IsSteamManaged)
+        {
+            _game.Icon = Icon;
+            _game.CoverImage = CoverImage;
+            _game.BackgroundImage = BackgroundImage;
+            _game.Modified = DateTime.Now;
+
+            if (IsNewGame)
+            {
+                _game.Added = DateTime.Now;
+                _gameRepository.Add(_game);
+            }
+            else
+            {
+                _gameRepository.Update(_game);
+            }
+
+            return true;
         }
 
         _game.Name = Name.Trim();

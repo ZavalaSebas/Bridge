@@ -9,11 +9,18 @@
         Background="{DynamicResource ApplicationBackgroundBrush}"
         Foreground="{StaticResource TextFillColorPrimaryBrush}"
         ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
     <Grid Margin="16">
-        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0">
-            <TabItem Header="General">
+        <Border Grid.Row="0" Background="#332A6EB8" CornerRadius="4" Padding="10,6" Margin="0,0,0,10" Visibility="{Binding IsSteamManaged, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="This Steam game's metadata is managed by Bridge and stays in sync with Steam. Only the artwork (icon, cover, background) can be customized here." FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+        </Border>
+
+        <TabControl Grid.Row="1">
+            <TabItem Header="General" Visibility="{Binding CanEditMetadata, Converter={StaticResource BoolToVis}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="8" MaxWidth="520">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -22,19 +29,19 @@
                             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Sorting Name" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}" ToolTip="Name used for sorting (e.g. 'Witcher 3' for 'The Witcher 3: Wild Hunt'). Leave empty to sort by Name."/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SortingName, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SortingName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Release Date" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ReleaseDateText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8" ToolTip="YYYY, YYYY-MM or YYYY-MM-DD"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ReleaseDateText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8" ToolTip="YYYY, YYYY-MM or YYYY-MM-DD"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Critic Score" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CriticScoreText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CriticScoreText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="Community Score" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding CommunityScoreText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding CommunityScoreText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
                         <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
                             <CheckBox Content="Favorite" IsChecked="{Binding Favorite}" Margin="0,0,16,0"/>
@@ -42,14 +49,14 @@
                         </StackPanel>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Description" VerticalAlignment="Top" Margin="0,2,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="120" Padding="6,4" VerticalScrollBarVisibility="Auto"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="120" Padding="6,4" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding CanEditMetadata}"/>
                     </Grid>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Details">
+            <TabItem Header="Details" Visibility="{Binding CanEditMetadata, Converter={StaticResource BoolToVis}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8">
+                    <StackPanel Margin="8" IsEnabled="{Binding CanEditMetadata}">
                         <DockPanel Margin="0,0,0,6">
                             <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" Width="26" Height="22" Padding="0" ToolTip="Add new genre" Click="AddReference_Click" Tag="Genre"/>
                             <TextBlock Text="Genres" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
@@ -100,7 +107,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Media">
+            <TabItem Header="Media" IsSelected="{Binding IsSteamManaged, Mode=OneWay}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8">
                         <TextBlock Text="Icon" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,6"/>
@@ -137,7 +144,7 @@
             </TabItem>
         </TabControl>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
             <Button Content="Save" IsDefault="True" Padding="18,7" Click="Save_Click"/>
             <Button Content="Cancel" IsCancel="True" Margin="8,0,0,0" Padding="18,7"/>
         </StackPanel>

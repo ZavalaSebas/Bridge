@@ -171,6 +171,19 @@ public class SteamLibraryImporterTests : IDisposable
         Assert.Equal(string.Empty, metadata.InstallDirectory);
     }
 
+    [Fact]
+    public void BuildDefaultLinks_AreDeterministicFromAppId()
+    {
+        var links = SteamLibraryImporter.BuildDefaultLinks("730");
+
+        Assert.Contains(links, l => l.Name == "Steam Store" && l.Url == "https://store.steampowered.com/app/730");
+        Assert.Contains(links, l => l.Name == "Community Hub" && l.Url == "https://steamcommunity.com/app/730");
+        Assert.Contains(links, l => l.Name == "Discussions" && l.Url == "https://steamcommunity.com/app/730/discussions/");
+        Assert.Contains(links, l => l.Name == "Guides" && l.Url == "https://steamcommunity.com/app/730/guides/");
+        Assert.Contains(links, l => l.Name == "News" && l.Url == "https://store.steampowered.com/news/?appids=730");
+        Assert.Contains(links, l => l.Name == "PCGamingWiki" && l.Url == "https://pcgamingwiki.com/api/appid.php?appid=730");
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))

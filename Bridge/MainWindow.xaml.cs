@@ -24,6 +24,11 @@ namespace Bridge
         {
             InitializeComponent();
 
+            // Restore the saved view's layout once the DataContext is assigned
+            // (App.xaml.cs sets it after construction): List keeps the detail
+            // panel, Grid/Table collapse it.
+            Loaded += (_, _) => ApplyViewModeLayout();
+
             // Debounce the tuck-away: hovering near the seam between the star
             // and the cover fires MouseLeave/MouseEnter in rapid succession
             // (the revealed star shifts the hovered area), which would make the
@@ -155,7 +160,7 @@ namespace Bridge
             if (DataContext is ViewModels.MainViewModel vm)
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.List;
-                ShowFullWidthDetail();
+                ApplyViewModeLayout();
             }
         }
 
@@ -164,8 +169,22 @@ namespace Bridge
             if (DataContext is ViewModels.MainViewModel vm)
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Grid;
-                CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
-                HideDetailPanel();
+                ApplyViewModeLayout();
+
+                // Fresh library: switching to Grid the first time realizes the
+                // covers list with its DEFAULT ItemsPanel (StackPanel) — one
+                // column — instead of CenteringWrapPanel. Re-assigning the
+                // ItemsSource forces the ListBox to re-apply its
+                // ItemsPanelTemplate, which wraps the covers into columns.
+                // Root cause still open — see CHANGELOG known issues.
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
+                {
+                    var source = CoversList.ItemsSource;
+                    CoversList.ItemsSource = null;
+                    CoversList.UpdateLayout();
+                    CoversList.ItemsSource = source;
+                    CoversList.UpdateLayout();
+                });
             }
         }
 
@@ -174,7 +193,32 @@ namespace Bridge
             if (DataContext is ViewModels.MainViewModel vm)
             {
                 vm.ViewMode = Bridge.Core.Enums.ViewMode.Table;
-                HideDetailPanel();
+                ApplyViewModeLayout();
+            }
+        }
+
+        // Applies the per-view layout the click handlers used to hard-code:
+        // List keeps the full detail panel, Grid/Table collapse it. Extracted so
+        // startup can restore the saved view with the same visual state.
+        private void ApplyViewModeLayout()
+        {
+            if (DataContext is not ViewModels.MainViewModel vm)
+                return;
+
+            switch (vm.ViewMode)
+            {
+                case Bridge.Core.Enums.ViewMode.List:
+                    ShowFullWidthDetail();
+                    CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
+                    break;
+                case Bridge.Core.Enums.ViewMode.Grid:
+                    CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
+                    HideDetailPanel();
+                    break;
+                case Bridge.Core.Enums.ViewMode.Table:
+                    CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
+                    HideDetailPanel();
+                    break;
             }
         }
 
