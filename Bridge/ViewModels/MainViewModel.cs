@@ -1065,6 +1065,101 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = $"Metadata applied to '{game.Name}' (source: {providerName}).";
     }
 
+    // Downloads metadata for games just added from "Scan Automatically". Unlike
+    // the startup sync (which walks existing games), this runs on demand for a
+    // handful of freshly-created manual games and prefers Steam by name first —
+    // a manually-installed copy of a game that exists on Steam (Risk of Rain 2,
+    // Fallout 3) gets the full Steam metadata (cover, hero, screenshots, store
+    // links) instead of IGDB's, and only falls back to the IGDB chain when
+    // Steam has no match. Matches the explicit "Download Metadata" action.
+    public async Task DownloadMetadataForAddedGamesAsync(IReadOnlyList<Game> games)
+    {
+        var candidates = games.Where(g => string.IsNullOrWhiteSpace(g.Description)).ToList();
+        if (candidates.Count == 0)
+        {
+            return;
+        }
+
+        StatusMessage = $"Downloading metadata for {candidates.Count} game(s)...";
+
+        using var throttle = new SemaphoreSlim(4);
+        var results = await Task.WhenAll(candidates.Select(game =>
+            Task.Run(async () =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    // Steam by name first — the game may exist on Steam even
+                    // though this copy wasn't installed through it.
+                    try
+                    {
+                        if (await _steamMetadataProvider.SearchAsync(game.Name) is { } steamFound)
+                            return (game, metadata: steamFound, provider: _steamMetadataProvider.Name);
+                    }
+                    catch
+                    {
+                        // Steam search failed — fall through to the IGDB chain.
+                    }
+
+                    foreach (var provider in _metadataProviders)
+                    {
+                        if (ReferenceEquals(provider, _steamMetadataProvider))
+                            continue;
+
+                        try
+                        {
+                            if (await provider.SearchAsync(game.Name) is { } found)
+                                return (game, metadata: found, provider: provider.Name);
+                        }
+                        catch
+                        {
+                            // Try the next provider
+                        }
+                    }
+
+                    return (game, metadata: (GameMetadata?)null, provider: (string?)null);
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            })));
+
+        int applied = 0;
+        foreach (var (game, metadata, providerName) in results)
+        {
+            if (metadata is null || providerName is null)
+                continue;
+
+            try
+            {
+                if (!Games.Contains(game))
+                    continue;
+
+                if (providerName == _steamMetadataProvider.Name)
+                {
+                    await EnrichLinksFromIgdbAsync(game.Name, metadata);
+                }
+
+                ApplyMetadata(game, metadata);
+                ApplyMetadataReferences(game, metadata);
+                ApplySteamLocalArtwork(game);
+
+                _gameRepository.Update(game);
+                RefreshListDisplay(game);
+                applied++;
+            }
+            catch (Exception ex)
+            {
+                App.LogException(ex);
+            }
+        }
+
+        StatusMessage = applied > 0
+            ? $"Metadata applied: {applied}/{candidates.Count} game(s) updated."
+            : $"No metadata found for the added game(s) ({candidates.Count} checked).";
+    }
+
     // Adds IGDB social links (YouTube, Reddit, Twitter, Wikipedia, ...) to
     // Steam-sourced metadata via our own Worker. Zero-config; if the Worker is
     // unreachable, the Steam links alone stand.
