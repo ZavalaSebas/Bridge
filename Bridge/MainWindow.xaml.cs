@@ -5,6 +5,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Diagnostics;
 using Bridge.Core.Entities;
+using Bridge.Services;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui.Controls;
@@ -20,10 +21,6 @@ namespace Bridge
         private static readonly TimeSpan FavoriteStarMotion = TimeSpan.FromMilliseconds(180);
         private readonly DispatcherTimer _favoriteHideTimer;
 
-        // The covers ItemsPanel workaround only needs to run once (first entry
-        // into Grid on a fresh library); see SetViewModeGrid_Click.
-        private bool _coversPanelWorkaroundApplied;
-
         public MainWindow()
         {
             InitializeComponent();
@@ -34,21 +31,15 @@ namespace Bridge
             Loaded += (_, _) =>
             {
                 ApplyViewModeLayout();
-                ScrollToSelectedGame();
 
-                // Re-scroll whenever the selection changes (the user clicks a
-                // game, or startup picks the initial one after the first-run
-                // import). Same Dispatcher deferral as ScrollToSelectedGame so
-                // the scroll happens after the selection has visually settled.
+                // Restore this view's saved scroll position on open, so Bridge
+                // comes back to where you were instead of the top. Also scrolls
+                // to the selected game on a fresh library (no saved position yet).
                 if (DataContext is ViewModels.MainViewModel vm)
                 {
-                    vm.PropertyChanged += (_, e) =>
-                    {
-                        if (e.PropertyName == nameof(ViewModels.MainViewModel.SelectedGame))
-                        {
-                            ScrollToSelectedGame();
-                        }
-                    };
+                    RestoreScrollPosition(vm.ViewMode);
+                    if (ScrollPositionSettingsStore.Load(vm.ViewMode.ToString()) <= 0)
+                        ScrollToSelectedGame();
                 }
             };
 
@@ -180,88 +171,107 @@ namespace Bridge
 
         private void SetViewModeList_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is ViewModels.MainViewModel vm)
-            {
-                vm.ViewMode = Bridge.Core.Enums.ViewMode.List;
-                ApplyViewModeLayout();
-                ReassertSelection(vm);
-            }
+            if (DataContext is not ViewModels.MainViewModel vm)
+                return;
+
+            SwitchView(vm, Bridge.Core.Enums.ViewMode.List);
         }
 
         private void SetViewModeGrid_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is ViewModels.MainViewModel vm)
-            {
-                vm.ViewMode = Bridge.Core.Enums.ViewMode.Grid;
-                ApplyViewModeLayout();
+            if (DataContext is not ViewModels.MainViewModel vm)
+                return;
 
-                // Fresh library: switching to Grid the first time realizes the
-                // covers list with its DEFAULT ItemsPanel (StackPanel) — one
-                // column — instead of CenteringWrapPanel. Re-assigning the
-                // ItemsSource forces the ListBox to re-apply its
-                // ItemsPanelTemplate, which wraps the covers into columns.
-                // Root cause still open — see CHANGELOG known issues.
-                //
-                // The fix is only needed the FIRST time (the panel is applied
-                // correctly afterwards), and every re-assignment re-renders the
-                // whole cover wall — a visible flicker on every switch back to
-                // Grid. So it runs once per session, not per view change.
-                if (!_coversPanelWorkaroundApplied)
-                {
-                    _coversPanelWorkaroundApplied = true;
-
-                    // Capture the selection BEFORE the ItemsSource cycle below —
-                    // the ListBox's SelectedItem binding is TwoWay, so setting
-                    // ItemsSource = null writes SelectedGame = null into the VM,
-                    // destroying the selection we'd otherwise re-assert.
-                    var selected = vm.SelectedGame;
-
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
-                    {
-                        var source = CoversList.ItemsSource;
-                        CoversList.ItemsSource = null;
-                        CoversList.UpdateLayout();
-                        CoversList.ItemsSource = source;
-                        CoversList.UpdateLayout();
-                        ReassertSelection(vm, selected);
-                    });
-                }
-                else
-                {
-                    // The panel is already correct, but a collapsed Grid view can
-                    // still drop the visual selection on switch-back — re-assert
-                    // it without touching the ItemsSource.
-                    ReassertSelection(vm);
-                }
-            }
+            SwitchView(vm, Bridge.Core.Enums.ViewMode.Grid);
         }
 
         private void SetViewModeTable_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is ViewModels.MainViewModel vm)
-            {
-                vm.ViewMode = Bridge.Core.Enums.ViewMode.Table;
-                ApplyViewModeLayout();
-                ReassertSelection(vm);
-            }
+            if (DataContext is not ViewModels.MainViewModel vm)
+                return;
+
+            SwitchView(vm, Bridge.Core.Enums.ViewMode.Table);
         }
 
-        // The view's ListBox/ListView binds SelectedItem to SelectedGame, but
-        // collapsing a view can drop its visual selection and the newly-shown
-        // view won't re-pick it up if the VM's SelectedGame didn't change. Re-apply
-        // by cycling null→game so the TwoWay binding pushes the selection into the
-        // visible control (and ScrollToSelectedGame runs via PropertyChanged).
-        // `game` is passed explicitly because in some flows (the covers ItemsSource
-        // workaround) the VM's SelectedGame is already null by the time we run.
-        private static void ReassertSelection(ViewModels.MainViewModel vm, Game? game = null)
+        // Switching views: save the outgoing view's scroll offset, swap to the
+        // new view, then restore that view's saved offset. Persisting each view's
+        // position means coming back to Details/Covers/List/Table always lands
+        // where you left it, instead of resetting to the top (and instead of the
+        // selection re-assertion approach, which re-rendered the covers and
+        // flickered).
+        private void SwitchView(ViewModels.MainViewModel vm, Bridge.Core.Enums.ViewMode newMode)
         {
-            if (game is null)
-            {
+            var oldMode = vm.ViewMode;
+            if (oldMode == newMode)
                 return;
+
+            SaveScrollPosition(oldMode);
+
+            vm.ViewMode = newMode;
+            ApplyViewModeLayout();
+
+            RestoreScrollPosition(newMode);
+        }
+
+        // Captures the current scroll offset of a view and persists it, so the
+        // position survives switching away (and closing the app).
+        private void SaveScrollPosition(Bridge.Core.Enums.ViewMode mode)
+        {
+            var offset = GetScrollOffset(mode);
+            if (offset is null)
+                return;
+
+            ScrollPositionSettingsStore.Save(mode.ToString(), offset.Value);
+        }
+
+        // Restores a view's saved scroll offset once its layout has settled.
+        private void RestoreScrollPosition(Bridge.Core.Enums.ViewMode mode)
+        {
+            var offset = ScrollPositionSettingsStore.Load(mode.ToString());
+            if (offset <= 0)
+                return;
+
+            // Deferred so the view's items are realized before we scroll.
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+            {
+                SetScrollOffset(mode, offset);
+            });
+        }
+
+        private double? GetScrollOffset(Bridge.Core.Enums.ViewMode mode)
+        {
+            return mode switch
+            {
+                Bridge.Core.Enums.ViewMode.Grid => GetScrollViewer(CoversList)?.VerticalOffset,
+                Bridge.Core.Enums.ViewMode.List => GetScrollViewer(GamesList)?.VerticalOffset,
+                Bridge.Core.Enums.ViewMode.Table => GetScrollViewer(TableList)?.VerticalOffset,
+                _ => null
+            };
+        }
+
+        private void SetScrollOffset(Bridge.Core.Enums.ViewMode mode, double offset)
+        {
+            if (mode == Bridge.Core.Enums.ViewMode.Grid)
+                GetScrollViewer(CoversList)?.ScrollToVerticalOffset(offset);
+            else if (mode == Bridge.Core.Enums.ViewMode.List)
+                GetScrollViewer(GamesList)?.ScrollToVerticalOffset(offset);
+            else if (mode == Bridge.Core.Enums.ViewMode.Table)
+                GetScrollViewer(TableList)?.ScrollToVerticalOffset(offset);
+        }
+
+        // Finds the ScrollViewer WPF wraps inside a ListBox/ListView.
+        private static ScrollViewer? GetScrollViewer(DependencyObject root)
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is ScrollViewer viewer)
+                    return viewer;
+                if (GetScrollViewer(child) is { } found)
+                    return found;
             }
 
-            vm.SelectedGame = null;
-            vm.SelectedGame = game;
+            return null;
         }
 
         // Applies the per-view layout the click handlers used to hard-code:
@@ -289,28 +299,24 @@ namespace Bridge
             }
         }
 
-        // After startup selects the last-played game, the view may open scrolled
-        // to the top with the selection out of view (it can be hundreds of rows
-        // down). Bring it into the viewport once the layout has settled.
+        // After startup selects the last-played game, the Covers (Grid) view may
+        // open scrolled to the top with the selection out of view (it can be
+        // hundreds of rows down). Bring it into the viewport once the layout has
+        // settled. Only Grid is scrolled here — List/Table restore their saved
+        // scroll position (ScrollPositionSettingsStore), and forcing layout on
+        // them at startup can mis-size the Table's auto-fill Name column.
         private void ScrollToSelectedGame()
         {
             if (DataContext is not ViewModels.MainViewModel vm
-                || vm.SelectedGame is not { } game)
+                || vm.SelectedGame is not { } game
+                || vm.ViewMode != Bridge.Core.Enums.ViewMode.Grid)
             {
                 return;
             }
 
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
             {
-                switch (vm.ViewMode)
-                {
-                    case Bridge.Core.Enums.ViewMode.Grid:
-                        CoversList.ScrollIntoView(game);
-                        break;
-                    case Bridge.Core.Enums.ViewMode.List:
-                        GamesList.ScrollIntoView(game);
-                        break;
-                }
+                CoversList.ScrollIntoView(game);
             });
         }
 
@@ -374,7 +380,16 @@ namespace Bridge
                                - System.Windows.SystemParameters.VerticalScrollBarWidth
                                - totalFixed;
 
-            if (available < 100) available = 100;
+            // If the available width isn't a sane positive value, the list is
+            // mid-layout (startup, or the detail panel collapsing) — skip this
+            // pass and let the next SizeChanged adjust with real dimensions.
+            // Clamping to a minimum here would permanently shrink the Name
+            // column to that minimum on startup.
+            if (available < 100)
+            {
+                _suppressTableResize = false;
+                return;
+            }
 
             var nameColumn = gridView.Columns[0];
             if (Math.Abs(nameColumn.Width - available) > 0.5)
