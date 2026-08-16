@@ -17,13 +17,14 @@
             <ui:SymbolIcon Symbol="Search24" FontSize="22" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
             <TextBlock Text="Scan Automatically" FontSize="{StaticResource Bridge.FontSize.Title}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
             <TextBlock x:Name="StatusText" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="12,0,0,2"/>
+            <ui:ProgressRing x:Name="ScanProgress" IsIndeterminate="True" Width="18" Height="18" Margin="10,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- Toolbar -->
         <DockPanel Grid.Row="1" Margin="0,0,0,12">
-            <Button DockPanel.Dock="Right" Content="Scan Folder..." Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
-            <Button DockPanel.Dock="Right" Content="Browse..." Padding="12,6" Click="Browse_Click"/>
-            <Button DockPanel.Dock="Left" Content="Detect Installed" Padding="12,6" Click="DetectInstalled_Click"/>
+            <Button x:Name="ScanFolderButton" DockPanel.Dock="Right" Content="Scan Folder..." Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
+            <Button x:Name="BrowseButton" DockPanel.Dock="Right" Content="Browse..." Padding="12,6" Click="Browse_Click"/>
+            <Button x:Name="DetectInstalledButton" DockPanel.Dock="Left" Content="Detect Installed" Padding="12,6" Click="DetectInstalled_Click"/>
             <Button DockPanel.Dock="Left" Content="Select All" Padding="10,6" Margin="0,0,6,0" Click="SelectAll_Click" ToolTip="Check every game in the list"/>
             <Button DockPanel.Dock="Left" Content="Select None" Padding="10,6" Click="SelectNone_Click" ToolTip="Uncheck every game in the list"/>
             <CheckBox x:Name="HideImportedCheck" DockPanel.Dock="Right" Content="Hide already imported" VerticalAlignment="Center" Margin="14,0,0,0" IsChecked="True" Checked="RefreshFilter_Click" Unchecked="RefreshFilter_Click"/>
