@@ -27,7 +27,26 @@ namespace Bridge
             // Restore the saved view's layout once the DataContext is assigned
             // (App.xaml.cs sets it after construction): List keeps the detail
             // panel, Grid/Table collapse it.
-            Loaded += (_, _) => ApplyViewModeLayout();
+            Loaded += (_, _) =>
+            {
+                ApplyViewModeLayout();
+                ScrollToSelectedGame();
+
+                // Re-scroll whenever the selection changes (the user clicks a
+                // game, or startup picks the initial one after the first-run
+                // import). Same Dispatcher deferral as ScrollToSelectedGame so
+                // the scroll happens after the selection has visually settled.
+                if (DataContext is ViewModels.MainViewModel vm)
+                {
+                    vm.PropertyChanged += (_, e) =>
+                    {
+                        if (e.PropertyName == nameof(ViewModels.MainViewModel.SelectedGame))
+                        {
+                            ScrollToSelectedGame();
+                        }
+                    };
+                }
+            };
 
             // Debounce the tuck-away: hovering near the seam between the star
             // and the cover fires MouseLeave/MouseEnter in rapid succession
@@ -220,6 +239,31 @@ namespace Bridge
                     HideDetailPanel();
                     break;
             }
+        }
+
+        // After startup selects the last-played game, the view may open scrolled
+        // to the top with the selection out of view (it can be hundreds of rows
+        // down). Bring it into the viewport once the layout has settled.
+        private void ScrollToSelectedGame()
+        {
+            if (DataContext is not ViewModels.MainViewModel vm
+                || vm.SelectedGame is not { } game)
+            {
+                return;
+            }
+
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+            {
+                switch (vm.ViewMode)
+                {
+                    case Bridge.Core.Enums.ViewMode.Grid:
+                        CoversList.ScrollIntoView(game);
+                        break;
+                    case Bridge.Core.Enums.ViewMode.List:
+                        GamesList.ScrollIntoView(game);
+                        break;
+                }
+            });
         }
 
         // The Details view keeps the full detail panel on the right; the covers
