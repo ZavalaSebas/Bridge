@@ -762,7 +762,7 @@ namespace Bridge
             }
         }
 
-        private void ScanInstalled_Click(object sender, RoutedEventArgs e)
+        private async void ScanInstalled_Click(object sender, RoutedEventArgs e)
         {
             var window = new ScanInstalledWindow { Owner = this };
             if (window.ShowDialog() != true)
@@ -775,6 +775,14 @@ namespace Bridge
                 foreach (var game in window.CreatedGames)
                 {
                     viewModel.AddGameToLibrary(game);
+                }
+
+                // Pull metadata right away for the games that were just added —
+                // Steam first (a manual copy of a Steam game gets its full store
+                // metadata), then IGDB for the rest.
+                if (window.CreatedGames.Count > 0)
+                {
+                    await viewModel.DownloadMetadataForAddedGamesAsync(window.CreatedGames);
                 }
             }
         }
