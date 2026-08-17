@@ -1,29 +1,80 @@
-<Window x:Class="Bridge.ScanRomWindow"
+<ui:FluentWindow x:Class="Bridge.ScanRomWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Scan ROMs" Height="Auto" Width="520"
-        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
-        ShowInTaskbar="False"
+        xmlns:controls="clr-namespace:Bridge.Controls"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        x:Name="Root"
+        Title="Scan ROMs" Width="580" Height="520"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}"
-        Foreground="{StaticResource TextFillColorPrimaryBrush}">
-    <StackPanel Margin="16" MinWidth="470">
-        <TextBlock Text="Emulator" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-        <ComboBox x:Name="EmulatorBox" Margin="0,4,0,10" Padding="6,4" SelectionChanged="EmulatorBox_SelectionChanged"/>
+        Foreground="{StaticResource TextFillColorPrimaryBrush}"
+        FontFamily="{StaticResource Bridge.FontFamily}"
+        FontSize="{StaticResource Bridge.FontSize.Body}">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/></Grid.RowDefinitions>
 
-        <TextBlock Text="Profile" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-        <ComboBox x:Name="ProfileBox" Margin="0,4,0,10" Padding="6,4"/>
+        <Grid Grid.RowSpan="2" IsHitTestVisible="False">
+            <Grid.CacheMode><BitmapCache/></Grid.CacheMode>
+            <controls:FadeImage x:Name="BackgroundArt" Stretch="UniformToFill" Width="{Binding ActualWidth, ElementName=Root}" Height="{Binding ActualHeight, ElementName=Root}"><controls:FadeImage.Effect><BlurEffect Radius="{StaticResource Bridge.Background.BlurRadius}" KernelType="Gaussian" RenderingBias="Performance"/></controls:FadeImage.Effect></controls:FadeImage>
+            <Border Background="{StaticResource Bridge.Background.DarkOverlay}"/>
+        </Grid>
 
-        <TextBlock Text="Folder to scan for ROMs" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-        <DockPanel Margin="0,4,0,0">
-            <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Padding="10,6" Margin="8,0,0,0" Click="BrowseFolder_Click"/>
-            <TextBox x:Name="FolderBox" Padding="6,4" VerticalContentAlignment="Center"/>
-        </DockPanel>
+        <ui:TitleBar Grid.Row="0" Background="{DynamicResource Bridge.Sidebar.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="0,0,0,1" Height="56" ShowMinimize="False" ShowMaximize="False" ShowClose="True"><ui:TitleBar.Header>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                <ui:SymbolIcon Symbol="FolderSearch24" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Scan ROMs" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+        </ui:TitleBar.Header></ui:TitleBar>
 
-        <TextBlock x:Name="ExtensionsText" Margin="0,10,0,0" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+        <Border Grid.Row="1" Margin="10,0,10,10" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource ApplicationBackgroundBrush}">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="20,16,20,20">
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
-            <Button Content="Scan" Width="90" Margin="8,0,0,0" IsDefault="True" Padding="10,6" Click="Scan_Click"/>
-        </StackPanel>
-    </StackPanel>
-</Window>
+                    <Border CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="14,12" Margin="0,0,0,12">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Code24" FontSize="15" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Emulator" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <ComboBox x:Name="EmulatorBox" Padding="6,4" Margin="0,0,0,6" SelectionChanged="EmulatorBox_SelectionChanged"/>
+                            <TextBlock x:Name="EmulatorDetailText" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="14,12" Margin="0,0,0,12">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Settings24" FontSize="15" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Profile" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <ComboBox x:Name="ProfileBox" Padding="6,4" Margin="0,0,0,6" SelectionChanged="ProfileBox_SelectionChanged"/>
+                            <TextBlock x:Name="ProfileDetailText" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="14,12" Margin="0,0,0,12">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Folder24" FontSize="15" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Folder to scan for ROMs" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,6">
+                                <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Padding="10,6" Margin="8,0,0,0" Click="BrowseFolder_Click"/>
+                                <TextBox x:Name="FolderBox" Padding="6,4" VerticalContentAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock x:Name="ExtensionsText" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                        <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
+                        <Button Content="Scan" Width="90" Margin="8,0,0,0" IsDefault="True" Padding="10,6" Click="Scan_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

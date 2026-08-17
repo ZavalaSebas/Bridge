@@ -973,7 +973,8 @@ namespace Bridge
 
         private async void ScanInstalled_Click(object sender, RoutedEventArgs e)
         {
-            var window = new ScanInstalledWindow { Owner = this };
+            var background = (DataContext as MainViewModel)?.SelectedGame?.BackgroundImage;
+            var window = new ScanInstalledWindow(background) { Owner = this };
             if (window.ShowDialog() != true)
             {
                 return;
@@ -998,7 +999,8 @@ namespace Bridge
 
         private void ScanRom_Click(object sender, RoutedEventArgs e)
         {
-            var window = new ScanRomWindow { Owner = this };
+            var background = (DataContext as MainViewModel)?.SelectedGame?.BackgroundImage;
+            var window = new ScanRomWindow(background) { Owner = this };
             if (window.ShowDialog() != true)
             {
                 return;
