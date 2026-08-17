@@ -11,4 +11,9 @@ public static class Config
         AppName);
 
     public static string DatabasePath => Path.Combine(AppDataPath, "bridge.db");
+
+    // On-disk cache for artwork RemoteImageCache downloads (covers, backgrounds,
+    // icons). Keeping the decoded bytes on disk means reopens read locally and
+    // render instantly instead of re-downloading every remote image.
+    public static string ImageCachePath => Path.Combine(AppDataPath, "image-cache");
 }

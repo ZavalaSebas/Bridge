@@ -67,11 +67,20 @@ namespace Bridge
             // zombie process.
             try
             {
+                var viewModel = Services.GetRequiredService<MainViewModel>();
                 var mainWindow = new MainWindow
                 {
-                    DataContext = Services.GetRequiredService<MainViewModel>()
+                    DataContext = viewModel
                 };
                 MainWindow = mainWindow;
+
+                // Decode the library's artwork (from the disk cache when
+                // available) BEFORE the first paint, so the Grid's covers and
+                // the selected game's background are already loaded when the
+                // window shows instead of rendering black and popping in a
+                // second later. Bounded by a timeout inside the VM.
+                viewModel.WaitForStartupArtworkAsync().GetAwaiter().GetResult();
+
                 mainWindow.Show();
             }
             catch (Exception ex)
