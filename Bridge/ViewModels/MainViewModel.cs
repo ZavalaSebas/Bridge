@@ -440,12 +440,12 @@ public partial class MainViewModel : ObservableObject
             // Both library imports are pure local file I/O (fast), so run them
             // back-to-back first — Steam and Epic games appear together — then
             // the slow per-game HTTP metadata syncs run after.
-            PreloadIcons();
+            _ = PreloadArtworkAsync();
             var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
             var epicSourceId = _sourceRepository.GetOrCreateByName("Epic").Id;
             await ImportSteamLibraryCoreAsync(steamSourceId);
             await ImportEpicLibraryCoreAsync(epicSourceId);
-            PreloadIcons();
+            _ = PreloadArtworkAsync();
 
             // First run: the constructor's SelectInitialGame ran against an empty
             // library, so nothing got selected. Pick the initial game now that the
@@ -457,9 +457,9 @@ public partial class MainViewModel : ObservableObject
             }
 
             await DownloadMissingSteamMetadataAsync(steamSourceId);
-            PreloadIcons();
+            _ = PreloadArtworkAsync();
             await DownloadMissingMetadataByNameAsync([epicSourceId]);
-            PreloadIcons();
+            _ = PreloadArtworkAsync();
         }
         catch (Exception ex)
         {
@@ -467,13 +467,36 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    // Warms the frozen-image cache so the small icons are usually ready by the
-    // time the library renders. Remote images also decode in the background;
-    // a failed/unreachable one simply never enters the cache. Each Image in the
-    // UI picks up its artwork the moment it's cached via CachedImage.SourceUrl.
-    private void PreloadIcons()
+    // Warms the frozen-image cache so the artwork is usually ready by the time
+    // the library renders — not just the small icons, but the covers (Grid view)
+    // and the selected game's background too. Without the covers preloaded, the
+    // Grid opens with many covers blank that pop in as their downloads finish;
+    // without the background preloaded, the hero's FadeImage shows it "all at
+    // once" instead of from the first frame. Remote images decode in the
+    // background; a failed/unreachable one simply never enters the cache. Each
+    // Image in the UI picks up its artwork the moment it's cached via
+    // CachedImage.SourceUrl.
+    private Task PreloadArtworkAsync()
     {
-        RemoteImageCache.Preload(Games.Select(g => g.Icon));
+        return RemoteImageCache.PreloadAndWaitAsync(
+            Games.Select(g => g.Icon)
+                .Concat(Games.Select(g => g.CoverImage))
+                .Concat(Games.Select(g => g.BackgroundImage)));
+    }
+
+    // Awaited by App.xaml.cs right before showing the window: the artwork must
+    // be decoded (from disk when cached) before the first paint, otherwise the
+    // Grid's covers and the hero background render black and pop in a moment
+    // later. A short timeout keeps startup snappy if a download stalls; the
+    // window then shows with whatever is ready and the rest fade in.
+    public async Task WaitForStartupArtworkAsync()
+    {
+        var preload = PreloadArtworkAsync();
+        // ConfigureAwait(false): called from App.xaml.cs with GetResult() on the
+        // UI thread — the continuation must not try to return to a blocked context.
+        var completed = await Task.WhenAny(preload, Task.Delay(TimeSpan.FromSeconds(3)))
+            .ConfigureAwait(false);
+        _ = completed; // preload keeps running in the background if it timed out
     }
 
     private void LoadGames()

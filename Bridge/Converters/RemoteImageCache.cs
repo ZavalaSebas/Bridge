@@ -1,7 +1,10 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Media.Imaging;
+using Bridge;
 
 namespace Bridge.Converters;
 
@@ -25,7 +28,9 @@ public static class RemoteImageCache
     private const int MaxCachedImages = 512;
 
     private static readonly ConcurrentDictionary<string, BitmapImage> Cache = new();
-    private static readonly ConcurrentDictionary<string, byte> InFlight = new();
+    // In-flight loads keyed by URL, storing the decode task so a preload can
+    // await it (the window waits for artwork before its first paint).
+    private static readonly ConcurrentDictionary<string, Task> InFlight = new();
 
     private static readonly object CallbacksLock = new();
     private static readonly Dictionary<string, List<Action>> PendingCallbacks = new();
@@ -74,6 +79,27 @@ public static class RemoteImageCache
     }
 
     /// <summary>
+    /// Warms the cache like <see cref="Preload"/> and returns a task that
+    /// completes when every decode has finished (failed URLs included). The
+    /// caller (startup) awaits this so the first paint already has the artwork.
+    /// </summary>
+    public static async Task PreloadAndWaitAsync(IEnumerable<string> urls)
+    {
+        var tasks = new List<Task>();
+        foreach (var url in urls)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                continue;
+            }
+
+            tasks.Add(BeginLoad(url));
+        }
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Invokes <paramref name="callback"/> (on the UI thread) once the image for
     /// <paramref name="url"/> is available — immediately if it's already cached,
     /// otherwise as soon as the background decode finishes. Used by CachedImage
@@ -106,14 +132,25 @@ public static class RemoteImageCache
         BeginLoad(url);
     }
 
-    private static void BeginLoad(string url)
+    private static Task BeginLoad(string url)
     {
-        if (!InFlight.TryAdd(url, 0))
+        if (InFlight.TryGetValue(url, out var existing))
         {
-            return; // already loading
+            return existing;
         }
 
         var loadTask = Task.Run(() => LoadSynchronously(url));
+        if (!InFlight.TryAdd(url, loadTask))
+        {
+            return InFlight[url];
+        }
+
+        // Populate the cache and fire callbacks on the continuation. This runs
+        // on the thread pool (NOT UiScheduler): startup awaits these tasks with
+        // GetResult() on the UI thread, and a UI-scheduled continuation can't
+        // run while the UI thread is blocked — the cache would never fill and
+        // the await would deadlock. The callbacks themselves are marshaled to
+        // the UI thread below (they touch Image.Source).
         _ = loadTask.ContinueWith(
             completed =>
             {
@@ -130,9 +167,7 @@ public static class RemoteImageCache
                     Cache[url] = image;
                 }
 
-                // Fire the pending callbacks on the UI thread (UiScheduler is
-                // captured at startup). Cleared even on failure so a never-
-                // resolving URL can't accumulate callbacks.
+                // Collect the pending callbacks, then run them on the UI thread.
                 List<Action>? callbacks = null;
                 lock (CallbacksLock)
                 {
@@ -142,17 +177,29 @@ public static class RemoteImageCache
                     }
                 }
 
-                if (callbacks is not null)
+                if (callbacks is not null && callbacks.Count > 0)
                 {
-                    foreach (var callback in callbacks)
-                    {
-                        callback();
-                    }
+                    // Callbacks touch Image.Source (UI thread only) — marshal the
+                    // invocation to the UI scheduler.
+                    var toRun = callbacks;
+                    Task.Factory.StartNew(
+                        () =>
+                        {
+                            foreach (var callback in toRun)
+                            {
+                                callback();
+                            }
+                        },
+                        CancellationToken.None,
+                        TaskCreationOptions.None,
+                        UiScheduler);
                 }
             },
             CancellationToken.None,
             TaskContinuationOptions.None,
-            UiScheduler);
+            TaskScheduler.Default);
+
+        return loadTask;
     }
 
     private static BitmapImage? LoadSynchronously(string url)
@@ -161,11 +208,15 @@ public static class RemoteImageCache
         {
             if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
             {
-                // Remote artwork: fetch the bytes ourselves (HttpClient works on
-                // any thread), then decode from a stream with OnLoad. Setting an
-                // HTTP UriSource here would hand the download to WPF's dispatcher-
+                // Remote artwork: serve from the on-disk cache when present,
+                // otherwise download the bytes ourselves (HttpClient works on
+                // any thread) and store them for the next run. Setting an HTTP
+                // UriSource here would hand the download to WPF's dispatcher-
                 // bound Downloader, which never finishes on a pool thread.
-                var bytes = DownloadClient.GetByteArrayAsync(uri).GetAwaiter().GetResult();
+                var bytes = GetBytes(uri);
+                if (bytes is null)
+                    return null;
+
                 using var stream = new MemoryStream(bytes);
                 var remote = new BitmapImage();
                 remote.BeginInit();
@@ -190,5 +241,53 @@ public static class RemoteImageCache
             // Unreachable/broken URL, unsupported format, relative URI — skip.
             return null;
         }
+    }
+
+    // Serves a remote image's bytes from the on-disk cache when available,
+    // otherwise downloads and persists them. The file name is the URL's SHA-1
+    // so the same artwork always maps to the same file regardless of URL
+    // formatting. Failures fall back to a fresh download attempt next time.
+    private static byte[]? GetBytes(Uri uri)
+    {
+        var url = uri.AbsoluteUri;
+        var cacheDir = Config.ImageCachePath;
+        var file = Path.Combine(cacheDir, CacheKeyFor(url));
+
+        if (File.Exists(file))
+        {
+            try
+            {
+                return File.ReadAllBytes(file);
+            }
+            catch
+            {
+                // Corrupt/unreadable cached file — re-download below.
+            }
+        }
+
+        try
+        {
+            var bytes = DownloadClient.GetByteArrayAsync(uri).GetAwaiter().GetResult();
+            try
+            {
+                Directory.CreateDirectory(cacheDir);
+                File.WriteAllBytes(file, bytes);
+            }
+            catch
+            {
+                // Persisting must never break the load.
+            }
+            return bytes;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string CacheKeyFor(string url)
+    {
+        var hash = SHA1.HashData(Encoding.UTF8.GetBytes(url));
+        return Convert.ToHexString(hash).ToLowerInvariant() + ".img";
     }
 }
