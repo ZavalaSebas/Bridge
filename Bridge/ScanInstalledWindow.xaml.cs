@@ -30,7 +30,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
     private readonly IGameRepository _gameRepository;
     private readonly ObservableCollection<InstalledGameEntry> _allCandidates = [];
 
-    public ScanInstalledWindow()
+    public ScanInstalledWindow(string? backgroundImage = null)
     {
         // Resolve services BEFORE InitializeComponent: the XAML's HideImported
         // checkbox is IsChecked="True", so its Checked event fires during
@@ -39,6 +39,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         _detector = services.GetRequiredService<InstalledGameDetector>();
         _gameRepository = services.GetRequiredService<IGameRepository>();
         InitializeComponent();
+        BackgroundArt.SourceUrl = backgroundImage;
     }
 
     private async void DetectInstalled_Click(object sender, RoutedEventArgs e)

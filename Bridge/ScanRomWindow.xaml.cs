@@ -4,10 +4,13 @@ using Bridge.Core.Entities;
 using Bridge.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
+using Wpf.Ui.Controls;
+using MessageBox = System.Windows.MessageBox;
+using MessageBoxButton = System.Windows.MessageBoxButton;
 
 namespace Bridge;
 
-public partial class ScanRomWindow : Window
+public partial class ScanRomWindow : FluentWindow
 {
     private readonly IRepository<Emulator> _emulatorRepository;
     private Emulator? _emulator;
@@ -17,13 +20,14 @@ public partial class ScanRomWindow : Window
     public Guid EmulatorId => _emulator?.Id ?? Guid.Empty;
     public string EmulatorProfileId => _profile?.Id ?? string.Empty;
 
-    public ScanRomWindow()
+    public ScanRomWindow(string? backgroundImage = null)
     {
         // Services before InitializeComponent (no bound events here, but keep the
         // pattern consistent with ScanInstalledWindow).
         var services = App.Services;
         _emulatorRepository = services.GetRequiredService<IRepository<Emulator>>();
         InitializeComponent();
+        BackgroundArt.SourceUrl = backgroundImage;
 
         Loaded += ScanRomWindow_Loaded;
     }
@@ -47,12 +51,22 @@ public partial class ScanRomWindow : Window
     private void EmulatorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _emulator = EmulatorBox.SelectedItem as Emulator;
+        RefreshEmulatorDetail();
         RefreshProfiles();
+    }
+
+    private void RefreshEmulatorDetail()
+    {
+        EmulatorDetailText.Text = _emulator is null
+            ? string.Empty
+            : $"Install: {(_emulator.InstallDirectory.Length > 0 ? _emulator.InstallDirectory : "not set")}"
+              + $"  ·  Profiles: {_emulator.Profiles.Count}";
     }
 
     private void RefreshProfiles()
     {
         _profile = null;
+        ProfileDetailText.Text = string.Empty;
         if (_emulator is null || _emulator.Profiles.Count == 0)
         {
             ProfileBox.ItemsSource = null;
@@ -72,14 +86,36 @@ public partial class ScanRomWindow : Window
     private void ProfileBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _profile = ProfileBox.SelectedItem as EmulatorProfile;
-        if (_profile is not null && _profile.ImageExtensions.Count > 0)
+        RefreshProfileDetail();
+        RefreshExtensions();
+    }
+
+    private void RefreshProfileDetail()
+    {
+        if (_profile is null)
         {
-            ExtensionsText.Text = $"Extensions: {string.Join(", ", _profile.ImageExtensions)}";
+            ProfileDetailText.Text = string.Empty;
+            return;
         }
-        else
-        {
-            ExtensionsText.Text = _profile is null ? string.Empty : "This profile has no extensions — everything will be scanned.";
-        }
+
+        var parts = new List<string>();
+        if (_profile.Executable.Length > 0)
+            parts.Add($"Executable: {_profile.Executable}");
+        if (_profile.Arguments.Length > 0)
+            parts.Add($"Arguments: {_profile.Arguments}");
+        if (_profile.WorkingDirectory.Length > 0)
+            parts.Add($"Dir: {_profile.WorkingDirectory}");
+
+        ProfileDetailText.Text = parts.Count > 0 ? string.Join("  ·  ", parts) : "No launch configuration set.";
+    }
+
+    private void RefreshExtensions()
+    {
+        ExtensionsText.Text = _profile is null
+            ? string.Empty
+            : _profile.ImageExtensions.Count > 0
+                ? $"Extensions: {string.Join(", ", _profile.ImageExtensions)}"
+                : "This profile has no extensions — everything will be scanned.";
     }
 
     private void BrowseFolder_Click(object sender, RoutedEventArgs e)

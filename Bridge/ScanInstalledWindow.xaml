@@ -2,84 +2,102 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:Bridge.Converters"
+        xmlns:controls="clr-namespace:Bridge.Controls"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        x:Name="Root"
         Title="Scan Automatically" Width="860" Height="620"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        ResizeMode="NoResize"
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}"
-        Foreground="{StaticResource TextFillColorPrimaryBrush}">
-    <Grid Margin="20,16">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        Foreground="{StaticResource TextFillColorPrimaryBrush}"
+        FontFamily="{StaticResource Bridge.FontFamily}"
+        FontSize="{StaticResource Bridge.FontSize.Body}">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/></Grid.RowDefinitions>
 
-        <!-- Header: title + count -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
-            <ui:SymbolIcon Symbol="Search24" FontSize="22" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
-            <TextBlock Text="Scan Automatically" FontSize="{StaticResource Bridge.FontSize.Title}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
-            <TextBlock x:Name="StatusText" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="12,0,0,2"/>
-            <ui:ProgressRing x:Name="ScanProgress" IsIndeterminate="True" Width="18" Height="18" Margin="10,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
-        </StackPanel>
+        <Grid Grid.RowSpan="2" IsHitTestVisible="False">
+            <Grid.CacheMode><BitmapCache/></Grid.CacheMode>
+            <controls:FadeImage x:Name="BackgroundArt" Stretch="UniformToFill" Width="{Binding ActualWidth, ElementName=Root}" Height="{Binding ActualHeight, ElementName=Root}"><controls:FadeImage.Effect><BlurEffect Radius="{StaticResource Bridge.Background.BlurRadius}" KernelType="Gaussian" RenderingBias="Performance"/></controls:FadeImage.Effect></controls:FadeImage>
+            <Border Background="{StaticResource Bridge.Background.DarkOverlay}"/>
+        </Grid>
 
-        <!-- Toolbar -->
-        <DockPanel Grid.Row="1" Margin="0,0,0,12">
-            <Button x:Name="ScanFolderButton" DockPanel.Dock="Right" Content="Scan Folder..." Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
-            <Button x:Name="BrowseButton" DockPanel.Dock="Right" Content="Browse..." Padding="12,6" Click="Browse_Click"/>
-            <Button x:Name="DetectInstalledButton" DockPanel.Dock="Left" Content="Detect Installed" Padding="12,6" Click="DetectInstalled_Click"/>
-            <Button DockPanel.Dock="Left" Content="Select All" Padding="10,6" Margin="0,0,6,0" Click="SelectAll_Click" ToolTip="Check every game in the list"/>
-            <Button DockPanel.Dock="Left" Content="Select None" Padding="10,6" Click="SelectNone_Click" ToolTip="Uncheck every game in the list"/>
-            <CheckBox x:Name="HideImportedCheck" DockPanel.Dock="Right" Content="Hide already imported" VerticalAlignment="Center" Margin="14,0,0,0" IsChecked="True" Checked="RefreshFilter_Click" Unchecked="RefreshFilter_Click"/>
-        </DockPanel>
+        <ui:TitleBar Grid.Row="0" Background="{DynamicResource Bridge.Sidebar.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="0,0,0,1" Height="56" ShowMinimize="False" ShowMaximize="False" ShowClose="True"><ui:TitleBar.Header>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                <ui:SymbolIcon Symbol="Search24" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Scan Automatically" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock x:Name="StatusText" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="12,0,0,2"/>
+                <ui:ProgressRing x:Name="ScanProgress" IsIndeterminate="True" Width="18" Height="18" Margin="10,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
+            </StackPanel>
+        </ui:TitleBar.Header></ui:TitleBar>
 
-        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
-            <ListBox x:Name="CandidatesList" Background="Transparent" BorderThickness="0" Padding="6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="Padding" Value="8,6"/>
-                        <Setter Property="Margin" Value="0,1"/>
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter/>
+        <Border Grid.Row="1" Margin="10,0,10,10" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource ApplicationBackgroundBrush}">
+            <Grid Margin="16,12,16,16">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+
+                <!-- Toolbar -->
+                <DockPanel Grid.Row="0" Margin="0,0,0,12">
+                    <Button x:Name="ScanFolderButton" DockPanel.Dock="Right" Content="Scan Folder..." Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
+                    <Button x:Name="BrowseButton" DockPanel.Dock="Right" Content="Browse..." Padding="12,6" Click="Browse_Click"/>
+                    <Button x:Name="DetectInstalledButton" DockPanel.Dock="Left" Content="Detect Installed" Padding="12,6" Click="DetectInstalled_Click"/>
+                    <Button DockPanel.Dock="Left" Content="Select All" Padding="10,6" Margin="0,0,6,0" Click="SelectAll_Click" ToolTip="Check every game in the list"/>
+                    <Button DockPanel.Dock="Left" Content="Select None" Padding="10,6" Click="SelectNone_Click" ToolTip="Uncheck every game in the list"/>
+                    <CheckBox x:Name="HideImportedCheck" DockPanel.Dock="Right" Content="Hide already imported" VerticalAlignment="Center" Margin="14,0,0,0" IsChecked="True" Checked="RefreshFilter_Click" Unchecked="RefreshFilter_Click"/>
+                </DockPanel>
+
+                <Border Grid.Row="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+                    <ListBox x:Name="CandidatesList" Background="Transparent" BorderThickness="0" Padding="6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Padding" Value="8,6"/>
+                                <Setter Property="Margin" Value="0,1"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Bridge.Accent.Hover}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" IsChecked="{Binding Import}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <Border Grid.Column="1" Width="32" Height="32" CornerRadius="4" ClipToBounds="True" Background="#1B2132" Margin="0,0,12,0">
+                                        <Image Width="28" Height="28" Stretch="Uniform" Source="{Binding Icon}" RenderOptions.BitmapScalingMode="Fant" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource Bridge.Accent.Hover}"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <CheckBox Grid.Column="0" IsChecked="{Binding Import}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                            <Border Grid.Column="1" Width="32" Height="32" CornerRadius="4" ClipToBounds="True" Background="#1B2132" Margin="0,0,12,0">
-                                <Image Width="28" Height="28" Stretch="Uniform" Source="{Binding Icon}" RenderOptions.BitmapScalingMode="Fant" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Path}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding Path}"/>
-                            </StackPanel>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Border>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Path}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding Path}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
-            <Button Content="Add Games" Width="110" Margin="8,0,0,0" Padding="10,6" Click="AddGames_Click"/>
-        </StackPanel>
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                    <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
+                    <Button Content="Add Games" Width="110" Margin="8,0,0,0" Padding="10,6" Click="AddGames_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </ui:FluentWindow>
