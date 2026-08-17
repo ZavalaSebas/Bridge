@@ -100,33 +100,43 @@ async function igdbRequest(
 }
 
 /**
- * Construye la query de Apicalypse para buscar un juego por nombre (y opcionalmente año).
+ * Construye las queries de Apicalypse para buscar un juego por nombre (y opcionalmente año).
  * Pide todos los campos de metadata que el endpoint /metadata necesita.
+ *
+ * Se intentan dos estrategias en orden:
+ *   1. `where name ~ "..."` — coincidencia literal (case-insensitive, contiene el
+ *      texto). Es la que mantiene los resultados exactos: "Genshin Impact" devuelve
+ *      el juego base, no un DLC/spin-off con ese nombre como prefijo.
+ *   2. `search "..."` — el endpoint de texto libre de IGDB, significativamente más
+ *      tolerante: tokeniza el nombre, ignora acentos y guiones, y devuelve el mejor
+ *      match por relevancia. Es lo que necesitan los nombres de ROMs
+ *      ("Pokemon - Emerald Version" -> "Pokémon Emerald Version"), que con un match
+ *      literal fallaban. Solo se usa cuando la búsqueda literal no dio resultados.
  */
-function buildGameQuery(name: string, releaseYear?: number): string {
+function buildGameQueries(name: string, releaseYear?: number): string[] {
   // Escapa comillas dobles en el nombre para la búsqueda
   const safeName = name.replace(/"/g, '\\"');
 
-  // Filtro base: busca por nombre aproximado
-  let whereClause = `name ~ "${safeName}"`;
-
   // Si se especifica el año, filtra por el timestamp de first_release_date
+  let yearClause = "";
   if (releaseYear) {
     const start = Math.floor(Date.UTC(releaseYear, 0, 1) / 1000); // 1 ene 00:00 UTC
     const end = Math.floor(Date.UTC(releaseYear + 1, 0, 1) / 1000); // 1 ene del año siguiente
-    whereClause += ` & first_release_date >= ${start} & first_release_date < ${end}`;
+    yearClause = ` where first_release_date >= ${start} & first_release_date < ${end}`;
   }
 
+  const fields =
+    "fields id,name,summary,first_release_date,cover.image_id,cover.url," +
+    "artworks.image_id,artworks.url,screenshots.image_id,screenshots.url," +
+    "genres.name,involved_companies.company.name," +
+    "involved_companies.publisher,involved_companies.developer," +
+    "rating,rating_count,aggregated_rating,aggregated_rating_count," +
+    "total_rating,total_rating_count,websites.url,websites.type;";
+
   return [
-    "fields id,name,summary,first_release_date,cover.image_id,cover.url,",
-    "artworks.image_id,artworks.url,screenshots.image_id,screenshots.url,",
-    "genres.name,involved_companies.company.name,",
-    "involved_companies.publisher,involved_companies.developer,",
-    "rating,rating_count,aggregated_rating,aggregated_rating_count,",
-    "total_rating,total_rating_count,websites.url,websites.type;",
-    `where ${whereClause};`,
-    "limit 1;",
-  ].join("");
+    `where name ~ "${safeName}"${yearClause};${fields}limit 1;`,
+    `search "${safeName}";${fields}${yearClause};limit 1;`,
+  ];
 }
 
 // ─── Handlers de endpoints ──────────────────────────────────────────────────
@@ -154,11 +164,20 @@ async function handleMetadata(request: Request, env: Env): Promise<Response> {
   }
 
   try {
-    const query = buildGameQuery(body.name, body.releaseYear);
-    const result = await igdbRequest("games", query, env);
+    // Exact literal match first, fuzzy `search` as the fallback for titles the
+    // literal match can't hit (ROMs with accents/hyphens, localized names).
+    const queries = buildGameQueries(body.name, body.releaseYear);
+    let games: unknown[] = [];
+    for (const query of queries) {
+      const result = await igdbRequest("games", query, env);
+      const batch = result as unknown[];
+      if (Array.isArray(batch) && batch.length > 0) {
+        games = batch;
+        break;
+      }
+    }
 
-    const games = result as unknown[];
-    if (!Array.isArray(games) || games.length === 0) {
+    if (games.length === 0) {
       return Response.json(
         {
           error: "Juego no encontrado.",

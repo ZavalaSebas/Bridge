@@ -936,8 +936,8 @@ namespace Bridge
         // MainViewModel command just to open it.
         private void ConfigureEmulator_Click(object sender, RoutedEventArgs e)
         {
-            var viewModel = App.Services.GetRequiredService<EmulatorSetupViewModel>();
-            var window = new EmulatorSetupWindow(viewModel) { Owner = this };
+            var viewModel = App.Services.GetRequiredService<EmulationSettingsViewModel>();
+            var window = new EmulationSettingsWindow(viewModel) { Owner = this };
             window.ShowDialog();
         }
 
@@ -997,7 +997,7 @@ namespace Bridge
             }
         }
 
-        private void ScanRom_Click(object sender, RoutedEventArgs e)
+        private async void ScanRom_Click(object sender, RoutedEventArgs e)
         {
             var background = (DataContext as MainViewModel)?.SelectedGame?.BackgroundImage;
             var window = new ScanRomWindow(background) { Owner = this };
@@ -1008,7 +1008,7 @@ namespace Bridge
 
             if (DataContext is MainViewModel viewModel)
             {
-                viewModel.ScanRomFolder(window.RomFolder, window.EmulatorId, window.EmulatorProfileId);
+                await viewModel.ScanRomFolderAsync(window.RomFolder);
             }
         }
 

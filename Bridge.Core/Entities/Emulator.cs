@@ -19,6 +19,9 @@ public class EmulatorProfile
     public string Executable { get; set; } = string.Empty;
     public string Arguments { get; set; } = string.Empty;
     public string WorkingDirectory { get; set; } = string.Empty;
+    // Set only for Bridge-managed RetroArch profiles. A custom emulator profile
+    // remains fully valid without it.
+    public string CorePath { get; set; } = string.Empty;
     public string StartupScript { get; set; } = string.Empty;
     public string PreScript { get; set; } = string.Empty;
     public string PostScript { get; set; } = string.Empty;

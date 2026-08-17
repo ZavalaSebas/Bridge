@@ -4,7 +4,7 @@
         xmlns:controls="clr-namespace:Bridge.Controls"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         x:Name="Root"
-        Title="Scan ROMs" Width="580" Height="520"
+        Title="Scan ROMs" Width="580" Height="370"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         ResizeMode="NoResize"
         ExtendsContentIntoTitleBar="True"
@@ -36,28 +36,6 @@
                     <Border CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="14,12" Margin="0,0,0,12">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Code24" FontSize="15" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Emulator" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
-                            </DockPanel>
-                            <ComboBox x:Name="EmulatorBox" Padding="6,4" Margin="0,0,0,6" SelectionChanged="EmulatorBox_SelectionChanged"/>
-                            <TextBlock x:Name="EmulatorDetailText" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Border>
-
-                    <Border CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="14,12" Margin="0,0,0,12">
-                        <StackPanel>
-                            <DockPanel Margin="0,0,0,8">
-                                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Settings24" FontSize="15" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Profile" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
-                            </DockPanel>
-                            <ComboBox x:Name="ProfileBox" Padding="6,4" Margin="0,0,0,6" SelectionChanged="ProfileBox_SelectionChanged"/>
-                            <TextBlock x:Name="ProfileDetailText" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Border>
-
-                    <Border CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="14,12" Margin="0,0,0,12">
-                        <StackPanel>
-                            <DockPanel Margin="0,0,0,8">
                                 <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Folder24" FontSize="15" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                 <TextBlock Text="Folder to scan for ROMs" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
                             </DockPanel>
@@ -65,7 +43,7 @@
                                 <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Padding="10,6" Margin="8,0,0,0" Click="BrowseFolder_Click"/>
                                 <TextBox x:Name="FolderBox" Padding="6,4" VerticalContentAlignment="Center"/>
                             </DockPanel>
-                            <TextBlock x:Name="ExtensionsText" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Text="Bridge scans this folder and its subfolders, identifies supported systems from each ROM extension, and downloads metadata automatically. RetroArch is installed only when you first play a ROM." FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
 

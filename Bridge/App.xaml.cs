@@ -125,6 +125,7 @@ namespace Bridge
             // subscribe to its events once for the lifetime of the app.
             services.AddSingleton<GameLauncher>();
             services.AddSingleton<RomScanner>();
+            services.AddSingleton<RetroArchService>();
             services.AddSingleton<SteamLibraryImporter>();
             services.AddSingleton<EpicLibraryImporter>();
             services.AddSingleton<WebImageSearchService>();
@@ -166,6 +167,7 @@ namespace Bridge
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();
             services.AddTransient<EmulatorSetupViewModel>();
+            services.AddTransient<EmulationSettingsViewModel>();
             services.AddTransient<IgdbSettingsViewModel>();
         }
 

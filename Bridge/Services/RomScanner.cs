@@ -6,18 +6,14 @@ using Bridge.Core.Enums;
 namespace Bridge.Services;
 
 /// <summary>
-/// MVP ROM import — PLAN.md's current scope is explicitly "simple ROMs
-/// (single emulator, single folder)", not Playnite's full CRC/serial/DAT
-/// matching pipeline against emulation databases (that's Future Scope — see
-/// PROJECT_FOUNDATION.md §28.4 for the real reference algorithm to build
-/// against when it's time). This walks one folder (non-recursive), matches
-/// by file extension against the profile's ImageExtensions, and creates one
-/// Game per unmatched file. Dedup is "does any existing game already have a
-/// Rom with this exact path" — nothing fuzzier, no checksum involved.
+/// Bridge-managed ROM import. It recursively finds ROMs recognised by
+/// <see cref="RomPlatformCatalog"/>, creates one Game per previously unseen
+/// path, and leaves the platform/reference resolution to MainViewModel (the
+/// scanner deliberately has no persistence dependency).
 /// </summary>
 public partial class RomScanner
 {
-    public IReadOnlyList<Game> Scan(string directory, Guid emulatorId, EmulatorProfile profile, IEnumerable<Game> existingGames)
+    public IReadOnlyList<Game> Scan(string directory, IEnumerable<Game> existingGames)
     {
         if (!Directory.Exists(directory))
         {
@@ -33,12 +29,8 @@ public partial class RomScanner
             .Select(r => NormalizePath(r.Path))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var extensions = profile.ImageExtensions.Count > 0
-            ? profile.ImageExtensions.Select(e => e.TrimStart('.').ToLowerInvariant()).ToHashSet()
-            : null;
-
         var results = new List<Game>();
-        foreach (var file in Directory.GetFiles(directory))
+        foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
         {
             if (alreadyImported.Contains(NormalizePath(file)))
             {
@@ -46,7 +38,7 @@ public partial class RomScanner
             }
 
             var extension = Path.GetExtension(file).TrimStart('.').ToLowerInvariant();
-            if (extensions is not null && !extensions.Contains(extension))
+            if (IsCompanionFile(extension) || !RomPlatformCatalog.TryGetByExtension(extension, out _))
             {
                 continue;
             }
@@ -56,11 +48,11 @@ public partial class RomScanner
             game.Roms.Add(new GameRom { Name = name, Path = file });
             game.GameActions.Add(new GameAction
             {
-                Name = "Play",
+                // The ids are resolved immediately before launch, once Bridge
+                // has installed/updated the managed RetroArch profile.
+                Name = "Bridge RetroArch",
                 Type = GameActionType.Emulator,
-                IsPlayAction = true,
-                EmulatorId = emulatorId,
-                EmulatorProfileId = profile.Id
+                IsPlayAction = true
             });
 
             results.Add(game);
@@ -68,6 +60,11 @@ public partial class RomScanner
 
         return results;
     }
+
+    private static bool IsCompanionFile(string extension) =>
+        extension is "sav" or "srm"
+        || (extension.StartsWith("state", StringComparison.Ordinal) && extension[5..].All(char.IsDigit))
+        || (extension.StartsWith("ss", StringComparison.Ordinal) && extension.Length > 2 && extension[2..].All(char.IsDigit));
 
     private static string NormalizePath(string path)
     {
@@ -98,4 +95,19 @@ public partial class RomScanner
             .Replace("\u00AE", string.Empty) // ®
             .Replace("_", " ")
             .Trim();
+
+    // Normaliza un nombre de ROM para buscarlo en IGDB. Sobre SanitizeName
+    // además reemplaza guiones separadores ("Pokemon - Emerald Version" ->
+    // "Pokemon Emerald Version") y colapsa espacios múltiples. El worker de IGDB
+    // usa su endpoint `search` (texto libre/fuzzy), que con un nombre sin guiones
+    // sueltos empareja mucho mejor con el título real de IGDB ("Pokémon Emerald
+    // Version"). Las etiquetas de región/versión entre corchetes o paréntesis ya
+    // las eliminó SanitizeName.
+    public static string ToSearchName(string name)
+    {
+        var sanitized = SanitizeName(name);
+        return string.Join(' ', sanitized
+            .Replace(" - ", " ")
+            .Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries));
+    }
 }

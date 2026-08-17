@@ -102,7 +102,7 @@ Bridge.Core/
 │   ├── GameRom.cs
 │   ├── Link.cs
 │   ├── DescriptionBlock.cs     # ordered description chunks (paragraph/heading/subheading/list text + images), stored as JSON on Game
-│   ├── Emulator.cs            # Emulator + EmulatorProfile
+│   ├── Emulator.cs            # Emulator + EmulatorProfile (EmulatorProfile.CorePath is set only for Bridge-managed RetroArch profiles)
 │   ├── GameScannerConfig.cs
 │   ├── Company.cs             # one entity, no Developer/Publisher subclasses — see ADR-7
 │   ├── GameSource.cs          # replaces Playnite's PluginId — see ADR-6
@@ -501,7 +501,7 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 102 tests, all passin
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
 - `Import/SteamLocalPlaytimeResolverTests.cs` — reads real `localconfig.vdf` shape: minutes→seconds conversion, LastPlayed→LastActivity, zero-playtime skipped, missing LastPlayed stays null, multi-account merge (max playtime / latest activity), missing files and malformed config return null.
 - `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
-- `Services/RomScannerTests.cs` — extension filtering, dedup-by-existing-ROM-path, missing-directory error.
+- `Services/RomScannerTests.cs` — extension recognition via `RomPlatformCatalog`, dedup-by-existing-ROM-path, missing-directory error, recursive scan into subfolders, companion-file filtering (`.sav`/`.srm`), `SanitizeName` + `ToSearchName` name normalization, and the managed "Bridge RetroArch" `GameAction` creation.
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
 - `Statistics/GameSortComparerTests.cs` — `GameSortComparer` sort-by-field logic: ascending/descending by name, playtime, last activity, favorite, plus reference resolution (Developer, Source) through the name lookups and the "empty values sort last in both directions" rule.
 - `Statistics/GameGroupResolverTests.cs` — `GameGroupResolver` group-key logic: first-letter Name groups, reference-name resolution (Developer/Library), install/completion buckets, playtime/install-size buckets, drive letter, release year, and the empty key for "Don't group".
@@ -751,6 +751,9 @@ public static class Config
 | `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
 | `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
 | `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
+| `Bridge/Services/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |
+| `Bridge/Services/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions) that drives ROM recognition |
+| `Bridge/Services/RomScanner.cs` | Recursive ROM scan by extension, companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
 
 ## IGDB Metadata Infrastructure
 
@@ -778,6 +781,69 @@ npx wrangler deploy
 **Security note:** the Worker secrets are the project owner's own Twitch app
 credentials. Never commit them; the `.gitignore` excludes `.dev.vars`/`.env`/`.wrangler`.
 
+The Worker tries two IGDB queries in order (see its README): a literal
+`where name ~ "..."` match first, then IGDB's fuzzy `search "..."` only if the
+literal query returns nothing — so exact titles stay exact while ROM names with
+accents/hyphens ("Pokemon - Emerald Version" → "Pokémon Emerald Version") still
+resolve. Bridge also short-circuits all four metadata flows with a clear "No
+internet connection" status message when `NetworkInterface.GetIsNetworkAvailable()`
+is false, instead of reporting a misleading "No metadata found".
+
+---
+
+## Managed Emulation (Bridge-managed RetroArch)
+
+Bridge installs and maintains its **own** RetroArch so ROMs launch with zero
+setup — no emulator configuration required. The user-configured
+`EmulatorSetupWindow` path still exists for third-party emulators; this section
+is the managed RetroArch flow.
+
+**Install pipeline (`RetroArchService`):**
+1. **Resolve** — the newest stable release version is read from the GitHub
+   `libretro/RetroArch` latest-release tag (stable Windows builds moved off
+   GitHub to the Libretro buildbot as `.7z` archives).
+2. **Download** — `stable/{version}/windows/x86_64/RetroArch.7z` from
+   `buildbot.libretro.com` (~200 MB), streamed with per-chunk progress into
+   `Config.EmulatorDownloadPath` under a neutral `.archive` name. The download's
+   own `HttpClient` uses a 15-minute timeout (the 100s default would abort a
+   slow transfer); only HTTPS + `buildbot.libretro.com`/`api.github.com` hosts
+   are allowed, with a 512 MB safety ceiling.
+3. **Extract** — `SharpCompress.ArchiveFactory.WriteToDirectory` streams the
+   solid 7z in one forward pass (~25s for the 14.8k-file build) on a pool thread
+   (`Task.Run`), so the UI never freezes. `ReaderFactory` does **not** support
+   7z, and per-entry extraction of a solid archive is O(n²) — `WriteToDirectory`
+   is the correct tool. SharpCompress is pinned at **0.48.0** for
+   CVE-2026-44788 / GHSA-6c8g-7p36-r338 (directory-traversal via directory
+   entries in `WriteToDirectory`).
+4. **Swap** — the extracted `retroarch.exe` is located, the install directory is
+   atomically replaced (move target → `.old`, move staging → target), and the
+   resolved version is written to `Config.RetroArchVersionPath`
+   (`emulators\retroarch.version`) as the change signal — the buildbot publishes
+   no digest, so "same version string = current, no re-download". Orphaned
+   staging/`.old`/partial `.archive` leftovers from a crash are cleaned up at
+   service construction.
+
+**Cores:** on first play of a ROM, the platform's core (e.g. `mgba_libretro.dll`)
+is downloaded from the buildbot **nightly** as `{core}_libretro.dll.zip` (the
+`.dll` is part of the zip filename — `CoreFileName + ".zip"`), extracted to
+`emulators\retroarch\cores\`, and the managed `EmulatorProfile` is built with
+`-L {CorePath} {RomPath}`. A core already on disk is left alone on Play;
+"Check for updates" (`UpdateInstalledAsync`) refreshes frontend + all cores
+explicitly.
+
+**Robustness:** a `SemaphoreSlim` serializes all install work (two quick Plays
+can't extract over each other; re-check under the gate prevents double installs).
+If the network drops mid-download, an already-installed frontend/core is kept
+and the status bar says so instead of throwing. The Play button shows
+**Download** / **Downloading…** / **Play** / **Stop** based on install + run
+state (`MainViewModel.PlayButtonText`/`PlayButtonSymbol`/`PlayButtonIsStop`).
+
+**Config paths** (`Bridge/Config.cs`): `EmulatorInstallPath`
+(`AppData\Bridge\emulators\retroarch`), `EmulatorDownloadPath`
+(`AppData\Bridge\emulator-downloads`), `RetroArchVersionPath`
+(`AppData\Bridge\emulators\retroarch.version`) — all separate from the game
+database so deleting an emulator install never risks library data.
+
 ---
 
 ## Known Limitations
@@ -788,6 +854,8 @@ credentials. Never commit them; the `.gitignore` excludes `.dev.vars`/`.env`/`.w
 | No fullscreen/controller mode | Deliberate scope decision, see [ADR-2](ARCHITECTURE.md#adr-2-single-application-no-separate-fullscreen-frontend-in-v1) | Use the desktop app; revisit if there's real demand |
 | `%LOCALAPPDATA%\Bridge\` collided with an unrelated older "Bridge" project's real app data on this machine (`bridge.db`, `settings.json`, `ImageCache/`, last modified 2026-08-04) | Both projects independently chose the app name "Bridge" | The old folder was renamed (not deleted) to `%LOCALAPPDATA%\Bridge_OLD_BACKUP_1785967008\` on 2026-08-05 before this project's `bridge.db` was first created, so no data was lost. If you're reading this on a different machine, or that backup folder is gone, this row no longer applies — safe to delete |
 | EF Core migrations not set up | MVP uses `Database.EnsureCreated()` instead — see `Bridge.Storage` section above | Switch to `dotnet ef migrations` before any schema change needs to preserve existing user data across an update |
+| ROM matching is filename/extension-based only | No CRC/serial/DAT matching against emulation databases yet (future scope — see `PLAN.md` Backlog) | Rename ROMs to recognizable titles; the scanner still enriches them through the IGDB metadata pipeline |
+| Only Bridge-managed RetroArch gets a curated catalog | `RomPlatformCatalog` covers 15 systems; third-party emulators still need manual configuration (`EmulatorSetupWindow`) — see [ADR-9](ARCHITECTURE.md#adr-9-single-emulatorprofile-shape-no-built-in-emulator-catalog-yet) | Configure the emulator manually, or add its core to the catalog |
 
 ---
 
