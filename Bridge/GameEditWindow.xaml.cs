@@ -3,19 +3,27 @@ using System.Windows.Controls;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
+using Wpf.Ui.Controls;
+using MessageBox = System.Windows.MessageBox;
+using MessageBoxButton = System.Windows.MessageBoxButton;
 
 namespace Bridge
 {
-    public partial class GameEditWindow : Window
+    public partial class GameEditWindow : FluentWindow
     {
         private readonly GameEditViewModel _viewModel;
 
-        public GameEditWindow(GameEditViewModel viewModel)
+        public GameEditWindow(GameEditViewModel viewModel, string? backgroundImage = null)
         {
             InitializeComponent();
             _viewModel = viewModel;
             DataContext = viewModel;
+            BackgroundArt.SourceUrl = backgroundImage;
             Title = viewModel.IsNewGame ? "New Game" : "Edit Game";
+            WindowTitleText.Text = Title;
+            WindowIcon.Symbol = viewModel.IsNewGame
+                ? Wpf.Ui.Controls.SymbolRegular.Add24
+                : Wpf.Ui.Controls.SymbolRegular.Edit24;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -69,7 +77,10 @@ namespace Bridge
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ShowInTaskbar = false,
-                Background = System.Windows.Media.Brushes.White
+                Background = System.Windows.Application.Current.TryFindResource("ApplicationBackgroundBrush") as System.Windows.Media.Brush
+                    ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x15, 0x1A, 0x28)),
+                Foreground = System.Windows.Application.Current.TryFindResource("TextFillColorPrimaryBrush") as System.Windows.Media.Brush
+                    ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE0, 0xE0, 0xE0))
             };
             var panel = new StackPanel { Margin = new Thickness(14) };
             panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"Name for the new {kind.ToLowerInvariant()}:" });

@@ -4,7 +4,10 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Diagnostics;
+using System.IO;
 using Bridge.Core.Entities;
+using Bridge.Import.Epic;
+using Bridge.Import.Steam;
 using Bridge.Services;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -469,7 +472,8 @@ namespace Bridge
 
         private void About_Click(object sender, RoutedEventArgs e)
         {
-            var window = new AboutWindow { Owner = this };
+            var background = (DataContext as MainViewModel)?.SelectedGame?.BackgroundImage;
+            var window = new AboutWindow(background) { Owner = this };
             window.ShowDialog();
         }
 
@@ -517,6 +521,10 @@ namespace Bridge
                     {
                         SyncThemeMenu(child);
                     }
+                    else if (child.Header?.ToString() == "3rd party clients")
+                    {
+                        SyncThirdPartyClientsMenu(child);
+                    }
                 }
             }
         }
@@ -541,6 +549,60 @@ namespace Bridge
                         position.IsChecked = position.Tag?.ToString() == _sidebarPosition;
                     }
                 }
+            }
+        }
+
+        // "3rd party clients": show the launcher clients that are installed on
+        // this machine (Steam and/or Epic) and open the one the user picks.
+        private static void SyncThirdPartyClientsMenu(System.Windows.Controls.ItemsControl menu)
+        {
+            menu.Items.Clear();
+
+            var steamPath = SteamPaths.GetInstallationPath();
+            if (!string.IsNullOrWhiteSpace(steamPath))
+            {
+                var steamExe = Path.Combine(steamPath, "steam.exe");
+                if (File.Exists(steamExe))
+                {
+                    menu.Items.Add(CreateClientMenuItem("Steam", steamExe));
+                }
+            }
+
+            var epicPath = EpicPaths.GetInstallationPath();
+            if (!string.IsNullOrWhiteSpace(epicPath))
+            {
+                var epicExe = EpicPaths.GetExecutablePath(epicPath);
+                if (File.Exists(epicExe))
+                {
+                    menu.Items.Add(CreateClientMenuItem("Epic", epicExe));
+                }
+            }
+        }
+
+        private static System.Windows.Controls.MenuItem CreateClientMenuItem(string name, string executable)
+        {
+            var item = new System.Windows.Controls.MenuItem
+            {
+                Header = name,
+                Tag = executable
+            };
+            item.Click += OpenThirdPartyClient_Click;
+            item.Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Cloud24,
+                FontSize = 16,
+                Foreground = System.Windows.Application.Current.TryFindResource("SystemAccentColorPrimaryBrush") as System.Windows.Media.Brush
+                    ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray)
+            };
+            return item;
+        }
+
+        private static void OpenThirdPartyClient_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem { Tag: string executable }
+                && File.Exists(executable))
+            {
+                Process.Start(new ProcessStartInfo { FileName = executable, UseShellExecute = true });
             }
         }
 
@@ -862,7 +924,7 @@ namespace Bridge
                 App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Company>>(),
                 App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Platform>>());
 
-            var window = new GameEditWindow(editViewModel) { Owner = this };
+            var window = new GameEditWindow(editViewModel, game.BackgroundImage) { Owner = this };
             if (window.ShowDialog() == true)
             {
                 mainVm.RefreshGameDisplay(game);
@@ -902,7 +964,7 @@ namespace Bridge
                 App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Platform>>(),
                 isNew: true);
 
-            var window = new GameEditWindow(editViewModel) { Owner = this };
+            var window = new GameEditWindow(editViewModel, game.BackgroundImage ?? mainVm.SelectedGame?.BackgroundImage) { Owner = this };
             if (window.ShowDialog() == true)
             {
                 mainVm.AddGameToLibrary(game);
