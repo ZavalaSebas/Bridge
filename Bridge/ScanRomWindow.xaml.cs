@@ -1,121 +1,17 @@
 using System.Windows;
-using System.Windows.Controls;
-using Bridge.Core.Entities;
-using Bridge.Core.Contracts;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
-using MessageBox = System.Windows.MessageBox;
-using MessageBoxButton = System.Windows.MessageBoxButton;
 
 namespace Bridge;
 
 public partial class ScanRomWindow : FluentWindow
 {
-    private readonly IRepository<Emulator> _emulatorRepository;
-    private Emulator? _emulator;
-    private EmulatorProfile? _profile;
-
     public string RomFolder => FolderBox.Text.Trim();
-    public Guid EmulatorId => _emulator?.Id ?? Guid.Empty;
-    public string EmulatorProfileId => _profile?.Id ?? string.Empty;
 
     public ScanRomWindow(string? backgroundImage = null)
     {
-        // Services before InitializeComponent (no bound events here, but keep the
-        // pattern consistent with ScanInstalledWindow).
-        var services = App.Services;
-        _emulatorRepository = services.GetRequiredService<IRepository<Emulator>>();
         InitializeComponent();
         BackgroundArt.SourceUrl = backgroundImage;
-
-        Loaded += ScanRomWindow_Loaded;
-    }
-
-    private void ScanRomWindow_Loaded(object sender, RoutedEventArgs e)
-    {
-        var emulators = _emulatorRepository.GetAll();
-        if (emulators.Count == 0)
-        {
-            EmulatorBox.Items.Add("No emulators configured — configure one first.");
-            EmulatorBox.IsEnabled = false;
-            ProfileBox.IsEnabled = false;
-            return;
-        }
-
-        EmulatorBox.DisplayMemberPath = nameof(Emulator.Name);
-        EmulatorBox.ItemsSource = emulators;
-        EmulatorBox.SelectedIndex = 0;
-    }
-
-    private void EmulatorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        _emulator = EmulatorBox.SelectedItem as Emulator;
-        RefreshEmulatorDetail();
-        RefreshProfiles();
-    }
-
-    private void RefreshEmulatorDetail()
-    {
-        EmulatorDetailText.Text = _emulator is null
-            ? string.Empty
-            : $"Install: {(_emulator.InstallDirectory.Length > 0 ? _emulator.InstallDirectory : "not set")}"
-              + $"  ·  Profiles: {_emulator.Profiles.Count}";
-    }
-
-    private void RefreshProfiles()
-    {
-        _profile = null;
-        ProfileDetailText.Text = string.Empty;
-        if (_emulator is null || _emulator.Profiles.Count == 0)
-        {
-            ProfileBox.ItemsSource = null;
-            ProfileBox.IsEnabled = false;
-            ExtensionsText.Text = _emulator is null
-                ? string.Empty
-                : "This emulator has no profiles — add one before scanning.";
-            return;
-        }
-
-        ProfileBox.DisplayMemberPath = nameof(EmulatorProfile.Name);
-        ProfileBox.ItemsSource = _emulator.Profiles;
-        ProfileBox.SelectedIndex = 0;
-        ProfileBox.IsEnabled = true;
-    }
-
-    private void ProfileBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        _profile = ProfileBox.SelectedItem as EmulatorProfile;
-        RefreshProfileDetail();
-        RefreshExtensions();
-    }
-
-    private void RefreshProfileDetail()
-    {
-        if (_profile is null)
-        {
-            ProfileDetailText.Text = string.Empty;
-            return;
-        }
-
-        var parts = new List<string>();
-        if (_profile.Executable.Length > 0)
-            parts.Add($"Executable: {_profile.Executable}");
-        if (_profile.Arguments.Length > 0)
-            parts.Add($"Arguments: {_profile.Arguments}");
-        if (_profile.WorkingDirectory.Length > 0)
-            parts.Add($"Dir: {_profile.WorkingDirectory}");
-
-        ProfileDetailText.Text = parts.Count > 0 ? string.Join("  ·  ", parts) : "No launch configuration set.";
-    }
-
-    private void RefreshExtensions()
-    {
-        ExtensionsText.Text = _profile is null
-            ? string.Empty
-            : _profile.ImageExtensions.Count > 0
-                ? $"Extensions: {string.Join(", ", _profile.ImageExtensions)}"
-                : "This profile has no extensions — everything will be scanned.";
     }
 
     private void BrowseFolder_Click(object sender, RoutedEventArgs e)
@@ -129,15 +25,9 @@ public partial class ScanRomWindow : FluentWindow
 
     private void Scan_Click(object sender, RoutedEventArgs e)
     {
-        if (_emulator is null || _profile is null)
-        {
-            MessageBox.Show(this, "Select an emulator and profile first.", "Scan ROMs", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(FolderBox.Text))
         {
-            MessageBox.Show(this, "Select a folder to scan.", "Scan ROMs", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "Select a folder to scan.", "Scan ROMs", System.Windows.MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

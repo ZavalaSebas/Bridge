@@ -33,6 +33,23 @@ aggregated_rating, websites[].url, websites[].type`
 Los `screenshots[].url` son las capturas reales (16:9) del juego — Bridge las
 muestra como galería en el detalle para juegos no-Steam (Epic, manuales).
 
+### Estrategia de búsqueda (dos queries en orden)
+
+El endpoint `metadata` intenta dos búsquedas de IGDB y devuelve la primera que
+tenga resultados:
+
+1. **Coincidencia literal** — `where name ~ "..."` (case-insensitive, contiene
+   el texto). Mantiene los resultados exactos: "Genshin Impact" devuelve el
+   juego base y no un DLC/spin-off cuyo nombre empieza igual.
+2. **Búsqueda fuzzy** — `search "..."` (endpoint de texto libre de IGDB), solo
+   si la literal no dio nada. Tokeniza el nombre, ignora acentos y guiones, y
+   devuelve el mejor match por relevancia — lo que necesitan los títulos de
+   ROMs ("Pokemon - Emerald Version" → "Pokémon Emerald Version"), que con el
+   match literal fallaban.
+
+Ambas queries piden los mismos campos; la lista de queries la construye
+`buildGameQueries` y el handler usa la primera con resultados.
+
 ### `POST /auth` (solo diagnóstico)
 Obtiene un token OAuth de Twitch. **No lo expongas en producción sin
 protegerlo** — se usa solo para depurar.

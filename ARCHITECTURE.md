@@ -306,7 +306,7 @@ Bridge's `Import.GameMetadata` uses plain `List<string>` for every reference-ent
 
 ### ADR-9: Single `EmulatorProfile` shape, no built-in emulator catalog yet
 
-**Status:** Accepted
+**Status:** Superseded (partially) by Bridge-managed RetroArch — see the note below
 
 **Date:** 2026-08-05
 
@@ -324,6 +324,9 @@ Playnite splits emulator profiles into `CustomEmulatorProfile` (user-configured 
 **Alternatives considered:**
 
 - **Alternative 1:** Build both variants now for parity with Playnite — rejected, the built-in catalog requires curated per-emulator launch-convention data that doesn't exist yet and isn't MVP scope.
+
+**2026-08-17 update — Bridge now ships a curated catalog for its own managed RetroArch:**
+This ADR's "no built-in catalog" caveat no longer applies to the ROM path. Bridge manages **one emulator it installs itself** — RetroArch (`Bridge/Services/RetroArchService.cs`) — and `Bridge/Services/RomPlatformCatalog.cs` is exactly the "curated per-emulator data" Alternative 1 deferred: a fixed table mapping 15 systems to their Libretro core DLLs and ROM extensions. The shape holds: `EmulatorProfile` is still a single type, still filled at runtime by `EnsureReadyAsync` (`-L {CorePath} {RomPath}`) rather than a second `BuiltInEmulatorProfile` variant. The remaining gap vs. Playnite is deliberately narrow: **user-configured third-party emulators still have no built-in catalog** — only Bridge's own RetroArch install does. The `EmulatorSetupWindow`/`EmulatorSetupViewModel` manual-config path still exists for those.
 
 ---
 
@@ -468,7 +471,13 @@ primary IGDB metadata backend:
   app token (`grant_type=client_credentials`, cached in-memory), queries IGDB
   (`api.igdb.com/v4/games`) and returns the raw IGDB shape. The query requests
   `screenshots.image_id/screenshots.url` alongside the artwork/cover fields, so
-  the response carries the game's real 16:9 screenshots.
+  the response carries the game's real 16:9 screenshots. The Worker tries two
+  queries in order and returns the first with results (see the Worker README):
+  a literal `where name ~ "..."` match first, then IGDB's fuzzy `search "..."`
+  as the fallback for titles the literal match can't hit (ROM names with
+  accents/hyphens, localized titles) — so "Genshin Impact" stays on the base
+  game while "Pokemon - Emerald Version" still lands on "Pokémon Emerald
+  Version".
 - `Bridge.Metadata/BridgeIgdbProvider.cs` consumes it as the **first** provider
   in the metadata chain; Bridge falls back to the Playnite proxy
   (`PlayniteIgdbProvider`) if the Worker is unreachable, then to a

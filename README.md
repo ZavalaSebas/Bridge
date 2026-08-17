@@ -73,7 +73,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 
 - **Steam library auto-import** — detects installed Steam games automatically on startup (registry + `libraryfolders.vdf` + `appmanifest*.acf`)
 - **Steam Store metadata** — downloads name, description, release date, cover/background art, critic/community scores, genres, and more from the official Steam store (no login, no API key)
-- **IGDB metadata** — text and image metadata from IGDB with **zero configuration** (via Bridge's own Cloudflare Worker; a user-supplied Twitch key is optional)
+- **IGDB metadata** — text and image metadata from IGDB with **zero configuration** (via Bridge's own Cloudflare Worker; a user-supplied Twitch key is optional). The Worker matches an exact name first (`where name ~`), falling back to IGDB's fuzzy `search` for titles that need it (ROM names with accents/hyphens), and Bridge shows a clear "no internet connection" message instead of "no metadata" when offline
 - **Multi-provider fallback** — metadata search tries Bridge's IGDB Worker first, then Playnite's proxy, then the user's IGDB key, then Steam Store automatically
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
 - **Epic Games support** — detects installed Epic games from the launcher's local files, launches via the Epic client, and shows each game's exe icon
@@ -87,7 +87,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Scan Automatically** — detect games installed on the PC from start-menu shortcuts, a folder, or a single executable (with installers/helpers filtered out), then import them with one click
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
-- Simple ROM folder scan with emulator matching and `{RomPath}` launching, with name sanitization (strips `[U]`/`[!]`/`(USA)` tags)
+- **Zero-setup ROM support** — recursively scans folders, detects supported systems from ROM extensions (`RomPlatformCatalog`: NES, SNES, N64, GB/GBC/GBA, NDS, Genesis, Master System, Game Gear, Atari, PC Engine, Lynx, WonderSwan), enriches games through the normal IGDB metadata pipeline, and installs/updates Bridge-managed RetroArch + the required core on first play. The Play button reads **Download** (then **Downloading…**) until the frontend/core is installed, then Play/Stop as usual
 - Self-contained single-file `.exe` (~155 MB) — no .NET runtime install required
 
 ---

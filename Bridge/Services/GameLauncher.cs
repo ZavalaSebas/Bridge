@@ -424,11 +424,17 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             ?? throw new InvalidOperationException($"Emulator profile {action.EmulatorProfileId} not found on '{emulator.Name}'.");
         var romPath = game.Roms.FirstOrDefault()?.Path
             ?? throw new InvalidOperationException($"'{game.Name}' has no ROM to launch.");
+        if (!File.Exists(romPath))
+        {
+            throw new InvalidOperationException($"ROM file not found: {romPath}");
+        }
 
         var executable = Path.IsPathRooted(profile.Executable)
             ? profile.Executable
             : Path.Combine(emulator.InstallDirectory, profile.Executable);
-        var arguments = profile.Arguments.Replace("{RomPath}", $"\"{romPath}\"");
+        var arguments = profile.Arguments
+            .Replace("{RomPath}", $"\"{romPath}\"")
+            .Replace("{CorePath}", $"\"{profile.CorePath}\"");
         var workingDirectory = string.IsNullOrWhiteSpace(profile.WorkingDirectory)
             ? emulator.InstallDirectory
             : profile.WorkingDirectory;

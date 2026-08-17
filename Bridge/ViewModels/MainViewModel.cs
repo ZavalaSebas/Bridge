@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.NetworkInformation;
 using System.Windows.Data;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
@@ -36,6 +37,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IRepository<Region> _regionRepository;
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
+    private readonly RetroArchService _retroArch;
     private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
     private readonly SteamMetadataProvider _steamMetadataProvider;
     private readonly BridgeIgdbProvider _bridgeIgdbProvider;
@@ -53,6 +55,61 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _searchText = string.Empty;
+
+    // RetroArch install progress: shown in the status bar while a managed
+    // frontend/core downloads and extracts, so a long first install reads as
+    // progress instead of a frozen window.
+    [ObservableProperty]
+    private bool _isEmulationBusy;
+
+    // The install bar is indeterminate while a phase can't report a percentage
+    // (resolving the release, extracting the archive); determinate during the
+    // download, which knows its byte count.
+    [ObservableProperty]
+    private bool _isEmulationIndeterminate;
+
+    [ObservableProperty]
+    private double _emulationProgress;
+
+    // True when the selected managed ROM has no installed frontend/core yet, so
+    // the Play button reads "Download" and installs on first click instead of
+    // pretending it will launch immediately.
+    [ObservableProperty]
+    private bool _needsEmulatorDownload;
+
+    // Play button label/symbol: "Play" normally, "Stop" while the game runs,
+    // "Download" when the selected ROM needs its frontend/core installed, and
+    // "Downloading" while that install is in progress.
+    [ObservableProperty]
+    private string _playButtonText = "Play";
+
+    [ObservableProperty]
+    private string _playButtonSymbol = "Play24";
+
+    [ObservableProperty]
+    private bool _playButtonIsStop;
+
+    private void UpdateNeedsEmulatorDownload()
+    {
+        var game = SelectedGame;
+        NeedsEmulatorDownload = game is not null && _retroArch.NeedsInstall(game);
+        UpdatePlayButtonState();
+    }
+
+    partial void OnIsEmulationBusyChanged(bool value) => UpdatePlayButtonState();
+
+    private void UpdatePlayButtonState()
+    {
+        var running = SelectedGame?.IsRunning == true;
+        PlayButtonText = running ? "Stop"
+            : IsEmulationBusy ? "Downloading..."
+            : NeedsEmulatorDownload ? "Download"
+            : "Play";
+        PlayButtonSymbol = running ? "Stop24"
+            : NeedsEmulatorDownload || IsEmulationBusy ? "ArrowDownload24"
+            : "Play24";
+        PlayButtonIsStop = running;
+    }
 
     partial void OnSearchTextChanged(string value)
     {
@@ -281,10 +338,35 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedGameChanged(Game? value)
     {
+        if (_selectedGameSubscription is not null)
+        {
+            _selectedGameSubscription.PropertyChanged -= OnSelectedGamePropertyChanged;
+        }
         RefreshReferenceFields(value);
         OnPropertyChanged(nameof(FavoriteMenuText));
         OnPropertyChanged(nameof(HiddenMenuText));
         OnPropertyChanged(nameof(SelectedGameLinks));
+        if (value is not null)
+        {
+            value.PropertyChanged += OnSelectedGamePropertyChanged;
+        }
+        _selectedGameSubscription = value;
+        UpdateNeedsEmulatorDownload();
+    }
+
+    // Tracks which Game's PropertyChanged we're subscribed to, so a selection
+    // change can detach the previous one (the generated setter has already
+    // overwritten _selectedGame by the time the partial runs).
+    private Game? _selectedGameSubscription;
+
+    // The Play/Stop button label depends on SelectedGame.IsRunning, which changes
+    // when the game launches or closes — keep the computed state in sync.
+    private void OnSelectedGamePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Game.IsRunning))
+        {
+            UpdatePlayButtonState();
+        }
     }
 
     private void RefreshReferenceFields(Game? game)
@@ -385,6 +467,7 @@ public partial class MainViewModel : ObservableObject
         IRepository<Region> regionRepository,
         GameLauncher launcher,
         RomScanner romScanner,
+        RetroArchService retroArch,
         IEnumerable<IGameMetadataProvider> metadataProviders,
         SteamMetadataProvider steamMetadataProvider,
         BridgeIgdbProvider bridgeIgdbProvider,
@@ -406,6 +489,7 @@ public partial class MainViewModel : ObservableObject
         _regionRepository = regionRepository;
         _launcher = launcher;
         _romScanner = romScanner;
+        _retroArch = retroArch;
         _metadataProviders = metadataProviders;
         _steamMetadataProvider = steamMetadataProvider;
         _bridgeIgdbProvider = bridgeIgdbProvider;
@@ -831,38 +915,39 @@ public partial class MainViewModel : ObservableObject
     // All web links the selected game has (Steam store, official site, IGDB...).
     public IReadOnlyList<Link> SelectedGameLinks => SelectedGame?.Links ?? [];
 
-    public void ScanRomFolder(string? romFolder, Guid? emulatorId = null, string? profileId = null)
+    public async Task ScanRomFolderAsync(string? romFolder)
     {
         if (string.IsNullOrWhiteSpace(romFolder))
         {
             return;
         }
 
-        // Resolve the chosen emulator/profile, falling back to the first ones
-        // configured (older callers that don't pass ids).
-        var emulator = emulatorId is { } eid
-            ? _emulatorRepository.Get(eid)
-            : _emulatorRepository.GetAll().FirstOrDefault();
-        var profile = profileId is { Length: > 0 } pid
-            ? emulator?.GetProfile(pid)
-            : emulator?.Profiles.FirstOrDefault();
-        if (emulator is null || profile is null)
-        {
-            StatusMessage = "No emulator configured yet — nothing to scan against.";
-            return;
-        }
-
         try
         {
-            var found = _romScanner.Scan(romFolder.Trim(), emulator.Id, profile, Games);
+            var found = _romScanner.Scan(romFolder.Trim(), Games);
+            var romSource = _sourceRepository.GetOrCreateByName("ROM");
             foreach (var game in found)
             {
+                var extension = Path.GetExtension(game.Roms[0].Path).TrimStart('.');
+                if (RomPlatformCatalog.TryGetByExtension(extension, out var platform))
+                {
+                    game.PlatformIds.Add(_platformRepository.GetOrCreateByName(platform!.PlatformName).Id);
+                }
+                game.SourceId = romSource.Id;
+                game.ExternalId = Path.GetFullPath(game.Roms[0].Path);
                 _gameRepository.Add(game);
                 AddGameSorted(game);
             }
 
             RefreshStatistics();
             StatusMessage = $"Scan complete: {found.Count} new ROM(s) imported from '{romFolder}'.";
+            if (found.Count > 0)
+            {
+                // Select the first imported ROM so the user lands on a concrete
+                // game (and its Download/Play button) instead of a stale selection.
+                SelectedGame = found[0];
+                await DownloadMetadataForAddedGamesAsync(found, romImport: true);
+            }
         }
         catch (Exception ex)
         {
@@ -1014,6 +1099,27 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    // True when the OS reports at least one active network interface. Metadata
+    // and emulator downloads all need internet, so a negative answer short-circuits
+    // them with a clear "you're offline" message instead of a confusing
+    // "no metadata found" (the providers swallow HTTP failures to keep the
+    // fallback chain moving, which hides the real cause). A positive answer is
+    // NOT a guarantee of internet — it just lets the normal flow run and report
+    // its own outcome.
+    private static bool IsNetworkAvailable()
+    {
+        try
+        {
+            return NetworkInterface.GetIsNetworkAvailable();
+        }
+        catch
+        {
+            // The check itself failed (rare) — let the normal flow run and
+            // report its own outcome rather than guessing.
+            return true;
+        }
+    }
+
     [RelayCommand]
     private async Task DownloadMetadataAsync()
     {
@@ -1021,15 +1127,19 @@ public partial class MainViewModel : ObservableObject
             return;
 
         var game = SelectedGame;
-        var gameName = game.Name;
+        // ROMs get the same treatment as a scan import: IGDB chain first (with
+        // the normalized name), Steam as the last resort — the strict Steam
+        // title match only wastes time on titles IGDB knows as "Pokémon".
+        var romImport = game.Roms.Count > 0;
+        var gameName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
 
-        StatusMessage = $"Downloading metadata for '{gameName}'...";
+        StatusMessage = $"Downloading metadata for '{game.Name}'...";
 
         GameMetadata? metadata = null;
         string? providerName = null;
 
         // Steam-imported games: use appid directly for a guaranteed lookup
-        if (game.SourceId != GameSource.ManualId && uint.TryParse(game.ExternalId, out _))
+        if (!romImport && game.SourceId != GameSource.ManualId && uint.TryParse(game.ExternalId, out _))
         {
             try
             {
@@ -1047,6 +1157,10 @@ public partial class MainViewModel : ObservableObject
         {
             foreach (var provider in _metadataProviders)
             {
+                // ROMs: IGDB first, Steam only as the final fallback.
+                if (romImport && ReferenceEquals(provider, _steamMetadataProvider))
+                    continue;
+
                 try
                 {
                     metadata = await provider.SearchAsync(gameName);
@@ -1061,11 +1175,26 @@ public partial class MainViewModel : ObservableObject
                     // Try next provider
                 }
             }
+
+            if (romImport && metadata is null)
+            {
+                try
+                {
+                    metadata = await _steamMetadataProvider.SearchAsync(gameName);
+                    providerName = metadata is null ? null : _steamMetadataProvider.Name;
+                }
+                catch
+                {
+                    // Steam search failed — no metadata for this ROM.
+                }
+            }
         }
 
         if (metadata is null)
         {
-            StatusMessage = $"No metadata found for '{gameName}'.";
+            StatusMessage = IsNetworkAvailable()
+                ? $"No metadata found for '{gameName}'."
+                : "No internet connection. Metadata will download the next time Bridge opens with a connection.";
             return;
         }
 
@@ -1095,11 +1224,24 @@ public partial class MainViewModel : ObservableObject
     // Fallout 3) gets the full Steam metadata (cover, hero, screenshots, store
     // links) instead of IGDB's, and only falls back to the IGDB chain when
     // Steam has no match. Matches the explicit "Download Metadata" action.
-    public async Task DownloadMetadataForAddedGamesAsync(IReadOnlyList<Game> games)
+    //
+    // For ROM imports (romImport: true) the order is reversed: ROMs are almost
+    // never on Steam, and Steam's strict tokenized title match only wastes
+    // time, so the IGDB chain runs first and Steam is the last-resort fallback.
+    // The search name is normalized (RomScanner.ToSearchName) so IGDB's fuzzy
+    // `search` matches titles like "Pokemon - Emerald Version" -> "Pokémon
+    // Emerald Version" instead of missing them.
+    public async Task DownloadMetadataForAddedGamesAsync(IReadOnlyList<Game> games, bool romImport = false)
     {
         var candidates = games.Where(g => string.IsNullOrWhiteSpace(g.Description)).ToList();
         if (candidates.Count == 0)
         {
+            return;
+        }
+
+        if (!IsNetworkAvailable())
+        {
+            StatusMessage = $"No internet connection. Metadata for {candidates.Count} game(s) will download the next time Bridge opens with a connection.";
             return;
         }
 
@@ -1112,6 +1254,40 @@ public partial class MainViewModel : ObservableObject
                 await throttle.WaitAsync();
                 try
                 {
+                    var searchName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
+
+                    if (romImport)
+                    {
+                        // ROMs: IGDB chain first, Steam as the final fallback.
+                        foreach (var provider in _metadataProviders)
+                        {
+                            if (ReferenceEquals(provider, _steamMetadataProvider))
+                                continue;
+
+                            try
+                            {
+                                if (await provider.SearchAsync(searchName) is { } found)
+                                    return (game, metadata: found, provider: provider.Name);
+                            }
+                            catch
+                            {
+                                // Try the next provider
+                            }
+                        }
+
+                        try
+                        {
+                            if (await _steamMetadataProvider.SearchAsync(searchName) is { } steamFound)
+                                return (game, metadata: steamFound, provider: _steamMetadataProvider.Name);
+                        }
+                        catch
+                        {
+                            // Steam search failed — no metadata for this ROM.
+                        }
+
+                        return (game, metadata: (GameMetadata?)null, provider: (string?)null);
+                    }
+
                     // Steam by name first — the game may exist on Steam even
                     // though this copy wasn't installed through it.
                     try
@@ -1386,6 +1562,14 @@ public partial class MainViewModel : ObservableObject
             .Where(g => g.SourceId == steamSourceId)
             .ToList();
 
+        if (!IsNetworkAvailable())
+        {
+            StatusMessage = allSteam.Count > 0
+                ? $"No internet connection. Metadata for {allSteam.Count} game(s) will download the next time Bridge opens with a connection."
+                : "No internet connection. Metadata will download the next time Bridge opens with a connection.";
+            return;
+        }
+
         // Two distinct needs, handled differently so we don't re-download a
         // game's full Steam metadata on every open just to fetch a missing link:
         //  - Missing a description → fetch the full Steam metadata (+ IGDB links).
@@ -1488,7 +1672,9 @@ public partial class MainViewModel : ObservableObject
 
         StatusMessage = applied > 0
             ? $"Metadata sync complete: {applied}/{needMetadata.Count + needLinksOnly.Count} game(s) updated."
-            : $"Metadata sync complete: no updates ({needMetadata.Count + needLinksOnly.Count} game(s) checked).";
+            : needMetadata.Count + needLinksOnly.Count > 0 && !IsNetworkAvailable()
+                ? "Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection."
+                : $"Metadata sync complete: no updates ({needMetadata.Count + needLinksOnly.Count} game(s) checked).";
     }
 
     // Downloads metadata for games from sources without an appid-based lookup
@@ -1504,6 +1690,12 @@ public partial class MainViewModel : ObservableObject
 
         if (candidates.Count == 0)
         {
+            return;
+        }
+
+        if (!IsNetworkAvailable())
+        {
+            StatusMessage = $"No internet connection. Metadata for {candidates.Count} game(s) will download the next time Bridge opens with a connection.";
             return;
         }
 
@@ -1563,11 +1755,13 @@ public partial class MainViewModel : ObservableObject
 
         StatusMessage = applied > 0
             ? $"Metadata sync complete: {applied}/{candidates.Count} game(s) updated."
-            : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
+            : !IsNetworkAvailable()
+                ? "Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection."
+                : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
     }
 
     [RelayCommand]
-    private void PlayGame(Game? game = null)
+    private async Task PlayGameAsync(Game? game = null)
     {
         var target = game ?? SelectedGame;
         if (target is null)
@@ -1577,6 +1771,37 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
+            if (_retroArch.IsManagedRom(target))
+            {
+                IsEmulationBusy = true;
+                try
+                {
+                    StatusMessage = $"Preparing RetroArch for '{target.Name}'...";
+                    await _retroArch.EnsureReadyAsync(target, new Progress<EmulatorProgress>(p =>
+                    {
+                        StatusMessage = p.Message;
+                        if (p.Percent is { } percent)
+                        {
+                            EmulationProgress = percent;
+                            IsEmulationIndeterminate = false;
+                        }
+                        else
+                        {
+                            IsEmulationIndeterminate = true;
+                        }
+                    }));
+                    _gameRepository.Update(target);
+                    // Now that the frontend/core exist, the button goes back to
+                    // "Play" (or "Stop" once the game launches) instead of "Download".
+                    UpdateNeedsEmulatorDownload();
+                }
+                finally
+                {
+                    IsEmulationBusy = false;
+                    IsEmulationIndeterminate = false;
+                    EmulationProgress = 0;
+                }
+            }
             _launcher.Launch(target);
         }
         catch (Exception ex)
