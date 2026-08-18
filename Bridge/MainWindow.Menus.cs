@@ -434,6 +434,12 @@ public partial class MainWindow
             vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Statistics;
     }
 
+    private void ShowSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Settings;
+    }
+
     // Selects a random game from whatever the current view shows
     // (respects the active search/filter/sort).
     private void SelectRandomGame_Click(object sender, RoutedEventArgs e)

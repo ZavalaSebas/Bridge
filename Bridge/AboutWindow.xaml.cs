@@ -34,9 +34,9 @@ namespace Bridge
 
             SupportLinks.ItemsSource = new[]
             {
-                new AboutLink("Ko-fi", "https://ko-fi.com/sebastianzavala82573",
+                new AboutLink("Ko-fi", Config.KoFiUrl,
                     "Buy me a coffee", SymbolRegular.DrinkCoffee24),
-                new AboutLink("GitHub Sponsors", "https://github.com/sponsors/ZavalaSebas",
+                new AboutLink("GitHub Sponsors", Config.GitHubSponsorsUrl,
                     "Support development on GitHub", SymbolRegular.Heart24)
             };
         }

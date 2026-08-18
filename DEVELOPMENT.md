@@ -84,7 +84,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # ~220 unit tests (see Tests section below)
+└── Bridge.Tests/        # ~242 unit tests (see Tests section below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -581,7 +581,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — ~220 unit tests as of this writing. Live-network IGDB provider tests are tagged `Integration` and run with `dotnet test --filter Category=Integration`.
+Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — ~242 unit tests as of this writing. Live-network IGDB provider tests are tagged `Integration` and are **intentionally excluded from CI** (same `--filter "Category!=Integration"` in the workflow); run them locally with `dotnet test --filter Category=Integration` when you need to hit the real IGDB endpoints.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`. Schema via `MigrateToLatest()`.
@@ -609,7 +609,7 @@ Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integr
 - `Services/ProcessTreeExpanderTests.cs` — the pure process-tree expansion: launcher spawning a game keeps both alive; the launcher exiting after spawning leaves the game (and only the game) tracking; all processes exiting empties the tree; multi-hop launchers (launcher → updater → game) join across polls; a launcher that never spawns anything prunes away with no phantom session.
 - `Storage/GameRepositoryTests.cs` (`GetAll_ResetsTransientRuntimeFlags_ButPreservesIsRunning`) — `GetAll` resets the transient install/launch flags but preserves `IsRunning`, because it's a live launcher flag that the background metadata sync must not clobber (the stale-`IsRunning` crash reset happens once in `MainViewModel.LoadGames`).
 
-**Deliberately not covered by automated tests**: `GameLauncher`'s actual process-launching (spawning real OS processes in every CI run is slow and flaky — that's why it was verified manually via scratch scripts during development instead, see the session history in git log / PR descriptions once those exist). The Steam play action *resolution* is covered (`SteamPlayActionsTests`) since it's pure logic, but the real `steam.exe -silent "steam://..."` invocation, directory-based process watching, and the process-tree *snapshot* (`ProcessTreeSnapshot`, the Toolhelp32 P/Invoke boundary) are not — the tree *expansion* is covered (`ProcessTreeExpanderTests`) and the snapshot was verified end-to-end with a real launcher→child process pair. Directory tracking matches processes by install-directory path *and* by executable name (`GetExecutableNames`) — the name fallback exists because Genshin's HoYoPlay launcher (`HYP.exe`) runs elevated and its `MainModule.FileName` is unreadable. An already-launched session uses a **launch-aware idle grace**: 20s while the session is under 30s old (a gap right after Play is the launcher still spawning the game, e.g. across Genshin's UAC relaunch), dropping to 5s once the game has been running so the close is detected quickly. All verified live against the running HYP processes and the observed UAC flow. If this ever needs automated coverage, introduce a `Process.Start` abstraction to mock against rather than launching real processes in `Bridge.Tests`. Likewise, the visual controls (the hero `FadeImage` cover-by-width sizing and the `ScreenshotGallery` carousel/drag/fullscreen behaviors) are WPF XAML/code-behind and are verified by launching the app, not by unit tests.
+**Deliberately not covered by automated tests (by design)**: `GameLauncher`'s actual process-launching — spawning real OS processes in every CI run is slow and flaky, so it was verified manually via scratch scripts during development instead (see session history in git log / PR descriptions once those exist). CI and the default local test run use `--filter "Category!=Integration"`; integration-tagged IGDB provider tests and real process launch are left for optional local runs, not the main gate.
 
 **Real bug found and fixed while writing these tests**: `Microsoft.Data.Sqlite` pools connections by default, so `File.Delete` on a temp `.db` file right after disposing its `DbContext` intermittently throws `IOException` — the connection isn't actually released yet. Fixed by adding `Pooling=False` to the test-only connection strings. This wasn't just a scratch-script annoyance — it would have made these exact tests flaky in CI if left in.
 
@@ -1080,7 +1080,7 @@ dotnet run --project Bridge/Bridge.csproj
 
 ## Branding & Sponsorship
 
-> **Partially implemented.** There's a **Support** submenu in the logo menu (Ko-fi + GitHub Sponsors, heart icon) that opens the links in the browser via `SafeLauncher`, and an **About Bridge...** item opening `Bridge/AboutWindow.xaml` (version, repo/license links, its own Support section with the same Ko-fi + GitHub Sponsors links). What's still missing: `Config.SponsorUrl` / `OpenSponsorCommand` don't exist — the URLs are hard-coded in `MainWindow.xaml`/`AboutWindow.xaml`. The status-bar heart and `CreditsWindow` snippets below remain templates for that remaining gap.
+> **Implemented.** Support links live in the logo menu (Ko-fi + GitHub Sponsors) and in `AboutWindow`, all reading from `Config.KoFiUrl` / `Config.GitHubSponsorsUrl`. `MainViewModel.OpenSponsorCommand` opens `Config.PrimarySponsorUrl` (GitHub Sponsors) via `SafeLauncher` — ready for a future status-bar heart. The sidebar **Settings** section opens an in-app hub with shortcuts to emulator setup, IGDB settings, theme color, update check, and About. The snippets below remain templates for optional status-bar / `CreditsWindow` affordances not yet wired in the UI.
 
 ### Heart Icon in Status Bar
 
@@ -1108,29 +1108,16 @@ Add a sponsor link in the status bar with a heart icon:
 ```
 
 ```csharp
-// ViewModel
-public ICommand OpenSponsorCommand => new RelayCommand(OpenSponsor);
-
-private void OpenSponsor()
-{
-    try
-    {
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = Config.SponsorUrl,
-            UseShellExecute = true
-        });
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Failed to open sponsor link");
-    }
-}
+// ViewModel — already implemented on MainViewModel
+[RelayCommand]
+private void OpenSponsor() => SafeLauncher.TryOpenUrl(Config.PrimarySponsorUrl);
 ```
 
 ```csharp
 // Config.cs
-public const string SponsorUrl = "https://github.com/sponsors/ZavalaSebas";
+public const string PrimarySponsorUrl = "https://github.com/sponsors/ZavalaSebas";
+public const string KoFiUrl = "https://ko-fi.com/sebastianzavala82573";
+public const string GitHubSponsorsUrl = "https://github.com/sponsors/ZavalaSebas";
 ```
 
 ---

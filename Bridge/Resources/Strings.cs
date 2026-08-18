@@ -75,6 +75,7 @@ public static class Strings
     public static string Bottom => Get(nameof(Bottom));
     public static string Theme => Get(nameof(Theme));
     public static string Settings => Get(nameof(Settings));
+    public static string SettingsDescription => Get(nameof(SettingsDescription));
     public static string AboutBridge => Get(nameof(AboutBridge));
     public static string Exit => Get(nameof(Exit));
     public static string GameRemovedFromLibrary => Get(nameof(GameRemovedFromLibrary));

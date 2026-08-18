@@ -126,6 +126,7 @@
   <data name="Right" xml:space="preserve"><value>Right</value></data>
   <data name="Top" xml:space="preserve"><value>Top</value></data>
   <data name="Bottom" xml:space="preserve"><value>Bottom</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>Manage integrations, appearance, and updates.</value></data>
   <data name="Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="AboutBridge" xml:space="preserve"><value>About Bridge...</value></data>
