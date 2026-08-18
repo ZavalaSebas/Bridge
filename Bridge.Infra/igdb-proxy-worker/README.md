@@ -14,9 +14,8 @@ Bridge.exe ──► https://bridge-igdb.<cuenta>.workers.dev/metadata ──►
 
 Bridge (la app de escritorio) hace una petición HTTP POST a este Worker; el
 Worker obtiene un app token de Twitch con `grant_type=client_credentials`,
-llama a IGDB con la metadata y devuelve el resultado. Es el mismo diseño que
-Playnite usa con su propio backend (api2.playnite.link), pero con
-infraestructura propia de Bridge.
+llama a IGDB con la metadata y devuelve el resultado. Las credenciales viven
+solo en el Worker (Worker Secrets), nunca en el cliente de escritorio.
 
 ## Endpoints
 
@@ -79,4 +78,4 @@ Crea `.dev.vars` (no lo subas a git) con los secrets y ejecuta `npx wrangler dev
 
 `Bridge.Metadata/BridgeIgdbProvider.cs` consume este Worker como primer
 provider de IGDB. Si el Worker no responde, Bridge cae al proxy público de
-Playnite (`PlayniteIgdbProvider`) y luego al IGDB del usuario (`IgdbMetadataProvider`).
+En la app, el orden de proveedores es: Worker propio → proxy publico legacy (`PlayniteIgdbProvider`) → IGDB del usuario (`IgdbMetadataProvider`).

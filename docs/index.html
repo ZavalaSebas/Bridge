@@ -27,32 +27,30 @@
 
 <h2>Features</h2>
 <ul>
-  <li>Manual game library: add, edit, delete, favorite/hidden flags, local SQLite persistence.</li>
-  <li>Launch games and track playtime automatically — Steam games launch via <code>steam://rungameid</code> with directory-based tracking, no per-game setup.</li>
-  <li>Automatic Steam library import on startup (registry → <code>libraryfolders.vdf</code> → <code>appmanifest*.acf</code>), deduped by <code>(ExternalId, SourceId)</code>.</li>
-  <li>Metadata from IGDB and the Steam Store (auto-downloaded for imported Steam games), plus Steam client icons.</li>
-  <li>ROM folder scanning and emulator setup with <code>{RomPath}</code> substitution.</li>
-  <li>Three view modes (List, Covers, Details) with search, filter presets, sorting, and grouping.</li>
-  <li>Statistics dashboard (library counts, playtime, completion status, top played).</li>
-  <li>WPF-UI dark theme with Mica backdrop, sidebar navigation, and Inter variable font.</li>
+  <li>Steam and Epic library auto-import with local metadata and icons.</li>
+  <li>Launch games and track playtime — Steam via <code>steam://rungameid</code>, directory/process-tree tracking.</li>
+  <li>IGDB metadata with zero config (Bridge Cloudflare Worker) plus optional user IGDB credentials.</li>
+  <li>Managed RetroArch: scan ROM folders, download frontend/cores on first play.</li>
+  <li>Three view modes (List, Covers, Table) with search, filters, sorting, and grouping.</li>
+  <li>Statistics dashboard, screenshot gallery, self-updater, and dark WPF-UI theme.</li>
 </ul>
 
 <h2>Getting Started</h2>
-<p>Build and run from the repo root:</p>
-<pre><code>dotnet build Bridge.slnx -c Release
-dotnet run --project Bridge/Bridge.csproj</code></pre>
+<p>Download the latest release from <a href="https://github.com/ZavalaSebas/Bridge/releases">GitHub Releases</a>, or build from source:</p>
+<pre><code>dotnet publish Bridge/Bridge.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true</code></pre>
 <p>The database is created automatically on first launch under <code>%LOCALAPPDATA%\Bridge\</code>.</p>
 
 <h2>Documentation</h2>
 <ul>
-  <li><a href="../DEVELOPMENT.md">Development Guide</a></li>
-  <li><a href="../PLAN.md">Project Plan</a></li>
-  <li><a href="../CHANGELOG.md">Changelog</a></li>
-  <li><a href="../ARCHITECTURE.md">Architecture</a></li>
+  <li><a href="https://github.com/ZavalaSebas/Bridge/blob/main/README.md">README</a></li>
+  <li><a href="https://github.com/ZavalaSebas/Bridge/blob/main/DEVELOPMENT.md">Development Guide</a></li>
+  <li><a href="https://github.com/ZavalaSebas/Bridge/blob/main/ARCHITECTURE.md">Architecture (ADRs)</a></li>
+  <li><a href="https://github.com/ZavalaSebas/Bridge/blob/main/PLAN.md">Project Plan</a></li>
+  <li><a href="https://github.com/ZavalaSebas/Bridge/blob/main/CHANGELOG.md">Changelog</a></li>
 </ul>
 
 <h2>License</h2>
-<p>This project is licensed under the GPL-3.0 license. See <a href="../LICENSE">LICENSE</a> for details.</p>
+<p>This project is licensed under the GPL-3.0 license. See <a href="https://github.com/ZavalaSebas/Bridge/blob/main/LICENSE">LICENSE</a> for details.</p>
 
 </body>
 </html>

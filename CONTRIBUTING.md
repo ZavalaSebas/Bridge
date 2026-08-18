@@ -25,31 +25,28 @@ These are **mandatory practices** for all contributions.
 ### Error Handling
 
 - Never swallow exceptions silently (no empty catch blocks)
-- Always log errors with `ILogger` — no `Debug.WriteLine` (exception for small solo projects, see the note under Logging)
-- User-facing errors should notify the user appropriately
-- Use custom exceptions for domain-specific errors (Bridge currently uses built-in `InvalidOperationException`/`NotSupportedException` — introduce a custom exception only when it adds real value)
+- Log failures through `App.LogException` (writes to `errors.log` under AppData) — Bridge does not use `Microsoft.Extensions.Logging` today
+- User-facing errors should notify the user appropriately (via `IDialogService` / `MessageDialogWindow`)
+- Use custom exceptions for domain-specific errors only when they add real value (Bridge currently uses built-in `InvalidOperationException`/`NotSupportedException` in most places)
 
 ### Logging
 
-- Use `ILogger<T>` in all services and ViewModels
-- Log at appropriate levels:
-  - `LogInformation` — normal operations
-  - `LogWarning` — recoverable issues
-  - `LogError` — failures
-- Include relevant context in log messages (e.g., IDs, names)
+Bridge uses a lightweight file logger, not `ILogger<T>`:
 
-> **Note for small projects:** If the project is very small or single-developer, `Debug.WriteLine` is acceptable as a conscious decision — but document it explicitly if you choose it, so it's not an oversight. The default standard remains `ILogger<T>`.
+- Call `App.LogException(ex, context)` from catch blocks in background work (`TaskExtensions.FireAndForget`, metadata sync, image cache, etc.)
+- Keep user-visible failures in dialogs or `StatusMessage` where appropriate
+- Do not add `Microsoft.Extensions.Logging` unless there is a concrete need — update DEVELOPMENT.md and this file if that changes
 
 ### Async Patterns
 
 - Always use `async/await` — never `.Result` or `.Wait()`
-- Pass `CancellationToken` to cancellable operations
+- Pass `CancellationToken` to cancellable operations where practical
 
 ### Security
 
 - Never commit secrets, API keys, or credentials
-- Use environment variables for sensitive configuration
-- Follow secure coding practices
+- Use Worker Secrets / protected settings stores for sensitive configuration
+- Follow secure coding practices (`SafeLauncher`, `UrlValidator` for external URLs)
 - Enable and address security warnings
 
 ### Naming Conventions
@@ -76,12 +73,10 @@ These practices are **recommended** under certain conditions. Apply them when re
 | **Mocking framework** (e.g., Moq) | If services have external dependencies that need mocking in tests (Bridge's metadata tests use a hand-written `FakeHttpMessageHandler` — follow that pattern unless a mock library genuinely helps) |
 | **Pre-commit hooks** | Only if working in a team |
 | **Code style analyzers** (e.g., StyleCop, Roslyn analyzers) | Only if working in a team or if strict style consistency is desired |
-| **Structured logging** | Recommended for most projects; consider if logs need machine-parseable output |
-| **Rate limiting on API calls** | Only if the project consumes an external API with rate limits |
-| **`IProgress<T>` for long-running operations** | If there are operations that benefit from progress reporting |
+| **`IProgress<T>` for long-running operations** | Used today for status-bar progress (metadata sync, RetroArch install, app updates) |
 | **`packages.lock.json` commit** | Only if working in a team or if deterministic restores are needed |
 | **Code signing** | Future consideration; no free solution available today |
-| **Accessibility** | If the project targets a broad audience; at minimum ensure keyboard navigation, focus indicators, and screen reader labels on controls |
+| **Accessibility** | Keyboard navigation, focus indicators, and `AutomationProperties` on controls — keep improving as UI changes |
 | **Separate branch for major redesigns** | Only if the change is a new major version that risks destabilizing main |
 
 ---
