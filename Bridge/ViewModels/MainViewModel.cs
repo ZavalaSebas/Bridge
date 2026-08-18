@@ -217,7 +217,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     // Sort menu's direction entry label: shows what toggling will switch to.
-    public string SortDirectionText => SortDescending ? "Ascending (A-Z)" : "Descending (Z-A)";
+    public string SortDirectionText => SortDescending ? Strings.SortAscending : Strings.SortDescending;
 
     private void ApplySort()
     {

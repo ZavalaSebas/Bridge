@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Centralized sponsor URLs** — `Config.KoFiUrl`, `Config.GitHubSponsorsUrl`, and `Config.PrimarySponsorUrl` replace hard-coded links in the Support menu and About window; `OpenSponsorCommand` opens the primary sponsor link for future status-bar affordances.
 - **Sidebar Favorites and Sources shortcuts** — Favorites applies the favorite filter; Sources groups the library by import source (Steam, Epic, ROM, Manual). Sidebar highlight stays in sync when the same state is chosen from the filter/group menus.
 - **Status-bar sponsor heart** — a heart button in the status bar opens `Config.PrimarySponsorUrl` via `OpenSponsorCommand`.
+- **Part 3 audit follow-up (i18n / structure / keyboard)** — migrated main-window menus, filters, sort/group labels, statistics overlay, and sort-direction text to `Strings.resx`; extracted `StatisticsOverlayView` and `SettingsOverlayView` UserControls; added title-bar tab order (`TabIndex` 1–5 on menu, search, filter, sort, group).
 
 ### Fixed
 - **Hero cross-fade blur edge when switching tall→short backgrounds** — `FadeImage` now animates the outgoing tall frame's bottom fade in sync with the incoming short frame's mask during the cross-fade, so the frosted edge no longer pops when opacity reaches zero.
