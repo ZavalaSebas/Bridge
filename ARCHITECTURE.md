@@ -220,6 +220,8 @@ This was decided by proceeding with the standing recommendation below under real
 - ✅ `EF Core`'s tooling/documentation depth directly serves the "even a low-capability model must be able to continue this" requirement — SQL + EF Core is far better represented in any model's training data than LiteDB's query API
 - ❌ The JSON-column approach means `Game.GenreIds` etc. can't be filtered/joined at the SQL level — acceptable for MVP (filtering happens in-memory after `GetAll()`), revisit if the library size makes that a real performance problem
 
+**Update (2026-08-18):** the "migrations story" has now been cashed in — schema changes use real EF migrations (`Bridge.Storage/Migrations/`, applied at startup by `BridgeDbMigrator.MigrateToLatest`, with pre-migration DBs baselined). Combined with the self-updater (ADR-14), a release can change the DB structure and it ships through the exe swap, applying on the user's next launch with no re-download or data loss. See the Schema Migrations section in DEVELOPMENT.md.
+
 **Alternatives considered:**
 
 - **Alternative 1: SQLite** — mature, relational, well-understood migrations story (EF Core or raw SQL); heavier to set up for simple document-shaped data like `GameMetadata`.
