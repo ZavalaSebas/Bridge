@@ -78,6 +78,7 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
             e.Ignore(g => g.IsUninstalling);
             e.Ignore(g => g.IsLaunching);
             e.Ignore(g => g.IsRunning);
+            e.Ignore(g => g.NeedsEmulatorDownload);
 
             e.Property(g => g.GameActions).HasConversion(new JsonValueConverter<List<GameAction>>());
             e.Property(g => g.Roms).HasConversion(new JsonValueConverter<List<GameRom>>());

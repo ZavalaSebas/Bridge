@@ -37,6 +37,7 @@ public partial class MainViewModel
             }
 
             RefreshStatistics();
+            RefreshAllEmulatorDownloadStates();
             StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), found.Count, romFolder);
             if (found.Count > 0)
             {
@@ -192,6 +193,8 @@ public partial class MainViewModel
 
             RebuildDetailedRows();
             RefreshStatistics();
+            InvalidateReferenceCaches();
+            RefreshAllEmulatorDownloadStates();
             StatusMessage = Strings.Format(nameof(Strings.ImportResultFormat), sourceName, added, updated);
         }
         catch (Exception ex)

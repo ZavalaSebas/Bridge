@@ -318,6 +318,8 @@ public static class Strings
     public static string SaveFailedFormat => Get(nameof(SaveFailedFormat));
     public static string Saved => Get(nameof(Saved));
     public static string LoadingEmulationStatus => Get(nameof(LoadingEmulationStatus));
+    public static string RetroArchNotInstalled => Get(nameof(RetroArchNotInstalled));
+    public static string RetroArchInstalledWithCoresFormat => Get(nameof(RetroArchInstalledWithCoresFormat));
     public static string CouldNotUpdateRetroArchFormat => Get(nameof(CouldNotUpdateRetroArchFormat));
     public static string VersionFormat => Get(nameof(VersionFormat));
     public static string SourceCode => Get(nameof(SourceCode));

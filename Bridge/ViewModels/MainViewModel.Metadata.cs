@@ -1,5 +1,6 @@
 using Bridge.Core.Entities;
 using Bridge.Core.Import;
+using Bridge.Core.Utilities;
 using Bridge.Emulation;
 using Bridge.Metadata;
 using Bridge.Resources;
@@ -155,22 +156,40 @@ public partial class MainViewModel
         // on every app open.
         if (!string.IsNullOrWhiteSpace(metadata.CoverImage) &&
             (overwrite || string.IsNullOrWhiteSpace(game.CoverImage)))
-            game.CoverImage = metadata.CoverImage;
+        {
+            var cover = UrlValidator.SanitizePersistedUrl(metadata.CoverImage);
+            if (!string.IsNullOrWhiteSpace(cover))
+                game.CoverImage = cover;
+        }
 
         // Don't overwrite an existing icon: for Epic games the importer sets the
         // installed executable's icon (better than a cover thumbnail), and for
         // Steam games ApplySteamLocalArtwork resolved the local clienticon. A
         // metadata icon only fills in games that have none yet.
         if (string.IsNullOrWhiteSpace(game.Icon) && !string.IsNullOrWhiteSpace(metadata.Icon))
-            game.Icon = metadata.Icon;
+        {
+            var icon = UrlValidator.SanitizePersistedUrl(metadata.Icon);
+            if (!string.IsNullOrWhiteSpace(icon))
+                game.Icon = icon;
+        }
 
         if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage) &&
             (overwrite || string.IsNullOrWhiteSpace(game.BackgroundImage)))
-            game.BackgroundImage = metadata.BackgroundImage;
+        {
+            var background = UrlValidator.SanitizePersistedUrl(metadata.BackgroundImage);
+            if (!string.IsNullOrWhiteSpace(background))
+                game.BackgroundImage = background;
+        }
 
         if (metadata.Screenshots is { Count: > 0 } &&
             (overwrite || game.Screenshots.Count == 0))
-            game.Screenshots = metadata.Screenshots;
+        {
+            game.Screenshots = metadata.Screenshots
+                .Select(UrlValidator.SanitizePersistedUrl)
+                .Where(url => !string.IsNullOrWhiteSpace(url))
+                .Select(url => url!)
+                .ToList();
+        }
 
         if (metadata.CriticScore.HasValue)
             game.CriticScore = metadata.CriticScore;
@@ -317,6 +336,26 @@ public partial class MainViewModel
                     game.RegionIds.Add(region.Id);
             }
         }
+
+        InvalidateMetadataReferenceCaches();
+        if (ReferenceEquals(SelectedGame, game))
+            RefreshReferenceFields(game);
+    }
+
+    // Metadata providers can add genres/platforms/etc. — drop only those caches,
+    // not completion-status names (unaffected by metadata and used by the hero
+    // badge + details row).
+    private void InvalidateMetadataReferenceCaches()
+    {
+        _companyNames = null;
+        _platformNames = null;
+        _genreNames = null;
+        _categoryNames = null;
+        _tagNames = null;
+        _featureNames = null;
+        _seriesNames = null;
+        _ageRatingNames = null;
+        _regionNames = null;
     }
 
     private Game? TryGetLiveGame(Game game) =>

@@ -97,6 +97,19 @@ public sealed class RetroArchService
     public bool IsManagedRom(Game game) => game.GameActions.Any(action =>
         action.Type == Core.Enums.GameActionType.Emulator && action.Name == ManagedActionName);
 
+    public bool IsFrontendInstalled => File.Exists(Path.Combine(_paths.InstallPath, "retroarch.exe"));
+
+    public int InstalledCoreCount
+    {
+        get
+        {
+            var coreDirectory = Path.Combine(_paths.InstallPath, "cores");
+            return Directory.Exists(coreDirectory)
+                ? Directory.EnumerateFiles(coreDirectory, "*_libretro.dll").Count()
+                : 0;
+        }
+    }
+
     // True when a managed ROM can't launch yet because the frontend or its core
     // is missing — the Play button shows "Download" in that case. Pure disk
     // check: the same platform resolution EnsureReadyAsync uses, minus any I/O.
@@ -154,16 +167,10 @@ public sealed class RetroArchService
 
     public async Task<string> GetStatusAsync(CancellationToken cancellationToken = default)
     {
-        var executable = Path.Combine(_paths.InstallPath, "retroarch.exe");
-        if (!File.Exists(executable))
-        {
-            return "RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.";
-        }
-
-        var coreDirectory = Path.Combine(_paths.InstallPath, "cores");
-        var count = Directory.Exists(coreDirectory) ? Directory.EnumerateFiles(coreDirectory, "*_libretro.dll").Count() : 0;
         await Task.CompletedTask;
-        return $"RetroArch is installed with {count} managed core(s). Cores are checked for updates when needed.";
+        return IsFrontendInstalled
+            ? $"installed:{InstalledCoreCount}"
+            : "missing";
     }
 
     public async Task UpdateInstalledAsync(IProgress<EmulatorProgress>? progress = null, CancellationToken cancellationToken = default)

@@ -21,7 +21,7 @@
                 <Border Width="210" Padding="14" Margin="0,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
                     <StackPanel>
                         <TextBlock Text="{x:Static res:Strings.All}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding TotalCount, StringFormat='{}{0} games'}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding TotalCount, Converter={StaticResource GamesCount}}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Width="210" Padding="14" Margin="4,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">

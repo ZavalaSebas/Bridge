@@ -371,6 +371,8 @@
   <data name="SaveFailedFormat" xml:space="preserve"><value>Save failed: {0}</value></data>
   <data name="Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="LoadingEmulationStatus" xml:space="preserve"><value>Loading emulation status...</value></data>
+  <data name="RetroArchNotInstalled" xml:space="preserve"><value>RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.</value></data>
+  <data name="RetroArchInstalledWithCoresFormat" xml:space="preserve"><value>RetroArch is installed with {0} managed core(s). Cores are checked for updates when needed.</value></data>
   <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve"><value>Could not update RetroArch: {0}</value></data>
   <data name="VersionFormat" xml:space="preserve"><value>Version {0}</value></data>
   <data name="SourceCode" xml:space="preserve"><value>Source code</value></data>
