@@ -88,6 +88,7 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
 - **Zero-setup ROM support** — recursively scans folders, detects supported systems from ROM extensions (`RomPlatformCatalog`: NES, SNES, N64, GB/GBC/GBA, NDS, Genesis, Master System, Game Gear, Atari, PC Engine, Lynx, WonderSwan), enriches games through the normal IGDB metadata pipeline, and installs/updates Bridge-managed RetroArch + the required core on first play. The Play button reads **Download** (then **Downloading…**) until the frontend/core is installed, then Play/Stop as usual
+- **Self-updating** — Bridge checks GitHub Releases at startup (and on demand via **Check for updates…** in the app menu), downloads the new `Bridge.exe`, and restarts into it with a safe swap (running exe kept as `.old` until the next launch). Skip an update and a download button appears in the title bar until you apply it. See [DEVELOPMENT.md](DEVELOPMENT.md#version-management)
 - Self-contained single-file `.exe` (~155 MB) — no .NET runtime install required
 
 ---

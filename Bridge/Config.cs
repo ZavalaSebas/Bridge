@@ -1,10 +1,17 @@
 using System.IO;
+using System.Reflection;
 
 namespace Bridge;
 
 public static class Config
 {
     public const string AppName = "Bridge";
+
+    public const string GitHubApiUrl = "https://api.github.com/repos/ZavalaSebas/Bridge/releases/latest";
+
+    public const int RequestTimeoutSeconds = 10;
+
+    public const string UpdateAssetName = "Bridge.exe";
 
     public static string AppDataPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -28,4 +35,7 @@ public static class Config
     // no SHA-256 digest, the version string is the change signal: a different
     // resolved version means the frontend must be refreshed.
     public static string RetroArchVersionPath => Path.Combine(AppDataPath, "emulators", "retroarch.version");
+
+    public static Version AssemblyVersion =>
+        Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 0);
 }

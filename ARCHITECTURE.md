@@ -52,6 +52,22 @@ Copy this block and fill it in when adding a new ADR below:
 
 ## Existing ADRs
 
+### ADR-14: GitHub Releases as the update channel (self-replacing `AppUpdateService`)
+
+**Status:** Accepted
+
+**Date:** 2026-08-17
+
+**Context:**
+Bridge ships as a single self-contained `Bridge.exe` (Fase 8, ~155 MB). Distributing updates meant asking users to re-download from the Releases page and replace the exe themselves — manual, error-prone, and it left users on old versions. The CI already publishes every tagged release to GitHub Releases, so the releases API already exists as an authoritative "latest version" source. The update had to be **self-replacing** safely: Windows won't let a running exe be overwritten in place.
+
+**Decision:**
+`AppUpdateService` (see the full ADR below) checks the GitHub latest-release API against `Config.AssemblyVersion`, and when remote is newer downloads the `Bridge.exe` asset and applies the safe swap (running exe → `.old`, downloaded → current, restart, `.old` cleaned on next launch) — HTTPS-only, GitHub hosts allowlisted, 256 MB cap, and gated by `CanSelfUpdate` so dev runs are never replaced.
+
+**Consequences:**
+- Users get updates with one click; the pending-update title-bar button catches skipped updates.
+- The csproj version must stay lower than the newest release tag for the check to detect it.
+
 ### ADR-1: No plugin system in v1
 
 **Status:** Accepted
@@ -505,6 +521,74 @@ Why this over the alternatives:
   reached, raise it or rotate keys.
 - The Worker `POST /auth` endpoint returns the token — keep it diagnostic-only;
   do not expose it in production without protection.
+
+---
+
+## ADR-14: GitHub Releases as the update channel (self-replacing `AppUpdateService`)
+
+**Status:** Accepted
+
+**Date:** 2026-08-17
+
+**Context:**
+Bridge ships as a single self-contained `Bridge.exe` (ADR/Fase 8, ~155 MB).
+Distributing updates meant asking users to re-download from the Releases page
+and replace the exe themselves — manual, error-prone, and it left users on old
+versions. The CI already publishes every tagged release to GitHub Releases
+(`.github/workflows/release.yml`), so the releases API already exists as an
+authoritative "latest version" source. The update had to be **self-replacing**
+safely: Windows won't let a running exe be overwritten in place.
+
+**Decision:**
+`Bridge/Services/AppUpdateService.cs` checks
+`api.github.com/repos/ZavalaSebas/Bridge/releases/latest`, compares the release
+`tag_name` (via `Version.TryParse(tag.TrimStart('v'))`) against
+`Config.AssemblyVersion`, and when remote is newer resolves the `Bridge.exe`
+asset. Applying the update follows the safe swap from DEVELOPMENT.md: download
+to a temp path, rename the running exe to `.old`, move the downloaded exe into
+the current path, start the new process and `Environment.Exit(0)`; a startup
+`CleanupOldExe()` deletes the `.old` next launch, and a best-effort rollback
+restores `.old` if the swap throws.
+
+Security boundaries (updates replace executable code — treat them as code):
+- Downloads are **HTTPS only** and only from GitHub's hosts (`api.github.com`,
+  `github.com`, `*.githubusercontent.com`); redirects are followed manually and
+  re-validated against the allowlist. `AllowAutoRedirect` is off so a malicious
+  intermediate can't redirect the download elsewhere.
+- A **256 MB size cap** (`MaximumDownloadBytes`) applies both to the declared
+  `Content-Length` and the bytes actually written.
+- `CanSelfUpdate` gates everything to `Environment.ProcessPath` ending in
+  `.exe`, so dev runs (`dotnet run`, the `bin/` output) never try to replace a
+  non-published binary — `AppUpdateServiceTests` run against the check logic
+  with a fake `HttpMessageHandler`.
+- The shared DI `HttpClient` got `Config.RequestTimeoutSeconds` (10s) so the
+  check fails fast instead of hanging on the 100s default.
+
+Why this over the alternatives:
+- **A full update library (Squirrel, Velopack)** — rejected: heavyweight
+  runtime/install footprint for a single-file exe; the swap pattern is ~30 lines
+  and fully under Bridge's control. Revisit only if delta updates or a service
+  become necessary.
+- **Downloading in a staging dir next to the exe** — rejected: writing beside
+  the exe may hit permission/AV issues; the download goes to the OS temp dir and
+  only the final swap touches the install location.
+- **Version from the csproj hard-coded in the check** — rejected: the assembly
+  version is the single source of truth; the dev build is deliberately set back
+  to the latest *released* version (0.1.0 vs the published v0.2.0) so the
+  updater can actually detect the next release instead of always reporting
+  up-to-date.
+
+**Consequences:**
+- Users get updates automatically with one click (and a pending-update button
+  in the title bar if they skip).
+- The version in `Bridge/Bridge.csproj` must stay lower than the newest release
+  tag for the check to work — the Release Process section in DEVELOPMENT.md is
+  the place that owns bumping it.
+- The updater only covers the single-file publish; the 7z/archive installs
+  (RetroArch) are managed separately by `RetroArchService`.
+- No integrity signature (code-signing) yet — the trust model is "GitHub host
+  allowlist + HTTPS"; signing would harden supply-chain attacks if the repo
+  ever gets a wider user base.
 
 ---
 

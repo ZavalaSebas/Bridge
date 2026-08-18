@@ -4,18 +4,17 @@ using Wpf.Ui.Controls;
 namespace Bridge;
 
 /// <summary>
-/// The app's own styled message dialog. A borderless, transparent window so the
-/// rounded card (with the app's accent color, card background and separator
-/// border) floats on its own — no stock Windows chrome, no surrounding frame.
-/// Same shape as a standard message box — title, icon, message text and an OK
-/// (optionally Cancel) button.
+/// The app's own styled message dialog — a <see cref="FluentWindow"/> with Mica,
+/// a custom title bar and themed buttons, matching windows like
+/// <see cref="AboutWindow"/> instead of a floating card or stock MessageBox.
 /// </summary>
-public partial class MessageDialogWindow : Window
+public partial class MessageDialogWindow : FluentWindow
 {
     public MessageDialogWindow(string message, string title, SymbolRegular? icon = null)
     {
         InitializeComponent();
 
+        Title = title;
         MessageTitle.Text = title;
         MessageText.Text = message;
 
@@ -25,26 +24,27 @@ public partial class MessageDialogWindow : Window
         }
     }
 
-    public bool WithCancel { get; private set; }
-
     private void Ok_Click(object sender, RoutedEventArgs e) => DialogResult = true;
 
-    // Shows a single-OK dialog. Fire-and-forget from an async handler — the
-    // dialog is modal so it returns once dismissed. Owned by the main window so
-    // it survives a launcher window closing right after (e.g. ScanInstalledWindow
-    // sets DialogResult=true before showing a skip notice).
+    private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
     public static void Show(string message, string title, SymbolRegular? icon = null)
     {
         var dialog = new MessageDialogWindow(message, title, icon) { Owner = Application.Current.MainWindow };
         dialog.ShowDialog();
     }
 
-    // Shows a dialog with OK + Cancel, returning true when OK was pressed.
-    public static bool ShowConfirm(string message, string title, SymbolRegular? icon = null)
+    public static bool ShowConfirm(
+        string message,
+        string title,
+        SymbolRegular? icon = null,
+        string? confirmText = null,
+        string? cancelText = null)
     {
         var dialog = new MessageDialogWindow(message, title, icon) { Owner = Application.Current.MainWindow };
         dialog.CancelButton.Visibility = Visibility.Visible;
-        dialog.OkButton.Content = "OK";
+        dialog.OkButton.Content = confirmText ?? "OK";
+        dialog.CancelButton.Content = cancelText ?? "Cancel";
         return dialog.ShowDialog() == true;
     }
 

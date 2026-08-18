@@ -17,6 +17,7 @@ using Bridge.Services;
 using Bridge.Statistics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Wpf.Ui.Controls;
 
 namespace Bridge.ViewModels;
 
@@ -43,6 +44,7 @@ public partial class MainViewModel : ObservableObject
     private readonly BridgeIgdbProvider _bridgeIgdbProvider;
     private readonly SteamLibraryImporter _steamImporter;
     private readonly EpicLibraryImporter _epicImporter;
+    private readonly AppUpdateService _appUpdateService;
 
     public ObservableCollection<Game> Games { get; } = [];
 
@@ -88,6 +90,15 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _playButtonIsStop;
+
+    // Shown beside the random-game button when the user skipped an available update.
+    [ObservableProperty]
+    private bool _hasPendingUpdate;
+
+    [ObservableProperty]
+    private string _pendingUpdateToolTip = string.Empty;
+
+    private AppUpdateInfo? _pendingUpdate;
 
     private void UpdateNeedsEmulatorDownload()
     {
@@ -472,7 +483,8 @@ public partial class MainViewModel : ObservableObject
         SteamMetadataProvider steamMetadataProvider,
         BridgeIgdbProvider bridgeIgdbProvider,
         SteamLibraryImporter steamImporter,
-        EpicLibraryImporter epicImporter)
+        EpicLibraryImporter epicImporter,
+        AppUpdateService appUpdateService)
     {
         _gameRepository = gameRepository;
         _emulatorRepository = emulatorRepository;
@@ -495,6 +507,7 @@ public partial class MainViewModel : ObservableObject
         _bridgeIgdbProvider = bridgeIgdbProvider;
         _steamImporter = steamImporter;
         _epicImporter = epicImporter;
+        _appUpdateService = appUpdateService;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
@@ -544,6 +557,7 @@ public partial class MainViewModel : ObservableObject
             _ = PreloadArtworkAsync();
             await DownloadMissingMetadataByNameAsync([epicSourceId]);
             _ = PreloadArtworkAsync();
+            await CheckForUpdatesCoreAsync(promptWhenUpToDate: false);
         }
         catch (Exception ex)
         {
@@ -1758,6 +1772,147 @@ public partial class MainViewModel : ObservableObject
             : !IsNetworkAvailable()
                 ? "Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection."
                 : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
+    }
+
+    [RelayCommand]
+    private Task CheckForUpdates() => CheckForUpdatesCoreAsync(promptWhenUpToDate: true);
+
+    private async Task CheckForUpdatesCoreAsync(bool promptWhenUpToDate)
+    {
+        if (!IsNetworkAvailable())
+        {
+            if (promptWhenUpToDate)
+            {
+                MessageDialogWindow.Show(
+                    "No internet connection. Check for updates again when you're back online.",
+                    "Check for updates",
+                    SymbolRegular.CloudOff24);
+            }
+
+            return;
+        }
+
+        try
+        {
+            var result = await _appUpdateService.CheckForUpdateAsync();
+            switch (result.Status)
+            {
+                case AppUpdateStatus.UpToDate:
+                    SetPendingUpdate(null);
+                    if (promptWhenUpToDate)
+                    {
+                        MessageDialogWindow.Show(
+                            $"Bridge {Config.AssemblyVersion.ToString(3)} is the latest version.",
+                            "Check for updates",
+                            SymbolRegular.Checkmark24);
+                    }
+
+                    break;
+
+                case AppUpdateStatus.NotApplicable:
+                    if (promptWhenUpToDate)
+                    {
+                        MessageDialogWindow.Show(
+                            result.Message ?? "Updates apply only to the published Bridge.exe.",
+                            "Check for updates",
+                            SymbolRegular.Info24);
+                    }
+
+                    break;
+
+                case AppUpdateStatus.Failed:
+                    if (promptWhenUpToDate)
+                    {
+                        MessageDialogWindow.Show(
+                            result.Message ?? "Could not check for updates.",
+                            "Check for updates",
+                            SymbolRegular.Warning24);
+                    }
+
+                    break;
+
+                case AppUpdateStatus.UpdateAvailable:
+                    var update = result.Update!;
+                    await PromptAndApplyUpdateAsync(update, skippedSetsPending: true);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (promptWhenUpToDate)
+            {
+                MessageDialogWindow.Show(
+                    $"Could not check for updates: {ex.Message}",
+                    "Check for updates",
+                    SymbolRegular.Warning24);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private Task ApplyPendingUpdate()
+    {
+        if (_pendingUpdate is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        return PromptAndApplyUpdateAsync(_pendingUpdate, skippedSetsPending: true);
+    }
+
+    private void SetPendingUpdate(AppUpdateInfo? update)
+    {
+        _pendingUpdate = update;
+        HasPendingUpdate = update is not null;
+        PendingUpdateToolTip = update is null
+            ? string.Empty
+            : $"Version {update.Version.ToString(3)} is available — click to download and restart";
+    }
+
+    private async Task PromptAndApplyUpdateAsync(AppUpdateInfo update, bool skippedSetsPending)
+    {
+        var message =
+            $"Version {update.Version.ToString(3)} is available (you have {Config.AssemblyVersion.ToString(3)}).\n\nDownload and restart now?";
+        if (!MessageDialogWindow.ShowConfirm(
+                message,
+                "Update available",
+                SymbolRegular.ArrowDownload24,
+                confirmText: "Update",
+                cancelText: "Not now"))
+        {
+            if (skippedSetsPending)
+            {
+                SetPendingUpdate(update);
+            }
+
+            return;
+        }
+
+        await ApplyUpdateAsync(update);
+    }
+
+    private async Task ApplyUpdateAsync(AppUpdateInfo update)
+    {
+        try
+        {
+            SetPendingUpdate(null);
+            StatusMessage = "Downloading update...";
+            await _appUpdateService.ApplyUpdateAsync(
+                update,
+                new Progress<AppUpdateProgress>(p =>
+                {
+                    StatusMessage = p.Message;
+                }));
+        }
+        catch (Exception ex)
+        {
+            SetPendingUpdate(update);
+            StatusMessage = $"Update failed: {ex.Message}";
+            MessageDialogWindow.Show(
+                $"Could not install the update: {ex.Message}",
+                "Update failed",
+                SymbolRegular.Warning24);
+        }
     }
 
     [RelayCommand]
