@@ -21,7 +21,7 @@ Bridge brings your games — from external libraries, manual entries, and emulat
 
 Bridge is an original game library manager: it unifies games from external libraries, manually added entries, and emulated ROMs into one local, self-contained catalog. It keeps what matters day to day — incremental import, local metadata, fast virtualized views, and emulation support — without a plugin runtime or a separate fullscreen frontend.
 
-[Playnite](https://playnite.link/) is an inspiration, not a specification. During development Bridge uses Playnite's *observed behavior* as a reference to understand how features should feel (import semantics, playtime tracking, metadata resolution), but its structure, architecture, and implementation are its own — no shared code, no ported internals, different module layout, different persistence, different UI. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the behavioral notes that inform development.
+[Playnite](https://playnite.link/) was the **original inspiration** when Bridge was first conceived — the idea of one local catalog for every game. Bridge is an independent project: its own code, architecture, UI, and scope (no plugin runtime, no shared internals).
 
 > **Disclaimer:** Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG, or any platform or emulator project referenced in this document. Bridge does not crack, bypass, or circumvent DRM. It organizes games you already own and emulators/ROMs you already have; it does not provide or distribute copyrighted game files.
 
@@ -74,16 +74,16 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Steam library auto-import** — detects installed Steam games automatically on startup (registry + `libraryfolders.vdf` + `appmanifest*.acf`)
 - **Steam Store metadata** — downloads name, description, release date, cover/background art, critic/community scores, genres, and more from the official Steam store (no login, no API key)
 - **IGDB metadata** — text and image metadata from IGDB with **zero configuration** (via Bridge's own Cloudflare Worker; a user-supplied Twitch key is optional). The Worker matches an exact name first (`where name ~`), falling back to IGDB's fuzzy `search` for titles that need it (ROM names with accents/hyphens), and Bridge shows a clear "no internet connection" message instead of "no metadata" when offline
-- **Multi-provider fallback** — metadata search tries Bridge's IGDB Worker first, then Playnite's proxy, then the user's IGDB key, then Steam Store automatically
+- **Multi-provider fallback** — metadata search tries Bridge's IGDB Worker first, then a legacy public IGDB proxy (`PlayniteIgdbProvider`), then the user's IGDB key, then Steam Store automatically
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
 - **Epic Games support** — detects installed Epic games from the launcher's local files, launches via the Epic client, and shows each game's exe icon
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Installed / Not Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
-- **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade; compact screenshot strip in the info panel), **Details** (themed table with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
-- **Cinematic screenshot gallery** — in the Details table view and as a compact strip in Covers, games with screenshots show them as a carousel: a large image floating over a frosted backdrop, a drag-to-scroll thumbnail strip, counter, arrow buttons, keyboard navigation, click-to-expand into a full-window dark overlay, and auto-advance
+- **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade; compact screenshot strip in the info panel), **Table** (themed grid with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
+- **Cinematic screenshot gallery** — in the Table view and as a compact strip in Covers, games with screenshots show them as a carousel: a large image floating over a frosted backdrop, a drag-to-scroll thumbnail strip, counter, arrow buttons, keyboard navigation, click-to-expand into a full-window dark overlay, and auto-advance
 - **Sidebar navigation** — Icon rail (52px) with Library and Statistics shortcuts, collapsible and re-positionable
 - **Dark theme + Mica + runtime theming** — custom indigo dark palette with Inter variable font, Mica backdrop on Windows 11, and a runtime accent switcher (9 color presets + custom picker) that recolors the whole UI
-- Manual game entries with add (Playnite-style editor with Sorting Name, create-on-the-fly genres/devs/publishers/platforms, and web image search), edit, and delete
+- Manual game entries with a dedicated editor (Sorting Name, create-on-the-fly genres/devs/publishers/platforms, and web image search), edit, and delete
 - **Scan Automatically** — detect games installed on the PC from start-menu shortcuts, a folder, or a single executable (with installers/helpers filtered out), then import them with one click
 - Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
@@ -95,15 +95,25 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 
 ## Architecture
 
-Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata` (use cases) → `App` (WPF UI; ROM scanning + emulator launch live in `Bridge/Services`). See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
+Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata`/`Emulation` (use cases) → `App` (WPF UI). ROM scanning and Bridge-managed RetroArch live in **`Bridge.Emulation/`**; launch/playtime tracking and app services live in **`Bridge/Services/`**. See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
 
-**IGDB metadata without configuration:** Bridge gets IGDB metadata (cover, description, developers, genres, scores, links, **screenshots**) for any game — including Epic-only titles like Genshin Impact — via its own [Cloudflare Worker](Bridge.Infra/igdb-proxy-worker/) that holds the IGDB credentials server-side (Worker Secrets, never in the app). Playnite's public proxy and a user-configured IGDB key act as fallbacks. The Worker returns IGDB's real screenshots too, so Epic/manual games get the same Details screenshot gallery as Steam games. See [ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend).
+**IGDB metadata without configuration:** Bridge gets IGDB metadata (cover, description, developers, genres, scores, links, **screenshots**) for any game — including Epic-only titles like Genshin Impact — via its own [Cloudflare Worker](Bridge.Infra/igdb-proxy-worker/) that holds the IGDB credentials server-side (Worker Secrets, never in the app). A public IGDB proxy fallback and a user-configured IGDB key act as additional providers. The Worker returns IGDB's real screenshots too, so Epic/manual games get the same Table-view screenshot gallery as Steam games. See [ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend).
 
 ---
 
 ## Development
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the full project guide, architecture, and workflow rules. See [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) for the behavioral notes on Playnite that inform Bridge's development decisions.
+| Document | Purpose |
+|----------|---------|
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Build, test, architecture, migrations, updater, key files |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | ADRs (design decisions) |
+| [PLAN.md](PLAN.md) | Phase tracker and scope |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution standards |
+| [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) | Archival notes from project inception (internal; not a Bridge spec) |
+| [Bridge.Infra/igdb-proxy-worker/README.md](Bridge.Infra/igdb-proxy-worker/README.md) | IGDB Worker deploy guide |
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the full project guide.
 
 ---
 
@@ -115,7 +125,7 @@ This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
 ## Acknowledgments
 
-Bridge's design is informed by studying [Playnite](https://playnite.link/)'s behavior (see `PROJECT_FOUNDATION.md` §28 for the notes). Playnite is an excellent, mature project — Bridge is a separate, smaller, plugin-free take on the same *problem space*, built independently.
+Bridge was originally conceived after studying unified game library managers; [Playnite](https://playnite.link/) was the first inspiration for that idea. Bridge is built independently — a separate, smaller, plugin-free product in the same problem space.
 
 ---
 
