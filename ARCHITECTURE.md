@@ -546,9 +546,21 @@ safely: Windows won't let a running exe be overwritten in place.
 `Config.AssemblyVersion`, and when remote is newer resolves the `Bridge.exe`
 asset. Applying the update follows the safe swap from DEVELOPMENT.md: download
 to a temp path, rename the running exe to `.old`, move the downloaded exe into
-the current path, start the new process and `Environment.Exit(0)`; a startup
-`CleanupOldExe()` deletes the `.old` next launch, and a best-effort rollback
-restores `.old` if the swap throws.
+the current path, start the new process and `Environment.Exit(0)`.
+
+**The swap is made survivable by an update handshake** (added 2026-08-17, in
+response to a beta-consideration review). Three files next to the exe drive it:
+`<exe>.update-pending` (written by `ApplyUpdateAsync` after the swap),
+`<exe>.old` (the previously working exe) and `<exe>.failed` (a broken new exe a
+rollback moved aside). At startup, before any window/DB/DI work,
+`HandleUpdateHandshake()` **keeps** `.old` as the rollback copy while a pending
+update exists; `ConfirmUpdateApplied()` clears it only after the new exe has
+proven it starts (window shown); and if startup throws (bad XAML, DB/DI
+failure) `RollbackToPrevious()` restores `.old` over the broken new exe and
+relaunches it. Before the swap, `BackupDatabase()` copies `bridge.db` to
+`bridge.db.bak-update` next to it — a manual-recovery safety net for the day a
+schema migration goes wrong, deliberately **not** auto-restored (a DB backup
+restored blindly could clobber newer data).
 
 Security boundaries (updates replace executable code — treat them as code):
 - Downloads are **HTTPS only** and only from GitHub's hosts (`api.github.com`,
@@ -566,12 +578,18 @@ Security boundaries (updates replace executable code — treat them as code):
 
 Why this over the alternatives:
 - **A full update library (Squirrel, Velopack)** — rejected: heavyweight
-  runtime/install footprint for a single-file exe; the swap pattern is ~30 lines
-  and fully under Bridge's control. Revisit only if delta updates or a service
-  become necessary.
+  runtime/install footprint for a single-file exe; the swap+handshake is ~60
+  lines and fully under Bridge's control. Revisit only if delta updates or a
+  service become necessary.
 - **Downloading in a staging dir next to the exe** — rejected: writing beside
   the exe may hit permission/AV issues; the download goes to the OS temp dir and
   only the final swap touches the install location.
+- **Deleting `.old` unconditionally on the next launch (the original design)** —
+  replaced by the handshake: an unconditional delete meant a new exe that
+  crashed at startup left the user with a broken build and no working copy.
+- **Auto-restoring the DB backup on rollback** — rejected: a database restored
+  blindly can clobber newer data written after the backup; the `.bak-update`
+  file is a manual-recovery net instead.
 - **Version from the csproj hard-coded in the check** — rejected: the assembly
   version is the single source of truth; the check just compares the installed
   version against the newest release tag, so a released build reports
@@ -580,6 +598,9 @@ Why this over the alternatives:
 **Consequences:**
 - Users get updates automatically with one click (and a pending-update button
   in the title bar if they skip).
+- A new version that fails to start rolls back automatically to the previously
+  working exe; a crashed-but-running new version can still be restored by hand
+  from `bridge.db.bak-update`.
 - The version in `Bridge/Bridge.csproj` is the "installed" version the check
   compares against — it must be bumped together with the release tag (the
   Release Process section in DEVELOPMENT.md owns that), so an update is detected
