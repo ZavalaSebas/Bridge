@@ -433,6 +433,11 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             }
         }
 
+        if (!UrlValidator.IsSafeToOpen(action.Path))
+        {
+            throw new InvalidOperationException($"Refusing to open unsafe URL: {action.Path}");
+        }
+
         return Process.Start(new ProcessStartInfo
         {
             FileName = action.Path,

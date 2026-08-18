@@ -20,7 +20,7 @@
                 <Border Grid.Column="0" Margin="0,0,8,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
                     <DockPanel LastChildFill="True">
                         <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="ConfigureEmulator_Click" AutomationProperties.Name="{x:Static res:Strings.ConfigureEmulatorTitle}">
-                            <TextBlock Text="{x:Static res:Strings.OpenSettings}"/>
+                            <TextBlock Text="{x:Static res:Strings.OpenEmulationSettings}"/>
                         </Button>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -34,7 +34,7 @@
                 <Border Grid.Column="1" Margin="8,0,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
                     <DockPanel LastChildFill="True">
                         <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="IgdbSettings_Click" AutomationProperties.Name="{x:Static res:Strings.IgdbSettingsTitle}">
-                            <TextBlock Text="{x:Static res:Strings.OpenSettings}"/>
+                            <TextBlock Text="{x:Static res:Strings.OpenIgdbSettings}"/>
                         </Button>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -51,7 +51,7 @@
             <Border Margin="0,0,0,24" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
                 <DockPanel LastChildFill="True">
                     <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="CustomThemeColor_Click" AutomationProperties.Name="{x:Static res:Strings.CustomThemeColorTitle}">
-                        <TextBlock Text="{x:Static res:Strings.OpenSettings}"/>
+                        <TextBlock Text="{x:Static res:Strings.OpenThemeSettings}"/>
                     </Button>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -96,7 +96,7 @@
                 <Border Grid.Column="1" Margin="8,0,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
                     <DockPanel LastChildFill="True">
                         <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="About_Click" AutomationProperties.Name="{x:Static res:Strings.AboutBridge}">
-                            <TextBlock Text="{x:Static res:Strings.OpenSettings}"/>
+                            <TextBlock Text="{x:Static res:Strings.ViewAbout}"/>
                         </Button>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">

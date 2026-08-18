@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows.Data;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Resources;
 using Bridge.Statistics;
 
 namespace Bridge.Converters;
@@ -34,13 +35,7 @@ public class PlaytimeConverter : IValueConverter
         if (value is not ulong seconds)
             return null;
 
-        return seconds switch
-        {
-            0 => "Not played",
-            < 60 => seconds == 1 ? "1 second" : $"{seconds} seconds",
-            < 3600 => $"{seconds / 60} {(seconds / 60 == 1 ? "minute" : "minutes")}",
-            _ => $"{seconds / 3600.0:0.#} {(seconds / 3600.0 < 2 ? "hour" : "hours")}"
-        };
+        return PlaytimeFormatter.FormatSeconds(seconds);
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -67,7 +62,7 @@ public class GameGroupConverter : IValueConverter
 public class ShortDateConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is DateTime date ? date.ToString("d") : "Never";
+        => value is DateTime date ? date.ToString("d") : Strings.GroupNever;
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
