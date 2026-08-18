@@ -1,15 +1,9 @@
 namespace Bridge.Import.Steam;
 
 /// <summary>
-/// Reads the playtime Steam records locally in
-/// userdata\{steamid}\config\localconfig.vdf — under
-/// UserLocalConfigStore\Software\Valve\Steam\apps\{appid}, Steam writes
-/// "Playtime" (minutes) and "LastPlayed" (unix timestamp) for every game the
-/// account has run. This is the same local data Playnite's Steam plugin used
-/// historically and the zero-config source of the game's real Steam playtime
-/// (the Web API alternative requires an account login — see PROJECT_FOUNDATION.md
-/// §28.27.A). Returns null when Steam isn't installed or no localconfig.vdf
-/// exists, so callers just leave the playtime it already has.
+/// Reads playtime from userdata\{steamid}\config\localconfig.vdf
+/// (Playtime in minutes, LastPlayed as unix seconds). Merges multiple accounts
+/// on one install; returns null if Steam or localconfig.vdf is missing.
 /// </summary>
 public static class SteamLocalPlaytimeResolver
 {

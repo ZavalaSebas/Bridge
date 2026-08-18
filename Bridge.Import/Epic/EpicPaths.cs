@@ -4,10 +4,8 @@ using Microsoft.Win32;
 namespace Bridge.Import.Epic;
 
 /// <summary>
-/// Locates the Epic Games Launcher installation and its data folders.
-/// Mirrors Playnite's EpicLauncher (EpicLibrary plugin): the install path comes
-/// from the uninstall registry entry (or the two well-known default locations),
-/// and the game data lives under %PROGRAMDATA%\Epic.
+/// Epic launcher install path (uninstall registry or default locations) and
+/// game data under %PROGRAMDATA%\Epic.
 /// </summary>
 public static class EpicPaths
 {
@@ -37,8 +35,7 @@ public static class EpicPaths
             return registryPath;
         }
 
-        // These registry keys sometimes go missing on people's PCs — fall back
-        // to the default install locations (Playnite does the same).
+        // Registry keys are sometimes missing — try default install paths.
         foreach (var candidate in new[]
                  {
                      @"C:\Program Files (x86)\Epic Games\",
@@ -59,8 +56,7 @@ public static class EpicPaths
 
     public static string GetExecutablePath(string rootPath)
     {
-        // Always prefer the 32-bit executable (Playnite's own note, GitHub issue
-        // JosefNemec/Playnite#1552).
+        // Prefer the 32-bit launcher exe when both exist.
         var p32 = Path.Combine(rootPath, "Launcher", "Portal", "Binaries", "Win32", "EpicGamesLauncher.exe");
         return File.Exists(p32)
             ? p32

@@ -1,17 +1,8 @@
 namespace Bridge.Services;
 
 /// <summary>
-/// Pure logic for process-tree playtime tracking — the algorithm Playnite's
-/// MonitorProcessTree uses (PROJECT_FOUNDATION.md §28.10): start with the
-/// launched PID, then every poll expand to include any process whose parent is
-/// already in the tree, and prune to the ones still alive. This is what makes
-/// launcher-based games (Genshin's launcher.exe, Epic/GOG frontends) track
-/// correctly: the launcher spawns the real game and exits, but the game stays
-/// in the tree as a descendant, so the session survives until the game itself
-/// closes.
-///
-/// Split from the OS snapshot (ProcessTreeSnapshot) so the expansion can be
-/// unit-tested with synthetic process tables — no real processes needed.
+/// Expands a process tree for playtime tracking: each poll adds children whose
+/// parent is already in the set. Unit-tested separately from OS snapshots.
 /// </summary>
 public static class ProcessTreeExpander
 {

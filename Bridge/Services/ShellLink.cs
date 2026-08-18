@@ -4,11 +4,7 @@ using System.Text;
 
 namespace Bridge.Services;
 
-/// <summary>
-/// Resolves a Windows shortcut (.lnk) to its target executable without the WSH
-/// scripting dependency Playnite uses (WshShell.CreateShortcut). Uses the native
-/// IShellLink COM interface via a small p/invoke shim.
-/// </summary>
+/// Resolves a .lnk shortcut to its target via IShellLink COM — no WSH dependency.
 internal static class ShellLink
 {
     public static string? ResolveTarget(string lnkPath)

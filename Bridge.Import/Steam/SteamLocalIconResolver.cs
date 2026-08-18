@@ -1,14 +1,9 @@
 namespace Bridge.Import.Steam;
 
 /// <summary>
-/// Resolves the artwork Steam keeps on disk for the library —
-/// appcache\librarycache\{appid}\ — the same images Playnite shows
-/// (PROJECT_FOUNDATION.md §28.26): the square 32x32 clienticon (a
-/// 40-hex-character .jpg), the vertical cover (library_600x900.jpg) and the
-/// widescreen hero background (library_hero.jpg). Wide header.jpg and
-/// logo.png also live alongside them but aren't used. Returns null when Steam
-/// isn't installed or that app has no cached file (downloads aren't guaranteed
-/// for every app), so callers fall back to web-sourced art.
+/// Local Steam library art under appcache\librarycache\{appid}\: 32×32
+/// clienticon (40-hex .jpg), cover (library_600x900.jpg), hero
+/// (library_hero.jpg). Returns null if Steam is missing or the app has no cache.
 /// </summary>
 public static class SteamLocalIconResolver
 {

@@ -3,11 +3,8 @@ using Bridge.Core.Enums;
 namespace Bridge.Core.Entities;
 
 /// <summary>
-/// Matches Playnite's CompletionStatus (just Id+Name) but folds in the role that
-/// Playnite tracks separately in a CompletionStatusSettings singleton row
-/// (PROJECT_FOUNDATION.md §28.12) — Kind marks which status is the "new game"
-/// default and which one auto-applies the first time a game is launched
-/// (§28.10's UpdateGameState logic). At most one status should have each Kind.
+/// User-defined completion label. <see cref="Kind"/> marks the default status for
+/// new games and the one applied on first launch.
 /// </summary>
 public class CompletionStatus : DatabaseObject
 {

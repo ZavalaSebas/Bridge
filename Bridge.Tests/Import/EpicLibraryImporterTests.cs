@@ -112,7 +112,7 @@ public class EpicLibraryImporterTests : IDisposable
 
         var games = Build().GetInstalledGames();
 
-        // No manifest for this app -> skipped (Playnite requires the manifest).
+        // No manifest for this app → skipped.
         Assert.Empty(games);
     }
 

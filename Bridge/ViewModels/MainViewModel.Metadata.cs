@@ -224,9 +224,7 @@ public partial class MainViewModel
         if (!string.IsNullOrWhiteSpace(metadata.Version))
             game.Version = metadata.Version;
 
-        // Merge links instead of replacing: Playnite shows the library links
-        // (Steam store, community, ...) together with the social ones a
-        // metadata provider adds (YouTube, Reddit, ...). Dedupe by URL.
+        // Merge links instead of replacing — keep store links and add social ones. Dedupe by URL.
         if (metadata.Links is { Count: > 0 })
         {
             var known = new HashSet<string>(game.Links.Select(l => l.Url), StringComparer.OrdinalIgnoreCase);

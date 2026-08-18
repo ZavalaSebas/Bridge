@@ -5,12 +5,8 @@ using Bridge.Core.Enums;
 
 namespace Bridge.Emulation;
 
-/// <summary>
-/// Bridge-managed ROM import. It recursively finds ROMs recognised by
-/// <see cref="RomPlatformCatalog"/>, creates one Game per previously unseen
-/// path, and leaves the platform/reference resolution to MainViewModel (the
-/// scanner deliberately has no persistence dependency).
-/// </summary>
+/// Recursively imports ROMs recognized by <see cref="RomPlatformCatalog"/>.
+/// Persistence is handled by the caller.
 public partial class RomScanner
 {
     public IReadOnlyList<Game> Scan(string directory, IEnumerable<Game> existingGames)
@@ -80,10 +76,7 @@ public partial class RomScanner
         }
     }
 
-    // Mirrors Playnite's RomName.SanitizeName (Scanner.cs): strips bracketed
-    // group/region/language tags and parenthesized flags ("Super Mario [U][!]"
-    // -> "Super Mario"), removes trademark symbols entirely and normalizes
-    // underscores to spaces. Curly apostrophes are flattened to straight ones.
+    // Strips [region]/ (flags) tags and trademark symbols; normalizes underscores.
     [GeneratedRegex(@"\[(.*?)\]|\((.*?)\)", RegexOptions.Compiled)]
     private static partial Regex RomPropsRegex();
 

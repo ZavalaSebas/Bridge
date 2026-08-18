@@ -1,6 +1,6 @@
 namespace Bridge.Core.Entities;
 
-/// <summary>Matches Playnite's Link (PROJECT_FOUNDATION.md §28.1 — the class is named Link, not "LinkItem").</summary>
+/// <summary>Named URL attached to a game (store, wiki, social, etc.).</summary>
 public class Link
 {
     public string Name { get; set; } = string.Empty;

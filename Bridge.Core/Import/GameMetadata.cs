@@ -3,14 +3,7 @@ using Bridge.Core.Entities;
 namespace Bridge.Core.Import;
 
 /// <summary>
-/// What an importer (Bridge.Import) produces from a source, before it becomes a
-/// persisted Game. Mirrors the role of Playnite's GameMetadata (PROJECT_FOUNDATION.md
-/// §28.1) but drops the MetadataProperty abstraction — Playnite needs it because
-/// third-party plugins can't know a reference entity's real Guid ahead of time, so
-/// they hand back either a name or an id and let Playnite's ItemCollection resolve
-/// it (§28.2). Bridge's importers are internal code with a real Bridge.Storage
-/// repository to call directly, so they can just resolve-or-create by name
-/// themselves and hand back real Guids here — one less type, same capability.
+/// Metadata fetched from a provider before it is merged into a persisted <see cref="Game"/>.
 /// </summary>
 public class GameMetadata
 {

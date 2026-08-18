@@ -2,8 +2,7 @@ using Bridge.Metadata;
 
 namespace Bridge.Tests.Metadata;
 
-// Tests the Playnite public IGDB proxy integration. These hit the real
-// endpoint — excluded from default CI via Category=Integration.
+// Integration tests against the hosted IGDB proxy — Category=Integration, not default CI.
 public class PlayniteIgdbProviderTests
 {
     [Fact]
@@ -29,8 +28,7 @@ public class PlayniteIgdbProviderTests
     {
         var provider = new PlayniteIgdbProvider(new HttpClient());
 
-        // Playnite's proxy returns null/empty data for a nonsense term rather
-        // than a match — the provider must map that to null, not crash.
+        // Nonsense search terms should return null, not throw.
         var metadata = await provider.SearchAsync("zxcvbnmasdfghjklqwertyuiop");
 
         Assert.Null(metadata);

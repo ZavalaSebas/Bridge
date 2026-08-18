@@ -35,8 +35,7 @@ namespace Bridge
             DialogResult = true;
         }
 
-        // Details tab: create a new reference entity (genre/developer/publisher/
-        // platform) on the fly, like Playnite's "+" button next to each list.
+        // Create genre/developer/publisher/platform entries from the edit dialog.
         private void AddReference_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: string kind })
@@ -103,7 +102,7 @@ namespace Bridge
         }
 
         // Media tab: search for an image on the web and put the chosen URL into
-        // the bound field (Playnite's Google-image-picker, keyless via DDG).
+        // Image search for the bound artwork field (DuckDuckGo, no API key).
         private void SearchWeb_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: string field })

@@ -68,8 +68,7 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
         // property is stored as a JSON text column via JsonValueConverter — see
         // Converters/JsonValueConverter.cs for why. Reference-entity ids
         // (GenreIds, DeveloperIds, etc.) are stored the same way: Game only ever
-        // holds ids, resolving them to real Genre/Company/etc. objects is the
-        // caller's job (matches Playnite's own pattern, PROJECT_FOUNDATION.md §28.1).
+        // holds ids; resolving them to Genre/Company/etc. objects is the caller's job.
         modelBuilder.Entity<Game>(e =>
         {
             e.HasKey(g => g.Id);
@@ -99,8 +98,7 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
             e.Property(g => g.AgeRatingIds).HasConversion(new JsonValueConverter<List<Guid>>());
             e.Property(g => g.RegionIds).HasConversion(new JsonValueConverter<List<Guid>>());
 
-            // Dedup lookup index — mirrors Playnite's (GameId, PluginId) key,
-            // adapted to (ExternalId, SourceId). See ARCHITECTURE.md ADR-6.
+            // Dedup by store id + source. See ARCHITECTURE.md ADR-6.
             e.HasIndex(g => new { g.ExternalId, g.SourceId }).IsUnique();
         });
     }

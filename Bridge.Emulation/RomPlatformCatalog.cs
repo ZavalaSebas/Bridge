@@ -1,10 +1,6 @@
 namespace Bridge.Emulation;
 
-/// <summary>
-/// Bridge's curated ROM recognition table. This deliberately contains stable
-/// platform/core identifiers only: download versions and hashes are resolved at
-/// install time, so normal Libretro updates never require a Bridge release.
-/// </summary>
+/// Curated ROM platform → Libretro core mapping. Versions resolve at install time.
 public sealed record RomPlatformDefinition(string PlatformName, string CoreFileName, params string[] Extensions);
 
 public static class RomPlatformCatalog

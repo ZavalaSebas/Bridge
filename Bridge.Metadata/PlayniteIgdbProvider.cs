@@ -9,17 +9,8 @@ using ReleaseDate = Bridge.Core.Entities.ReleaseDate;
 namespace Bridge.Metadata;
 
 /// <summary>
-/// Metadata provider backed by Playnite's public IGDB proxy
-/// (https://api2.playnite.link/api/igdb/...). Playnite runs its own backend with
-/// IGDB credentials embedded server-side, so its clients get IGDB metadata with
-/// no user configuration — we use the same public endpoint the IGDBMetadata
-/// PlayniteExtension plugin calls (IgdbClient.cs), so Bridge gets the same
-/// zero-config IGDB coverage while the user can still configure their own IGDB
-/// key (IgdbMetadataProvider) if they prefer.
-///
-/// Caveat: this depends on Playnite's infrastructure; if it changes or goes
-/// away, Bridge should fall back to the user-configured provider or a future
-/// backend of its own.
+/// Zero-config IGDB metadata via a public hosted proxy. Users can still use
+/// IgdbMetadataProvider with their own Twitch/IGDB credentials.
 /// </summary>
 public sealed class PlayniteIgdbProvider(HttpClient httpClient) : IGameMetadataProvider
 {
@@ -92,9 +83,7 @@ public sealed class PlayniteIgdbProvider(HttpClient httpClient) : IGameMetadataP
             metadata.Icon = IgdbMetadataProvider.UpgradeImageUrl(coverUrl, "t_thumb");
         }
 
-        // Background: IGDB artworks are the wide banner art — the same thing
-        // Playnite uses for the details background. Prefer an artwork, fall
-        // back to a screenshot.
+        // Wide IGDB artwork for the details background; fall back to a screenshot.
         var backgroundUrl = game.ArtworksExpanded?.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.Url))?.Url;
         if (string.IsNullOrWhiteSpace(backgroundUrl))
         {

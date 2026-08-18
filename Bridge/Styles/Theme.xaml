@@ -44,8 +44,7 @@
     <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
     <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
 
-    <!-- Fondos: tinte azul/indigo (como el MainColor de Playnite #2C3A67) en vez
-         de gris puro, para darle personalidad a la paleta dark. -->
+    <!-- Fondos: tinte azul/indigo (#2C3A67) en vez de gris puro. -->
     <Color x:Key="Bridge.Background.Primary.Color">#151A28</Color>
     <Color x:Key="Bridge.Background.Secondary.Color">#1B2132</Color>
     <Color x:Key="Bridge.Background.Tertiary.Color">#232B40</Color>
@@ -191,13 +190,10 @@
     <!-- Sidebar: semitransparente para dejar pasar el Mica/Acrylic de la
          ventana (efecto vidrio). Sobre el fallback sólido de Win10 se ve
          simplemente como un panel oscuro — aceptable. Con el fondo borroso del
-         juego seleccionado detrás, la translucidez es la que crea el look de
-         "cristal empañado" (como el default theme de Playnite). -->
+         juego seleccionado detrás, la translucidez da el efecto de cristal empañado. -->
     <SolidColorBrush x:Key="Bridge.Sidebar.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" Opacity="0.75" />
 
-    <!-- Frosted-glass window background: el fondo del juego seleccionado, borroso
-         y oscurecido, detrás de todo el contenido (replica de
-         FadeImage + BlurEffect de Playnite). -->
+    <!-- Fondo borroso del juego seleccionado detrás de todo el contenido. -->
     <sys:Double x:Key="Bridge.Background.BlurRadius">40</sys:Double>
     <SolidColorBrush x:Key="Bridge.Background.DarkOverlay" Color="#B2000000" />
 
@@ -207,10 +203,10 @@
     <SolidColorBrush x:Key="Bridge.Card.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" />
     <SolidColorBrush x:Key="Bridge.Card.Hover" Color="{StaticResource Bridge.Background.Quaternary.Color}" />
 
-    <!-- Acento-tinted hover para filas seleccionables (estilo Playnite HoverColor) -->
+    <!-- Hover con tinte de acento para filas seleccionables. -->
     <SolidColorBrush x:Key="Bridge.Accent.Hover" Color="#1F4E79" />
 
-    <!-- Scrollbar con pulgar de acento (como el GlyphBrush de Playnite). -->
+    <!-- Scrollbar con pulgar de acento. -->
     <Style x:Key="{x:Type ScrollBar}" TargetType="{x:Type ScrollBar}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Width" Value="12" />

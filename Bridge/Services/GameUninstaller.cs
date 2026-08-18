@@ -8,19 +8,8 @@ using Microsoft.Win32;
 namespace Bridge.Services;
 
 /// <summary>
-/// Resolves and runs the real uninstaller for a game (Playnite's
-/// GameUninstaller equivalent). Per-source:
-///  - Steam games open `steam://uninstall/{appid}` and let Steam do the work.
-///  - Epic games have no `uninstall` action in their launcher protocol (only
-///    launch/updatecheck/installer), so — like Playnite's EpicUninstallController
-///    — we open the library page for the user to uninstall from there and watch
-///    LauncherInstalled.dat until the game disappears from the installed list.
-///  - Anything else matches a Windows Uninstall registry entry (DisplayName
-///    equal to the game name, or InstallLocation equal to the install folder)
-///    and runs its UninstallString.
-/// After launching, <see cref="RunAsync"/> waits for the game to actually leave
-/// (install folder gone, or Epic app list no longer containing it) so the caller
-/// only flips IsInstalled once the uninstaller provably finished.
+/// Runs the platform uninstall flow per source (Steam URI, Epic library page, registry entry).
+/// Waits until the game is no longer installed before returning.
 /// </summary>
 public sealed class GameUninstaller
 {

@@ -4,15 +4,8 @@ using Bridge.Core.Enums;
 namespace Bridge.Import.Steam;
 
 /// <summary>
-/// Builds the automatic Steam play action for a Steam-imported game, mirroring
-/// Playnite's SteamPlayController (PROJECT_FOUNDATION.md §28.26): Playnite never
-/// stores a GameAction for Steam games — the plugin resolves one at runtime and
-/// launches via the steam:// URI, never the local .exe (Steamworks DRM — running
-/// the exe directly without the Steam client fails, which is why Playnite doesn't).
-///
-/// The launched action is a URL action: steam://rungameid/{appid}, tracked by
-/// directory (watch processes running from the game's InstallDirectory) since the
-/// launched process is steam.exe, not the game.
+/// Runtime Steam play action: steam://rungameid/{appid}, tracked by install
+/// directory because the launched process is steam.exe, not the game exe.
 /// </summary>
 public static class SteamPlayActions
 {

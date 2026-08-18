@@ -826,17 +826,7 @@ public partial class MainViewModel : ObservableObject
         };
     }
 
-    // Playnite shows Steam's square 32x32 clienticon (PROJECT_FOUNDATION.md
-    // §28.26), which Steam keeps locally in appcache\librarycache\{appid}\ —
-    // the web API no longer returns the `clienticon` field, so the local file
-    // is the faithful source. Falls back to whatever Icon already holds
-    // (e.g. the header.jpg URL from metadata) when Steam isn't installed or
-    // that app has no cached icon.
-    // Prefers the artwork Steam caches locally (appcache\librarycache\{appid}\)
-    // over web URLs so the library shows complete art the moment a game is
-    // loaded — no download, no "blank until metadata" state. Resolves all three
-    // pieces (square icon, vertical cover, widescreen hero background) and only
-    // overrides fields a local file exists for.
+    // Prefer Steam's local librarycache art (icon, cover, hero) over web URLs.
     private void ApplySteamLocalArtwork(Game game)
     {
         if (game.SourceId == GameSource.ManualId || !uint.TryParse(game.ExternalId, out _))

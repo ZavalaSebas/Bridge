@@ -2,14 +2,7 @@ using System.ComponentModel;
 
 namespace Bridge.Core.Enums;
 
-/// <summary>
-/// Grouping modes for the library list, mirroring Playnite's group options
-/// (PROJECT_FOUNDATION.md §12) for the fields Bridge can actually resolve.
-/// "None" disables grouping. Fields needing repositories that don't exist yet
-/// (AgeRating, Category, Feature, Series, Region, Tag) are left out for now —
-/// see GameSortField for the same constraint. "Library" groups by the game's
-/// source (SourceId resolved to its display name).
-/// </summary>
+/// <summary>Library grouping modes. "Library" groups by import source name.</summary>
 public enum GameGroupField
 {
     [Description("Don't group")]
