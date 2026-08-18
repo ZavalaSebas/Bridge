@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop working end-to-end (Fases 1-8, including the Fase 7 WPF-UI visual overhaul) plus real Steam library detection; Fase 9 (consolidation) not started
 >
-> **Last updated:** 2026-08-08
+> **Last updated:** 2026-08-17
 
 ## Project Overview
 
@@ -67,6 +67,7 @@ The MVP defined in the foundation notes:
 - **Web image search in the editor** — `ImageSearchWindow` + `WebImageSearchService` let the user pick Icon/Cover/Background art from web image-search results (plus a local-file browse fallback)
 - **Configurable themes** — `ThemeManager` + `ThemeColorWindow`: 9 accent presets plus a custom color picker, applied at runtime and persisted to `theme.json`
 - **Rich descriptions** — Steam descriptions are stored and rendered as `DescriptionBlocks` (text / heading / subheading / list / image blocks), not a single raw string
+- **Self-updating** — `AppUpdateService` checks GitHub Releases (`ZavalaSebas/Bridge`) against the assembly version: silently at startup and on demand via **Check for updates…** in the app menu, then downloads the new `Bridge.exe` and applies the safe swap (running exe → `.old`, downloaded → current, restart, `.old` cleaned on next launch). "Not now" on the confirm dialog keeps the update pending in the title bar (download button next to random game) until applied. Only in the published single-file build (`CanSelfUpdate`); security-bound to GitHub hosts over HTTPS with a 256 MB cap. See the "Version Management" section in DEVELOPMENT.md
 
 ### Future Versions — Backlog
 - Additional library sources beyond Steam and Epic (GOG, itch.io, ...)
@@ -98,9 +99,9 @@ Bridge/
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider/IgdbAuthClient/IgdbSettings
 ├── Bridge.Emulation/    # not created — see note below
-└── Bridge.Tests/        # created — 199 tests, all passing (dotnet test Bridge.slnx)
+└── Bridge.Tests/        # created — 202 tests, all passing (dotnet test Bridge.slnx)
 │                        #   ViewModels/ (GameEditViewModelTests)
-│                        #   Services/ (RomScannerTests, InstalledGameDetectorTests)
+│                        #   Services/ (AppUpdateServiceTests, RomScannerTests, InstalledGameDetectorTests)
 │                        #   Metadata/ (IgdbAuthClientTests, IgdbMetadataProviderTests,
 │                        #               BridgeIgdbProviderTests, SteamDescriptionBlocksTests,
 │                        #               SteamSearchRegexTests)

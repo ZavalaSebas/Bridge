@@ -33,6 +33,7 @@ namespace Bridge
             RemoteImageCache.UiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
             Directory.CreateDirectory(Config.AppDataPath);
+            AppUpdateService.CleanupOldExe();
 
             var services = new ServiceCollection();
             ConfigureServices(services);
@@ -130,6 +131,7 @@ namespace Bridge
             services.AddSingleton<EpicLibraryImporter>();
             services.AddSingleton<WebImageSearchService>();
             services.AddSingleton<InstalledGameDetector>();
+            services.AddSingleton<AppUpdateService>();
 
             // IGDB: settings loaded from disk once at startup (see
             // IgdbSettingsStore — separate JSON file, not bridge.db), then
@@ -137,7 +139,14 @@ namespace Bridge
             // to MainViewModel without extra plumbing. One shared HttpClient
             // per .NET guidance (don't new one up per request).
             services.AddSingleton(IgdbSettingsStore.Load());
-            services.AddSingleton<HttpClient>();
+            services.AddSingleton(sp =>
+            {
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(Config.RequestTimeoutSeconds)
+                };
+                return client;
+            });
 
             // Bridge's own IGDB proxy (Cloudflare Worker): the IGDB/Twitch
             // credentials live as Worker Secrets server-side, so Bridge gets

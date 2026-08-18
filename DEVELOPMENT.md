@@ -252,16 +252,16 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 ```
 
 - `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.1.0.0`)
-- **Updater pattern** (optional — **not implemented**, this is a pattern reference, not a shipped feature): fetch `https://api.github.com/repos/{owner}/{repo}/releases/latest`, compare `Version.TryParse(tag.TrimStart('v'))` against `Config.AssemblyVersion`. If remote is newer, download the `.exe` asset.
+- **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases/latest` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), compares `Version.TryParse(tag.TrimStart('v'))` against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`).
 
   The most critical part is the **safe executable swap** — never overwrite the running `.exe` directly:
 
   ```csharp
   var currentExe = Environment.ProcessPath;
-  var tempExe = Path.Combine(Path.GetTempPath(), $"update_{Guid.NewGuid()}.exe");
+  var tempExe = Path.Combine(Path.GetTempPath(), $"Bridge_update_{Guid.NewGuid()}.exe");
   var oldExe = currentExe + ".old";
 
-  await NetworkHelper.DownloadFileAsync(downloadUrl, tempExe);
+  await DownloadFileAsync(downloadUrl, tempExe, progress);
   File.Delete(oldExe);           // discard any stale .old
   File.Move(currentExe, oldExe); // rename running exe → .old
   File.Move(tempExe, currentExe); // rename downloaded → current location
@@ -270,7 +270,7 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
   Environment.Exit(0);           // terminate running instance so new exe takes over
   ```
 
-  On next launch, `CleanupOldExe()` deletes the `.old`. If the new process fails to start, a rollback moves `.old` back.
+  On next launch, `AppUpdateService.CleanupOldExe()` (called from `App.OnStartup`, before any window opens) deletes the `.old`. If the swap throws, `RollbackSwap` restores `.old` back to the current path and removes the temp file (best-effort). Security constraints: downloads only over HTTPS, only from GitHub's hosts (`api.github.com`, `github.com`, `*.githubusercontent.com` — with redirects manually followed against the allowlist), capped at 256 MB, with a 15-minute timeout and byte-count progress reported to the status bar. `CanSelfUpdate` returns false in dev (`dotnet run`/the build output) so updates never try to replace a non-published exe. Covered by `Bridge.Tests/Services/AppUpdateServiceTests.cs`.
 
 **To bump the version**: edit `<Version>` in the csproj, commit with a descriptive message, push to `main`.
 
@@ -306,7 +306,7 @@ When the user dismisses the dialog with "Don't show again", write the current ve
 
 ### Constants Pattern (`Config.cs`)
 
-> **Partially implemented** — the real `Bridge/Config.cs` only contains `AppName`, `AppDataPath`, and `DatabasePath`. `GitHubApiUrl`, `RequestTimeoutSeconds`, and any URL/timeout constants below do **not** exist yet; add them here when the updater/branding features are actually built.
+> **Implemented** — the real `Bridge/Config.cs` holds `AppName`, `AppDataPath`, `DatabasePath`, the emulator paths, `GitHubApiUrl`, `RequestTimeoutSeconds`, `UpdateAssetName`, and `AssemblyVersion` (read from the executing assembly).
 
 **Prefer keeping constants centralized** in a dedicated `Config.cs` file rather than scattered across classes.
 
@@ -502,6 +502,7 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 102 tests, all passin
 - `Import/SteamLocalPlaytimeResolverTests.cs` — reads real `localconfig.vdf` shape: minutes→seconds conversion, LastPlayed→LastActivity, zero-playtime skipped, missing LastPlayed stays null, multi-account merge (max playtime / latest activity), missing files and malformed config return null.
 - `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
 - `Services/RomScannerTests.cs` — extension recognition via `RomPlatformCatalog`, dedup-by-existing-ROM-path, missing-directory error, recursive scan into subfolders, companion-file filtering (`.sav`/`.srm`), `SanitizeName` + `ToSearchName` name normalization, and the managed "Bridge RetroArch" `GameAction` creation.
+- `Services/AppUpdateServiceTests.cs` — `CheckForUpdateAsync` against the fake `HttpMessageHandler`: a newer remote release → `UpdateAvailable` with the right version + `Bridge.exe` download URL; a matching version → `UpToDate`; a release with no `Bridge.exe` asset → `Failed`. The swap/restart itself is not covered (it replaces the running exe — see the deliberately-not-covered note below).
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
 - `Statistics/GameSortComparerTests.cs` — `GameSortComparer` sort-by-field logic: ascending/descending by name, playtime, last activity, favorite, plus reference resolution (Developer, Source) through the name lookups and the "empty values sort last in both directions" rule.
 - `Statistics/GameGroupResolverTests.cs` — `GameGroupResolver` group-key logic: first-letter Name groups, reference-name resolution (Developer/Library), install/completion buckets, playtime/install-size buckets, drive letter, release year, and the empty key for "Don't group".
@@ -754,6 +755,7 @@ public static class Config
 | `Bridge/Services/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |
 | `Bridge/Services/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions) that drives ROM recognition |
 | `Bridge/Services/RomScanner.cs` | Recursive ROM scan by extension, companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
+| `Bridge/Services/AppUpdateService.cs` | Self-updater: checks GitHub Releases against `Config.AssemblyVersion`, downloads the `Bridge.exe` asset with host-allowlist + size-cap + progress, applies the safe swap (running exe → `.old`, downloaded → current, restart, startup cleanup) — see "Version Management" above |
 
 ## IGDB Metadata Infrastructure
 
