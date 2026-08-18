@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Bridge.Converters;
 using Bridge.Core.Contracts;
+using Bridge.Core.Entities;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
@@ -116,6 +117,10 @@ namespace Bridge
 
             Exit += (_, _) =>
             {
+                if (Services.GetService<MetadataHttpClient>() is IDisposable metadataClient)
+                    metadataClient.Dispose();
+                if (Services.GetService<DownloadHttpClient>() is IDisposable downloadClient)
+                    downloadClient.Dispose();
                 if (Services is IDisposable disposable)
                     disposable.Dispose();
             };
@@ -135,53 +140,45 @@ namespace Bridge
             // subscribe to its events once for the lifetime of the app.
             services.AddSingleton<GameLauncher>();
             services.AddSingleton<RomScanner>();
-            services.AddSingleton<RetroArchService>();
             services.AddSingleton<SteamLibraryImporter>();
             services.AddSingleton<EpicLibraryImporter>();
-            services.AddSingleton<WebImageSearchService>();
             services.AddSingleton<InstalledGameDetector>();
             services.AddSingleton<MetadataSyncService>();
-            services.AddSingleton<AppUpdateService>();
 
             // IGDB: settings loaded from disk once at startup (see
             // IgdbSettingsStore — separate JSON file, not bridge.db), then
             // shared as a singleton so IgdbSettingsWindow's edits are visible
-            // to MainViewModel without extra plumbing. One shared HttpClient
-            // per .NET guidance (don't new one up per request).
+            // to MainViewModel without extra plumbing. Metadata and download
+            // HttpClients are separate so long RetroArch downloads never share
+            // timeout state with quick metadata/API calls.
             services.AddSingleton(IgdbSettingsStore.Load());
-            services.AddSingleton(sp =>
-            {
-                var client = new HttpClient
-                {
-                    Timeout = TimeSpan.FromSeconds(Config.MetadataRequestTimeoutSeconds)
-                };
-                return client;
-            });
+            services.AddSingleton<MetadataHttpClient>();
+            services.AddSingleton<DownloadHttpClient>();
 
-            // Bridge's own IGDB proxy (Cloudflare Worker): the IGDB/Twitch
-            // credentials live as Worker Secrets server-side, so Bridge gets
-            // IGDB metadata with zero user configuration — the same architecture
-            // Playnite uses, but our own infra. First in the chain.
-            services.AddSingleton<BridgeIgdbProvider>();
+            services.AddSingleton(sp => new BridgeIgdbProvider(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<BridgeIgdbProvider>());
 
-            // Fallback: Playnite's public IGDB proxy (same zero-config behavior)
-            // in case our own Worker is unreachable.
-            services.AddSingleton<PlayniteIgdbProvider>();
+            services.AddSingleton(sp => new PlayniteIgdbProvider(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<PlayniteIgdbProvider>());
 
-            // User-configured IGDB (optional): only used if both proxies fail
-            // or return nothing.
-            services.AddSingleton<IgdbAuthClient>();
-            services.AddSingleton<IgdbMetadataProvider>();
+            services.AddSingleton(sp => new IgdbAuthClient(
+                sp.GetRequiredService<MetadataHttpClient>().Client,
+                sp.GetRequiredService<IgdbSettings>()));
+            services.AddSingleton(sp => new IgdbMetadataProvider(
+                sp.GetRequiredService<MetadataHttpClient>().Client,
+                sp.GetRequiredService<IgdbSettings>(),
+                sp.GetRequiredService<IgdbAuthClient>()));
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<IgdbMetadataProvider>());
 
-            // Steam Store metadata: 100% HTTP, anonymous, no API key needed.
-            // Registered as both concrete (for appid-specific lookups on
-            // Steam-imported games) and via IGameMetadataProvider for the
-            // multi-provider fallback chain in MainViewModel.
-            services.AddSingleton<SteamMetadataProvider>();
+            services.AddSingleton(sp => new SteamMetadataProvider(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<SteamMetadataProvider>());
+
+            services.AddSingleton(sp => new WebImageSearchService(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new AppUpdateService(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new RetroArchService(
+                sp.GetRequiredService<IRepository<Emulator>>(),
+                sp.GetRequiredService<IRepository<Platform>>(),
+                sp.GetRequiredService<DownloadHttpClient>().Client));
 
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();
