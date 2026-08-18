@@ -1,9 +1,9 @@
-using System.Windows;
 using Bridge.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace Bridge;
 
-public partial class EmulationSettingsWindow : Window
+public partial class EmulationSettingsWindow : FluentWindow
 {
     public EmulationSettingsWindow(EmulationSettingsViewModel viewModel)
     {

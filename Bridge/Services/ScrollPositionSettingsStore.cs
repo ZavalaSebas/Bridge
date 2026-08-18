@@ -1,4 +1,5 @@
 using System.IO;
+using Bridge.Core.Enums;
 
 namespace Bridge.Services;
 
@@ -21,12 +22,25 @@ public static class ScrollPositionSettingsStore
 
     public static double Load(string view)
     {
-        return LoadValue(view);
+        return LoadValue(NormalizeLegacyViewKey(view));
     }
 
     public static void Save(string view, double offset)
     {
-        SaveValue(view, offset);
+        SaveValue(NormalizeLegacyViewKey(view), offset);
+    }
+
+    /// <summary>Maps legacy view keys (e.g. Grid) to current enum names (Covers).</summary>
+    internal static string NormalizeLegacyViewKey(string view)
+    {
+        var trimmed = view.Trim();
+        if (trimmed.Equals("Grid", StringComparison.OrdinalIgnoreCase))
+            return nameof(ViewMode.Covers);
+
+        if (Enum.TryParse<ViewMode>(trimmed, ignoreCase: true, out var mode))
+            return mode.ToString();
+
+        return trimmed;
     }
 
     public static double LoadTableNameWidth()

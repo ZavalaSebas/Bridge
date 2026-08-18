@@ -4,9 +4,9 @@ namespace Bridge.Core.Enums;
 
 /// <summary>
 /// Main content view modes, mirroring Playnite's view switcher. "List" is the
-/// list + detail panel; "Grid" is a cover wall with hover actions (Play / Info)
-/// over each cover; "Table" is a detailed list where every row shows the same
-/// fields as the info window (no images).
+/// list + detail panel; "Covers" is a cover wall with Play / Info actions;
+/// "Table" is a detailed list where every row shows the same fields as the
+/// info window (no images).
 /// </summary>
 public enum ViewMode
 {
@@ -14,8 +14,8 @@ public enum ViewMode
     List,
 
     [Description("Covers")]
-    Grid,
+    Covers,
 
-    [Description("Details")]
+    [Description("Table")]
     Table
 }

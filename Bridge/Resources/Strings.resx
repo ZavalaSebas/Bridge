@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Select" xml:space="preserve"><value>Select</value></data>
+  <data name="Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Name" xml:space="preserve"><value>Name</value></data>
+  <data name="ClientId" xml:space="preserve"><value>Client ID</value></data>
+  <data name="ClientSecret" xml:space="preserve"><value>Client Secret</value></data>
+  <data name="InstallDirectory" xml:space="preserve"><value>Install Directory</value></data>
+  <data name="CheckForUpdates" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Searching" xml:space="preserve"><value>Searching...</value></data>
+  <data name="NoResults" xml:space="preserve"><value>No results.</value></data>
+  <data name="SearchFailed" xml:space="preserve"><value>Search failed.</value></data>
+  <data name="ResultsCountFormat" xml:space="preserve"><value>{0} results</value></data>
+  <data name="EmulationSettingsTitle" xml:space="preserve"><value>Emulation</value></data>
+  <data name="EmulationManagedRetroArchHeading" xml:space="preserve"><value>Bridge-managed RetroArch</value></data>
+  <data name="EmulationManagedRetroArchDescription" xml:space="preserve"><value>Bridge detects supported ROM platforms automatically and downloads RetroArch plus the required core when you first play. No external emulator setup is required.</value></data>
+  <data name="EmulationSupportedSystems" xml:space="preserve"><value>Supported systems include NES, SNES, Nintendo 64, Game Boy, Game Boy Advance, Nintendo DS, Sega 8/16-bit, Atari, PC Engine and WonderSwan.</value></data>
+  <data name="IgdbSettingsTitle" xml:space="preserve"><value>IGDB Settings</value></data>
+  <data name="IgdbSettingsHelp" xml:space="preserve"><value>Get a free Client ID and Secret from a Twitch Developer account: dev.twitch.tv/console/apps — register any app, "Client Type" doesn't matter for this.</value></data>
+  <data name="ConfigureEmulatorTitle" xml:space="preserve"><value>Configure Emulator</value></data>
+  <data name="ExecutableRelativeOrAbsolute" xml:space="preserve"><value>Executable (relative to Install Directory, or absolute)</value></data>
+  <data name="ArgumentsRomPathPlaceholder" xml:space="preserve"><value>Arguments (use {RomPath} where the ROM path goes)</value></data>
+  <data name="RomExtensionsCommaSeparated" xml:space="preserve"><value>ROM extensions (comma-separated, e.g. nes, zip)</value></data>
+  <data name="SearchImagesTitle" xml:space="preserve"><value>Search images</value></data>
+  <data name="SearchImagesQueryName" xml:space="preserve"><value>Image search query</value></data>
+  <data name="SearchImagesQueryTooltip" xml:space="preserve"><value>Search term (game name)</value></data>
+  <data name="CustomThemeColorTitle" xml:space="preserve"><value>Custom Theme Color</value></data>
+  <data name="CustomThemeColorDescription" xml:space="preserve"><value>Pick an accent color — the whole theme recomputes from it.</value></data>
+  <data name="ViewList" xml:space="preserve"><value>List view</value></data>
+  <data name="ViewCovers" xml:space="preserve"><value>Covers view</value></data>
+  <data name="ViewTable" xml:space="preserve"><value>Table view</value></data>
+  <data name="SearchGames" xml:space="preserve"><value>Search games</value></data>
+  <data name="SearchGamesTooltip" xml:space="preserve"><value>Search games (Ctrl+F)</value></data>
+  <data name="BridgeMenu" xml:space="preserve"><value>Bridge menu</value></data>
+  <data name="FilterPresets" xml:space="preserve"><value>Filter presets</value></data>
+  <data name="SortSettings" xml:space="preserve"><value>Sort settings</value></data>
+  <data name="GroupSettings" xml:space="preserve"><value>Group settings</value></data>
+  <data name="SelectRandomGame" xml:space="preserve"><value>Select random game</value></data>
+  <data name="Library" xml:space="preserve"><value>Library</value></data>
+  <data name="Statistics" xml:space="preserve"><value>Statistics</value></data>
+</root>

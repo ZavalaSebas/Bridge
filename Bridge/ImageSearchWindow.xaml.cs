@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using Bridge.Resources;
 using Bridge.Services;
+using Wpf.Ui.Controls;
 
 namespace Bridge;
 
-public partial class ImageSearchWindow : Window
+public partial class ImageSearchWindow : FluentWindow
 {
     private readonly WebImageSearchService _searchService;
     private readonly ObservableCollection<ImageSearchResult> _results = [];
@@ -37,7 +39,7 @@ public partial class ImageSearchWindow : Window
             return;
 
         _results.Clear();
-        StatusText.Text = "Searching...";
+        StatusText.Text = Strings.Searching;
         Cursor = Cursors.Wait;
 
         try
@@ -45,11 +47,13 @@ public partial class ImageSearchWindow : Window
             var found = await _searchService.SearchAsync(query);
             foreach (var result in found)
                 _results.Add(result);
-            StatusText.Text = found.Count == 0 ? "No results." : $"{found.Count} results";
+            StatusText.Text = found.Count == 0
+                ? Strings.NoResults
+                : string.Format(Strings.ResultsCountFormat, found.Count);
         }
         catch
         {
-            StatusText.Text = "Search failed.";
+            StatusText.Text = Strings.SearchFailed;
         }
         finally
         {

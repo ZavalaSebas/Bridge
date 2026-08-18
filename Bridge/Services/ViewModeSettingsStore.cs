@@ -4,7 +4,7 @@ using Bridge.Core.Enums;
 namespace Bridge.Services;
 
 /// <summary>
-/// Persists the last-selected library view (List/Grid/Table) in a small text
+/// Persists the last-selected library view (List/Covers/Table) in a small text
 /// file under AppDataPath, so reopening Bridge restores the view you were using.
 /// Same pattern as ThemeManager: a plain file, tolerant of corruption, and
 /// saving never crashes the app.
@@ -13,14 +13,30 @@ public static class ViewModeSettingsStore
 {
     private static string SettingsFile => Path.Combine(Config.AppDataPath, "viewmode.txt");
 
+    /// <summary>
+    /// Maps legacy persisted enum names to the current <see cref="ViewMode"/> values.
+    /// </summary>
+    internal static string NormalizeLegacyName(string raw)
+    {
+        var trimmed = raw.Trim();
+        if (trimmed.Equals("Grid", StringComparison.OrdinalIgnoreCase))
+            return nameof(ViewMode.Covers);
+
+        if (Enum.TryParse<ViewMode>(trimmed, ignoreCase: true, out var mode))
+            return mode.ToString();
+
+        return trimmed;
+    }
+
     public static ViewMode Load()
     {
         try
         {
-            if (File.Exists(SettingsFile) &&
-                Enum.TryParse<ViewMode>(File.ReadAllText(SettingsFile).Trim(), out var saved))
+            if (File.Exists(SettingsFile))
             {
-                return saved;
+                var normalized = NormalizeLegacyName(File.ReadAllText(SettingsFile));
+                if (Enum.TryParse<ViewMode>(normalized, out var saved))
+                    return saved;
             }
         }
         catch
