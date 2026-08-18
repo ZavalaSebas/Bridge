@@ -11,6 +11,8 @@
     <!-- Brush) por cada token.                                               -->
     <!-- =================================================================== -->
 
+    <BitmapImage x:Key="Bridge.LogoImage" UriSource="pack://application:,,,/Assets/BridgeLogo.png" />
+
     <!-- Acentos: el primario (#007ACC) es navegación/UI general y además es
          el SystemAccent que Wpf.Ui inyecta en AccentButton*; el secundario
          (#10B981) es EXCLUSIVO del botón Play / CTAs de lanzamiento, no se
