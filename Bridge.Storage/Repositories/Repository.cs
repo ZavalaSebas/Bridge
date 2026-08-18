@@ -48,11 +48,10 @@ public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : D
 
     public T GetOrCreateByName(string name)
     {
-        // Normalize the search term (stored rows keep the name the caller gave
-        // them). Lower() here translates to SQLite's ASCII-only lower(), i.e.
-        // effectively ordinal — matching the rest of the app's OrdinalIgnoreCase
-        // comparisons. No Trim meant "Action" vs "Action " created duplicates.
-        var normalized = name.Trim();
+        var normalized = name?.Trim() ?? string.Empty;
+        if (normalized.Length == 0)
+            throw new ArgumentException("Reference entity name cannot be empty.", nameof(name));
+
         var existing = Set.FirstOrDefault(x => x.Name.Trim().ToLower() == normalized.ToLower());
         if (existing is not null)
         {
@@ -60,8 +59,17 @@ public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : D
         }
 
         var created = new T { Name = normalized };
-        Set.Add(created);
-        Context.SaveChanges();
-        return created;
+        try
+        {
+            Set.Add(created);
+            Context.SaveChanges();
+            return created;
+        }
+        catch (DbUpdateException)
+        {
+            // Another import/metadata pass may have inserted the same name concurrently.
+            Context.Entry(created).State = EntityState.Detached;
+            return Set.First(x => x.Name.Trim().ToLower() == normalized.ToLower());
+        }
     }
 }

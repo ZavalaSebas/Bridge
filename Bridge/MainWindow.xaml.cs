@@ -454,20 +454,10 @@ namespace Bridge
         private bool _suppressTableResize;
 
 
-        // Opens the Support menu links (Ko-fi / GitHub Sponsors) in the browser.
         private void OpenSupportLink_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.MenuItem { Tag: string url } && !string.IsNullOrWhiteSpace(url))
-            {
-                try
-                {
-                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-                }
-                catch
-                {
-                    // Missing browser/URL — nothing to do.
-                }
-            }
+            if (sender is System.Windows.Controls.MenuItem { Tag: string url })
+                SafeLauncher.TryOpenUrl(url);
         }
 
         private void About_Click(object sender, RoutedEventArgs e)

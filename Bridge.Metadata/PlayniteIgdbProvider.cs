@@ -58,6 +58,10 @@ public sealed class PlayniteIgdbProvider(HttpClient httpClient) : IGameMetadataP
         {
             return null;
         }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 
     private static GameMetadata Map(PlayniteGame game)

@@ -40,8 +40,8 @@ public partial class MainViewModel : ObservableObject
     private readonly RomScanner _romScanner;
     private readonly RetroArchService _retroArch;
     private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
+    private readonly MetadataSyncService _metadataSync;
     private readonly SteamMetadataProvider _steamMetadataProvider;
-    private readonly BridgeIgdbProvider _bridgeIgdbProvider;
     private readonly SteamLibraryImporter _steamImporter;
     private readonly EpicLibraryImporter _epicImporter;
     private readonly AppUpdateService _appUpdateService;
@@ -337,14 +337,7 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(link.Url))
             return;
 
-        try
-        {
-            Process.Start(new ProcessStartInfo(link.Url) { UseShellExecute = true });
-        }
-        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            // User's machine has no default handler for the URL scheme — nothing to open.
-        }
+        SafeLauncher.TryOpenUrl(link.Url);
     }
 
     partial void OnSelectedGameChanged(Game? value)
@@ -481,10 +474,10 @@ public partial class MainViewModel : ObservableObject
         RetroArchService retroArch,
         IEnumerable<IGameMetadataProvider> metadataProviders,
         SteamMetadataProvider steamMetadataProvider,
-        BridgeIgdbProvider bridgeIgdbProvider,
         SteamLibraryImporter steamImporter,
         EpicLibraryImporter epicImporter,
-        AppUpdateService appUpdateService)
+        AppUpdateService appUpdateService,
+        MetadataSyncService metadataSyncService)
     {
         _gameRepository = gameRepository;
         _emulatorRepository = emulatorRepository;
@@ -503,8 +496,8 @@ public partial class MainViewModel : ObservableObject
         _romScanner = romScanner;
         _retroArch = retroArch;
         _metadataProviders = metadataProviders;
+        _metadataSync = metadataSyncService;
         _steamMetadataProvider = steamMetadataProvider;
-        _bridgeIgdbProvider = bridgeIgdbProvider;
         _steamImporter = steamImporter;
         _epicImporter = epicImporter;
         _appUpdateService = appUpdateService;
@@ -522,7 +515,7 @@ public partial class MainViewModel : ObservableObject
             }
         };
         RebuildDetailedRows();
-        _ = InitializeAsync();
+        InitializeAsync().FireAndForget("MainViewModel.Initialize");
     }
 
     // Startup work that used to run synchronously in the constructor (Steam
@@ -599,6 +592,8 @@ public partial class MainViewModel : ObservableObject
 
     private void LoadGames()
     {
+        _gameRepository.ResetPersistedTransientFlags();
+
         foreach (var game in _gameRepository.GetAll())
         {
             ApplySteamLocalArtwork(game);
@@ -1149,62 +1144,12 @@ public partial class MainViewModel : ObservableObject
 
         StatusMessage = $"Downloading metadata for '{game.Name}'...";
 
-        GameMetadata? metadata = null;
-        string? providerName = null;
+        var result = await _metadataSync.SearchForManualDownloadAsync(
+            gameName,
+            romImport,
+            game.SourceId != GameSource.ManualId ? game.ExternalId : null);
 
-        // Steam-imported games: use appid directly for a guaranteed lookup
-        if (!romImport && game.SourceId != GameSource.ManualId && uint.TryParse(game.ExternalId, out _))
-        {
-            try
-            {
-                metadata = await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId);
-                providerName = _steamMetadataProvider.Name;
-            }
-            catch
-            {
-                // Steam API failed — fall through to the provider chain
-            }
-        }
-
-        // Fallback chain: try each provider by name search
-        if (metadata is null)
-        {
-            foreach (var provider in _metadataProviders)
-            {
-                // ROMs: IGDB first, Steam only as the final fallback.
-                if (romImport && ReferenceEquals(provider, _steamMetadataProvider))
-                    continue;
-
-                try
-                {
-                    metadata = await provider.SearchAsync(gameName);
-                    if (metadata is not null)
-                    {
-                        providerName = provider.Name;
-                        break;
-                    }
-                }
-                catch
-                {
-                    // Try next provider
-                }
-            }
-
-            if (romImport && metadata is null)
-            {
-                try
-                {
-                    metadata = await _steamMetadataProvider.SearchAsync(gameName);
-                    providerName = metadata is null ? null : _steamMetadataProvider.Name;
-                }
-                catch
-                {
-                    // Steam search failed — no metadata for this ROM.
-                }
-            }
-        }
-
-        if (metadata is null)
+        if (result is null)
         {
             StatusMessage = IsNetworkAvailable()
                 ? $"No metadata found for '{gameName}'."
@@ -1212,15 +1157,10 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Playnite merges metadata from multiple sources: the library plugin
-        // (Steam) provides store/community links while the metadata provider
-        // (IGDB) adds the social links (YouTube, Reddit, Twitter, ...). When
-        // Steam was the main source, enrich the links via our own IGDB Worker
-        // (zero-config) — the user-configured key is no longer required here.
+        var (metadata, providerName) = result.Value;
+
         if (providerName == _steamMetadataProvider.Name)
-        {
-            await EnrichLinksFromIgdbAsync(gameName, metadata);
-        }
+            await _metadataSync.EnrichSteamLinksFromIgdbAsync(gameName, metadata);
 
         ApplyMetadata(game, metadata);
         ApplyMetadataReferences(game, metadata);
@@ -1269,68 +1209,10 @@ public partial class MainViewModel : ObservableObject
                 try
                 {
                     var searchName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
-
-                    if (romImport)
-                    {
-                        // ROMs: IGDB chain first, Steam as the final fallback.
-                        foreach (var provider in _metadataProviders)
-                        {
-                            if (ReferenceEquals(provider, _steamMetadataProvider))
-                                continue;
-
-                            try
-                            {
-                                if (await provider.SearchAsync(searchName) is { } found)
-                                    return (game, metadata: found, provider: provider.Name);
-                            }
-                            catch
-                            {
-                                // Try the next provider
-                            }
-                        }
-
-                        try
-                        {
-                            if (await _steamMetadataProvider.SearchAsync(searchName) is { } steamFound)
-                                return (game, metadata: steamFound, provider: _steamMetadataProvider.Name);
-                        }
-                        catch
-                        {
-                            // Steam search failed — no metadata for this ROM.
-                        }
-
-                        return (game, metadata: (GameMetadata?)null, provider: (string?)null);
-                    }
-
-                    // Steam by name first — the game may exist on Steam even
-                    // though this copy wasn't installed through it.
-                    try
-                    {
-                        if (await _steamMetadataProvider.SearchAsync(game.Name) is { } steamFound)
-                            return (game, metadata: steamFound, provider: _steamMetadataProvider.Name);
-                    }
-                    catch
-                    {
-                        // Steam search failed — fall through to the IGDB chain.
-                    }
-
-                    foreach (var provider in _metadataProviders)
-                    {
-                        if (ReferenceEquals(provider, _steamMetadataProvider))
-                            continue;
-
-                        try
-                        {
-                            if (await provider.SearchAsync(game.Name) is { } found)
-                                return (game, metadata: found, provider: provider.Name);
-                        }
-                        catch
-                        {
-                            // Try the next provider
-                        }
-                    }
-
-                    return (game, metadata: (GameMetadata?)null, provider: (string?)null);
+                    var found = await _metadataSync.SearchForAddedGameAsync(searchName, romImport);
+                    return found is null
+                        ? (game, metadata: (GameMetadata?)null, provider: (string?)null)
+                        : (game, metadata: found.Value.Metadata, provider: found.Value.ProviderName);
                 }
                 finally
                 {
@@ -1350,9 +1232,7 @@ public partial class MainViewModel : ObservableObject
                     continue;
 
                 if (providerName == _steamMetadataProvider.Name)
-                {
-                    await EnrichLinksFromIgdbAsync(game.Name, metadata);
-                }
+                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(game.Name, metadata);
 
                 ApplyMetadata(game, metadata);
                 ApplyMetadataReferences(game, metadata);
@@ -1372,32 +1252,6 @@ public partial class MainViewModel : ObservableObject
             ? $"Metadata applied: {applied}/{candidates.Count} game(s) updated."
             : $"No metadata found for the added game(s) ({candidates.Count} checked).";
     }
-
-    // Adds IGDB social links (YouTube, Reddit, Twitter, Wikipedia, ...) to
-    // Steam-sourced metadata via our own Worker. Zero-config; if the Worker is
-    // unreachable, the Steam links alone stand.
-    private async Task EnrichLinksFromIgdbAsync(string gameName, GameMetadata metadata)
-    {
-        try
-        {
-            if (await _bridgeIgdbProvider.SearchAsync(gameName) is { } igdbMetadata)
-                metadata.Links.AddRange(igdbMetadata.Links);
-        }
-        catch
-        {
-            // Worker unreachable — Steam links alone are fine
-        }
-    }
-
-    // Steam-sourced links (store/community/guides/news/wiki) are identified by
-    // their domain; anything else (YouTube, Reddit, Wikipedia, official site,
-    // social networks) is a non-Steam link — the IGDB enrichment target.
-    private static bool IsSteamLink(string name) => name switch
-    {
-        "Community Hub" or "Discussions" or "Guides" or "News" or
-        "Steam Store" or "PCGamingWiki" or "Achievements" or "Workshop" => true,
-        _ => false
-    };
 
     private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
     {
@@ -1457,11 +1311,25 @@ public partial class MainViewModel : ObservableObject
             var known = new HashSet<string>(game.Links.Select(l => l.Url), StringComparer.OrdinalIgnoreCase);
             foreach (var link in metadata.Links.Where(l => !string.IsNullOrWhiteSpace(l.Url)))
             {
-                if (known.Add(link.Url))
-                    game.Links.Add(link);
+                var sanitized = Bridge.Core.Utilities.UrlValidator.SanitizePersistedUrl(link.Url);
+                if (sanitized is null)
+                    continue;
+
+                if (known.Add(sanitized))
+                    game.Links.Add(new Link { Name = link.Name, Url = sanitized });
             }
         }
     }
+
+    // Steam-sourced links (store/community/guides/news/wiki) are identified by
+    // their domain; anything else (YouTube, Reddit, Wikipedia, official site,
+    // social networks) is a non-Steam link — the IGDB enrichment target.
+    private static bool IsSteamLink(string name) => name switch
+    {
+        "Community Hub" or "Discussions" or "Guides" or "News" or
+        "Steam Store" or "PCGamingWiki" or "Achievements" or "Workshop" => true,
+        _ => false
+    };
 
     // Resolve metadata names into real reference-entity ids (Genre/Company/
     // Platform) via GetOrCreateByName — the same mechanism Bridge.Import uses
@@ -1640,7 +1508,7 @@ public partial class MainViewModel : ObservableObject
                     // Steam provides store/community links; our IGDB Worker adds the
                     // social links (YouTube, Reddit, ...) so the automatic sync is
                     // complete, not just the manual one.
-                    await EnrichLinksFromIgdbAsync(game.Name, metadata);
+                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(game.Name, metadata);
 
                     ApplyMetadata(game, metadata, overwrite: false);
                     ApplyMetadataReferences(game, metadata);
@@ -1669,7 +1537,7 @@ public partial class MainViewModel : ObservableObject
                     continue;
 
                 var metadata = new GameMetadata();
-                await EnrichLinksFromIgdbAsync(game.Name, metadata);
+                await _metadataSync.EnrichSteamLinksFromIgdbAsync(game.Name, metadata);
                 if (metadata.Links.Count == 0)
                     continue;
 
@@ -1722,20 +1590,10 @@ public partial class MainViewModel : ObservableObject
                 await throttle.WaitAsync();
                 try
                 {
-                    foreach (var provider in _metadataProviders)
-                    {
-                        try
-                        {
-                            if (await provider.SearchAsync(game.Name) is { } found)
-                                return (game, metadata: found);
-                        }
-                        catch
-                        {
-                            // Try the next provider
-                        }
-                    }
-
-                    return (game, metadata: (GameMetadata?)null);
+                    var found = await _metadataSync.SearchByNameChainAsync(game.Name);
+                    return found is null
+                        ? (game, metadata: (GameMetadata?)null)
+                        : (game, metadata: found.Value.Metadata);
                 }
                 finally
                 {

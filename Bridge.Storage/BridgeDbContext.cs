@@ -25,17 +25,28 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
     {
         // Every reference entity is just Id + Name — one line each is enough.
         modelBuilder.Entity<Genre>().HasKey(e => e.Id);
+        modelBuilder.Entity<Genre>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<Category>().HasKey(e => e.Id);
+        modelBuilder.Entity<Category>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<Tag>().HasKey(e => e.Id);
+        modelBuilder.Entity<Tag>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<Series>().HasKey(e => e.Id);
+        modelBuilder.Entity<Series>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<AgeRating>().HasKey(e => e.Id);
+        modelBuilder.Entity<AgeRating>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<GameFeature>().HasKey(e => e.Id);
+        modelBuilder.Entity<GameFeature>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<Company>().HasKey(e => e.Id);
+        modelBuilder.Entity<Company>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<GameSource>().HasKey(e => e.Id);
+        modelBuilder.Entity<GameSource>().HasIndex(e => e.Name).IsUnique();
 
         modelBuilder.Entity<Region>().HasKey(e => e.Id);
+        modelBuilder.Entity<Region>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<Platform>().HasKey(e => e.Id);
+        modelBuilder.Entity<Platform>().HasIndex(e => e.Name).IsUnique();
         modelBuilder.Entity<CompletionStatus>().HasKey(e => e.Id);
+        modelBuilder.Entity<CompletionStatus>().HasIndex(e => e.Name).IsUnique();
 
         // Emulator stores its Profiles list as JSON too — same reasoning as Game
         // below: it's a small attached list, not something queried directly in SQL.
@@ -84,7 +95,7 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
 
             // Dedup lookup index — mirrors Playnite's (GameId, PluginId) key,
             // adapted to (ExternalId, SourceId). See ARCHITECTURE.md ADR-6.
-            e.HasIndex(g => new { g.ExternalId, g.SourceId });
+            e.HasIndex(g => new { g.ExternalId, g.SourceId }).IsUnique();
         });
     }
 }

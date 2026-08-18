@@ -3,6 +3,7 @@ using System.IO;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Core.Utilities;
 using Bridge.Import.Steam;
 
 namespace Bridge.Services;
@@ -99,7 +100,8 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                     directoryTracking = new ActiveTracking { InstallDirectory = game.InstallDirectory };
                     _active[game.Id] = directoryTracking;
                 }
-                _ = TrackDirectoryAsync(game, directoryTracking.Cancellation.Token, action.InitialTrackingDelayMs, action.TrackingFrequencyMs);
+                TrackDirectoryAsync(game, directoryTracking.Cancellation.Token, action.InitialTrackingDelayMs, action.TrackingFrequencyMs)
+                    .FireAndForget("GameLauncher.TrackDirectory");
                 break;
 
             // Process-tree tracking: the launched process AND every descendant it
@@ -118,14 +120,32 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                         treeTracking = new ActiveTracking { LaunchedPid = pid };
                         _active[game.Id] = treeTracking;
                     }
-                    _ = TrackProcessTreeAsync(game, pid, treeTracking.Cancellation.Token, action.TrackingFrequencyMs);
+                    TrackProcessTreeAsync(game, pid, treeTracking.Cancellation.Token, action.TrackingFrequencyMs)
+                        .FireAndForget("GameLauncher.TrackProcessTree");
                 }
                 catch
                 {
                     process.Dispose();
-                    // No usable handle/Id for the started process — fall back to
-                    // exact-process tracking rather than losing the session.
-                    _ = TrackAsync(game, process, CancellationToken.None, action.TrackingFrequencyMs);
+                    // PID unavailable — fall back to directory tracking when possible
+                    // instead of passing a disposed Process handle to TrackAsync.
+                    if (!string.IsNullOrWhiteSpace(game.InstallDirectory))
+                    {
+                        ActiveTracking fallbackTracking;
+                        lock (_activeLock)
+                        {
+                            fallbackTracking = new ActiveTracking { InstallDirectory = game.InstallDirectory };
+                            _active[game.Id] = fallbackTracking;
+                        }
+
+                        TrackDirectoryAsync(game, fallbackTracking.Cancellation.Token, action.InitialTrackingDelayMs, action.TrackingFrequencyMs)
+                            .FireAndForget("GameLauncher.TrackDirectoryFallback");
+                    }
+                    else
+                    {
+                        game.IsRunning = false;
+                        GameStopped?.Invoke(game, 0);
+                        UnregisterActive(game);
+                    }
                 }
                 break;
 
@@ -136,7 +156,8 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                     exactTracking = new ActiveTracking { LaunchedPid = GetProcessId(process) };
                     _active[game.Id] = exactTracking;
                 }
-                _ = TrackAsync(game, process, exactTracking.Cancellation.Token, action.TrackingFrequencyMs);
+                TrackAsync(game, process, exactTracking.Cancellation.Token, action.TrackingFrequencyMs)
+                    .FireAndForget("GameLauncher.TrackExact");
                 break;
         }
     }
@@ -157,7 +178,10 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     {
         lock (_activeLock)
         {
-            _active.Remove(game.Id);
+            if (_active.Remove(game.Id, out var tracking))
+            {
+                tracking.Cancellation.Dispose();
+            }
         }
     }
 
@@ -207,7 +231,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         // opens right after Stop and runs untracked.
         if (!killedAny)
         {
-            _ = KillWhenAppearsAsync(tracking);
+            KillWhenAppearsAsync(tracking).FireAndForget("GameLauncher.KillWhenAppears");
         }
     }
 
@@ -322,7 +346,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 }
 
                 if (!string.IsNullOrWhiteSpace(path) &&
-                    path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                    PathContainment.IsPathUnderDirectory(path, installDirectory))
                 {
                     matches = true;
                 }
@@ -768,19 +792,11 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                     // Elevated/protected process — path unreadable, fall back to name.
                 }
 
-                if (!string.IsNullOrWhiteSpace(path))
-                {
-                    if (path.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(path) &&
+                    PathContainment.IsPathUnderDirectory(path, installDirectory))
                     {
-                        // Path-prefix boundary check: "C:\Games\Steam2\game.exe" must not
-                        // match an install dir of "C:\Games\Steam".
-                        if (path.Length == installDirectory.Length ||
-                            path[installDirectory.Length] is ('\\' or '/'))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
-                }
                 else
                 {
                     // Path unreadable (elevated launcher like Genshin's HYP.exe) — the

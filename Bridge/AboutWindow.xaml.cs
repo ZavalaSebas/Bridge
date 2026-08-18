@@ -34,25 +34,14 @@ namespace Bridge
 
             SupportLinks.ItemsSource = new[]
             {
-                new AboutLink("Buy me a coffee", "https://ko-fi.com/YOUR_KOFI",
-                    "ko-fi.com", SymbolRegular.DrinkCoffee24),
                 new AboutLink("GitHub Sponsors", "https://github.com/sponsors/ZavalaSebas",
-                    "github.com/sponsors/ZavalaSebas", SymbolRegular.Heart24)
+                    "Support development on GitHub", SymbolRegular.Heart24)
             };
         }
 
-        // Opens any Hyperlink's NavigateUri in the default browser.
         private void Link_Click(object sender, RequestNavigateEventArgs e)
         {
-            try
-            {
-                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-            }
-            catch
-            {
-                // Missing browser/URL — nothing to do.
-            }
-
+            SafeLauncher.TryOpenUrl(e.Uri.AbsoluteUri);
             e.Handled = true;
         }
 
@@ -60,18 +49,9 @@ namespace Bridge
         private void LinkRow_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not System.Windows.Controls.Button { Tag: string url })
-            {
                 return;
-            }
 
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch
-            {
-                // Missing browser/URL — nothing to do.
-            }
+            SafeLauncher.TryOpenUrl(url);
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) => Close();

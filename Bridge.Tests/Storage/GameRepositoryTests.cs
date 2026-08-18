@@ -27,7 +27,7 @@ public class GameRepositoryTests : IDisposable
             .UseSqlite($"Data Source={_dbPath};Pooling=False")
             .Options;
         _context = new BridgeDbContext(_options);
-        _context.Database.EnsureCreated();
+        _context.MigrateToLatest();
         _repository = new GameRepository(_context);
     }
 

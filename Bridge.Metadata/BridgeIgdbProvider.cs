@@ -19,7 +19,7 @@ namespace Bridge.Metadata;
 /// </summary>
 public sealed class BridgeIgdbProvider(HttpClient httpClient) : IGameMetadataProvider
 {
-    private const string MetadataEndpoint = "https://bridge-igdb.sebaszavala120.workers.dev/metadata";
+    private const string MetadataEndpoint = MetadataEndpoints.BridgeIgdbWorker;
 
     public string Name => "IGDB";
 
@@ -49,6 +49,10 @@ public sealed class BridgeIgdbProvider(HttpClient httpClient) : IGameMetadataPro
             return null;
         }
         catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (System.Text.Json.JsonException)
         {
             return null;
         }
