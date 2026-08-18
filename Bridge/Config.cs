@@ -7,7 +7,11 @@ public static class Config
 {
     public const string AppName = "Bridge";
 
-    public const string GitHubApiUrl = "https://api.github.com/repos/ZavalaSebas/Bridge/releases/latest";
+    // The full releases list (newest first), not /releases/latest: Bridge picks
+    // which release to offer based on the update channel (Stable skips
+    // prereleases, Beta accepts them) instead of letting GitHub's "latest"
+    // endpoint decide — that one excludes prereleases entirely.
+    public const string GitHubReleasesUrl = "https://api.github.com/repos/ZavalaSebas/Bridge/releases?per_page=100";
 
     public const int RequestTimeoutSeconds = 10;
 
@@ -35,6 +39,10 @@ public static class Config
     // no SHA-256 digest, the version string is the change signal: a different
     // resolved version means the frontend must be refreshed.
     public static string RetroArchVersionPath => Path.Combine(AppDataPath, "emulators", "retroarch.version");
+
+    // The update channel (Stable/Beta) Bridge offers releases from. Kept in a
+    // plain file like viewmode.txt: an app-instance preference, not library data.
+    public static string UpdateChannelFilePath => Path.Combine(AppDataPath, "update-channel.txt");
 
     public static Version AssemblyVersion =>
         Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 0);

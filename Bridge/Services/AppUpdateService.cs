@@ -185,7 +185,9 @@ public sealed class AppUpdateService
         Environment.ProcessPath is { Length: > 0 } path &&
         path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
 
-    public async Task<AppUpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
+    public async Task<AppUpdateCheckResult> CheckForUpdateAsync(
+        UpdateChannel? channel = null,
+        CancellationToken cancellationToken = default)
     {
         if (!CanSelfUpdate)
         {
@@ -194,9 +196,10 @@ public sealed class AppUpdateService
                 Message: "Updates apply only to the published Bridge.exe.");
         }
 
+        var effectiveChannel = channel ?? UpdateChannelSettingsStore.Load();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, Config.GitHubApiUrl);
+            using var request = new HttpRequestMessage(HttpMethod.Get, Config.GitHubReleasesUrl);
             request.Headers.UserAgent.ParseAdd(UserAgent());
             request.Headers.Accept.ParseAdd("application/vnd.github+json");
 
@@ -205,9 +208,20 @@ public sealed class AppUpdateService
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken));
             var root = document.RootElement;
-            var tagName = root.GetProperty("tag_name").GetString();
-            if (string.IsNullOrWhiteSpace(tagName) ||
-                !Version.TryParse(tagName.TrimStart('v'), out var remoteVersion))
+            var release = SelectRelease(root, effectiveChannel);
+            if (release is null)
+            {
+                return new AppUpdateCheckResult(
+                    AppUpdateStatus.Failed,
+                    Message: effectiveChannel == UpdateChannel.Beta
+                        ? "No compatible beta release was found on GitHub."
+                        : "No compatible release was found on GitHub.");
+            }
+
+            var tagName = release.Value.TryGetProperty("tag_name", out var tagProperty)
+                ? tagProperty.GetString()
+                : null;
+            if (!TryParseTagVersion(tagName, out var remoteVersion))
             {
                 return new AppUpdateCheckResult(
                     AppUpdateStatus.Failed,
@@ -217,10 +231,18 @@ public sealed class AppUpdateService
             var currentVersion = Config.AssemblyVersion;
             if (remoteVersion <= currentVersion)
             {
-                return new AppUpdateCheckResult(AppUpdateStatus.UpToDate);
+                // On the stable channel the newest release overall may still be a
+                // prerelease that's newer than what the user runs — say so instead
+                // of a bare "up to date", so testers learn where betas opt in.
+                var betaHint = effectiveChannel == UpdateChannel.Stable
+                    ? DescribeNewerPrerelease(root, currentVersion)
+                    : null;
+                return new AppUpdateCheckResult(
+                    AppUpdateStatus.UpToDate,
+                    Message: betaHint);
             }
 
-            var downloadUrl = FindAssetDownloadUrl(root);
+            var downloadUrl = FindAssetDownloadUrl(release.Value);
             if (downloadUrl is null)
             {
                 return new AppUpdateCheckResult(
@@ -244,6 +266,98 @@ public sealed class AppUpdateService
                 AppUpdateStatus.Failed,
                 Message: $"Could not reach GitHub: {ex.Message}");
         }
+    }
+
+    // The releases endpoint returns the newest release first. Pick the first
+    // one that matches the channel and carries a parseable version tag: the
+    // stable channel skips prereleases, the beta channel accepts them.
+    private static JsonElement? SelectRelease(JsonElement root, UpdateChannel channel)
+    {
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var release in root.EnumerateArray())
+        {
+            if (channel == UpdateChannel.Stable &&
+                release.TryGetProperty("prerelease", out var prerelease) &&
+                prerelease.ValueKind is JsonValueKind.True)
+            {
+                continue;
+            }
+
+            var tag = release.TryGetProperty("tag_name", out var tagProperty)
+                ? tagProperty.GetString()
+                : null;
+            if (TryParseTagVersion(tag, out _))
+            {
+                return release;
+            }
+        }
+
+        return null;
+    }
+
+    // Prerelease tags carry a suffix (v0.3.0-beta1); the numeric prefix is the
+    // version Bridge compares against. Comparison is deliberately numeric: a
+    // beta tagged 0.3.0-beta1 never "beats" an installed 0.3.0 stable, so a
+    // stable user can't be downgraded onto a beta. The channel decision is the
+    // GitHub `prerelease` flag, not the tag text.
+    private static bool TryParseTagVersion(string? tag, out Version version)
+    {
+        version = new Version(0, 0, 0, 0);
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            return false;
+        }
+
+        var text = tag.Trim().TrimStart('v', 'V');
+        var dash = text.IndexOf('-');
+        if (dash >= 0)
+        {
+            text = text[..dash];
+        }
+
+        var plus = text.IndexOf('+');
+        if (plus >= 0)
+        {
+            text = text[..plus];
+        }
+
+        var parsed = Version.TryParse(text, out var parsedVersion);
+        version = parsedVersion ?? new Version(0, 0, 0, 0);
+        return parsed;
+    }
+
+    // When the stable channel is up to date but a newer prerelease exists, tell
+    // the user where it went instead of leaving them wondering why betas never
+    // arrive on their machine.
+    private static string? DescribeNewerPrerelease(JsonElement root, Version currentVersion)
+    {
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var release in root.EnumerateArray())
+        {
+            if (!release.TryGetProperty("prerelease", out var prerelease) ||
+                prerelease.ValueKind is not JsonValueKind.True)
+            {
+                continue;
+            }
+
+            var tag = release.TryGetProperty("tag_name", out var tagProperty)
+                ? tagProperty.GetString()
+                : null;
+            if (TryParseTagVersion(tag, out var version) && version > currentVersion)
+            {
+                return "A beta build is available. Enable the beta channel in About to receive it.";
+            }
+        }
+
+        return null;
     }
 
     public async Task ApplyUpdateAsync(

@@ -1,5 +1,7 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Bridge.Services;
 
 namespace Bridge.Converters;
@@ -9,6 +11,10 @@ namespace Bridge.Converters;
 /// refreshes the control the moment the decoded (frozen) image is ready.
 ///
 /// Usage: &lt;Image converters:CachedImage.SourceUrl="{Binding Icon}" /&gt;
+/// or, for a centered cover-crop on a card:
+/// &lt;Grid converters:CachedImage.SourceUrl="{Binding CoverImage}"&gt;…&lt;/Grid&gt;
+/// (the Grid/Border variant paints the art as a UniformToFill ImageBrush, which
+/// centers its crop — an Image element does not; see ApplyCoverBackground).
 ///
 /// This is more reliable than a converter returning a still-downloading
 /// BitmapImage: virtualized list containers don't re-evaluate bindings when the
@@ -31,12 +37,25 @@ public static class CachedImage
 
     private static void OnSourceUrlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not Image image)
-        {
-            return;
-        }
-
         var url = e.NewValue as string;
+        switch (d)
+        {
+            case Image image:
+                SetImageSource(image, url);
+                break;
+
+            case Border border:
+                ApplyCoverBackground(border, url);
+                break;
+
+            case Grid grid:
+                ApplyCoverBackground(grid, url);
+                break;
+        }
+    }
+
+    private static void SetImageSource(Image image, string? url)
+    {
         if (string.IsNullOrWhiteSpace(url))
         {
             image.Source = null;
@@ -45,7 +64,7 @@ public static class CachedImage
 
         // Local disk paths (Steam's cached art, an Epic game's .exe) don't go
         // through the remote cache.
-        if (System.IO.Path.IsPathRooted(url))
+        if (Path.IsPathRooted(url))
         {
             image.Source = LoadLocalPath(url);
             return;
@@ -68,6 +87,70 @@ public static class CachedImage
                 image.Source = RemoteImageCache.Get(url);
             }
         });
+    }
+
+    // Grid/Border variant used by the covers cards: paints the artwork as the
+    // element's Background with an ImageBrush(UniformToFill). Unlike an Image
+    // element with the same Stretch — which anchors the crop to the top-left,
+    // leaving non-2:3 covers visibly off-center in the card — a TileBrush
+    // centers its content in its viewport by default, so the crop is centered.
+    private static void ApplyCoverBackground(DependencyObject target, string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            SetBackground(target, null);
+            return;
+        }
+
+        if (Path.IsPathRooted(url))
+        {
+            SetBackground(target, MakeFillBrush(LoadLocalPath(url)));
+            return;
+        }
+
+        if (RemoteImageCache.Get(url) is { } cached)
+        {
+            SetBackground(target, MakeFillBrush(cached));
+            return;
+        }
+
+        // Not decoded yet — paint nothing and refresh as soon as it lands.
+        SetBackground(target, null);
+        RemoteImageCache.Subscribe(url, () =>
+        {
+            if (GetSourceUrl(target) == url)
+            {
+                SetBackground(target, MakeFillBrush(RemoteImageCache.Get(url)));
+            }
+        });
+    }
+
+    private static void SetBackground(DependencyObject target, Brush? brush)
+    {
+        switch (target)
+        {
+            case Border border:
+                border.Background = brush;
+                break;
+            case Grid grid:
+                grid.Background = brush;
+                break;
+        }
+    }
+
+    private static ImageBrush? MakeFillBrush(ImageSource? source)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        var brush = new ImageBrush(source)
+        {
+            Stretch = Stretch.UniformToFill
+        };
+        brush.Freeze();
+        return brush;
     }
 
     // Loads a local disk path: an executable's embedded icon (Epic games store

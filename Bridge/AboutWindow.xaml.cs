@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Navigation;
+using Bridge.Services;
 using Wpf.Ui.Controls;
 
 namespace Bridge
@@ -20,6 +21,8 @@ namespace Bridge
 
             RuntimeText.Text = $".NET {Environment.Version}";
             OsText.Text = RuntimeInformation.OSDescription;
+
+            BetaChannelToggle.IsChecked = UpdateChannelSettingsStore.Load() == UpdateChannel.Beta;
 
             ProjectLinks.ItemsSource = new[]
             {
@@ -72,6 +75,14 @@ namespace Bridge
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+        // Persists the update channel choice as the toggle flips; the update
+        // check reads it via UpdateChannelSettingsStore on every run.
+        private void BetaChannelToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            UpdateChannelSettingsStore.Save(
+                BetaChannelToggle.IsChecked == true ? UpdateChannel.Beta : UpdateChannel.Stable);
+        }
     }
 
     /// <summary>A single row in the About dialog's link lists.</summary>

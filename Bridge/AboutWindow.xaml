@@ -141,6 +141,22 @@
                     </StackPanel>
                 </StackPanel>
 
+                <!-- Canal de actualizaciones -->
+                <TextBlock Text="Updates" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="2,10,0,8"/>
+                <Border CornerRadius="8" Background="{DynamicResource ControlFillColorSecondaryBrush}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="12,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Receive beta builds" FontWeight="Medium" FontSize="13"/>
+                            <TextBlock Text="Install prereleases published before their stable release." FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,1,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ui:ToggleSwitch Grid.Column="1" x:Name="BetaChannelToggle" VerticalAlignment="Center" Margin="14,0,0,0" Checked="BetaChannelToggle_Changed" Unchecked="BetaChannelToggle_Changed"/>
+                    </Grid>
+                </Border>
+
                 <!-- Disclaimer legal -->
                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="2,16,0,0" LineHeight="15">
                     Made with care by ZavalaSebas. This software is provided "as is", without warranty of any kind.
