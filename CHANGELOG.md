@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings hub in the sidebar** — a new Settings section (sidebar gear icon) opens a full-width overlay with shortcuts to emulator setup, IGDB settings, custom theme color, update check, and About — same actions as the logo menu, without adding new configuration logic.
 - **Separate HTTP clients for metadata vs downloads** — `MetadataHttpClient` (10s) and `DownloadHttpClient` (900s) replace the shared singleton so long RetroArch downloads no longer share timeout state with quick metadata/API calls.
 - **Centralized sponsor URLs** — `Config.KoFiUrl`, `Config.GitHubSponsorsUrl`, and `Config.PrimarySponsorUrl` replace hard-coded links in the Support menu and About window; `OpenSponsorCommand` opens the primary sponsor link for future status-bar affordances.
+- **Sidebar Favorites and Sources shortcuts** — Favorites applies the favorite filter; Sources groups the library by import source (Steam, Epic, ROM, Manual). Sidebar highlight stays in sync when the same state is chosen from the filter/group menus.
+- **Status-bar sponsor heart** — a heart button in the status bar opens `Config.PrimarySponsorUrl` via `OpenSponsorCommand`.
 
 ### Fixed
 - **Hero cross-fade blur edge when switching tall→short backgrounds** — `FadeImage` now animates the outgoing tall frame's bottom fade in sync with the incoming short frame's mask during the cross-fade, so the frosted edge no longer pops when opacity reaches zero.

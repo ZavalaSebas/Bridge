@@ -1080,7 +1080,7 @@ dotnet run --project Bridge/Bridge.csproj
 
 ## Branding & Sponsorship
 
-> **Implemented.** Support links live in the logo menu (Ko-fi + GitHub Sponsors) and in `AboutWindow`, all reading from `Config.KoFiUrl` / `Config.GitHubSponsorsUrl`. `MainViewModel.OpenSponsorCommand` opens `Config.PrimarySponsorUrl` (GitHub Sponsors) via `SafeLauncher` — ready for a future status-bar heart. The sidebar **Settings** section opens an in-app hub with shortcuts to emulator setup, IGDB settings, theme color, update check, and About. The snippets below remain templates for optional status-bar / `CreditsWindow` affordances not yet wired in the UI.
+> **Implemented.** Support links live in the logo menu (Ko-fi + GitHub Sponsors), in `AboutWindow`, and via a status-bar heart button (`OpenSponsorCommand` → `Config.PrimarySponsorUrl`). The sidebar exposes **Library**, **Favorites** (favorite filter), **Sources** (group by library), **Statistics**, and **Settings** (shortcuts hub). The `CreditsWindow` snippet below remains an optional template — `AboutWindow` already covers version, links, and legal.
 
 ### Heart Icon in Status Bar
 

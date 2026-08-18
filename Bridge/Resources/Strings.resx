@@ -97,6 +97,9 @@
   <data name="SortSettings" xml:space="preserve"><value>Sort settings</value></data>
   <data name="GroupSettings" xml:space="preserve"><value>Group settings</value></data>
   <data name="SelectRandomGame" xml:space="preserve"><value>Select random game</value></data>
+  <data name="Favorites" xml:space="preserve"><value>Favorites</value></data>
+  <data name="Sources" xml:space="preserve"><value>Sources</value></data>
+  <data name="SupportProject" xml:space="preserve"><value>Support the project</value></data>
   <data name="Library" xml:space="preserve"><value>Library</value></data>
   <data name="Statistics" xml:space="preserve"><value>Statistics</value></data>
   <data name="Play" xml:space="preserve"><value>Play</value></data>
