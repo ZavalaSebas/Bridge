@@ -34,9 +34,17 @@ public partial class MainWindow
         if (e.Key == System.Windows.Input.Key.Enter &&
             System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None &&
             SearchBox.IsKeyboardFocusWithin is false &&
-            vm.SelectedGame is not null)
+            vm.SelectedGame is { } selectedGame)
         {
-            if (vm.PlayGameCommand.CanExecute(null))
+            if (selectedGame.IsRunning)
+            {
+                if (vm.StopGameCommand.CanExecute(null))
+                {
+                    vm.StopGameCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
+            else if (vm.PlayGameCommand.CanExecute(null))
             {
                 vm.PlayGameCommand.Execute(null);
                 e.Handled = true;

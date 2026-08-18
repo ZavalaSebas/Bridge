@@ -11,7 +11,6 @@ namespace Bridge
         public MainWindow()
         {
             InitializeComponent();
-            WireMainWindowResourceHandlers();
 
             // Restore the saved view's layout once the DataContext is assigned
             // (App.xaml.cs sets it after construction): List keeps the detail

@@ -21,6 +21,7 @@ public partial class MainViewModel
             if (_retroArch.IsManagedRom(target))
             {
                 IsEmulationBusy = true;
+                BeginStatusProgress(indeterminate: true);
                 try
                 {
                     StatusMessage = Strings.Format(nameof(Strings.PreparingRetroArchFormat), target.Name);
@@ -28,14 +29,9 @@ public partial class MainViewModel
                     {
                         StatusMessage = p.Message;
                         if (p.Percent is { } percent)
-                        {
-                            EmulationProgress = percent;
-                            IsEmulationIndeterminate = false;
-                        }
+                            ReportStatusProgress(percent, indeterminate: false);
                         else
-                        {
-                            IsEmulationIndeterminate = true;
-                        }
+                            ReportStatusProgress(StatusProgress, indeterminate: true);
                     }));
                     _gameRepository.Update(target);
                     // Now that the frontend/core exist, the button goes back to
@@ -45,8 +41,7 @@ public partial class MainViewModel
                 finally
                 {
                     IsEmulationBusy = false;
-                    IsEmulationIndeterminate = false;
-                    EmulationProgress = 0;
+                    EndStatusProgress();
                 }
             }
             _launcher.Launch(target);

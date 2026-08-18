@@ -183,6 +183,7 @@ public partial class MainViewModel
         _gameRepository.Update(SelectedGame);
         InvalidateReferenceCaches();
         CompletionStatusText = status.Name;
+        GamesView.Refresh();
         RefreshStatistics();
     }
 

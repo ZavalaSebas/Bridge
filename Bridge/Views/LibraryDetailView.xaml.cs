@@ -21,6 +21,7 @@ public partial class LibraryDetailView : UserControl
     private readonly DispatcherTimer _favoriteHideTimer;
     private bool _suppressTableResize;
     private bool _suppressTableSelectionSync;
+    private bool _menuHandlersWired;
     private MainViewModel? _subscribedViewModel;
 
     public LibraryDetailView()
@@ -41,7 +42,10 @@ public partial class LibraryDetailView : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (Window.GetWindow(this) is MainWindow mainWindow)
+        if (Window.GetWindow(this) is not MainWindow mainWindow)
+            return;
+
+        if (!_menuHandlersWired)
         {
             if (FindResource("Bridge.GameContextMenu") is ContextMenu contextMenu)
                 contextMenu.Opened += mainWindow.HandleGameContextMenuOpened;
@@ -49,11 +53,13 @@ public partial class LibraryDetailView : UserControl
             if (FindResource("Bridge.CompletionStatusMenuItemStyle") is Style completionStyle)
                 completionStyle.Setters.Add(new EventSetter(MenuItem.ClickEvent, new RoutedEventHandler(CompletionStatusMenuItem_Click)));
 
-            if (FindResource("VmProxy") is BindingProxy proxy && mainWindow.DataContext is MainViewModel vm)
-            {
-                proxy.Data = vm;
-                SubscribeToViewModel(vm);
-            }
+            _menuHandlersWired = true;
+        }
+
+        if (FindResource("VmProxy") is BindingProxy proxy && mainWindow.DataContext is MainViewModel vm)
+        {
+            proxy.Data = vm;
+            SubscribeToViewModel(vm);
         }
     }
 

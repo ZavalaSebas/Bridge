@@ -69,52 +69,52 @@
     <!-- =================================================================== -->
 
     <!-- Application / solid backgrounds -->
-    <Color x:Key="ApplicationBackgroundColor">{StaticResource Bridge.Background.Primary.Color}</Color>
+    <Color x:Key="ApplicationBackgroundColor">#151A28</Color>
     <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="{StaticResource Bridge.Background.Primary.Color}" />
 
-    <Color x:Key="SolidBackgroundFillColorBase">{StaticResource Bridge.Background.Primary.Color}</Color>
+    <Color x:Key="SolidBackgroundFillColorBase">#151A28</Color>
     <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush" Color="{StaticResource Bridge.Background.Primary.Color}" />
-    <Color x:Key="SolidBackgroundFillColorBaseAlt">{StaticResource Bridge.Background.Primary.Color}</Color>
+    <Color x:Key="SolidBackgroundFillColorBaseAlt">#151A28</Color>
     <SolidColorBrush x:Key="SolidBackgroundFillColorBaseAltBrush" Color="{StaticResource Bridge.Background.Primary.Color}" />
-    <Color x:Key="SolidBackgroundFillColorSecondary">{StaticResource Bridge.Background.Secondary.Color}</Color>
+    <Color x:Key="SolidBackgroundFillColorSecondary">#1B2132</Color>
     <SolidColorBrush x:Key="SolidBackgroundFillColorSecondaryBrush" Color="{StaticResource Bridge.Background.Secondary.Color}" />
-    <Color x:Key="SolidBackgroundFillColorTertiary">{StaticResource Bridge.Background.Tertiary.Color}</Color>
+    <Color x:Key="SolidBackgroundFillColorTertiary">#232B40</Color>
     <SolidColorBrush x:Key="SolidBackgroundFillColorTertiaryBrush" Color="{StaticResource Bridge.Background.Tertiary.Color}" />
-    <Color x:Key="SolidBackgroundFillColorQuarternary">{StaticResource Bridge.Background.Quaternary.Color}</Color>
+    <Color x:Key="SolidBackgroundFillColorQuarternary">#2C3550</Color>
     <SolidColorBrush x:Key="SolidBackgroundFillColorQuarternaryBrush" Color="{StaticResource Bridge.Background.Quaternary.Color}" />
 
     <!-- Text fills -->
-    <Color x:Key="TextFillColorPrimary">{StaticResource Bridge.Text.Primary.Color}</Color>
+    <Color x:Key="TextFillColorPrimary">#E0E0E0</Color>
     <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="{StaticResource Bridge.Text.Primary.Color}" />
-    <Color x:Key="TextFillColorSecondary">{StaticResource Bridge.Text.Secondary.Color}</Color>
+    <Color x:Key="TextFillColorSecondary">#9A9A9A</Color>
     <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="{StaticResource Bridge.Text.Secondary.Color}" />
-    <Color x:Key="TextFillColorTertiary">{StaticResource Bridge.Text.Muted.Color}</Color>
+    <Color x:Key="TextFillColorTertiary">#6A6A6A</Color>
     <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="{StaticResource Bridge.Text.Muted.Color}" />
-    <Color x:Key="TextFillColorDisabled">{StaticResource Bridge.Text.Disabled.Color}</Color>
+    <Color x:Key="TextFillColorDisabled">#555555</Color>
     <SolidColorBrush x:Key="TextFillColorDisabledBrush" Color="{StaticResource Bridge.Text.Disabled.Color}" />
-    <Color x:Key="TextOnAccentFillColorPrimary">{StaticResource Bridge.Text.OnAccent.Color}</Color>
+    <Color x:Key="TextOnAccentFillColorPrimary">#FFFFFF</Color>
     <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="{StaticResource Bridge.Text.OnAccent.Color}" />
 
     <!-- Control fills -->
-    <Color x:Key="ControlFillColorDefault">{StaticResource Bridge.Background.Tertiary.Color}</Color>
+    <Color x:Key="ControlFillColorDefault">#232B40</Color>
     <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="{StaticResource Bridge.Background.Tertiary.Color}" />
-    <Color x:Key="ControlFillColorSecondary">{StaticResource Bridge.Background.Quaternary.Color}</Color>
+    <Color x:Key="ControlFillColorSecondary">#2C3550</Color>
     <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="{StaticResource Bridge.Background.Quaternary.Color}" />
     <Color x:Key="ControlFillColorTertiary">#3A3A3A</Color>
     <SolidColorBrush x:Key="ControlFillColorTertiaryBrush" Color="#3A3A3A" />
-    <Color x:Key="ControlFillColorInputActive">{StaticResource Bridge.Background.Secondary.Color}</Color>
+    <Color x:Key="ControlFillColorInputActive">#1B2132</Color>
     <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="{StaticResource Bridge.Background.Secondary.Color}" />
-    <Color x:Key="ControlSolidFillColorDefault">{StaticResource Bridge.Background.Tertiary.Color}</Color>
+    <Color x:Key="ControlSolidFillColorDefault">#232B40</Color>
     <SolidColorBrush x:Key="ControlSolidFillColorDefaultBrush" Color="{StaticResource Bridge.Background.Tertiary.Color}" />
 
     <!-- Subtle / alt fills (hover, selected rows) -->
-    <Color x:Key="SubtleFillColorSecondary">{StaticResource Bridge.Background.Secondary.Color}</Color>
+    <Color x:Key="SubtleFillColorSecondary">#1B2132</Color>
     <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="{StaticResource Bridge.Background.Secondary.Color}" />
-    <Color x:Key="SubtleFillColorTertiary">{StaticResource Bridge.Background.Tertiary.Color}</Color>
+    <Color x:Key="SubtleFillColorTertiary">#232B40</Color>
     <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="{StaticResource Bridge.Background.Tertiary.Color}" />
-    <Color x:Key="ControlAltFillColorSecondary">{StaticResource Bridge.Background.Secondary.Color}</Color>
+    <Color x:Key="ControlAltFillColorSecondary">#1B2132</Color>
     <SolidColorBrush x:Key="ControlAltFillColorSecondaryBrush" Color="{StaticResource Bridge.Background.Secondary.Color}" />
-    <Color x:Key="ControlAltFillColorTertiary">{StaticResource Bridge.Background.Tertiary.Color}</Color>
+    <Color x:Key="ControlAltFillColorTertiary">#232B40</Color>
     <SolidColorBrush x:Key="ControlAltFillColorTertiaryBrush" Color="{StaticResource Bridge.Background.Tertiary.Color}" />
 
     <!-- Borders -->
@@ -128,13 +128,13 @@
     <SolidColorBrush x:Key="SurfaceStrokeColorDefaultBrush" Color="#3A4668" />
 
     <!-- Status -->
-    <Color x:Key="SystemFillColorSuccess">{StaticResource Bridge.Status.Success.Color}</Color>
+    <Color x:Key="SystemFillColorSuccess">#10B981</Color>
     <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="{StaticResource Bridge.Status.Success.Color}" />
-    <Color x:Key="SystemFillColorCaution">{StaticResource Bridge.Status.Warning.Color}</Color>
+    <Color x:Key="SystemFillColorCaution">#F59E0B</Color>
     <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="{StaticResource Bridge.Status.Warning.Color}" />
-    <Color x:Key="SystemFillColorCritical">{StaticResource Bridge.Status.Error.Color}</Color>
+    <Color x:Key="SystemFillColorCritical">#EF4444</Color>
     <SolidColorBrush x:Key="SystemFillColorCriticalBrush" Color="{StaticResource Bridge.Status.Error.Color}" />
-    <Color x:Key="SystemFillColorAttention">{StaticResource Bridge.Status.Info.Color}</Color>
+    <Color x:Key="SystemFillColorAttention">#3B82F6</Color>
     <SolidColorBrush x:Key="SystemFillColorAttentionBrush" Color="{StaticResource Bridge.Status.Info.Color}" />
 
     <!-- =================================================================== -->
