@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <Version>0.2.0</Version>
     <AssemblyVersion>$(Version).0</AssemblyVersion>
+    <ApplicationIcon>Assets\Bridge.ico</ApplicationIcon>
 
     <!-- Single-file self-contained publish (Fase 8). Without
          IncludeNativeLibrariesForSelfExtract, WPF's own native interop DLLs
@@ -47,6 +48,8 @@
     <!-- Inter Variable font, embedded as a WPF Resource so the app ships
          self-contained without depending on it being installed on the machine. -->
     <Resource Include="Fonts\InterVariable.ttf" />
+    <Resource Include="Assets\Bridge.ico" />
+    <Resource Include="Assets\BridgeLogo.png" />
   </ItemGroup>
 
 </Project>
