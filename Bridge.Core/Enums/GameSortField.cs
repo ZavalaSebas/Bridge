@@ -2,14 +2,7 @@ using System.ComponentModel;
 
 namespace Bridge.Core.Enums;
 
-/// <summary>
-/// Sortable fields for the library list. Mirrors Playnite's sort options
-/// (PROJECT_FOUNDATION.md §12) for the fields Bridge can actually resolve:
-/// direct Game properties plus reference entities Bridge has repositories for
-/// (Genre/Platform/Company/GameSource). Fields needing repositories that don't
-/// exist yet (AgeRating, Category, Feature, Series, Region, Tag) are left out
-/// for now.
-/// </summary>
+/// <summary>Sortable library fields — direct game properties and resolved reference names.</summary>
 public enum GameSortField
 {
     [Description("Name")]

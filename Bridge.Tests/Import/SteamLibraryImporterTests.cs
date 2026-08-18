@@ -2,9 +2,7 @@ using Bridge.Import.Steam;
 
 namespace Bridge.Tests.Import;
 
-// Uses realistic content shaped exactly like real Steam files (verified
-// against actual libraryfolders.vdf / appmanifest*.acf on a real machine
-// with Steam installed, PROJECT_FOUNDATION.md §28.26) — not invented syntax.
+// Fixtures match real libraryfolders.vdf / appmanifest*.acf syntax.
 public class SteamLibraryImporterTests : IDisposable
 {
     private readonly string _tempDir;

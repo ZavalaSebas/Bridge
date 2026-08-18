@@ -4,15 +4,7 @@ using Bridge.Core.Enums;
 
 namespace Bridge.Statistics;
 
-/// <summary>
-/// IComparer for the library list, used as ListCollectionView.CustomSort.
-/// Supports Playnite-style sort fields; reference entities (Developer/
-/// Publisher/Platform/Genre/Source) are compared by display name, resolved
-/// through nameByGuid dictionaries so the comparer stays testable without a
-/// database. Empty/unset values always sort to the end, regardless of
-/// direction — descending only reverses the actual values, never the "empty
-/// goes last" rule.
-/// </summary>
+/// <summary>Sorts games for ListCollectionView.CustomSort. Empty values always sort last.</summary>
 public class GameSortComparer : IComparer<Game>, IComparer
 {
     private readonly GameSortField _field;
@@ -109,7 +101,7 @@ public class GameSortComparer : IComparer<Game>, IComparer
     }
 
     // First non-empty name of the referenced entities, else "" — keeps it
-    // deterministic for the MVP (no multi-value preference like Playnite).
+    // First matching name wins when a game has several reference ids.
     private int CompareNames(
         IEnumerable<Guid> xIds,
         IEnumerable<Guid> yIds,

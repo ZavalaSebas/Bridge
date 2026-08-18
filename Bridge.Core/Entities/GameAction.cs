@@ -3,11 +3,9 @@ using Bridge.Core.Enums;
 namespace Bridge.Core.Entities;
 
 /// <summary>
-/// Field shape matches Playnite's GameAction 1:1 (PROJECT_FOUNDATION.md §28.8) —
-/// field usage is type-dependent: File uses Path/Arguments/WorkingDir; Url uses
-/// only Path; Emulator uses EmulatorId/EmulatorProfileId/Arguments(if
-/// OverrideDefaultArgs)/AdditionalArguments, never Path/WorkingDir; Script uses
-/// only Script. See §28.9 for the exact per-type launch algorithm this feeds.
+/// Launch action for a game. Which fields matter depends on <see cref="Type"/>:
+/// File uses Path/Arguments/WorkingDir; Url uses Path; Emulator uses emulator ids
+/// and argument overrides; Script uses Script only.
 /// </summary>
 public class GameAction
 {

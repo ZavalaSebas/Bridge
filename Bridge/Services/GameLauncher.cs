@@ -9,37 +9,9 @@ using Bridge.Import.Steam;
 namespace Bridge.Services;
 
 /// <summary>
-/// Launches a game's play GameAction and tracks it by polling — matching
-/// Playnite's real mechanism exactly (PROJECT_FOUNDATION.md §28.9-28.10):
-/// no Process.Exited event, a loop checking !process.HasExited every
-/// TrackingFrequencyMs, session length accumulated from elapsed wall time.
-///
-/// MVP scope, deliberately narrower than Playnite's real behavior — see
-/// PLAN.md's Fase 3/6 entries for what's still missing, don't treat these
-/// gaps as bugs:
-/// - GameActionType.Url is supported but only for the auto-resolved Steam
-///   case below, not as a general user-configured action.
-/// - GameActionType.Script isn't supported.
-/// - Emulator argument substitution is a single literal "{RomPath}" token
-///   replace, not Playnite's full ExpandVariables system (§28.9) — no
-///   {InstallDir}/{PlayniteDir}/etc. tokens yet.
-/// - Steam tracking uses TrackingMode.Directory (watch processes whose
-///   binary lives under the game's InstallDirectory — Playnite's
-///   WatchDirectoryProcesses, §28.9). File/Emulator actions with the default
-///   tracking use process-tree walking (Playnite's MonitorProcessTree, §28.10)
-///   so launcher-based games (Genshin's launcher.exe, Epic/GOG frontends) keep
-///   tracking after the launcher spawns the real game and exits. Other modes
-///   track the exact launched process only (Playnite's OriginalProcess).
-///
-/// Automatic Steam play action: mirrors Playnite's SteamPlayController
-/// (SteamGameController.cs:160-204, verified against the real extension and
-/// core in PROJECT_FOUNDATION.md §28.26). When a Steam-imported game (appid in
-/// ExternalId) has no user-configured GameAction, Launch() resolves one at
-/// runtime — steam://rungameid/{appid} passed to steam.exe as
-/// "-silent \"steam://rungameid/{appid}\"". The local .exe in InstallDirectory
-/// is deliberately NOT used to launch (Steamworks DRM — running the exe
-/// directly without the Steam client fails), which is why Playnite never does
-/// either. The resolved action is not persisted.
+/// Launches play actions and tracks sessions by polling. Steam games without a
+/// configured action get a runtime steam:// launch. Not supported yet: Script actions,
+/// general Url actions, and emulator tokens beyond {RomPath}/{CorePath}.
 /// </summary>
 public class GameLauncher(IRepository<Emulator> emulatorRepository)
 {
@@ -115,10 +87,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                     .FireAndForget("GameLauncher.TrackDirectory");
                 return true;
 
-            // Process-tree tracking: the launched process AND every descendant it
-            // spawns (the launcher-spawns-game-and-exits case — Genshin's
-            // launcher.exe, Epic/GOG frontends). Default auto-chooses the tree
-            // for File/Emulator actions, matching Playnite's automatic choice.
+            // Default: process tree for File/Emulator, install directory for Url.
             case TrackingMode.Process:
             case TrackingMode.Default when action.Type is GameActionType.File or GameActionType.Emulator:
                 try
@@ -393,10 +362,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
     private static GameAction? TryResolveAutomaticAction(Game game)
     {
-        // Mirrors Playnite's SteamPlayController, which is created for every Steam game
-        // with no stored GameAction (SteamLibrary.cs:101-109 + SteamGameController.cs:139-153).
-        // The action build is pure logic in SteamPlayActions (unit-tested without needing
-        // Steam installed); only the "is Steam actually installed" check needs the registry.
+        // Steam games with no stored action get a runtime steam:// play action.
         var action = SteamPlayActions.CreatePlayAction(game);
         if (action is null)
         {
@@ -415,12 +381,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             UseShellExecute = true
         }) ?? throw new InvalidOperationException($"Failed to start process: {action.Path}");
 
-    // Mirrors Playnite's SteamPlayController.Play (SteamGameController.cs:160-204):
-    // prefer explicit steam.exe -silent "steam://..." (avoids the client window and
-    // is more reliable than relying on the steam:// URL association), fall back to
-    // ShellExecute on the URL itself (ProcessStarter.StartUrl equivalent). Only
-    // steam:// URLs go through steam.exe — anything else (http/https, mailto, ...)
-    // is ShellExecute'd directly.
+    // Prefer steam.exe -silent "steam://..."; fall back to ShellExecute on the URL.
     private static Process StartUrlAction(GameAction action)
     {
         if (action.Path.StartsWith("steam://", StringComparison.OrdinalIgnoreCase))
@@ -530,12 +491,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
         GameStopped?.Invoke(game, elapsed);
     }
 
-    // Directory-based tracking for the auto-resolved Steam case. Mirrors Playnite's
-    // WatchDirectoryProcesses (§28.9): the launched process is steam.exe, which is
-    // NOT the game, so we watch for any process whose executable lives under the
-    // game's InstallDirectory instead of tracking a PID. Waits for at least one such
-    // process to appear (InitialTrackingDelayMs grace period for Steam to spin up),
-    // then for all of them to exit.
+    // Watch processes under InstallDirectory — steam.exe is not the game itself.
     private async Task TrackDirectoryAsync(Game game, CancellationToken token, int initialDelayMs, int frequencyMs)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -643,13 +599,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     private static TimeSpan IdleTimeoutFor(TimeSpan sessionAge) =>
         sessionAge < DirectoryLaunchIdleWindow ? DirectoryLaunchIdleTimeout : DirectoryIdleTimeout;
 
-    // Process-tree tracking for the launcher-spawns-child-and-exits case (Genshin's
-    // launcher.exe, Epic/GOG frontends). Mirrors Playnite's MonitorProcessTree
-    // (§28.10): start with the launched PID, then every poll expand the tree to
-    // include any process whose parent is already in it, and prune to the ones
-    // still alive. The launcher may exit after spawning the game — the game stays
-    // in the tree as a descendant, so the session survives until the game itself
-    // closes. Gives up after DirectoryLaunchTimeout if nothing ever appears.
+    // Expand the tree each poll so launcher-spawned games stay tracked after the launcher exits.
     private async Task TrackProcessTreeAsync(Game game, int launchedPid, CancellationToken token, int frequencyMs)
     {
         var stopwatch = Stopwatch.StartNew();

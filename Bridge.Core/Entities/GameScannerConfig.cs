@@ -2,7 +2,7 @@ using Bridge.Core.Enums;
 
 namespace Bridge.Core.Entities;
 
-/// <summary>Matches Playnite's GameScannerConfig field-for-field — see PROJECT_FOUNDATION.md §28.1 for the field list and §28.4 for exactly what each field controls during a scan.</summary>
+/// <summary>ROM scanner folder profile — paths, exclusions, and emulator binding.</summary>
 public class GameScannerConfig : DatabaseObject
 {
     public Guid EmulatorId { get; set; }

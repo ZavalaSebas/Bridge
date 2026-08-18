@@ -5,19 +5,16 @@ using Bridge.Core.Utilities;
 namespace Bridge.Import.Steam;
 
 /// <summary>
-/// Detects locally-installed Steam games — no network call, no Steam Web
-/// API key, purely local files. Mirrors Playnite's real SteamLocalService
-/// flow exactly (PROJECT_FOUNDATION.md §28.26, verified against Playnite's
-/// actual extension source and against real files on this machine, not just
-/// the docs): registry → libraryfolders.vdf → appmanifest*.acf per library
-/// → filter by the FullyInstalled state flag.
+/// Detects locally installed Steam games from local files only — no network
+/// or Web API key. Registry → libraryfolders.vdf → appmanifest*.acf, keeping
+/// entries with the FullyInstalled state flag.
 /// </summary>
 public class SteamLibraryImporter
 {
-    // Bit value from Playnite's real AppStateFlags enum (§28.26) — 4 = FullyInstalled.
+    // AppStateFlags bit — 4 = FullyInstalled.
     private const int FullyInstalledFlag = 4;
 
-    // Steamworks Common Redistributables — not a real game. Playnite's real importer skips this exact AppID too.
+    // Steamworks Common Redistributables — not a game; skip this app id.
     private const string RedistributablesAppId = "228980";
 
     public List<GameMetadata> GetInstalledGames()
@@ -110,8 +107,7 @@ public class SteamLibraryImporter
         }
         catch
         {
-            // Steam can write a malformed .acf mid-update (Playnite's own comment on
-            // this exact case, §28.26) — skip this one file, don't abort the whole scan.
+            // Steam may write a malformed .acf mid-update — skip this file.
             return null;
         }
 
@@ -147,8 +143,7 @@ public class SteamLibraryImporter
                 installDirectory = string.Empty;
         }
 
-        // SizeOnDisk is the on-disk size in bytes that Steam writes to the
-        // .acf — the same field Playnite's Steam plugin reads for Install Size.
+        // SizeOnDisk in the .acf is the on-disk install size in bytes.
         ulong? sizeOnDisk = null;
         if (appState.TryGetValue("SizeOnDisk", out var sizeObj) &&
             sizeObj is string sizeStr &&

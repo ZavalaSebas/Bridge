@@ -32,9 +32,7 @@
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="56" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-        <!-- Frosted-glass window background (Playnite-style): el fondo del juego
-             seleccionado va borroso y oscurecido detras; los paneles
-             semitransparentes encima dejan pasar el blur = cristal. -->
+        <!-- Fondo borroso del juego seleccionado detrás del contenido. -->
 
         <Grid Grid.RowSpan="3" IsHitTestVisible="False">
             <Grid.CacheMode><BitmapCache /></Grid.CacheMode>

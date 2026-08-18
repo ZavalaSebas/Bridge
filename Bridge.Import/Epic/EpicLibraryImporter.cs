@@ -8,14 +8,9 @@ using Bridge.Core.Utilities;
 namespace Bridge.Import.Epic;
 
 /// <summary>
-/// Detects locally-installed Epic Games games — no network call, no OAuth
-/// login, purely local files. Mirrors Playnite's EpicLibrary plugin
-/// (EpicLibrary.cs GetInstalledGames + EpicLauncher.cs): reads
-/// LauncherInstalled.dat for the install list and the per-game .item
-/// manifests for display names, filtering out Unreal Engine bits, DLC and
-/// engine plugins. The play action never launches the exe directly — it uses
-/// the com.epicgames.launcher:// URL so the Epic client handles DRM, tracked
-/// by directory (same approach as the Steam play action).
+/// Detects locally installed Epic games from LauncherInstalled.dat and per-game
+/// .item manifests. Skips Unreal Engine, DLC, and engine plugins. Play action
+/// uses com.epicgames.launcher:// and directory tracking like Steam.
 /// </summary>
 public class EpicLibraryImporter
 {
@@ -61,7 +56,7 @@ public class EpicLibraryImporter
                 continue;
             }
 
-            // DLC (non-launchable add-ons) — Playnite skips these.
+            // Skip non-launchable DLC add-ons.
             if (manifest.AppCategories?.Contains("addons") == true &&
                 manifest.AppCategories?.Any(a => a == "addons/launchable") == false)
             {
@@ -117,10 +112,7 @@ public class EpicLibraryImporter
                 IsInstalled = true
             };
 
-            // Playnite loads the icon from the installed game's executable
-            // (EpicMetadataProvider): "There's not icon available on Epic
-            // servers so we will load one from EXE". The Icon field holds the
-            // exe path and Bridge's ExeIconLoader renders it.
+            // Epic has no server icon — use the launch exe path; ExeIconLoader renders it.
             if (!string.IsNullOrWhiteSpace(manifest.LaunchExecutable))
             {
                 var exePath = PathContainment.TryResolveUnderRoot(installLocation, manifest.LaunchExecutable);

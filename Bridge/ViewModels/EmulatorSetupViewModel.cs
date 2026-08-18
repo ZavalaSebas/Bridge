@@ -6,12 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Bridge.ViewModels;
 
-/// <summary>
-/// MVP emulator configuration — one Emulator with one Profile, matching
-/// PLAN.md's current "single emulator" scope. Editing multiple emulators/
-/// profiles, and the "select emulator on start" flow (PROJECT_FOUNDATION.md
-/// §28.9), are Future Scope.
-/// </summary>
+/// <summary>Single-emulator setup screen — one Emulator with one profile.</summary>
 public partial class EmulatorSetupViewModel : ObservableObject
 {
     private readonly IRepository<Emulator> _emulatorRepository;
