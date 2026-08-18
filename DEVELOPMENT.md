@@ -319,9 +319,10 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 > The auto-updater replaces the exe; the **schema** of `bridge.db` is updated by
 > the app itself at startup, applying EF Core migrations on top of the user's
 > existing AppData DB — so a release can change the DB structure without the
-> user re-downloading or losing data. This is how the updater "updates
-> everything, not just the exe": the exe swap ships new code **and** new
-> migrations, and the migrations run on the user's next launch.
+> user re-downloading or losing data. Non-database AppData (settings files,
+> folders) is migrated separately by `AppDataMigrator` (see the AppData
+> Migrations section below). Together, the exe swap ships new code **and** new
+> migration steps, and they all run on the user's next launch.
 
 **Real EF migrations** replaced the old `EnsureCreated()` + raw-SQL `EnsureColumn`
 mini-migrations:
@@ -364,6 +365,53 @@ only supports a subset of `ALTER TABLE` natively; EF Core generates table-rebuil
 migrations for anything else, which is fine but heavier (a large `Games` table is
 copied). Prefer additive changes (new columns/tables) where possible; a column
 **drop or rename** rebuilds the table.
+
+### AppData Migrations
+
+> The exe updater replaces `Bridge.exe`; **EF migrations** reshape `bridge.db`;
+> **AppData migrations** reshape everything else under `%LOCALAPPDATA%\Bridge\`
+> (settings files, folder layout, obsolete paths). All three run automatically
+> on the next launch after an update — the user never touches AppData manually.
+
+**Implemented in `Bridge/Services/AppData/`** (`AppDataMigrator`,
+`AppDataMigrationContext`, `AppDataMigrations`):
+
+- **Version file:** `appdata-version.txt` records the last applied step (integer,
+  not the assembly version). Missing or corrupt file is treated as version `0`.
+- **Applied at startup** by `AppDataMigrator.MigrateToLatest()` in
+  `Bridge/App.xaml.cs`, **before** DI and `BridgeDbMigrator.MigrateToLatest()`.
+- **Numbered steps** run in order; after each step succeeds, the version file is
+  bumped. If a step throws, the version stays put and the step retries on the
+  next launch (steps must be **idempotent**).
+- **Current steps (v1):** ensure standard folders (`image-cache/`, `emulators/`,
+  `emulator-downloads/`, `logs/`), merge legacy `ImageCache/` into
+  `image-cache/`, rewrite legacy `Grid` view keys to `Covers`, protect plain
+  `igdb-settings.json` with DPAPI, remove obsolete `settings.json` when present.
+  Load-time tolerance in the individual stores remains as a safety net.
+
+**To change AppData layout** (rename a folder, reformat a settings file, delete
+an obsolete path):
+
+1. Add a new method to `AppDataMigrations.cs` (e.g. `V2_RenameFoo`).
+2. Append it to the `Steps` array in `AppDataMigrator.cs`.
+3. Increment `AppDataMigrator.LatestVersion`.
+4. Add a unit test in `Bridge.Tests/Services/AppDataMigratorTests.cs`.
+
+```csharp
+// AppDataMigrations.cs — example future step
+public static void V2_MoveThemeFile(AppDataMigrationContext ctx)
+{
+    var oldPath = ctx.Combine("theme.json");
+    var newPath = ctx.Combine("settings", "theme.json");
+    if (File.Exists(oldPath) && !File.Exists(newPath))
+    {
+        ctx.EnsureDirectory("settings");
+        File.Move(oldPath, newPath);
+    }
+}
+```
+
+Covered by `Bridge.Tests/Services/AppDataMigratorTests.cs`.
 
 ### Welcome Sentinel
 

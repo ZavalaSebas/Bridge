@@ -59,4 +59,18 @@ public static class ViewModeSettingsStore
             // Persisting must never crash the app.
         }
     }
+
+    /// <summary>
+    /// One-time on-disk fix for legacy "Grid" persisted before ViewMode.Covers.
+    /// Called from <see cref="AppDataMigrator"/>; load-time normalization remains
+    /// as a fallback for corrupt partial writes.
+    /// </summary>
+    internal static void MigrateLegacyPersistedNames(AppDataMigrationContext ctx)
+    {
+        ctx.ReplaceFileTextIfExists(["viewmode.txt"], static text =>
+        {
+            var normalized = NormalizeLegacyName(text);
+            return Enum.TryParse<ViewMode>(normalized, out var mode) ? mode.ToString() : normalized;
+        });
+    }
 }

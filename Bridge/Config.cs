@@ -57,6 +57,11 @@ public static class Config
     // plain file like viewmode.txt: an app-instance preference, not library data.
     public static string UpdateChannelFilePath => Path.Combine(AppDataPath, "update-channel.txt");
 
+    // Tracks which numbered AppData migration steps have run (see AppDataMigrator).
+    public const string AppDataVersionFileName = "appdata-version.txt";
+
+    public static string AppDataVersionFilePath => Path.Combine(AppDataPath, AppDataVersionFileName);
+
     public static Version AssemblyVersion =>
         Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 0);
 }
