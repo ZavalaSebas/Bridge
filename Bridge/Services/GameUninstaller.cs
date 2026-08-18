@@ -1,3 +1,4 @@
+using Bridge.Core.Utilities;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -44,14 +45,11 @@ public sealed class GameUninstaller
     // there's nothing left to wait on.
     public static async Task<bool> RunAsync(string command, Game game, string? sourceName)
     {
-        try
-        {
-            Process.Start(new ProcessStartInfo(command) { UseShellExecute = true });
-        }
-        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
+        var started = UrlValidator.IsSafeToOpen(command)
+            ? SafeLauncher.TryOpenUrl(command)
+            : SafeLauncher.TryRunUninstallCommand(command);
+        if (!started)
             return false;
-        }
 
         var deadline = DateTime.UtcNow.AddMinutes(2);
         while (DateTime.UtcNow < deadline)

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Core.Import;
+using Bridge.Core.Utilities;
 
 namespace Bridge.Import.Epic;
 
@@ -108,8 +109,8 @@ public class EpicLibraryImporter
             // exe path and Bridge's ExeIconLoader renders it.
             if (!string.IsNullOrWhiteSpace(manifest.LaunchExecutable))
             {
-                var exePath = Path.Combine(installLocation, manifest.LaunchExecutable);
-                if (File.Exists(exePath))
+                var exePath = PathContainment.TryResolveUnderRoot(installLocation, manifest.LaunchExecutable);
+                if (exePath is not null && File.Exists(exePath))
                 {
                     metadata.Icon = exePath;
                 }

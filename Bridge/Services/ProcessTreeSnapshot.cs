@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.ComponentModel;
 
 namespace Bridge.Services;
 
@@ -27,6 +28,7 @@ public static class ProcessTreeSnapshot
         var snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if (snapshot == IntPtr.Zero)
         {
+            App.LogException(new Win32Exception(Marshal.GetLastWin32Error(), "CreateToolhelp32Snapshot failed"));
             return result;
         }
 

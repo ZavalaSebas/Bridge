@@ -19,7 +19,7 @@ public class RepositoryTests : IDisposable
             .UseSqlite($"Data Source={_dbPath};Pooling=False")
             .Options;
         _context = new BridgeDbContext(options);
-        _context.Database.EnsureCreated();
+        _context.MigrateToLatest();
         _repository = new Repository<Genre>(_context);
     }
 

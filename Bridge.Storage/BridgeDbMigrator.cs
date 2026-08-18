@@ -17,6 +17,13 @@ namespace Bridge.Storage;
 /// </summary>
 public static class BridgeDbMigrator
 {
+    private static readonly string[] RequiredBaselineTables =
+    [
+        "Games",
+        "GameSources",
+        "Genres"
+    ];
+
     /// <summary>Migrates the DB to the latest schema, baselining pre-migrations DBs first.</summary>
     public static void MigrateToLatest(this BridgeDbContext context)
     {
@@ -25,8 +32,9 @@ public static class BridgeDbMigrator
 
         // Baseline: the DB already has the schema (EnsureCreated era) but no
         // migration history. Mark the current migrations as applied without
-        // running their SQL — the tables already exist.
-        if (applied.Count == 0 && migrations.Count > 0 && DatabaseHasTables(context))
+        // running their SQL — the tables already exist. Require the core Bridge
+        // tables so a partial/corrupt DB is not silently marked as migrated.
+        if (applied.Count == 0 && migrations.Count > 0 && DatabaseHasBaselineSchema(context))
         {
             var history = context.GetService<IHistoryRepository>();
             history.CreateIfNotExists();
@@ -40,7 +48,7 @@ public static class BridgeDbMigrator
         context.Database.Migrate();
     }
 
-    private static bool DatabaseHasTables(BridgeDbContext context)
+    private static bool DatabaseHasBaselineSchema(BridgeDbContext context)
     {
         using var connection = context.Database.GetDbConnection();
         var wasOpen = connection.State == ConnectionState.Open;
@@ -52,8 +60,15 @@ public static class BridgeDbMigrator
         try
         {
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
-            return Convert.ToInt32(command.ExecuteScalar()) > 0;
+            command.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
+            using var reader = command.ExecuteReader();
+            var tables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            while (reader.Read())
+            {
+                tables.Add(reader.GetString(0));
+            }
+
+            return RequiredBaselineTables.All(tables.Contains);
         }
         finally
         {

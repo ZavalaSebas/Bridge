@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
@@ -50,9 +52,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
                 communityScore = CalculateCommunityScore(reviews.TotalPositive, reviews.TotalNegative);
             }
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // reviews are optional, not a hard failure
+            Trace.TraceWarning("Steam reviews lookup failed for app {0}: {1}", steamAppId, ex.Message);
         }
 
         return MapToGameMetadata(appDetails, steamAppId, communityScore);
@@ -88,13 +90,12 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
 
             return null;
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            Trace.TraceWarning("Steam search failed for \"{0}\": {1}", gameName, ex.Message);
             return null;
         }
     }
-
-    // Splits a game name into lowercase content words, dropping common English
     // filler ("of the", "and", ...) so "Fallout 3 - Game of the Year" still
     // matches "Fallout 3". Short tokens are kept on purpose: "2" in "Risk of
     // Rain 2" and "V" in "Grand Theft Auto V" are what tell it apart from the
@@ -140,8 +141,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
 
             return entry is { Success: true, Data: not null } ? entry.Data : null;
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            Trace.TraceWarning("Steam appdetails failed for app {0}: {1}", appId, ex.Message);
             return null;
         }
     }
@@ -154,8 +156,9 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             var response = await httpClient.GetFromJsonAsync<SteamAppReviewsResponse>(url, cancellationToken: cancellationToken);
             return response is { Success: 1 } ? response.QuerySummary : null;
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            Trace.TraceWarning("Steam appreviews failed for app {0}: {1}", appId, ex.Message);
             return null;
         }
     }
