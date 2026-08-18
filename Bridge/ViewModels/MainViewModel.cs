@@ -531,9 +531,9 @@ public partial class MainViewModel : ObservableObject
 
     // Startup work that used to run synchronously in the constructor (Steam
     // import + background metadata sync), which blocked the window from showing
-    // for seconds on large libraries. Runs after the window is visible; both
-    // stages stay on the UI thread between awaits (the singleton BridgeDbContext
-    // isn't thread-safe) but yield regularly so the UI keeps responding.
+    // for seconds on large libraries. Runs after the window is visible; stages
+    // stay on the UI thread between awaits but yield regularly so the UI keeps
+    // responding.
     private async Task InitializeAsync()
     {
         try
@@ -1046,8 +1046,8 @@ public partial class MainViewModel : ObservableObject
 
     // Shared bulk import: enumerates games (on a pool thread — pure file I/O),
     // inserts new ones and syncs install state on existing ones, all on the UI
-    // thread (singleton DbContext). Suspend the per-change rebuild so a large
-    // library doesn't trigger O(n²) table rebuilds.
+    // thread. Suspend the per-change rebuild so a large library doesn't trigger
+    // O(n²) table rebuilds.
     private async Task ImportLibraryCoreAsync(
         Guid sourceId,
         string sourceName,
@@ -1096,34 +1096,42 @@ public partial class MainViewModel : ObservableObject
                 }
                 else
                 {
+                    // FindByExternalId returns a detached snapshot — mutate the live
+                    // instance bound to the UI so import + metadata sync see the same object.
+                    var live = Games.FirstOrDefault(g => g.Id == existing.Id);
+                    if (live is null)
+                    {
+                        continue;
+                    }
+
                     // Mirrors Playnite's real re-scan behavior (PROJECT_FOUNDATION.md
                     // §28.2): a re-import only syncs install state, it never touches
                     // fields the user (or a metadata download) may have already set.
-                    existing.IsInstalled = metadata.IsInstalled;
-                    existing.InstallDirectory = metadata.InstallDirectory;
-                    existing.InstallSizeBytes = metadata.InstallSizeBytes;
+                    live.IsInstalled = metadata.IsInstalled;
+                    live.InstallDirectory = metadata.InstallDirectory;
+                    live.InstallSizeBytes = metadata.InstallSizeBytes;
                     // Steam's locally-recorded playtime fills in the real number
                     // without ever shrinking what Bridge already tracked (the two
                     // overlap, so taking the max can't double-count), and
                     // LastActivity only moves forward.
-                    existing.PlaytimeSeconds = Math.Max(existing.PlaytimeSeconds, metadata.PlaytimeSeconds);
+                    live.PlaytimeSeconds = Math.Max(live.PlaytimeSeconds, metadata.PlaytimeSeconds);
                     if (metadata.LastActivity is { } steamPlayed &&
-                        (existing.LastActivity is null || steamPlayed > existing.LastActivity))
+                        (live.LastActivity is null || steamPlayed > live.LastActivity))
                     {
-                        existing.LastActivity = steamPlayed;
+                        live.LastActivity = steamPlayed;
                     }
                     // Fill a missing icon from the source (Epic exe icon, Steam
                     // local art) without overwriting one the user set. A local
                     // file icon (the Epic exe) always wins over a remote URL.
                     var srcIcon = metadata.Icon;
                     if (!string.IsNullOrWhiteSpace(srcIcon) &&
-                        (string.IsNullOrWhiteSpace(existing.Icon) || Path.IsPathRooted(srcIcon)))
+                        (string.IsNullOrWhiteSpace(live.Icon) || Path.IsPathRooted(srcIcon)))
                     {
-                        existing.Icon = srcIcon;
+                        live.Icon = srcIcon;
                     }
-                    applyLocalArtwork?.Invoke(existing);
-                    _gameRepository.Update(existing);
-                    RefreshListDisplay(existing);
+                    applyLocalArtwork?.Invoke(live);
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
                     updated++;
                 }
             }
@@ -1262,18 +1270,19 @@ public partial class MainViewModel : ObservableObject
 
             try
             {
-                if (!Games.Contains(game))
+                var live = TryGetLiveGame(game);
+                if (live is null)
                     continue;
 
                 if (providerName == _steamMetadataProvider.Name)
-                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(game.Name, metadata);
+                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                ApplyMetadata(game, metadata);
-                ApplyMetadataReferences(game, metadata);
-                ApplySteamLocalArtwork(game);
+                ApplyMetadata(live, metadata);
+                ApplyMetadataReferences(live, metadata);
+                ApplySteamLocalArtwork(live);
 
-                _gameRepository.Update(game);
-                RefreshListDisplay(game);
+                _gameRepository.Update(live);
+                RefreshListDisplay(live);
                 applied++;
             }
             catch (Exception ex)
@@ -1472,9 +1481,15 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    private Game? TryGetLiveGame(Game game) =>
+        Games.FirstOrDefault(g => g.Id == game.Id);
+
     private async Task DownloadMissingSteamMetadataAsync(Guid steamSourceId)
     {
-        var allSteam = _gameRepository.GetAll()
+        // Use the in-memory library — _gameRepository.GetAll() returns detached
+        // snapshots (AsNoTracking), and Games.Contains() is reference-based, so
+        // a repository round-trip made every startup sync a no-op.
+        var allSteam = Games
             .Where(g => g.SourceId == steamSourceId)
             .ToList();
 
@@ -1536,20 +1551,21 @@ public partial class MainViewModel : ObservableObject
                     // This sync runs after the window is interactive — the game may
                     // have been deleted (or had its actions edited) while the awaits
                     // above were in flight. Only mutate/save what's still live.
-                    if (!Games.Contains(game))
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
                         continue;
 
                     // Steam provides store/community links; our IGDB Worker adds the
                     // social links (YouTube, Reddit, ...) so the automatic sync is
                     // complete, not just the manual one.
-                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(game.Name, metadata);
+                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                    ApplyMetadata(game, metadata, overwrite: false);
-                    ApplyMetadataReferences(game, metadata);
-                    ApplySteamLocalArtwork(game);
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+                    ApplySteamLocalArtwork(live);
 
-                    _gameRepository.Update(game);
-                    RefreshListDisplay(game);
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
                     applied++;
                 }
                 catch (Exception ex)
@@ -1567,17 +1583,18 @@ public partial class MainViewModel : ObservableObject
         {
             try
             {
-                if (!Games.Contains(game))
+                var live = TryGetLiveGame(game);
+                if (live is null)
                     continue;
 
                 var metadata = new GameMetadata();
-                await _metadataSync.EnrichSteamLinksFromIgdbAsync(game.Name, metadata);
+                await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
                 if (metadata.Links.Count == 0)
                     continue;
 
-                ApplyMetadata(game, metadata, overwrite: false);
-                _gameRepository.Update(game);
-                RefreshListDisplay(game);
+                ApplyMetadata(live, metadata, overwrite: false);
+                _gameRepository.Update(live);
+                RefreshListDisplay(live);
                 applied++;
             }
             catch (Exception ex)
@@ -1600,7 +1617,7 @@ public partial class MainViewModel : ObservableObject
     // which resolves Epic-only games correctly (unlike Steam-by-name).
     private async Task DownloadMissingMetadataByNameAsync(IReadOnlyList<Guid> sourceIds)
     {
-        var candidates = _gameRepository.GetAll()
+        var candidates = Games
             .Where(g => sourceIds.Contains(g.SourceId) && string.IsNullOrWhiteSpace(g.Description))
             .ToList();
 
@@ -1643,14 +1660,15 @@ public partial class MainViewModel : ObservableObject
 
             try
             {
-                if (!Games.Contains(game))
+                var live = TryGetLiveGame(game);
+                if (live is null)
                     continue;
 
-                ApplyMetadata(game, metadata, overwrite: false);
-                ApplyMetadataReferences(game, metadata);
+                ApplyMetadata(live, metadata, overwrite: false);
+                ApplyMetadataReferences(live, metadata);
 
-                _gameRepository.Update(game);
-                RefreshListDisplay(game);
+                _gameRepository.Update(live);
+                RefreshListDisplay(live);
                 applied++;
             }
             catch (Exception ex)
