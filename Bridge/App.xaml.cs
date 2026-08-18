@@ -14,6 +14,7 @@ using Bridge.Storage.Repositories;
 using Bridge.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Wpf.Ui.Controls;
 
 namespace Bridge
 {
@@ -45,8 +46,9 @@ namespace Bridge
             // no __EFMigrationsHistory) is baselined first so its existing
             // schema is treated as the initial migration, then only future
             // migrations apply on top.
-            var dbContext = Services.GetRequiredService<BridgeDbContext>();
-            dbContext.MigrateToLatest();
+            var factory = Services.GetRequiredService<IDbContextFactory<BridgeDbContext>>();
+            using var ctx = factory.CreateDbContext();
+            ctx.MigrateToLatest();
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.
@@ -121,14 +123,11 @@ namespace Bridge
 
         private static void ConfigureServices(IServiceCollection services)
         {
-            var dbOptions = new DbContextOptionsBuilder<BridgeDbContext>()
-                .UseSqlite($"Data Source={Config.DatabasePath}")
-                .Options;
-
-            // Singleton, not Scoped: this is a desktop app with one long-lived
-            // session, not a web app handling independent requests. Matches
-            // DEVELOPMENT.md's Lifetime Guidelines ("Scoped — Rarely used in WPF").
-            services.AddSingleton(new BridgeDbContext(dbOptions));
+            // IDbContextFactory: repositories create a short-lived context per
+            // operation so concurrent background work (metadata sync, imports)
+            // doesn't share one non-thread-safe DbContext.
+            services.AddDbContextFactory<BridgeDbContext>(options =>
+                options.UseSqlite($"Data Source={Config.DatabasePath}"));
             services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));
             services.AddSingleton<IGameRepository, GameRepository>();
 
@@ -202,7 +201,7 @@ namespace Bridge
                 return;
             }
 
-            MessageBox.Show(e.Exception.Message, Config.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageDialogWindow.Show(e.Exception.Message, Config.AppName, SymbolRegular.ErrorCircle24);
             e.Handled = true;
 
             // A startup exception (before MainWindow exists) leaves no window to
