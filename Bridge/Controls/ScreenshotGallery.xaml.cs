@@ -303,7 +303,11 @@ public partial class ScreenshotGallery : UserControl
         }
 
         FullscreenPopup.IsOpen = true;
-        FullscreenRoot.Focus();
+        FullscreenPopup.Dispatcher.BeginInvoke(() =>
+        {
+            FullscreenRoot.Focus();
+            Keyboard.Focus(FullscreenRoot);
+        }, DispatcherPriority.Input);
     }
 
     private void CloseFullscreen()

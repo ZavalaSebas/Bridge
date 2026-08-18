@@ -14,6 +14,7 @@ using Bridge.Converters;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
+using Bridge.Resources;
 using Bridge.Services;
 using Bridge.Statistics;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -564,7 +565,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            SetStatus($"Startup import failed: {ex.Message}", StatusMessageKind.Error);
+            SetStatus(Strings.Format(nameof(Strings.StartupImportFailedFormat), ex.Message), StatusMessageKind.Error);
         }
     }
 
@@ -623,25 +624,19 @@ public partial class MainViewModel : ObservableObject
 
     private void LoadGames()
     {
-        _gameRepository.ResetPersistedTransientFlags();
-
         foreach (var game in _gameRepository.GetAll())
         {
             ApplySteamLocalArtwork(game);
             AddGameSorted(game);
         }
 
-        // Crash recovery: a previous session may have been force-closed while a
-        // game was running, leaving IsRunning=true persisted. Reset it here — this
-        // is the startup load, before the user can launch anything, so it can't
-        // clobber a legitimate in-session IsRunning (the background metadata sync
-        // must not reset it, see GameRepository.ResetTransientFlags).
+        // IsRunning is in-memory only (not persisted). Reset on startup so a
+        // stale in-process flag can't survive a hot reload during development.
         foreach (var game in Games)
         {
             if (!game.IsRunning)
                 continue;
             game.IsRunning = false;
-            _gameRepository.Update(game);
         }
 
         RefreshStatistics();
@@ -775,7 +770,7 @@ public partial class MainViewModel : ObservableObject
 
         if (SelectedGame.IsRunning)
         {
-            SetStatus($"'{SelectedGame.Name}' is running — close it before deleting.", StatusMessageKind.Error);
+            SetStatus(Strings.Format(nameof(Strings.GameRunningCloseBeforeDeleteFormat), SelectedGame.Name), StatusMessageKind.Error);
             return;
         }
 
@@ -793,7 +788,7 @@ public partial class MainViewModel : ObservableObject
         Games.Remove(SelectedGame);
         SelectedGame = null;
         RefreshStatistics();
-        SetStatus("Game removed from library.");
+        SetStatus(Strings.GameRemovedFromLibrary);
     }
 
     // Runs the game's real uninstaller (Steam/Epic launcher or the Windows
@@ -811,7 +806,7 @@ public partial class MainViewModel : ObservableObject
         var game = SelectedGame;
         if (game.IsRunning)
         {
-            SetStatus($"'{game.Name}' is running — close it before uninstalling.", StatusMessageKind.Error);
+            SetStatus(Strings.Format(nameof(Strings.GameRunningCloseBeforeUninstallFormat), game.Name), StatusMessageKind.Error);
             return;
         }
 
@@ -819,11 +814,11 @@ public partial class MainViewModel : ObservableObject
         var command = GameUninstaller.Resolve(game, sourceName);
         if (string.IsNullOrWhiteSpace(command))
         {
-            SetStatus($"No uninstaller found for '{game.Name}'.", StatusMessageKind.Warning);
+            SetStatus(Strings.Format(nameof(Strings.NoUninstallerFoundFormat), game.Name), StatusMessageKind.Warning);
             return;
         }
 
-        StatusMessage = $"Launching uninstaller for '{game.Name}'...";
+        StatusMessage = Strings.Format(nameof(Strings.LaunchingUninstallerFormat), game.Name);
         var completed = await GameUninstaller.RunAsync(command, game, sourceName);
 
         // The folder is gone (or was never tracked) — mark not installed. Keep
@@ -833,8 +828,8 @@ public partial class MainViewModel : ObservableObject
         RefreshListDisplay(game);
         RefreshStatistics();
         StatusMessage = completed
-            ? $"'{game.Name}' uninstalled."
-            : $"Uninstaller for '{game.Name}' finished but the game is still detected as installed.";
+            ? Strings.Format(nameof(Strings.GameUninstalledFormat), game.Name)
+            : Strings.Format(nameof(Strings.UninstallerFinishedStillInstalledFormat), game.Name);
     }
 
     [RelayCommand]
@@ -946,7 +941,7 @@ public partial class MainViewModel : ObservableObject
         var dir = SelectedGame.InstallDirectory;
         if (string.IsNullOrWhiteSpace(dir))
         {
-            StatusMessage = $"'{SelectedGame.Name}' has no install directory.";
+            StatusMessage = Strings.Format(nameof(Strings.NoInstallDirectoryFormat), SelectedGame.Name);
             return;
         }
 
@@ -956,7 +951,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
-            StatusMessage = $"Couldn't open '{dir}'.";
+            StatusMessage = Strings.Format(nameof(Strings.CouldNotOpenDirectoryFormat), dir);
         }
     }
 
@@ -988,7 +983,7 @@ public partial class MainViewModel : ObservableObject
             }
 
             RefreshStatistics();
-            StatusMessage = $"Scan complete: {found.Count} new ROM(s) imported from '{romFolder}'.";
+            StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), found.Count, romFolder);
             if (found.Count > 0)
             {
                 // Select the first imported ROM so the user lands on a concrete
@@ -999,7 +994,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            SetStatus($"Scan failed: {ex.Message}", StatusMessageKind.Error);
+            SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), ex.Message), StatusMessageKind.Error);
         }
     }
 
@@ -1023,7 +1018,7 @@ public partial class MainViewModel : ObservableObject
         // skip quietly instead of surfacing a scary message.
         if (string.IsNullOrEmpty(SteamPaths.GetInstallationPath()))
         {
-            StatusMessage = "Steam not detected — skipped import.";
+            StatusMessage = Strings.SteamNotDetectedSkippedImport;
             return;
         }
 
@@ -1038,7 +1033,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (!EpicPaths.IsInstalled)
         {
-            StatusMessage = "Epic Games Launcher not detected — skipped import.";
+            StatusMessage = Strings.EpicNotDetectedSkippedImport;
             return;
         }
 
@@ -1135,11 +1130,11 @@ public partial class MainViewModel : ObservableObject
 
             RebuildDetailedRows();
             RefreshStatistics();
-            StatusMessage = $"{sourceName} import: {added} new, {updated} updated.";
+            StatusMessage = Strings.Format(nameof(Strings.ImportResultFormat), sourceName, added, updated);
         }
         catch (Exception ex)
         {
-            SetStatus($"{sourceName} import failed: {ex.Message}", StatusMessageKind.Error);
+            SetStatus(Strings.Format(nameof(Strings.ImportFailedFormat), sourceName, ex.Message), StatusMessageKind.Error);
         }
         finally
         {
@@ -1181,7 +1176,7 @@ public partial class MainViewModel : ObservableObject
         var romImport = game.Roms.Count > 0;
         var gameName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
 
-        StatusMessage = $"Downloading metadata for '{game.Name}'...";
+        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGameFormat), game.Name);
 
         var result = await _metadataSync.SearchForManualDownloadAsync(
             gameName,
@@ -1191,8 +1186,8 @@ public partial class MainViewModel : ObservableObject
         if (result is null)
         {
             StatusMessage = IsNetworkAvailable()
-                ? $"No metadata found for '{gameName}'."
-                : "No internet connection. Metadata will download the next time Bridge opens with a connection.";
+                ? Strings.Format(nameof(Strings.NoMetadataFoundFormat), gameName)
+                : Strings.NoInternetMetadataDeferred;
             return;
         }
 
@@ -1207,7 +1202,7 @@ public partial class MainViewModel : ObservableObject
 
         _gameRepository.Update(game);
         RefreshListDisplay(game);
-        StatusMessage = $"Metadata applied to '{game.Name}' (source: {providerName}).";
+        StatusMessage = Strings.Format(nameof(Strings.MetadataAppliedToGameFormat), game.Name, providerName);
     }
 
     // Downloads metadata for games just added from "Scan Automatically". Unlike
@@ -1234,11 +1229,11 @@ public partial class MainViewModel : ObservableObject
 
         if (!IsNetworkAvailable())
         {
-            StatusMessage = $"No internet connection. Metadata for {candidates.Count} game(s) will download the next time Bridge opens with a connection.";
+            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
             return;
         }
 
-        StatusMessage = $"Downloading metadata for {candidates.Count} game(s)...";
+        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
 
         using var throttle = new SemaphoreSlim(4);
         var results = await Task.WhenAll(candidates.Select(game =>
@@ -1288,8 +1283,8 @@ public partial class MainViewModel : ObservableObject
         }
 
         StatusMessage = applied > 0
-            ? $"Metadata applied: {applied}/{candidates.Count} game(s) updated."
-            : $"No metadata found for the added game(s) ({candidates.Count} checked).";
+            ? Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count)
+            : Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count);
     }
 
     private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
@@ -1486,8 +1481,8 @@ public partial class MainViewModel : ObservableObject
         if (!IsNetworkAvailable())
         {
             StatusMessage = allSteam.Count > 0
-                ? $"No internet connection. Metadata for {allSteam.Count} game(s) will download the next time Bridge opens with a connection."
-                : "No internet connection. Metadata will download the next time Bridge opens with a connection.";
+                ? Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), allSteam.Count)
+                : Strings.NoInternetMetadataDeferred;
             return;
         }
 
@@ -1507,7 +1502,7 @@ public partial class MainViewModel : ObservableObject
         int applied = 0;
         if (needMetadata.Count > 0)
         {
-            StatusMessage = $"Downloading metadata for {needMetadata.Count} game(s)...";
+            StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), needMetadata.Count);
 
             // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
             // requests are the slow part, and firing all of them at once would trip
@@ -1592,10 +1587,10 @@ public partial class MainViewModel : ObservableObject
         }
 
         StatusMessage = applied > 0
-            ? $"Metadata sync complete: {applied}/{needMetadata.Count + needLinksOnly.Count} game(s) updated."
+            ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, needMetadata.Count + needLinksOnly.Count)
             : needMetadata.Count + needLinksOnly.Count > 0 && !IsNetworkAvailable()
-                ? "Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection."
-                : $"Metadata sync complete: no updates ({needMetadata.Count + needLinksOnly.Count} game(s) checked).";
+                ? Strings.MetadataSyncNoInternet
+                : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), needMetadata.Count + needLinksOnly.Count);
     }
 
     // Downloads metadata for games from sources without an appid-based lookup
@@ -1616,11 +1611,11 @@ public partial class MainViewModel : ObservableObject
 
         if (!IsNetworkAvailable())
         {
-            StatusMessage = $"No internet connection. Metadata for {candidates.Count} game(s) will download the next time Bridge opens with a connection.";
+            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
             return;
         }
 
-        StatusMessage = $"Downloading metadata for {candidates.Count} game(s)...";
+        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
 
         using var throttle = new SemaphoreSlim(4);
         var results = await Task.WhenAll(candidates.Select(game =>
@@ -1665,10 +1660,10 @@ public partial class MainViewModel : ObservableObject
         }
 
         StatusMessage = applied > 0
-            ? $"Metadata sync complete: {applied}/{candidates.Count} game(s) updated."
+            ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count)
             : !IsNetworkAvailable()
-                ? "Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection."
-                : $"Metadata sync complete: no updates ({candidates.Count} game(s) checked).";
+                ? Strings.MetadataSyncNoInternet
+                : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), candidates.Count);
     }
 
     [RelayCommand]
@@ -1793,7 +1788,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             SetPendingUpdate(null);
-            StatusMessage = "Downloading update...";
+            StatusMessage = Strings.DownloadingUpdate;
             await _appUpdateService.ApplyUpdateAsync(
                 update,
                 new Progress<AppUpdateProgress>(p =>
@@ -1804,7 +1799,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             SetPendingUpdate(update);
-            StatusMessage = $"Update failed: {ex.Message}";
+            StatusMessage = Strings.Format(nameof(Strings.UpdateFailedFormat), ex.Message);
             MessageDialogWindow.Show(
                 $"Could not install the update: {ex.Message}",
                 "Update failed",
@@ -1828,7 +1823,7 @@ public partial class MainViewModel : ObservableObject
                 IsEmulationBusy = true;
                 try
                 {
-                    StatusMessage = $"Preparing RetroArch for '{target.Name}'...";
+                    StatusMessage = Strings.Format(nameof(Strings.PreparingRetroArchFormat), target.Name);
                     await _retroArch.EnsureReadyAsync(target, new Progress<EmulatorProgress>(p =>
                     {
                         StatusMessage = p.Message;
@@ -1858,7 +1853,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Couldn't launch '{target.Name}': {ex.Message}";
+            StatusMessage = Strings.Format(nameof(Strings.CouldNotLaunchGameFormat), target.Name, ex.Message);
         }
     }
 
@@ -1874,7 +1869,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         _launcher.Stop(SelectedGame);
-        StatusMessage = $"Stopping '{SelectedGame.Name}'...";
+        StatusMessage = Strings.Format(nameof(Strings.StoppingGameFormat), SelectedGame.Name);
     }
 
     // See the threading note on GameLauncher.TrackAsync — both handlers below
@@ -1887,7 +1882,7 @@ public partial class MainViewModel : ObservableObject
         // if Bridge is closed while the game is still running. Saving here means a
         // close mid-game still records "played once / last played now".
         _gameRepository.Update(game);
-        StatusMessage = $"Playing {game.Name}...";
+        StatusMessage = Strings.Format(nameof(Strings.PlayingGameFormat), game.Name);
     }
 
     private void OnGameStopped(Game game, ulong sessionSeconds)
@@ -1914,7 +1909,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         RefreshStatistics();
-        StatusMessage = $"{game.Name} — session: {sessionSeconds}s, total: {game.PlaytimeSeconds}s";
+        StatusMessage = Strings.Format(nameof(Strings.SessionSummaryFormat), game.Name, sessionSeconds, game.PlaytimeSeconds);
     }
 
     // Game is a plain POCO (no INotifyPropertyChanged — Bridge.Core entities

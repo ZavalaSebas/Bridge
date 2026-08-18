@@ -12,37 +12,46 @@ namespace Bridge.Storage.Repositories;
 /// MVP; see the note on IRepository.cs about adding batching later if profiling
 /// ever shows it's needed, not before.
 /// </summary>
-public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : DatabaseObject, new()
+public class Repository<T>(IDbContextFactory<BridgeDbContext> factory) : IRepository<T> where T : DatabaseObject, new()
 {
-    protected readonly BridgeDbContext Context = context;
-    protected readonly DbSet<T> Set = context.Set<T>();
+    public virtual T? Get(Guid id)
+    {
+        using var context = factory.CreateDbContext();
+        return context.Set<T>().Find(id);
+    }
 
-    public virtual T? Get(Guid id) => Set.Find(id);
-
-    public virtual IReadOnlyList<T> GetAll() => Set.AsNoTracking().ToList();
+    public virtual IReadOnlyList<T> GetAll()
+    {
+        using var context = factory.CreateDbContext();
+        return context.Set<T>().AsNoTracking().ToList();
+    }
 
     public void Add(T item)
     {
-        Set.Add(item);
-        Context.SaveChanges();
+        using var context = factory.CreateDbContext();
+        context.Set<T>().Add(item);
+        context.SaveChanges();
     }
 
     public void Update(T item)
     {
-        Set.Update(item);
-        Context.SaveChanges();
+        using var context = factory.CreateDbContext();
+        context.Set<T>().Update(item);
+        context.SaveChanges();
     }
 
     public bool Remove(Guid id)
     {
-        var entity = Set.Find(id);
+        using var context = factory.CreateDbContext();
+        var set = context.Set<T>();
+        var entity = set.Find(id);
         if (entity is null)
         {
             return false;
         }
 
-        Set.Remove(entity);
-        Context.SaveChanges();
+        set.Remove(entity);
+        context.SaveChanges();
         return true;
     }
 
@@ -52,7 +61,9 @@ public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : D
         if (normalized.Length == 0)
             throw new ArgumentException("Reference entity name cannot be empty.", nameof(name));
 
-        var existing = Set.FirstOrDefault(x => x.Name.Trim().ToLower() == normalized.ToLower());
+        using var context = factory.CreateDbContext();
+        var set = context.Set<T>();
+        var existing = set.FirstOrDefault(x => x.Name.Trim().ToLower() == normalized.ToLower());
         if (existing is not null)
         {
             return existing;
@@ -61,15 +72,15 @@ public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : D
         var created = new T { Name = normalized };
         try
         {
-            Set.Add(created);
-            Context.SaveChanges();
+            set.Add(created);
+            context.SaveChanges();
             return created;
         }
         catch (DbUpdateException)
         {
             // Another import/metadata pass may have inserted the same name concurrently.
-            Context.Entry(created).State = EntityState.Detached;
-            return Set.First(x => x.Name.Trim().ToLower() == normalized.ToLower());
+            context.Entry(created).State = EntityState.Detached;
+            return set.First(x => x.Name.Trim().ToLower() == normalized.ToLower());
         }
     }
 }

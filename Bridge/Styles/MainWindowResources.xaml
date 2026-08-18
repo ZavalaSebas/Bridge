@@ -1,0 +1,356 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:Bridge.Converters"
+                    xmlns:controls="clr-namespace:Bridge.Controls"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                    xmlns:res="clr-namespace:Bridge.Resources">
+
+    <converters:ReleaseDateConverter x:Key="ReleaseDateConverter" />
+    <converters:PlaytimeConverter x:Key="PlaytimeConverter" />
+    <converters:ShortDateConverter x:Key="ShortDateConverter" />
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <converters:ZoomToSizeConverter x:Key="ZoomToSize" />
+    <converters:ScoreToBrushConverter x:Key="ScoreToBrush" />
+    <converters:CompletionStatusToColorConverter x:Key="CompletionStatusToColor" />
+    <converters:EnumMatchConverter x:Key="EnumMatch" />
+    <converters:RoundedRectClipConverter x:Key="RoundedClip" />
+    <converters:EmptyToVisibilityConverter x:Key="EmptyToVis" />
+    <converters:NonZeroToVisibilityConverter x:Key="NonZeroToVis" />
+    <converters:DescriptionBlocksConverter x:Key="DescriptionBlocks" />
+    <converters:StatusMessageKindToBrushConverter x:Key="StatusMessageBrush" />
+
+    <DataTemplate x:Key="DescTextTemplate">
+        <TextBlock Text="{Binding Text}"
+                   TextWrapping="Wrap"
+                   Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                   FontSize="15"
+                   LineHeight="22"
+                   Margin="0,0,0,6" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="DescHeadingTemplate">
+        <TextBlock Text="{Binding Text}"
+                   TextWrapping="Wrap"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Foreground="{StaticResource TextFillColorPrimaryBrush}"
+                   Margin="0,14,0,6" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="DescSubheadingTemplate">
+        <TextBlock Text="{Binding Text}"
+                   TextWrapping="Wrap"
+                   FontSize="16"
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource TextFillColorPrimaryBrush}"
+                   Margin="0,10,0,4" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="DescListTemplate">
+        <TextBlock Text="{Binding Text}"
+                   TextWrapping="Wrap"
+                   FontSize="15"
+                   Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                   LineHeight="22"
+                   Margin="14,0,0,4">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Text">
+                        <Setter.Value>
+                            <MultiBinding StringFormat="&#x2022; {0}">
+                                <Binding Path="Text" />
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </DataTemplate>
+
+    <DataTemplate x:Key="DescImageTemplate">
+        <Border CornerRadius="6"
+                ClipToBounds="True"
+                Background="#151A28"
+                HorizontalAlignment="Stretch"
+                MaxHeight="260"
+                Margin="0,6,0,6">
+            <Image MaxHeight="260"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   converters:CachedImage.SourceUrl="{Binding Url}"
+                   RenderOptions.BitmapScalingMode="Fant" />
+        </Border>
+    </DataTemplate>
+
+    <controls:DescriptionBlockTemplateSelector x:Key="DescriptionBlockSelector"
+                                               TextTemplate="{StaticResource DescTextTemplate}"
+                                               HeadingTemplate="{StaticResource DescHeadingTemplate}"
+                                               SubheadingTemplate="{StaticResource DescSubheadingTemplate}"
+                                               ListTemplate="{StaticResource DescListTemplate}"
+                                               ImageTemplate="{StaticResource DescImageTemplate}" />
+
+    <!-- Menu item that highlights when checked: accent-colored + semibold
+         text so the active filter/sort/group is obvious in the dark theme
+         (the default checkmark glyph can be faint). -->
+    <Style x:Key="Bridge.CheckableMenuItem"
+           TargetType="MenuItem"
+           BasedOn="{StaticResource {x:Type MenuItem}}">
+        <Setter Property="Foreground" Value="{StaticResource TextFillColorPrimaryBrush}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}"
+                         Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Bridge.LinkMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Header" Value="{Binding Name}" />
+    </Style>
+
+    <Style x:Key="Bridge.CompletionStatusMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Header" Value="{Binding}" />
+    </Style>
+
+    <!-- Shared right-click menu for library games: Play + the same entries as
+         the More button. Shared instance — its DataContext is set to the
+         MainViewModel (and SelectedGame to the clicked game) in
+         GameContextMenu_Opened, so the command bindings resolve like the
+         More menu's. -->
+    <ContextMenu x:Key="Bridge.GameContextMenu">
+        <MenuItem Header="{x:Static res:Strings.Play}" Command="{Binding PlayGameCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Play24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="{Binding FavoriteMenuText}" Command="{Binding ToggleFavoriteCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Star24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="{x:Static res:Strings.DownloadMetadata}" Command="{Binding DownloadMetadataCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="ArrowDownload24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="{Binding HiddenMenuText}" Command="{Binding ToggleHiddenCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="EyeOff24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="{x:Static res:Strings.Links}" ItemsSource="{Binding SelectedGameLinks}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Link24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource Bridge.LinkMenuItemStyle}" />
+            </MenuItem.ItemContainerStyle>
+        </MenuItem>
+        <MenuItem Header="{x:Static res:Strings.OpenGameLocation}" Command="{Binding OpenGameLocationCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="FolderOpen24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="{x:Static res:Strings.SetCompletionStatus}" ItemsSource="{Binding CompletionStatuses}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Flag24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource Bridge.CompletionStatusMenuItemStyle}" />
+            </MenuItem.ItemContainerStyle>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="{x:Static res:Strings.Remove}" Command="{Binding DeleteGameCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Delete24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="{x:Static res:Strings.Uninstall}" Command="{Binding UninstallGameCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="UninstallApp24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+    </ContextMenu>
+
+    <!-- Shared, nicer group header: rotating chevron + group name + item
+         count + separator line. DataContext is the CollectionViewGroup
+         (Name / ItemCount). -->
+    <Style x:Key="Bridge.GroupContainer" TargetType="GroupItem">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupItem">
+                    <StackPanel>
+                        <ToggleButton x:Name="Expander"
+                                      IsChecked="True"
+                                      HorizontalAlignment="Stretch"
+                                      HorizontalContentAlignment="Left"
+                                      Cursor="Hand"
+                                      OverridesDefaultStyle="True"
+                                      Margin="12,14,12,6"
+                                      AutomationProperties.Name="{x:Static res:Strings.ExpandGroup}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <ContentPresenter HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center" />
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon Symbol="ChevronRight24"
+                                               FontSize="14"
+                                               Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                                               VerticalAlignment="Center">
+                                    <ui:SymbolIcon.RenderTransform>
+                                        <RotateTransform x:Name="ChevronRotate"
+                                                         Angle="0"
+                                                         CenterX="7"
+                                                         CenterY="7" />
+                                    </ui:SymbolIcon.RenderTransform>
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <RotateTransform Angle="0"
+                                                                       CenterX="7"
+                                                                       CenterY="7" />
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                                                             Value="True">
+                                                    <Setter Property="RenderTransform">
+                                                        <Setter.Value>
+                                                            <RotateTransform Angle="90"
+                                                                               CenterX="7"
+                                                                               CenterY="7" />
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Name}"
+                                           FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Bridge.SystemAccentBrush}"
+                                           VerticalAlignment="Center"
+                                           Margin="8,0,0,0"
+                                           TextTrimming="CharacterEllipsis" />
+                                <Border Grid.Column="2"
+                                        CornerRadius="9"
+                                        Background="{DynamicResource Bridge.Card.Background}"
+                                        Padding="8,2"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Games in group">
+                                    <TextBlock Text="{Binding ItemCount}"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextFillColorSecondaryBrush}" />
+                                </Border>
+                            </Grid>
+                        </ToggleButton>
+                        <Border Height="1"
+                                Margin="12,0,12,4"
+                                Background="{DynamicResource Bridge.SeparatorBrush}"
+                                Opacity="0.6" />
+                        <ItemsPresenter Visibility="{Binding IsChecked, ElementName=Expander, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="GridViewColumnHeader">
+        <Setter Property="Background" Value="{DynamicResource Bridge.Card.Background}" />
+        <Setter Property="Foreground" Value="{StaticResource TextFillColorPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource Bridge.FontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GridViewColumnHeader">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                            BorderThickness="0,0,1,1"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Bridge.Accent.Hover}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="ListViewItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Foreground" Value="{StaticResource TextFillColorPrimaryBrush}" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource Bridge.FocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListViewItem">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
+                        <GridViewRowPresenter Content="{TemplateBinding Content}"
+                                              Columns="{TemplateBinding GridView.ColumnCollection}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource Bridge.Accent.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{StaticResource TextFillColorPrimaryBrush}" />
+                            <Setter Property="BorderThickness" Value="3,0,0,0" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource Bridge.SystemAccentBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

@@ -99,4 +99,82 @@
   <data name="SelectRandomGame" xml:space="preserve"><value>Select random game</value></data>
   <data name="Library" xml:space="preserve"><value>Library</value></data>
   <data name="Statistics" xml:space="preserve"><value>Statistics</value></data>
+  <data name="Play" xml:space="preserve"><value>Play</value></data>
+  <data name="DownloadMetadata" xml:space="preserve"><value>Download Metadata</value></data>
+  <data name="Links" xml:space="preserve"><value>Links</value></data>
+  <data name="OpenGameLocation" xml:space="preserve"><value>Open Game Location</value></data>
+  <data name="SetCompletionStatus" xml:space="preserve"><value>Set Completion Status</value></data>
+  <data name="Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Uninstall</value></data>
+  <data name="NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="SelectFolderToScan" xml:space="preserve"><value>Select a folder to scan.</value></data>
+  <data name="CouldNotCreateReferenceFormat" xml:space="preserve"><value>Could not create {0}.</value></data>
+  <data name="AddReferenceTitle" xml:space="preserve"><value>Add reference</value></data>
+  <data name="AddGame" xml:space="preserve"><value>Add Game</value></data>
+  <data name="Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Steam" xml:space="preserve"><value>Steam</value></data>
+  <data name="Epic" xml:space="preserve"><value>Epic</value></data>
+  <data name="ScanAutomatically" xml:space="preserve"><value>Scan Automatically...</value></data>
+  <data name="ScanRoms" xml:space="preserve"><value>Scan ROMs...</value></data>
+  <data name="AddManually" xml:space="preserve"><value>Add Manually...</value></data>
+  <data name="Support" xml:space="preserve"><value>Support</value></data>
+  <data name="ThirdPartyClients" xml:space="preserve"><value>3rd party clients</value></data>
+  <data name="Sidebar" xml:space="preserve"><value>Sidebar</value></data>
+  <data name="ShowSidebar" xml:space="preserve"><value>Show Sidebar</value></data>
+  <data name="Position" xml:space="preserve"><value>Position</value></data>
+  <data name="Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Top" xml:space="preserve"><value>Top</value></data>
+  <data name="Bottom" xml:space="preserve"><value>Bottom</value></data>
+  <data name="Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="AboutBridge" xml:space="preserve"><value>About Bridge...</value></data>
+  <data name="Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="GameRemovedFromLibrary" xml:space="preserve"><value>Game removed from library.</value></data>
+  <data name="NoInstallDirectoryFormat" xml:space="preserve"><value>'{0}' has no install directory.</value></data>
+  <data name="CouldNotOpenDirectoryFormat" xml:space="preserve"><value>Couldn't open '{0}'.</value></data>
+  <data name="ScanCompleteFormat" xml:space="preserve"><value>Scan complete: {0} new ROM(s) imported from '{1}'.</value></data>
+  <data name="ScanFailedFormat" xml:space="preserve"><value>Scan failed: {0}</value></data>
+  <data name="SteamNotDetectedSkippedImport" xml:space="preserve"><value>Steam not detected — skipped import.</value></data>
+  <data name="EpicNotDetectedSkippedImport" xml:space="preserve"><value>Epic Games Launcher not detected — skipped import.</value></data>
+  <data name="ImportResultFormat" xml:space="preserve"><value>{0} import: {1} new, {2} updated.</value></data>
+  <data name="ImportFailedFormat" xml:space="preserve"><value>{0} import failed: {1}</value></data>
+  <data name="StartupImportFailedFormat" xml:space="preserve"><value>Startup import failed: {0}</value></data>
+  <data name="DownloadingMetadataForGameFormat" xml:space="preserve"><value>Downloading metadata for '{0}'...</value></data>
+  <data name="NoMetadataFoundFormat" xml:space="preserve"><value>No metadata found for '{0}'.</value></data>
+  <data name="NoInternetMetadataDeferred" xml:space="preserve"><value>No internet connection. Metadata will download the next time Bridge opens with a connection.</value></data>
+  <data name="NoInternetMetadataDeferredForGamesFormat" xml:space="preserve"><value>No internet connection. Metadata for {0} game(s) will download the next time Bridge opens with a connection.</value></data>
+  <data name="DownloadingMetadataForGamesFormat" xml:space="preserve"><value>Downloading metadata for {0} game(s)...</value></data>
+  <data name="MetadataAppliedToGameFormat" xml:space="preserve"><value>Metadata applied to '{0}' (source: {1}).</value></data>
+  <data name="MetadataAppliedBatchFormat" xml:space="preserve"><value>Metadata applied: {0}/{1} game(s) updated.</value></data>
+  <data name="NoMetadataFoundForAddedGamesFormat" xml:space="preserve"><value>No metadata found for the added game(s) ({0} checked).</value></data>
+  <data name="MetadataSyncCompleteFormat" xml:space="preserve"><value>Metadata sync complete: {0}/{1} game(s) updated.</value></data>
+  <data name="MetadataSyncNoUpdatesFormat" xml:space="preserve"><value>Metadata sync complete: no updates ({0} game(s) checked).</value></data>
+  <data name="MetadataSyncNoInternet" xml:space="preserve"><value>Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection.</value></data>
+  <data name="LaunchingUninstallerFormat" xml:space="preserve"><value>Launching uninstaller for '{0}'...</value></data>
+  <data name="GameUninstalledFormat" xml:space="preserve"><value>'{0}' uninstalled.</value></data>
+  <data name="UninstallerFinishedStillInstalledFormat" xml:space="preserve"><value>Uninstaller for '{0}' finished but the game is still detected as installed.</value></data>
+  <data name="GameRunningCloseBeforeDeleteFormat" xml:space="preserve"><value>'{0}' is running — close it before deleting.</value></data>
+  <data name="GameRunningCloseBeforeUninstallFormat" xml:space="preserve"><value>'{0}' is running — close it before uninstalling.</value></data>
+  <data name="NoUninstallerFoundFormat" xml:space="preserve"><value>No uninstaller found for '{0}'.</value></data>
+  <data name="DownloadingUpdate" xml:space="preserve"><value>Downloading update...</value></data>
+  <data name="UpdateFailedFormat" xml:space="preserve"><value>Update failed: {0}</value></data>
+  <data name="PreparingRetroArchFormat" xml:space="preserve"><value>Preparing RetroArch for '{0}'...</value></data>
+  <data name="CouldNotLaunchGameFormat" xml:space="preserve"><value>Couldn't launch '{0}': {1}</value></data>
+  <data name="StoppingGameFormat" xml:space="preserve"><value>Stopping '{0}'...</value></data>
+  <data name="PlayingGameFormat" xml:space="preserve"><value>Playing {0}...</value></data>
+  <data name="SessionSummaryFormat" xml:space="preserve"><value>{0} — session: {1}s, total: {2}s</value></data>
+  <data name="ShowHiddenGames" xml:space="preserve"><value>Show hidden games</value></data>
+  <data name="Favorite" xml:space="preserve"><value>Favorite</value></data>
+  <data name="Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="More" xml:space="preserve"><value>More</value></data>
+  <data name="GameInfo" xml:space="preserve"><value>Game info</value></data>
+  <data name="CoverZoom" xml:space="preserve"><value>Cover zoom</value></data>
+  <data name="EmulationProgress" xml:space="preserve"><value>Emulation progress</value></data>
+  <data name="StatusMessage" xml:space="preserve"><value>Status message</value></data>
+  <data name="GamesList" xml:space="preserve"><value>Games list</value></data>
+  <data name="CoversGrid" xml:space="preserve"><value>Covers grid</value></data>
+  <data name="GamesTable" xml:space="preserve"><value>Games table</value></data>
+  <data name="ExpandGroup" xml:space="preserve"><value>Expand or collapse group</value></data>
 </root>

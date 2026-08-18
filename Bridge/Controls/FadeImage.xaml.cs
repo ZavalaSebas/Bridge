@@ -162,13 +162,20 @@ public partial class FadeImage : UserControl
         if (CoverByWidth)
         {
             ApplyCoverByWidthSizing();
-            // Apply the per-frame fade to BOTH frames up front (each with its
-            // own aspect-based height): the incoming short frame already carries
-            // its diffused edge from the first frame of the cross-fade, and the
-            // outgoing tall frame keeps whatever fade applies to it. Pre-fading
-            // both is what makes switching tall→short reveal the blur edge
-            // smoothly instead of popping it in once the fade finishes.
-            ApplyShortFrameFade();
+
+            var heroHeight = Math.Max(ActualHeight, 1);
+            var incomingHeight = Math.Max(ActualWidth, 1) / aspect;
+            var incomingShort = incomingHeight > 0 && incomingHeight < heroHeight;
+            var outgoingTall = previous?.Source is not null && previous.Height >= heroHeight;
+
+            ApplyShortFrameFadeTo(Image1, animate: false);
+            ApplyShortFrameFadeTo(Image2, animate: false);
+
+            if (incomingShort)
+                ApplyShortFrameFadeTo(next, animate: true);
+
+            if (outgoingTall && previous is not null)
+                AnimateOutgoingTallFade(previous, incomingHeight, heroHeight);
         }
         else if (Stretch == Stretch.Uniform && Height > 0)
         {
@@ -301,10 +308,51 @@ public partial class FadeImage : UserControl
         ApplyShortFrameFadeTo(Image2, animate: false);
     }
 
+    // When a tall hero frame cross-fades into a shorter one, animate the
+    // outgoing frame's bottom fade in sync with the incoming short frame so
+    // the blur edge does not snap once opacity reaches zero.
+    private void AnimateOutgoingTallFade(Image outgoing, double incomingHeight, double heroHeight)
+    {
+        if (incomingHeight >= heroHeight)
+            return;
+
+        var targetStart = ComputeShortFadeStartOffset(incomingHeight, heroHeight);
+
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0, 1),
+            GradientStops =
+            {
+                new GradientStop(Colors.Black, 0.0),
+                new GradientStop(Colors.Black, 1.0)
+            }
+        };
+        outgoing.OpacityMask = brush;
+
+        brush.GradientStops[1].BeginAnimation(
+            GradientStop.OffsetProperty,
+            new DoubleAnimation(1.0, targetStart, TransitionDuration)
+            {
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            });
+    }
+
+    private static double ComputeShortFadeStartOffset(double imageHeight, double heroHeight)
+    {
+        if (imageHeight <= 0 || imageHeight >= heroHeight)
+            return 0.999;
+
+        var heroFadeStart = 0.35 * heroHeight;
+        var shortage = (heroHeight - imageHeight) / heroHeight;
+        var blend = Math.Clamp(shortage / 0.25, 0.0, 1.0);
+        var fullFadeStart = Math.Min(heroFadeStart / imageHeight, 0.999);
+        return fullFadeStart + (1.0 - fullFadeStart) * (1.0 - blend);
+    }
+
     private void ApplyShortFrameFadeTo(Image image, bool animate = true)
     {
         var heroHeight = Math.Max(ActualHeight, 1);
-        var heroFadeStart = 0.35 * heroHeight;
 
         var imageHeight = image.Height;
         if (imageHeight <= 0 || imageHeight >= heroHeight)
@@ -313,18 +361,7 @@ public partial class FadeImage : UserControl
             return;
         }
 
-        // Fade the per-frame mask in GRADUALLY as the frame gets shorter than
-        // the hero. Without this, resizing the window until the frame no longer
-        // overflows the hero's bottom flips the mask from "off" to "on" in one
-        // step — a visible jump of the blur edge. blend goes 0 (frame just under
-        // the hero → shared hero mask already fades its bottom, no extra mask
-        // needed) to 1 (frame clearly shorter → full per-frame fade), ramping
-        // over the first 25% of the hero's height.
-        var shortage = (heroHeight - imageHeight) / heroHeight;
-        var blend = Math.Clamp(shortage / 0.25, 0.0, 1.0);
-
-        var fullFadeStart = Math.Min(heroFadeStart / imageHeight, 0.999);
-        var fadeStart = fullFadeStart + (1.0 - fullFadeStart) * (1.0 - blend);
+        var fadeStart = ComputeShortFadeStartOffset(imageHeight, heroHeight);
 
         var brush = new LinearGradientBrush
         {
@@ -341,10 +378,6 @@ public partial class FadeImage : UserControl
 
         if (animate)
         {
-            // Develop the diffused edge from the bottom of the frame up to its
-            // target position over the cross-fade duration — the incoming short
-            // frame's fade grows smoothly instead of snapping in once the tall
-            // frame it replaced is gone.
             var fadeStop = brush.GradientStops[1];
             fadeStop.BeginAnimation(
                 GradientStop.OffsetProperty,
