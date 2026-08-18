@@ -86,6 +86,19 @@ namespace Bridge
                 return;
             }
 
+            if (e.Key == System.Windows.Input.Key.I &&
+                System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None &&
+                SearchBox.IsKeyboardFocusWithin is false &&
+                vm.ViewMode == Bridge.Core.Enums.ViewMode.Covers &&
+                vm.SelectedGame is { } infoGame)
+            {
+                CompactInfoPanel.Visibility = System.Windows.Visibility.Visible;
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                    new Action(() => CoversList.ScrollIntoView(infoGame)));
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == System.Windows.Input.Key.Enter &&
                 System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None &&
                 SearchBox.IsKeyboardFocusWithin is false &&
@@ -219,12 +232,12 @@ namespace Bridge
             SwitchView(vm, Bridge.Core.Enums.ViewMode.List);
         }
 
-        private void SetViewModeGrid_Click(object sender, RoutedEventArgs e)
+        private void SetViewModeCovers_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is not ViewModels.MainViewModel vm)
                 return;
 
-            SwitchView(vm, Bridge.Core.Enums.ViewMode.Grid);
+            SwitchView(vm, Bridge.Core.Enums.ViewMode.Covers);
         }
 
         private void SetViewModeTable_Click(object sender, RoutedEventArgs e)
@@ -312,7 +325,7 @@ namespace Bridge
         {
             return mode switch
             {
-                Bridge.Core.Enums.ViewMode.Grid => GetScrollViewer(CoversList)?.VerticalOffset,
+                Bridge.Core.Enums.ViewMode.Covers => GetScrollViewer(CoversList)?.VerticalOffset,
                 Bridge.Core.Enums.ViewMode.List => GetScrollViewer(GamesList)?.VerticalOffset,
                 Bridge.Core.Enums.ViewMode.Table => GetScrollViewer(TableList)?.VerticalOffset,
                 _ => null
@@ -321,7 +334,7 @@ namespace Bridge
 
         private void SetScrollOffset(Bridge.Core.Enums.ViewMode mode, double offset)
         {
-            if (mode == Bridge.Core.Enums.ViewMode.Grid)
+            if (mode == Bridge.Core.Enums.ViewMode.Covers)
                 GetScrollViewer(CoversList)?.ScrollToVerticalOffset(offset);
             else if (mode == Bridge.Core.Enums.ViewMode.List)
                 GetScrollViewer(GamesList)?.ScrollToVerticalOffset(offset);
@@ -358,7 +371,7 @@ namespace Bridge
                     ShowFullWidthDetail();
                     CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
                     break;
-                case Bridge.Core.Enums.ViewMode.Grid:
+                case Bridge.Core.Enums.ViewMode.Covers:
                     CompactInfoPanel.Visibility = System.Windows.Visibility.Collapsed;
                     HideDetailPanel();
                     break;
@@ -380,7 +393,7 @@ namespace Bridge
         {
             if (DataContext is not ViewModels.MainViewModel vm
                 || vm.SelectedGame is not { } game
-                || vm.ViewMode != Bridge.Core.Enums.ViewMode.Grid)
+                || vm.ViewMode != Bridge.Core.Enums.ViewMode.Covers)
             {
                 return;
             }
