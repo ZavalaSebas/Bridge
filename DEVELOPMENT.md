@@ -30,11 +30,27 @@ When making changes, consider:
 | **Code = Truth** | If the docs say one thing and the code another, the docs are wrong — fix the docs |
 | **Tested** | If it's not documented, it doesn't exist for a new contributor |
 
+### Documentation map
+
+| Document | Role |
+|----------|------|
+| [README.md](README.md) | User-facing overview, features, build instructions |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Developer guide (this file) — architecture, workflow, key files |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | ADRs — why Bridge is structured this way |
+| [PLAN.md](PLAN.md) | Phase tracker and scope (living plan) |
+| [CHANGELOG.md](CHANGELOG.md) | Release notes ([Keep a Changelog](https://keepachangelog.com/)) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution standards |
+| [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) | Archival notes from project inception — **not** a Bridge implementation spec |
+| [Bridge.Infra/igdb-proxy-worker/README.md](Bridge.Infra/igdb-proxy-worker/README.md) | Cloudflare Worker deploy guide |
+| [docs/index.html](docs/index.html) | Static landing page (updated by release CI) |
+
+**Code = truth.** When docs disagree with the repo, update the docs.
+
 ---
 
 ## Why Bridge?
 
-Bridge is an original game library manager: one local, self-contained catalog for games from external libraries, manual entries, and emulated ROMs. It keeps what makes a good library manager functionally useful (incremental import, local metadata/image caching, virtualized list views, emulation support) and drops what exists purely to support runtime extensibility — no plugin architecture, no dual desktop/fullscreen frontends. [Playnite](https://playnite.link/) is an *inspiration*: its observed behavior informs how Bridge's features should feel, but Bridge is designed independently — different module layout, different persistence, different UI, no shared code. See [`PROJECT_FOUNDATION.md`](PROJECT_FOUNDATION.md) for the behavioral notes used during development, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the specific decisions (ADR-1 through ADR-12) that follow from this direction.
+Bridge is an original game library manager: one local, self-contained catalog for games from external libraries, manual entries, and emulated ROMs. It keeps what makes a good library manager functionally useful (incremental import, local metadata/image caching, virtualized list views, emulation support) and drops what exists purely to support runtime extensibility — no plugin architecture, no dual desktop/fullscreen frontends. The project was originally inspired by [Playnite](https://playnite.link/) when it was first conceived; everything since is Bridge's own design — different module layout, persistence, UI, and code. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the ADRs (ADR-1 through ADR-14).
 
 ---
 
@@ -80,7 +96,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # created — RomScanner, RomPlatformCatalog, RetroArchService, EmulationPaths (see below)
-└── Bridge.Tests/        # ~242 unit tests (see Tests section below)
+└── Bridge.Tests/        # 273 tests (269 unit + 4 integration; see Tests section below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -101,7 +117,7 @@ Bridge.Core/
 │   ├── Emulator.cs            # Emulator + EmulatorProfile (EmulatorProfile.CorePath is set only for Bridge-managed RetroArch profiles)
 │   ├── GameScannerConfig.cs
 │   ├── Company.cs             # one entity, no Developer/Publisher subclasses — see ADR-7
-│   ├── GameSource.cs          # replaces Playnite's PluginId — see ADR-6
+│   ├── GameSource.cs          # import source + dedup key — see ADR-6
 │   ├── CompletionStatus.cs
 │   ├── Region.cs
 │   ├── Platform.cs
@@ -112,7 +128,7 @@ Bridge.Core/
 │   ├── GameSortField.cs         # 22 sortable fields, Description attribute = display label
 │   ├── GameGroupField.cs        # 21 groupable fields, Description attribute = display label
 │   ├── NavigationSection.cs     # sidebar sections: Library/Favorites/Sources/Statistics/Settings
-│   └── ViewMode.cs              # List / Covers / Details main-content views
+│   └── ViewMode.cs              # List / Covers / Table main-content views
 ├── Import/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
 └── Contracts/
@@ -121,7 +137,7 @@ Bridge.Core/
     └── IGameMetadataProvider.cs # SearchAsync + Name — enables multi-provider fallback chain
 ```
 
-Every entity's field shape is traced directly to `PROJECT_FOUNDATION.md` §28's verified reference — where Bridge's shape deliberately diverges from Playnite's (no `PluginId`, one `Company` type, no `MetadataProperty`, single `EmulatorProfile` shape), the reasoning is recorded in [ARCHITECTURE.md](ARCHITECTURE.md) ADR-6 through ADR-9, not just in code comments. `dotnet build Bridge.Core/Bridge.Core.csproj` compiles clean (0 warnings, 0 errors) as of this writing.
+Entity shapes and ADR rationale are documented in [ARCHITECTURE.md](ARCHITECTURE.md) ADR-6 through ADR-9. `dotnet build Bridge.Core/Bridge.Core.csproj` compiles clean (0 warnings, 0 errors) as of this writing.
 
 ### `Bridge.Storage` — what's in it
 
@@ -168,11 +184,11 @@ Bridge.Import/
     └── SteamPaths.cs               # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
 ```
 
-See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. See also `PROJECT_FOUNDATION.md` §28.26 for the behavioral notes on Playnite's SteamLibrary extension, and §28.27.A for the full upstream pipeline (online owned games, playtime via Web API, Family Sharing, etc. — the online playtime path requires an account login and is documented for future reference; the *local* playtime path is what Bridge implements). `SteamPlayActions.CreatePlayAction` builds the `steam://rungameid/{appid}` URL action that Steam games use at launch (the same behavior Playnite's `SteamPlayController` exhibits, §28.26): resolved at runtime, launched via `steam.exe -silent` because Steamworks DRM makes launching the local `.exe` fail. Pure logic, unit-tested in `Bridge.Tests/Import/SteamPlayActionsTests.cs` without needing Steam installed.
+See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. `SteamPlayActions.CreatePlayAction` builds the `steam://rungameid/{appid}` URL action for Steam games: resolved at runtime, launched via `steam.exe -silent` because Steamworks DRM makes launching the local `.exe` fail. Pure logic, unit-tested in `Bridge.Tests/Import/SteamPlayActionsTests.cs` without needing Steam installed.
 
-`SteamLocalPlaytimeResolver.GetPlaytimes()` reads Steam's locally-recorded playtime from `userdata\{steamid}\config\localconfig.vdf` — under `UserLocalConfigStore > Software > Valve > Steam > apps > {appid}`, Steam writes `Playtime` (minutes) and `LastPlayed` (unix timestamp) for every game the account has run. The resolver converts minutes→seconds (the units `Game.PlaytimeSeconds` uses) and `LastPlayed`→`LastActivity`; multiple `userdata` accounts on the same install are merged per game by taking the largest playtime and the most recent activity. This is the zero-config source of a Steam game's real playtime (Playnite's Web API alternative requires connecting an account — §28.27.A). `SteamLibraryImporter.GetInstalledGames()` fills it into the imported metadata, and `MainViewModel.ImportLibraryCoreAsync` applies it: new games take Steam's playtime, existing games merge it without ever shrinking what Bridge already tracked (the two overlap, so max can't double-count), and `LastActivity` only moves forward. Unit-tested in `Bridge.Tests/Import/SteamLocalPlaytimeResolverTests.cs` against the real file shape.
+`SteamLocalPlaytimeResolver.GetPlaytimes()` reads Steam's locally-recorded playtime from `userdata\{steamid}\config\localconfig.vdf` — under `UserLocalConfigStore > Software > Valve > Steam > apps > {appid}`, Steam writes `Playtime` (minutes) and `LastPlayed` (unix timestamp) for every game the account has run. The resolver converts minutes→seconds (the units `Game.PlaytimeSeconds` uses) and `LastPlayed`→`LastActivity`; multiple `userdata` accounts on the same install are merged per game by taking the largest playtime and the most recent activity. This is the zero-config source of a Steam game's real playtime (no Steam Web API or account login required). `SteamLibraryImporter.GetInstalledGames()` fills it into the imported metadata, and `MainViewModel.ImportLibraryCoreAsync` applies it: new games take Steam's playtime, existing games merge it without ever shrinking what Bridge already tracked (the two overlap, so max can't double-count), and `LastActivity` only moves forward. Unit-tested in `Bridge.Tests/Import/SteamLocalPlaytimeResolverTests.cs` against the real file shape.
 
-`SteamLocalIconResolver.TryGetLocalIconPath(appId, steamInstallPath = null)` resolves the square 32x32 icon Steam itself caches for the library (the `clienticon` — the exact artwork Playnite shows). Steam stopped returning `clienticon` from the web API, so Bridge reads the file Steam writes to `appcache\librarycache\{appid}\{40-hex}.jpg` (default install path comes from `SteamPaths`); returns `null` when Steam isn't installed or that app has no cached icon, so callers fall back to the `header.jpg` URL from metadata. `TryGetLocalCoverPath` and `TryGetLocalBackgroundPath` resolve the rest of the local art the same way — `library_600x900.jpg` (vertical cover) and `library_hero.jpg` (widescreen hero). Verified against the real cache on this machine (628 apps with a cached 32x32 icon; covers/heroes present alongside). `MainViewModel.ApplySteamLocalArtwork` prefers all three on load, during Steam import (before the row binds, so a fresh install shows complete art immediately) and after every metadata download — local art wins over the web URLs, so the library renders from disk with no download.
+`SteamLocalIconResolver.TryGetLocalIconPath(appId, steamInstallPath = null)` resolves the square 32x32 icon Steam itself caches for the library (the `clienticon`). Steam stopped returning `clienticon` from the web API, so Bridge reads the file Steam writes to `appcache\librarycache\{appid}\{40-hex}.jpg` (default install path comes from `SteamPaths`); returns `null` when Steam isn't installed or that app has no cached icon, so callers fall back to the `header.jpg` URL from metadata. `TryGetLocalCoverPath` and `TryGetLocalBackgroundPath` resolve the rest of the local art the same way — `library_600x900.jpg` (vertical cover) and `library_hero.jpg` (widescreen hero). Verified against the real cache on this machine (628 apps with a cached 32x32 icon; covers/heroes present alongside). `MainViewModel.ApplySteamLocalArtwork` prefers all three on load, during Steam import (before the row binds, so a fresh install shows complete art immediately) and after every metadata download — local art wins over the web URLs, so the library renders from disk with no download.
 
 ### Library list: search, presets, sorting, grouping
 
@@ -180,7 +196,7 @@ The left list uses `GamesView` (a `ListCollectionView` over `Games`) instead of 
 
 - **Search** — `SearchText` observable bound to a text box; `GameMatchesSearch` filters on a case-insensitive name substring.
 - **Presets** — `FilterPreset` (`LibraryFilterPreset`: All/Favorite/Installed/NotPlayed/RecentlyPlayed) adds a **pure predicate** (`GameMatchesSearch`) that decides which games show. Presets never touch the sort or grouping — those are independent concerns, so switching a filter and back to All always keeps the sort you had. Combinable with the search box.
-- **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation — Playnite's `StatisticsViewModel`-style handling). The sort menu shows the active field with a checkmark and a direction toggle entry.
+- **Sorting** — `SortField` (`GameSortField`, 22 fields) + `SortDescending` drive a `GameSortComparer` assigned to `CustomSort`. Reference fields (Developer/Publisher/Platform/Genre/Source) compare by display name resolved through `BuildNameLookup` dictionaries built from the repositories, so the comparer stays pure and testable. Empty/unset values always sort last regardless of direction (matches the "Not played at the bottom" expectation). The sort menu shows the active field with a checkmark and a direction toggle entry.
 - **Grouping** — `GroupField` (`GameGroupField`, 21 fields, "Don't group" off) adds a `PropertyGroupDescription` (with a null property name so the item itself flows through a `GameGroupConverter`) to `GroupDescriptions`. `GameGroupResolver` is pure and unit-tested: buckets for playtime/install size/scores, drive letter, release year, coarse date buckets ("Never/Last 7 days/..."), reference names via lookups. Group headers render via the `ListBox.GroupStyle`. In the **Covers** view, `GroupStyle.Panel` must also be set to `CenteringWrapPanel` — WPF's default group panel is a vertical `StackPanel`, which ignores the ListBox's root `ItemsPanel` and stacks every cover in one column inside each group.
 
 The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver live in the app project under `Bridge/Statistics` (namespace `Bridge.Statistics`). They avoid WPF types but ship inside the WPF app, and they're unit-testable only because `Bridge.Tests` targets `net10.0-windows` (it references `Bridge`). The XAML binds them through `GameGroupConverter`/`GameSortComparer` (see `Bridge/Converters/MetadataConverters.cs`).
@@ -189,20 +205,20 @@ The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver li
 
 The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), laid out as 3 rows:
 
-1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values remain `ViewMode.List/Grid/Table` for persisted settings) + a Random-game placeholder button.
+1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values are `ViewMode.List/Covers/Table`; legacy settings may still store `Grid`, mapped to Covers on load) + a Random-game placeholder button.
 
-2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail, **Library**/**Statistics** buttons via the `NavigationSection` enum in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Details views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns.
+2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail, **Library**/**Statistics** buttons via the `NavigationSection` enum in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Table views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns.
 
-3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error).
+3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error), and an optional determinate/indeterminate `ProgressBar` (`ShowStatusProgress`, `StatusProgress`, `IsStatusProgressIndeterminate` on `MainViewModel`) for long operations — metadata sync/download, artwork preload, RetroArch install, and app updates.
 
 View modes switch via 3 toggle buttons in the Top Panel:
 - **List** (`ViewMode.List`): `ListBox` with 28×28 icons + white game names (grouped via `GamesView`). Double-click launches the game.
 - **Covers** (`ViewMode.Covers`): `ListBox` whose `ItemsPanel` is `controls:CenteringWrapPanel` (a custom wrap panel that also centers each row) with 200×300px cards (base size, driven through the `ZoomToSize` converter) with hover intent (scale 1.03x + drop shadow + overlay fade, 120ms `CubicEase EaseOut`). The panel invalidates measure on `SizeChanged` so covers re-wrap when the views column expands from the List-view width (360px) to the full Covers layout. When grouping is on, `GroupStyle.Panel` uses the same `CenteringWrapPanel` (see Grouping above).
-- **Details** (`ViewMode.Table`): `ListView`/`GridView` with 6 columns — Name, Release, Genre, Last Played, Time Played, Library. Name column dynamically fills remaining space via `SizeChanged` handler.
+- **Table** (`ViewMode.Table`): `ListView`/`GridView` with 6 columns — Name, Release, Genre, Last Played, Time Played, Library. Name column dynamically fills remaining space via `SizeChanged` handler.
 
 Detail panel (right): `CoverImage` 200px + title/scores/checkboxes + Play (uses `SystemAccentColorPrimaryBrush`, `#007ACC`, `CornerRadius="2"`) / More (ContextMenu with Save/Download Metadata/Delete) / Edit buttons. Below: Details (label/value pairs in accent blue) + Description (read-only here — editable via the Edit window, `GameEditWindow`). Background image (`SelectedGame.BackgroundImage`) fills the panel at 60% opacity with dark overlay.
 
-Below the Details/Description row, when the selected game has screenshots (`SelectedGame.Screenshots.Count > 0`), the **screenshot gallery** renders (`Bridge/Controls/ScreenshotGallery.xaml(.cs)`): a large main image floating over a frosted backdrop of the same screenshot, with previous/next arrows, a counter (`1 / N`), a drag-to-scroll thumbnail strip (no scrollbar — `Preview*` mouse events pan the `ScrollViewer`), and click-to-expand into a full-window dark overlay with its own thumbnail strip, arrows and counter. The carousel auto-advances every 4s (paused while the mouse is over the main image or the overlay is open; only runs with 2+ screenshots). The main image sizes to 72% height / 82% width of its container via `Converters/FractionConverter`, keeping the "image inside image" look proportional at any window size. The gallery appears in the **Details** table view (`ViewMode.Table`) and as a compact strip in the **Covers** info panel (`ViewMode.Covers`, `CompactMode="True"`). Screenshots come from either provider — Steam (`path_full`) or the IGDB Worker (`t_1080p`, non-Steam games) — they all land in the same `Game.Screenshots` JSON column. A `CompactMode` property (used by the covers info panel) hides the header and main image, shows only a smaller thumbnail strip (110×62 tiles), and opens the fullscreen overlay straight from a thumbnail tap; auto-advance never runs in that mode.
+Below the Details/Description row, when the selected game has screenshots (`SelectedGame.Screenshots.Count > 0`), the **screenshot gallery** renders (`Bridge/Controls/ScreenshotGallery.xaml(.cs)`): a large main image floating over a frosted backdrop of the same screenshot, with previous/next arrows, a counter (`1 / N`), a drag-to-scroll thumbnail strip (no scrollbar — `Preview*` mouse events pan the `ScrollViewer`), and click-to-expand into a full-window dark overlay with its own thumbnail strip, arrows and counter. The carousel auto-advances every 4s (paused while the mouse is over the main image or the overlay is open; only runs with 2+ screenshots). The main image sizes to 72% height / 82% width of its container via `Converters/FractionConverter`, keeping the "image inside image" look proportional at any window size. The gallery appears in the **Table** view (`ViewMode.Table`) and as a compact strip in the **Covers** info panel (`ViewMode.Covers`, `CompactMode="True"`). Screenshots come from either provider — Steam (`path_full`) or the IGDB Worker (`t_1080p`, non-Steam games) — they all land in the same `Game.Screenshots` JSON column. A `CompactMode` property (used by the covers info panel) hides the header and main image, shows only a smaller thumbnail strip (110×62 tiles), and opens the fullscreen overlay straight from a thumbnail tap; auto-advance never runs in that mode.
 
 The **covers info panel** (`CompactInfoPanel`) shows its own compact layout: the hero art fades into the panel background via a strong vertical gradient (ending in the panel's `#CC1B2132` so there's no hard edge), a larger game title (22px bold, drop shadow) with the favorite star inline after it (`InlineUIContainer` in the title `TextBlock`, so the star follows the title's wrapping lines and never gets cut), the Play/More/Edit row sitting on the hero under the title, and a theme-colored square close button in the top-right. The link list wraps to two columns (`WrapPanel` + per-item `MaxWidth`). The Play button is the same animated Play/Stop template as the Details hero — there its `IsRunning` DataTriggers bind to `SelectedGame.IsRunning` because the panel's DataContext is the `MainViewModel`, not the game.
 
@@ -214,7 +230,7 @@ All list-based views (List, Details, Statistics Top Played) use the same visual 
 - `IsMouseOver`: `Background="{StaticResource Bridge.Card.Hover}"` (#2C3550)
 - `IsSelected`: `Background="Transparent"` (suppresses `SystemColors.HighlightBrush` from default control template), `BorderThickness="3,0,0,0"` + `BorderBrush="{StaticResource Bridge.SystemAccentBrush}"` (#007ACC left accent bar)
 
-The Details table row (`ListViewItem`) highlights with `Bridge.Accent.Hover` (#1F4E79).
+The Table row (`ListViewItem`) highlights with `Bridge.Accent.Hover` (#1F4E79).
 
 Covers uses a similar pattern through a custom `ControlTemplate` with a `SelectionRing` `Border` and `DataTrigger` on `TemplatedParent.IsSelected`.
 
@@ -246,7 +262,7 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 <AssemblyVersion>$(Version).0</AssemblyVersion>
 ```
 
-- `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.1.0.0`)
+- `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.2.0.0`)
 - **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases?per_page=100` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), picks the newest release that matches the **update channel**, compares its `tag_name` numeric prefix against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). The channel lives in `UpdateChannelSettingsStore` (`update-channel.txt` under AppDataPath): **Stable** (default) skips GitHub prereleases, **Beta** accepts them, toggled in the About window. Prerelease tags keep their suffix in the repo but are compared by numeric prefix only (`v0.3.0-beta1` never beats an installed `0.3.0` stable, so a stable user can't be downgraded onto a beta); the `prerelease` flag is what distinguishes channels. Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`). On the stable channel, when a newer prerelease exists but no newer stable, the up-to-date message points the user to the beta toggle.
 
   The most critical part is the **safe executable swap** — never overwrite the running `.exe` directly:
@@ -577,7 +593,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — ~242 unit tests as of this writing. Live-network IGDB provider tests are tagged `Integration` and are **intentionally excluded from CI** (same `--filter "Category!=Integration"` in the workflow); run them locally with `dotnet test --filter Category=Integration` when you need to hit the real IGDB endpoints.
+Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — 269 unit tests as of this writing (273 total including 4 integration tests). Live-network IGDB provider tests are tagged `Integration` and are **intentionally excluded from CI** (same `--filter "Category!=Integration"` in the workflow); run them locally with `dotnet test --filter Category=Integration` when you need to hit the real IGDB endpoints.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`. Schema via `MigrateToLatest()`.
@@ -587,7 +603,7 @@ Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integr
 - `Services/SafeLauncherTests.cs` — uninstall-string parsing/rejection.
 - `Services/MetadataSyncServiceTests.cs` — metadata provider fallback chains.
 - `Metadata/BridgeIgdbProviderTests.cs`, `Metadata/PlayniteIgdbProviderTests.cs` — live-network integration tests (`Category=Integration`).
-- `Import/SteamLibraryImporterTests.cs` — library folder detection, StateFlags filtering, re-scan update behavior (test content shaped exactly like real Steam files, verified against a real install, `PROJECT_FOUNDATION.md` §28.26).
+- `Import/SteamLibraryImporterTests.cs` — library folder detection, StateFlags filtering, re-scan update behavior (fixtures shaped like real Steam `libraryfolders.vdf` / `appmanifest` files).
 - `Import/VdfParserTests.cs` — the hand-rolled VDF tokenizer/parser: key/value pairs, nested blocks, escape sequences, unquoted-junk tolerance.
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
 - `Import/SteamLocalPlaytimeResolverTests.cs` — reads real `localconfig.vdf` shape: minutes→seconds conversion, LastPlayed→LastActivity, zero-playtime skipped, missing LastPlayed stays null, multi-account merge (max playtime / latest activity), missing files and malformed config return null.
@@ -820,7 +836,7 @@ public static class Config
 {
     // URLs
     public const string ApiUrl = "https://api.example.com";
-    public const string UserAgent = "Bridge/0.1.0";
+    public const string UserAgent = "Bridge/0.2.0";
 
     // Timeouts
     public const int RequestTimeoutSeconds = 10;
@@ -858,7 +874,7 @@ public static class Config
 | `Bridge.Core/Utilities/UrlValidator.cs` | HTTPS/steam/epic allowlist + SSRF guard for user-facing URLs |
 | `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via EF migrations — `Bridge.Storage/Migrations/`, applied by `BridgeDbMigrator.MigrateToLatest`) |
 | `Bridge.Metadata/BridgeIgdbProvider.cs` | IGDB metadata via Bridge's own Cloudflare Worker (zero-config) — first in the metadata chain |
-| `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via Playnite's public proxy — fallback if the Worker is unreachable |
+| `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via legacy public proxy — fallback if the Worker is unreachable |
 | `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
 | `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
 | `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
@@ -876,7 +892,7 @@ for the rationale.
 
 **Provider chain (first hit wins):**
 1. `BridgeIgdbProvider` — Bridge's own Worker (`https://bridge-igdb.<account>.workers.dev/metadata`). Credentials live as Worker Secrets in Cloudflare, never in code.
-2. `PlayniteIgdbProvider` — Playnite's public proxy (fallback if our Worker is down).
+2. `PlayniteIgdbProvider` — legacy public IGDB proxy (fallback if our Worker is down).
 3. `IgdbMetadataProvider` — the user's own Twitch key, if configured.
 4. Steam by name — last resort (can match a wrong game, especially for games only on Epic).
 
@@ -1138,7 +1154,7 @@ Show a credits window with the app name, version, author credit, and legal discl
             <TextBlock Text="Bridge"
                        FontSize="22" FontWeight="SemiBold"
                        TextAlignment="Center" />
-            <TextBlock Text="Version 0.1.0"
+            <TextBlock Text="Version 0.2.0"
                        TextAlignment="Center"
                        Foreground="Gray"
                        Margin="0,4,0,20" />

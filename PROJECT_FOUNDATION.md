@@ -1,13 +1,13 @@
-DOCUMENTACION DE CONVERSACION Y BASE PARA REESCRITURA DE PLAYNITE
+DOCUMENTACION DE CONVERSACION — ARCHIVO DE INICIO DEL PROYECTO
 
 Fecha: 2026-08-05
 Idioma: es-ES
 
-> **Nota de encuadre:** Este documento es un **análisis interno de referencia** — registra cómo funciona Playnite por dentro para *informar las decisiones de desarrollo de Bridge*, no como especificación a replicar. Bridge no es una reescritura de Playnite: su arquitectura, estructura de módulos, persistencia e interfaz son propias e independientes. Las secciones §28 se usan en los demás documentos como "evidencia de comportamiento observado" (cómo debería sentirse una feature), nunca como contrato de implementación.
+> **Nota de encuadre:** Este documento es **material de archivo** de cuando Bridge se concibió por primera vez. Registra un análisis profundo de [Playnite](https://playnite.link/) como **inspiración original** para entender el dominio (biblioteca unificada, importación, metadatos, emulación). **No es una especificación de Bridge** — Bridge tiene arquitectura, código e interfaz propios e independientes. No usar este documento para comparar implementaciones ni como contrato de desarrollo.
 
 1. OBJETIVO GENERAL DISCUTIDO
 
-La conversacion se centro en comprender en profundidad como funciona Playnite para poder replantear el proyecto desde cero o reescribirlo con una arquitectura mas simple y moderna. La idea principal del usuario fue:
+La conversacion se centro en comprender en profundidad como funciona un gestor de biblioteca unificada (Playnite fue el punto de partida e inspiracion original) para replantear el proyecto desde cero con una arquitectura mas simple y moderna. La idea principal del usuario fue:
 
 - replicar el comportamiento funcional de Playnite,
 - modernizarlo con C# y .NET 10,
