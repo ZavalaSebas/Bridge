@@ -69,6 +69,34 @@ namespace Bridge
                 if (CoverFavoriteButton.IsChecked != true && CoverHost.IsMouseOver is false)
                     AnimateFavoriteStar(inView: false);
             };
+
+            PreviewKeyDown += MainWindow_PreviewKeyDown;
+        }
+
+        private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (DataContext is not MainViewModel vm)
+                return;
+
+            if (e.Key == System.Windows.Input.Key.F &&
+                (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0)
+            {
+                SearchBox.Focus();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == System.Windows.Input.Key.Enter &&
+                System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None &&
+                SearchBox.IsKeyboardFocusWithin is false &&
+                vm.SelectedGame is not null)
+            {
+                if (vm.PlayGameCommand.CanExecute(null))
+                {
+                    vm.PlayGameCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
         }
 
         private void CoverFavorite_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)

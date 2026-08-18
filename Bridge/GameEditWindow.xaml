@@ -88,7 +88,7 @@
                         <Border Margin="2,4,2,2" Background="{DynamicResource Bridge.Sidebar.Background}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
                             <StackPanel MaxWidth="520" IsEnabled="{Binding CanEditMetadata}">
                                 <DockPanel Margin="0,0,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" Width="26" Height="22" Padding="0" ToolTip="Add new genre" Click="AddReference_Click" Tag="Genre"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new genre" Click="AddReference_Click" Tag="Genre"/>
                                     <TextBlock Text="Genres" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Genres}">
@@ -99,7 +99,7 @@
                                 </ItemsControl>
 
                                 <DockPanel Margin="0,14,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" Width="26" Height="22" Padding="0" ToolTip="Add new developer" Click="AddReference_Click" Tag="Developer"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new developer" Click="AddReference_Click" Tag="Developer"/>
                                     <TextBlock Text="Developers" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Developers}">
@@ -110,7 +110,7 @@
                                 </ItemsControl>
 
                                 <DockPanel Margin="0,14,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" Width="26" Height="22" Padding="0" ToolTip="Add new publisher" Click="AddReference_Click" Tag="Publisher"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new publisher" Click="AddReference_Click" Tag="Publisher"/>
                                     <TextBlock Text="Publishers" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Publishers}">
@@ -121,7 +121,7 @@
                                 </ItemsControl>
 
                                 <DockPanel Margin="0,14,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" Width="26" Height="22" Padding="0" ToolTip="Add new platform" Click="AddReference_Click" Tag="Platform"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new platform" Click="AddReference_Click" Tag="Platform"/>
                                     <TextBlock Text="Platforms" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Platforms}">

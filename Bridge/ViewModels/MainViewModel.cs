@@ -9,6 +9,7 @@ using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Core.Import;
+using Bridge;
 using Bridge.Converters;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
@@ -278,6 +279,15 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
+
+    [ObservableProperty]
+    private StatusMessageKind _statusMessageKind = StatusMessageKind.Normal;
+
+    private void SetStatus(string message, StatusMessageKind kind = StatusMessageKind.Normal)
+    {
+        StatusMessageKind = kind;
+        StatusMessage = message;
+    }
 
     [ObservableProperty]
     private string _statisticsSummary = string.Empty;
@@ -554,7 +564,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Startup import failed: {ex.Message}";
+            SetStatus($"Startup import failed: {ex.Message}", StatusMessageKind.Error);
         }
     }
 
@@ -763,12 +773,19 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Deleting a game that's running would strand its session (the stop
-        // handler touches a row that no longer exists) and leave "Playing..."
-        // stuck. Refuse while it's active.
         if (SelectedGame.IsRunning)
         {
-            StatusMessage = $"'{SelectedGame.Name}' is running — close it before deleting.";
+            SetStatus($"'{SelectedGame.Name}' is running — close it before deleting.", StatusMessageKind.Error);
+            return;
+        }
+
+        if (!MessageDialogWindow.ShowConfirm(
+                $"Remove \"{SelectedGame.Name}\" from your Bridge library? This cannot be undone.",
+                "Remove game",
+                SymbolRegular.Delete24,
+                confirmText: "Remove",
+                cancelText: "Cancel"))
+        {
             return;
         }
 
@@ -776,6 +793,7 @@ public partial class MainViewModel : ObservableObject
         Games.Remove(SelectedGame);
         SelectedGame = null;
         RefreshStatistics();
+        SetStatus("Game removed from library.");
     }
 
     // Runs the game's real uninstaller (Steam/Epic launcher or the Windows
@@ -793,7 +811,7 @@ public partial class MainViewModel : ObservableObject
         var game = SelectedGame;
         if (game.IsRunning)
         {
-            StatusMessage = $"'{game.Name}' is running — close it before uninstalling.";
+            SetStatus($"'{game.Name}' is running — close it before uninstalling.", StatusMessageKind.Error);
             return;
         }
 
@@ -801,7 +819,7 @@ public partial class MainViewModel : ObservableObject
         var command = GameUninstaller.Resolve(game, sourceName);
         if (string.IsNullOrWhiteSpace(command))
         {
-            StatusMessage = $"No uninstaller found for '{game.Name}'.";
+            SetStatus($"No uninstaller found for '{game.Name}'.", StatusMessageKind.Warning);
             return;
         }
 
@@ -981,7 +999,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Scan failed: {ex.Message}";
+            SetStatus($"Scan failed: {ex.Message}", StatusMessageKind.Error);
         }
     }
 
@@ -1121,7 +1139,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"{sourceName} import failed: {ex.Message}";
+            SetStatus($"{sourceName} import failed: {ex.Message}", StatusMessageKind.Error);
         }
         finally
         {
