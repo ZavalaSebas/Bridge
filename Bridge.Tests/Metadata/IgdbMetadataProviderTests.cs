@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Bridge.Core.Entities;
 using Bridge.Metadata;
 
 namespace Bridge.Tests.Metadata;
@@ -48,7 +49,7 @@ public class IgdbMetadataProviderTests
         Assert.NotNull(metadata);
         Assert.Equal("Half-Life 2", metadata.Name);
         Assert.Equal("A dystopian sci-fi shooter.", metadata.Description);
-        Assert.Equal(new Core.Entities.ReleaseDate(2004, 11, 18), metadata.ReleaseDate);
+        Assert.Equal(new ReleaseDate(2004, 11, 18), metadata.ReleaseDate);
         Assert.Equal("https://images.igdb.com/igdb/image/upload/t_cover_big/abc123.jpg", metadata.CoverImage);
         Assert.Equal(["Shooter", "Adventure"], metadata.Genres);
     }

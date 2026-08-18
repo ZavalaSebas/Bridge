@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Media.Imaging;
 using Bridge;
+using Bridge.Core.Utilities;
 
 namespace Bridge.Converters;
 
@@ -28,6 +29,7 @@ public static class RemoteImageCache
     private const int MaxCachedImages = 512;
 
     private static readonly ConcurrentDictionary<string, BitmapImage> Cache = new();
+    private static readonly ConcurrentQueue<string> CacheOrder = new();
     // In-flight loads keyed by URL, storing the decode task so a preload can
     // await it (the window waits for artwork before its first paint).
     private static readonly ConcurrentDictionary<string, Task> InFlight = new();
@@ -159,12 +161,9 @@ public static class RemoteImageCache
                 var image = completed.IsCompletedSuccessfully ? completed.Result : null;
                 if (image is not null)
                 {
-                    if (Cache.Count >= MaxCachedImages)
-                    {
-                        Cache.Clear();
-                    }
-
                     Cache[url] = image;
+                    CacheOrder.Enqueue(url);
+                    TrimCache();
                 }
 
                 // Collect the pending callbacks, then run them on the UI thread.
@@ -206,7 +205,9 @@ public static class RemoteImageCache
     {
         try
         {
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                uri.Scheme is "http" or "https" &&
+                UrlValidator.IsSafeHttpUrl(uri.AbsoluteUri))
             {
                 // Remote artwork: serve from the on-disk cache when present,
                 // otherwise download the bytes ourselves (HttpClient works on
@@ -282,6 +283,14 @@ public static class RemoteImageCache
         catch
         {
             return null;
+        }
+    }
+
+    private static void TrimCache()
+    {
+        while (Cache.Count > MaxCachedImages && CacheOrder.TryDequeue(out var oldest))
+        {
+            Cache.TryRemove(oldest, out _);
         }
     }
 

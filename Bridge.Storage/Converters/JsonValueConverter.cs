@@ -21,7 +21,10 @@ public class JsonValueConverter<T> : ValueConverter<T, string>
     {
     }
 
-    private static readonly JsonSerializerOptions JsonOptions = new();
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        MaxDepth = 32
+    };
 
     private static T Deserialize(string json)
     {
@@ -43,11 +46,12 @@ public class JsonValueConverter<T> : ValueConverter<T, string>
         {
             return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? CreateEmptyValue();
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
             // A malformed JSON cell (partial write, hand-edited DB, value from a
             // previous schema) must not take down the whole library load — treat
             // it as "no data" for this field and keep going.
+            System.Diagnostics.Trace.WriteLine($"JsonValueConverter: malformed JSON cell: {ex.Message}");
             return CreateEmptyValue();
         }
     }

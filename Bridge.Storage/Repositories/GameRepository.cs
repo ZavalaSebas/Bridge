@@ -50,6 +50,26 @@ public class GameRepository(BridgeDbContext context) : Repository<Game>(context)
         game.IsInstalling = false;
         game.IsUninstalling = false;
         game.IsLaunching = false;
+    }
+
+    /// <summary>
+    /// Persists transient-flag cleanup once at startup after a crash, instead of
+    /// writing on every read path.
+    /// </summary>
+    public void ResetPersistedTransientFlags()
+    {
+        var dirty = Set.Where(g =>
+            g.IsInstalling || g.IsUninstalling || g.IsLaunching).ToList();
+        if (dirty.Count == 0)
+            return;
+
+        foreach (var game in dirty)
+        {
+            game.IsInstalling = false;
+            game.IsUninstalling = false;
+            game.IsLaunching = false;
+        }
+
         Context.SaveChanges();
     }
 }

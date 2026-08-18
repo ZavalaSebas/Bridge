@@ -22,7 +22,7 @@ public class GameEditViewModelTests : IDisposable
             .UseSqlite($"Data Source={_dbPath};Pooling=False")
             .Options;
         _context = new BridgeDbContext(options);
-        _context.Database.EnsureCreated();
+        _context.MigrateToLatest();
         _gameRepository = new GameRepository(_context);
         _genreRepository = new Repository<Genre>(_context);
         _companyRepository = new Repository<Company>(_context);

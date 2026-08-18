@@ -115,6 +115,12 @@ namespace Bridge
                 Wpf.Ui.Appearance.ApplicationTheme.Dark,
                 Wpf.Ui.Controls.WindowBackdropType.Mica,
                 updateAccent: false);
+
+            Exit += (_, _) =>
+            {
+                if (Services is IDisposable disposable)
+                    disposable.Dispose();
+            };
         }
 
         private static void ConfigureServices(IServiceCollection services)
@@ -139,6 +145,7 @@ namespace Bridge
             services.AddSingleton<EpicLibraryImporter>();
             services.AddSingleton<WebImageSearchService>();
             services.AddSingleton<InstalledGameDetector>();
+            services.AddSingleton<MetadataSyncService>();
             services.AddSingleton<AppUpdateService>();
 
             // IGDB: settings loaded from disk once at startup (see
@@ -151,7 +158,7 @@ namespace Bridge
             {
                 var client = new HttpClient
                 {
-                    Timeout = TimeSpan.FromSeconds(Config.RequestTimeoutSeconds)
+                    Timeout = TimeSpan.FromSeconds(Config.MetadataRequestTimeoutSeconds)
                 };
                 return client;
             });
@@ -191,6 +198,14 @@ namespace Bridge
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             LogException(e.Exception);
+
+            if (IsFatalStartupException(e.Exception))
+            {
+                AppUpdateService.RollbackToPrevious();
+                Shutdown();
+                return;
+            }
+
             MessageBox.Show(e.Exception.Message, Config.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
 
@@ -225,6 +240,17 @@ namespace Bridge
             {
                 // Logging must never take the app down.
             }
+        }
+
+        private static bool IsFatalStartupException(Exception exception)
+        {
+            for (var ex = exception; ex is not null; ex = ex.InnerException)
+            {
+                if (ex is DbUpdateException && Current.MainWindow is null)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

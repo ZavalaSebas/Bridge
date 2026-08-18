@@ -4,6 +4,7 @@ using System.Text;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Import;
+using Bridge.Core.Utilities;
 using ReleaseDate = Bridge.Core.Entities.ReleaseDate;
 
 namespace Bridge.Metadata;
@@ -89,10 +90,14 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
                 if (string.IsNullOrWhiteSpace(website.Url))
                     continue;
 
+                var sanitized = SanitizeWebsiteUrl(website.Url.StartsWith("//") ? "https:" + website.Url : website.Url);
+                if (string.IsNullOrWhiteSpace(sanitized))
+                    continue;
+
                 metadata.Links.Add(new Link
                 {
                     Name = WebsiteCategoryName(website.Category),
-                    Url = website.Url.StartsWith("//") ? "https:" + website.Url : website.Url
+                    Url = sanitized
                 });
             }
         }
@@ -141,8 +146,20 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
         return withScheme.Replace("t_thumb", size);
     }
 
-    // The search term is embedded in a quoted Apicalypse query, so both
-    // characters that terminate a string literal must be escaped.
-    private static string EscapeApicalypseString(string value) =>
-        value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    // Apicalypse search strings reject control characters and unbalanced quotes.
+    private static string EscapeApicalypseString(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length > 200)
+            trimmed = trimmed[..200];
+
+        return trimmed
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal)
+            .Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal);
+    }
+
+    private static string SanitizeWebsiteUrl(string url) =>
+        UrlValidator.SanitizePersistedUrl(url) ?? string.Empty;
 }

@@ -157,7 +157,7 @@ Bridge.Metadata/
 └── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
 ```
 
-See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. On startup, `MainViewModel.DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all newly imported Steam games. Cover/background URLs are stored as-is on the Game, and rendered through an in-memory cache of decoded (frozen) bitmaps — `Bridge/Converters/RemoteImageCache.cs`, bounded at 512 entries, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
+See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `MainViewModel.DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all newly imported Steam games. Cover/background URLs are stored as-is on the Game, and rendered through an in-memory cache of decoded (frozen) bitmaps — `Bridge/Converters/RemoteImageCache.cs`, bounded at 512 entries (LRU trim, not a full clear), with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
 
 ### `Bridge.Import` — what's in it
 
@@ -318,8 +318,9 @@ mini-migrations:
 - **Migrations live in `Bridge.Storage/Migrations/`** — generated with
   `dotnet ef migrations add <Name> --project Bridge.Storage --startup-project Bridge.Storage`
   (a `BridgeDbContextDesignTimeFactory` lets the tools build the context without
-  launching the WPF app; it points at the same `%LOCALAPPDATA%\Bridge\bridge.db`
-  the app uses).
+  launching the WPF app; it uses `BRIDGE_DEV_DB` when set, otherwise a temp file —
+  **not** the real `%LOCALAPPDATA%\Bridge\bridge.db`, so `dotnet ef` never touches
+  user data).
 - **Applied at startup** by `BridgeDbMigrator.MigrateToLatest()` in
   `Bridge/App.xaml.cs` (where `EnsureCreated` + the three `EnsureColumn` calls
   used to be). `Database.Migrate()` applies every pending migration in order.
@@ -332,6 +333,11 @@ mini-migrations:
   and only future migrations apply on top. Verified against the real
   `%LOCALAPPDATA%\Bridge\bridge.db` (46 games, 20 genres) and covered by
   `Bridge.Tests/Storage/MigrationTests.cs` (fresh-DB and pre-migration baseline).
+- **`AddUniqueIndexes` (2026-08-18)** — unique indexes on reference-entity names
+  (`Genres`, `Platforms`, `Companies`, …) and on `(ExternalId, SourceId)` for
+  `Games`. Migration fails if duplicate rows already exist; clean up duplicates
+  before upgrading. Storage unit tests now call `MigrateToLatest()` instead of
+  `EnsureCreated()` so they exercise the same path as production.
 
 **To change the schema** (add/remove a column or table, etc.):
 
@@ -579,8 +585,10 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 Run locally with: `dotnet test Bridge.slnx -c Release` — 102 tests, all passing as of this writing.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
-- `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`.
-- `Storage/RepositoryTests.cs` — `GetOrCreateByName` dedup, including case-insensitivity.
+- `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`. Schema via `MigrateToLatest()`.
+- `Storage/RepositoryTests.cs` — `GetOrCreateByName` dedup, including case-insensitivity and retry on unique-index races. Schema via `MigrateToLatest()`.
+- `Core/PathContainmentTests.cs` — `PathContainment.IsPathUnderDirectory` (normal paths, trailing separators, `..` rejection).
+- `Services/SafeLauncherTests.cs` — URL allowlist (`UrlValidator`) and uninstall-string parsing/rejection.
 - `Import/SteamLibraryImporterTests.cs` — library folder detection, StateFlags filtering, re-scan update behavior (test content shaped exactly like real Steam files, verified against a real install, `PROJECT_FOUNDATION.md` §28.26).
 - `Import/VdfParserTests.cs` — the hand-rolled VDF tokenizer/parser: key/value pairs, nested blocks, escape sequences, unquoted-junk tolerance.
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
@@ -612,6 +620,21 @@ Run locally with: `dotnet test Bridge.slnx -c Release` — 102 tests, all passin
 - Arrange → Act → Assert pattern
 - Test class name = Service/Class name + "Tests" (e.g., `MyServiceTests`)
 - Namespace mirrors source: `Bridge.Tests.Services.MyServiceTests`
+
+---
+
+## External launch and path safety
+
+User-triggered URLs and uninstall commands must go through the shared helpers — do not call `Process.Start` with raw strings from the DB or registry.
+
+| Helper | Location | Use |
+|--------|----------|-----|
+| `UrlValidator.IsSafeToOpen` | `Bridge.Core/Utilities/UrlValidator.cs` | HTTPS + `steam://` + Epic launcher scheme allowlist; blocks `javascript:`, `file:`, private IPs (SSRF) |
+| `SafeLauncher.TryOpenUrl` | `Bridge/Services/SafeLauncher.cs` | Opens validated URLs (About, links panel, uninstall fallback browser) |
+| `SafeLauncher.TryRunUninstallCommand` | same | Parses registry `UninstallString`, rejects `cmd`/PowerShell chains, requires executable on disk |
+| `PathContainment.IsPathUnderDirectory` | `Bridge.Core/Utilities/PathContainment.cs` | Library importers and `GameLauncher.KillProcessesInDirectory` — paths must stay under the library root |
+
+Metadata image downloads use the same URL rules in `RemoteImageCache`. IGDB credentials are stored with DPAPI (`IgdbSettingsStore`); the Twitch token request sends the client secret in the POST body, not the query string.
 
 ---
 
@@ -831,6 +854,10 @@ public static class Config
 | `Bridge.Core/Contracts/IGameRepository.cs` | The persistence contract `Bridge.Storage` implements |
 | `Bridge/App.xaml.cs` | Composition root — DI setup, theme dictionaries, logging |
 | `Bridge/Config.cs` | App constants (AppName, paths) |
+| `Bridge/Services/SafeLauncher.cs` | Validated external URLs and uninstall commands — see External launch and path safety |
+| `Bridge/Services/MetadataSyncService.cs` | Centralized metadata provider fallback chains |
+| `Bridge.Core/Utilities/PathContainment.cs` | Path-under-root checks for importers and process killing |
+| `Bridge.Core/Utilities/UrlValidator.cs` | HTTPS/steam/epic allowlist + SSRF guard for user-facing URLs |
 | `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via EF migrations — `Bridge.Storage/Migrations/`, applied by `BridgeDbMigrator.MigrateToLatest`) |
 | `Bridge.Metadata/BridgeIgdbProvider.cs` | IGDB metadata via Bridge's own Cloudflare Worker (zero-config) — first in the metadata chain |
 | `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via Playnite's public proxy — fallback if the Worker is unreachable |

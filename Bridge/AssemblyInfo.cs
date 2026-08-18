@@ -1,4 +1,7 @@
+using System.Runtime.CompilerServices;
 using System.Windows;
+
+[assembly: InternalsVisibleTo("Bridge.Tests")]
 
 [assembly: ThemeInfo(
     ResourceDictionaryLocation.None,

@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Core.Utilities;
 using Bridge.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -193,7 +194,9 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         var candidateDir = Path.GetDirectoryName(executablePath) ?? string.Empty;
         var dirMatch = existing
             .Where(g => !string.IsNullOrWhiteSpace(g.InstallDirectory))
-            .Any(g => candidateDir.StartsWith(g.InstallDirectory.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
+            .Any(g => PathContainment.IsPathUnderDirectory(
+                candidateDir,
+                g.InstallDirectory.TrimEnd('\\', '/')));
         if (dirMatch)
             return (true, "install directory match");
 

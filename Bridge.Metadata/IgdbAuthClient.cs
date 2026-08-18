@@ -42,11 +42,16 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
                 throw new InvalidOperationException("IGDB Client ID/Secret are not configured.");
             }
 
-            var url = $"{TokenUrl}?client_id={Uri.EscapeDataString(settings.ClientId)}" +
-                       $"&client_secret={Uri.EscapeDataString(settings.ClientSecret)}" +
-                       "&grant_type=client_credentials";
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+            var url = $"{TokenUrl}";
+            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["client_id"] = settings.ClientId,
+                    ["client_secret"] = settings.ClientSecret,
+                    ["grant_type"] = "client_credentials"
+                })
+            };
             request.Headers.UserAgent.ParseAdd("Bridge/0.1");
             using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();

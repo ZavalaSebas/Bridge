@@ -15,6 +15,12 @@ public static class Config
 
     public const int RequestTimeoutSeconds = 10;
 
+    public const int MetadataRequestTimeoutSeconds = 10;
+
+    public const int DownloadRequestTimeoutSeconds = 900;
+
+    public const string BridgeIgdbMetadataEndpoint = "https://bridge-igdb.sebaszavala120.workers.dev/metadata";
+
     public const string UpdateAssetName = "Bridge.exe";
 
     public static string AppDataPath => Path.Combine(

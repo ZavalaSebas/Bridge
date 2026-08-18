@@ -1,4 +1,6 @@
+using System.IO;
 using Bridge.Core.Import;
+using Bridge.Core.Utilities;
 
 namespace Bridge.Import.Steam;
 
@@ -136,9 +138,14 @@ public class SteamLibraryImporter
             : $"Steam App {appId}";
 
         var installDirName = appState.TryGetValue("installdir", out var dirObj) && dirObj is string d ? d : string.Empty;
-        var installDirectory = string.IsNullOrEmpty(installDirName)
-            ? string.Empty
-            : Path.Combine(steamAppsDir, "common", installDirName);
+        var installDirectory = string.Empty;
+        if (!string.IsNullOrEmpty(installDirName))
+        {
+            var commonRoot = Path.Combine(steamAppsDir, "common");
+            installDirectory = PathContainment.TryResolveUnderRoot(commonRoot, installDirName) ?? string.Empty;
+            if (!Directory.Exists(installDirectory))
+                installDirectory = string.Empty;
+        }
 
         // SizeOnDisk is the on-disk size in bytes that Steam writes to the
         // .acf — the same field Playnite's Steam plugin reads for Install Size.
