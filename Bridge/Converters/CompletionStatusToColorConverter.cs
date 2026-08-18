@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
+using Bridge.Resources;
 
 namespace Bridge.Converters;
 
@@ -34,10 +35,13 @@ public class CompletionStatusToColorConverter : IValueConverter
 
         return status switch
         {
-            "Completed" or "Played" or "Beaten" => Completed,
-            "On Hold" => OnHold,
-            "Abandoned" => Abandoned,
-            "Plan to Play" or "Playing" => Planned,
+            var s when s == Strings.CompletionStatusCompleted
+                || s == Strings.Played
+                || s == Strings.CompletionStatusBeaten => Completed,
+            var s when s == Strings.CompletionStatusOnHold => OnHold,
+            var s when s == Strings.CompletionStatusAbandoned => Abandoned,
+            var s when s == Strings.CompletionStatusPlanToPlay
+                || s == Strings.CompletionStatusPlaying => Planned,
             _ => Neutral
         };
     }

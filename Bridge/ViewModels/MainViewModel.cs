@@ -111,10 +111,10 @@ public partial class MainViewModel : ObservableObject
     private void UpdatePlayButtonState()
     {
         var running = SelectedGame?.IsRunning == true;
-        PlayButtonText = running ? "Stop"
-            : IsEmulationBusy ? "Downloading..."
-            : NeedsEmulatorDownload ? "Download"
-            : "Play";
+        PlayButtonText = running ? Strings.Stop
+            : IsEmulationBusy ? Strings.Downloading
+            : NeedsEmulatorDownload ? Strings.Download
+            : Strings.Play;
         PlayButtonSymbol = running ? "Stop24"
             : NeedsEmulatorDownload || IsEmulationBusy ? "ArrowDownload24"
             : "Play24";

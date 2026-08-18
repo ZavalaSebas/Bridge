@@ -1,4 +1,5 @@
 using System.Windows;
+using Bridge.Resources;
 using Wpf.Ui.Controls;
 
 namespace Bridge;
@@ -49,8 +50,8 @@ public partial class MessageDialogWindow : FluentWindow
     {
         var dialog = new MessageDialogWindow(message, title, icon) { Owner = Application.Current.MainWindow };
         dialog.CancelButton.Visibility = Visibility.Visible;
-        dialog.OkButton.Content = confirmText ?? "OK";
-        dialog.CancelButton.Content = cancelText ?? "Cancel";
+        dialog.OkButton.Content = confirmText ?? Strings.OK;
+        dialog.CancelButton.Content = cancelText ?? Strings.Cancel;
         return dialog.ShowDialog() == true;
     }
 

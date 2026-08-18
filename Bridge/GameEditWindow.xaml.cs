@@ -83,8 +83,8 @@ namespace Bridge
             var panel = new StackPanel { Margin = new Thickness(14) };
             panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"Name for the new {kind.ToLowerInvariant()}:" });
             panel.Children.Add(input);
-            var ok = new System.Windows.Controls.Button { Content = "OK", Width = 70, IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
-            var cancel = new System.Windows.Controls.Button { Content = "Cancel", Width = 70, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 8, 0) };
+            var ok = new System.Windows.Controls.Button { Content = Strings.OK, Width = 70, IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+            var cancel = new System.Windows.Controls.Button { Content = Strings.Cancel, Width = 70, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 8, 0) };
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
             buttons.Children.Add(cancel);
             buttons.Children.Add(ok);
