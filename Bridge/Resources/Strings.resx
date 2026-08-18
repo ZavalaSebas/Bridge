@@ -181,4 +181,89 @@
   <data name="CoversGrid" xml:space="preserve"><value>Covers grid</value></data>
   <data name="GamesTable" xml:space="preserve"><value>Games table</value></data>
   <data name="ExpandGroup" xml:space="preserve"><value>Expand or collapse group</value></data>
+  <data name="All" xml:space="preserve"><value>All</value></data>
+  <data name="Installed" xml:space="preserve"><value>Installed</value></data>
+  <data name="NotPlayedFilter" xml:space="preserve"><value>Not Played</value></data>
+  <data name="RecentlyPlayed" xml:space="preserve"><value>Recently Played</value></data>
+  <data name="DontGroup" xml:space="preserve"><value>Don't group</value></data>
+  <data name="Developer" xml:space="preserve"><value>Developer</value></data>
+  <data name="Publisher" xml:space="preserve"><value>Publisher</value></data>
+  <data name="Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Genre" xml:space="preserve"><value>Genre</value></data>
+  <data name="InstallationStatus" xml:space="preserve"><value>Installation Status</value></data>
+  <data name="CompletionStatus" xml:space="preserve"><value>Completion Status</value></data>
+  <data name="TimePlayed" xml:space="preserve"><value>Time Played</value></data>
+  <data name="PlayCount" xml:space="preserve"><value>Play Count</value></data>
+  <data name="ReleaseYear" xml:space="preserve"><value>Release Year</value></data>
+  <data name="LastPlayed" xml:space="preserve"><value>Last Played</value></data>
+  <data name="ReleaseDate" xml:space="preserve"><value>Release Date</value></data>
+  <data name="CriticScore" xml:space="preserve"><value>Critic Score</value></data>
+  <data name="Source" xml:space="preserve"><value>Source</value></data>
+  <data name="SortAscending" xml:space="preserve"><value>Ascending (A-Z)</value></data>
+  <data name="SortDescending" xml:space="preserve"><value>Descending (Z-A)</value></data>
+  <data name="KoFi" xml:space="preserve"><value>Ko-fi</value></data>
+  <data name="GitHubSponsors" xml:space="preserve"><value>GitHub Sponsors</value></data>
+  <data name="IgdbMenu" xml:space="preserve"><value>IGDB...</value></data>
+  <data name="CustomTheme" xml:space="preserve"><value>Custom...</value></data>
+  <data name="ThemeBlue" xml:space="preserve"><value>Blue</value></data>
+  <data name="ThemeCyan" xml:space="preserve"><value>Cyan</value></data>
+  <data name="ThemeTeal" xml:space="preserve"><value>Teal</value></data>
+  <data name="ThemeGreen" xml:space="preserve"><value>Green</value></data>
+  <data name="ThemePurple" xml:space="preserve"><value>Purple</value></data>
+  <data name="ThemePink" xml:space="preserve"><value>Pink</value></data>
+  <data name="ThemeRed" xml:space="preserve"><value>Red</value></data>
+  <data name="ThemeOrange" xml:space="preserve"><value>Orange</value></data>
+  <data name="ThemeAmber" xml:space="preserve"><value>Amber</value></data>
+  <data name="Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Added" xml:space="preserve"><value>Added</value></data>
+  <data name="Playtime" xml:space="preserve"><value>Playtime</value></data>
+  <data name="Completion" xml:space="preserve"><value>Completion</value></data>
+  <data name="InstallDirectoryLabel" xml:space="preserve"><value>Install Directory</value></data>
+  <data name="InstallSize" xml:space="preserve"><value>Install Size</value></data>
+  <data name="Genres" xml:space="preserve"><value>Genres</value></data>
+  <data name="Developers" xml:space="preserve"><value>Developers</value></data>
+  <data name="Publishers" xml:space="preserve"><value>Publishers</value></data>
+  <data name="Categories" xml:space="preserve"><value>Categories</value></data>
+  <data name="Features" xml:space="preserve"><value>Features</value></data>
+  <data name="Tags" xml:space="preserve"><value>Tags</value></data>
+  <data name="AgeRating" xml:space="preserve"><value>Age Rating</value></data>
+  <data name="Series" xml:space="preserve"><value>Series</value></data>
+  <data name="Region" xml:space="preserve"><value>Region</value></data>
+  <data name="Version" xml:space="preserve"><value>Version</value></data>
+  <data name="UserScore" xml:space="preserve"><value>User Score</value></data>
+  <data name="CommunityScore" xml:space="preserve"><value>Community Score</value></data>
+  <data name="NotInstalled" xml:space="preserve"><value>Not installed</value></data>
+  <data name="Info" xml:space="preserve"><value>Info</value></data>
+  <data name="SelectAGame" xml:space="preserve"><value>Select a game</value></data>
+  <data name="Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Average" xml:space="preserve"><value>Average</value></data>
+  <data name="Played" xml:space="preserve"><value>Played</value></data>
+  <data name="Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="TopPlayTime" xml:space="preserve"><value>Top Play Time</value></data>
+  <data name="GamesCountFormat" xml:space="preserve"><value>{0} games</value></data>
+  <data name="CompletionCountFormat" xml:space="preserve"><value>{0} ({1:0}%)</value></data>
+  <data name="Release" xml:space="preserve"><value>Release</value></data>
+  <data name="LabelAdded" xml:space="preserve"><value>Added:</value></data>
+  <data name="LabelPlaytime" xml:space="preserve"><value>Playtime:</value></data>
+  <data name="LabelLastPlayed" xml:space="preserve"><value>Last Played:</value></data>
+  <data name="LabelCompletion" xml:space="preserve"><value>Completion:</value></data>
+  <data name="LabelInstall" xml:space="preserve"><value>Install:</value></data>
+  <data name="LabelInstallSize" xml:space="preserve"><value>Install Size:</value></data>
+  <data name="LabelLibrary" xml:space="preserve"><value>Library:</value></data>
+  <data name="LabelPlatform" xml:space="preserve"><value>Platform:</value></data>
+  <data name="LabelGenre" xml:space="preserve"><value>Genre:</value></data>
+  <data name="LabelDeveloper" xml:space="preserve"><value>Dev:</value></data>
+  <data name="LabelPublisher" xml:space="preserve"><value>Publisher:</value></data>
+  <data name="LabelCategories" xml:space="preserve"><value>Categories:</value></data>
+  <data name="LabelFeatures" xml:space="preserve"><value>Features:</value></data>
+  <data name="LabelTags" xml:space="preserve"><value>Tags:</value></data>
+  <data name="LabelAgeRating" xml:space="preserve"><value>Age Rating:</value></data>
+  <data name="LabelSeries" xml:space="preserve"><value>Series:</value></data>
+  <data name="LabelRegion" xml:space="preserve"><value>Region:</value></data>
+  <data name="LabelVersion" xml:space="preserve"><value>Version:</value></data>
+  <data name="LabelUserScore" xml:space="preserve"><value>User Score:</value></data>
+  <data name="LabelCriticScore" xml:space="preserve"><value>Critic Score:</value></data>
+  <data name="LabelCommunityScore" xml:space="preserve"><value>Community Score:</value></data>
+  <data name="LabelLinks" xml:space="preserve"><value>Links:</value></data>
 </root>
