@@ -350,4 +350,79 @@
   <data name="CloseEscTooltip" xml:space="preserve"><value>Close (Esc)</value></data>
   <data name="RuntimeFormat" xml:space="preserve"><value>.NET {0}</value></data>
   <data name="OsFormat" xml:space="preserve"><value>{0} ({1}-bit)</value></data>
+  <data name="Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="None" xml:space="preserve"><value>None</value></data>
+  <data name="ScanTitle" xml:space="preserve"><value>Scan</value></data>
+  <data name="Scanning" xml:space="preserve"><value>Scanning...</value></data>
+  <data name="ScanStartMenuFailedFormat" xml:space="preserve"><value>Couldn't scan the start menu: {0}</value></data>
+  <data name="SelectFolderToScanGames" xml:space="preserve"><value>Select folder to scan for games</value></data>
+  <data name="SelectExecutable" xml:space="preserve"><value>Select executable</value></data>
+  <data name="ExecutablesFilter" xml:space="preserve"><value>Executables (*.exe;*.lnk)|*.exe;*.lnk</value></data>
+  <data name="InvalidExecutable" xml:space="preserve"><value>Not a valid executable.</value></data>
+  <data name="AddGamesTitle" xml:space="preserve"><value>Add games</value></data>
+  <data name="NoGamesSelected" xml:space="preserve"><value>No games selected.</value></data>
+  <data name="CandidatesFoundFormat" xml:space="preserve"><value>{0} found</value></data>
+  <data name="CandidatesShownFormat" xml:space="preserve"><value>{0} of {1} shown</value></data>
+  <data name="AlreadyInLibrarySkippedFormat" xml:space="preserve"><value>Already in your library ({0}): {1}{2}. They were skipped.</value></data>
+  <data name="MoreSkippedFormat" xml:space="preserve"><value>, +{0} more</value></data>
+  <data name="StatisticsSummaryFormat" xml:space="preserve"><value>Total: {0} | Installed: {1} | Favorites: {2} | Hidden: {3} | Total playtime: {4}</value></data>
+  <data name="GamesInGroupTooltip" xml:space="preserve"><value>Games in group</value></data>
+  <data name="SaveFailedFormat" xml:space="preserve"><value>Save failed: {0}</value></data>
+  <data name="Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="LoadingEmulationStatus" xml:space="preserve"><value>Loading emulation status...</value></data>
+  <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve"><value>Could not update RetroArch: {0}</value></data>
+  <data name="VersionFormat" xml:space="preserve"><value>Version {0}</value></data>
+  <data name="SourceCode" xml:space="preserve"><value>Source code</value></data>
+  <data name="License" xml:space="preserve"><value>License</value></data>
+  <data name="BuyMeACoffee" xml:space="preserve"><value>Buy me a coffee</value></data>
+  <data name="SupportOnGitHub" xml:space="preserve"><value>Support development on GitHub</value></data>
+  <data name="GnuGplLicense" xml:space="preserve"><value>GNU General Public License v3.0</value></data>
+  <data name="OpenEmulationSettings" xml:space="preserve"><value>Open emulation settings</value></data>
+  <data name="OpenIgdbSettings" xml:space="preserve"><value>Open IGDB settings</value></data>
+  <data name="OpenThemeSettings" xml:space="preserve"><value>Open theme settings</value></data>
+  <data name="ViewAbout" xml:space="preserve"><value>View about</value></data>
+  <data name="SelectRomFolderTitle" xml:space="preserve"><value>Select ROM folder</value></data>
+  <data name="SelectImageTitle" xml:space="preserve"><value>Select image</value></data>
+  <data name="ImageFilesFilter" xml:space="preserve"><value>Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All files|*.*</value></data>
+  <data name="AddReferenceNamePromptFormat" xml:space="preserve"><value>Name for the new {0}:</value></data>
+  <data name="AddReferenceTitleFormat" xml:space="preserve"><value>Add {0}</value></data>
+  <data name="EmulatorSavedFormat" xml:space="preserve"><value>Saved '{0}'.</value></data>
+  <data name="SupportDevelopmentOnGitHub" xml:space="preserve"><value>Support development on GitHub</value></data>
+  <data name="BridgeRepositoryPath" xml:space="preserve"><value>github.com/ZavalaSebas/Bridge</value></data>
+  <data name="UnexpectedErrorFormat" xml:space="preserve"><value>An unexpected error occurred: {0}</value></data>
+  <data name="PlaytimeNotPlayed" xml:space="preserve"><value>Not played</value></data>
+  <data name="PlaytimeOneSecond" xml:space="preserve"><value>1 second</value></data>
+  <data name="PlaytimeSecondsFormat" xml:space="preserve"><value>{0} seconds</value></data>
+  <data name="PlaytimeOneMinute" xml:space="preserve"><value>1 minute</value></data>
+  <data name="PlaytimeMinutesFormat" xml:space="preserve"><value>{0} minutes</value></data>
+  <data name="PlaytimeHoursFormat" xml:space="preserve"><value>{0} hours</value></data>
+  <data name="SizeZeroBytes" xml:space="preserve"><value>0 B</value></data>
+  <data name="SizeBytesFormat" xml:space="preserve"><value>{0} B</value></data>
+  <data name="SizeKilobytesFormat" xml:space="preserve"><value>{0} KB</value></data>
+  <data name="SizeMegabytesFormat" xml:space="preserve"><value>{0} MB</value></data>
+  <data name="SizeGigabytesFormat" xml:space="preserve"><value>{0} GB</value></data>
+  <data name="GroupNeverPlayed" xml:space="preserve"><value>Never played</value></data>
+  <data name="GroupPlayedOnce" xml:space="preserve"><value>Once</value></data>
+  <data name="GroupPlayedMultiple" xml:space="preserve"><value>Multiple times</value></data>
+  <data name="GroupLessThanOneHour" xml:space="preserve"><value>Less than 1 hour</value></data>
+  <data name="GroupOneToTenHours" xml:space="preserve"><value>1 - 10 hours</value></data>
+  <data name="GroupTenToHundredHours" xml:space="preserve"><value>10 - 100 hours</value></data>
+  <data name="GroupHundredPlusHours" xml:space="preserve"><value>100+ hours</value></data>
+  <data name="GroupUnknownSize" xml:space="preserve"><value>Unknown size</value></data>
+  <data name="GroupLessThanOneGb" xml:space="preserve"><value>Less than 1 GB</value></data>
+  <data name="GroupOneToTenGb" xml:space="preserve"><value>1 - 10 GB</value></data>
+  <data name="GroupTenToHundredGb" xml:space="preserve"><value>10 - 100 GB</value></data>
+  <data name="GroupHundredPlusGb" xml:space="preserve"><value>100+ GB</value></data>
+  <data name="GroupNever" xml:space="preserve"><value>Never</value></data>
+  <data name="GroupToday" xml:space="preserve"><value>Today</value></data>
+  <data name="GroupLastSevenDays" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="GroupLastThirtyDays" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="GroupLastYear" xml:space="preserve"><value>Last year</value></data>
+  <data name="GroupOlder" xml:space="preserve"><value>Older</value></data>
+  <data name="GroupNoScore" xml:space="preserve"><value>No score</value></data>
+  <data name="GroupScore0To49" xml:space="preserve"><value>0 - 49</value></data>
+  <data name="GroupScore50To69" xml:space="preserve"><value>50 - 69</value></data>
+  <data name="GroupScore70To89" xml:space="preserve"><value>70 - 89</value></data>
+  <data name="GroupScore90To100" xml:space="preserve"><value>90 - 100</value></data>
 </root>

@@ -1,4 +1,5 @@
 using Bridge.Emulation;
+using Bridge.Resources;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -8,7 +9,7 @@ namespace Bridge.ViewModels;
 public partial class EmulationSettingsViewModel(RetroArchService retroArch) : ObservableObject
 {
     [ObservableProperty]
-    private string _statusMessage = "Loading emulation status...";
+    private string _statusMessage = Strings.LoadingEmulationStatus;
 
     public async Task LoadAsync() => StatusMessage = await retroArch.GetStatusAsync();
 
@@ -22,7 +23,7 @@ public partial class EmulationSettingsViewModel(RetroArchService retroArch) : Ob
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Could not update RetroArch: {ex.Message}";
+            StatusMessage = Strings.Format(nameof(Strings.CouldNotUpdateRetroArchFormat), ex.Message);
         }
     }
 }

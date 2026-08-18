@@ -1,6 +1,5 @@
-using System.Diagnostics;
 using Bridge;
-using Bridge.Core.Entities;
+using System.Diagnostics;
 using Bridge.Resources;
 using Bridge.Services;
 using CommunityToolkit.Mvvm.Input;
@@ -24,7 +23,7 @@ public partial class MainViewModel
             return;
         }
 
-        if (!MessageDialogWindow.ShowConfirm(
+        if (!_dialogService.ShowConfirm(
                 Strings.Format(nameof(Strings.RemoveGameConfirmFormat), SelectedGame.Name),
                 Strings.RemoveGameTitle,
                 SymbolRegular.Delete24,
@@ -60,7 +59,7 @@ public partial class MainViewModel
             return;
         }
 
-        var sourceName = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
+        var sourceName = _sourceRepository.Get(game.SourceId)?.Name ?? Strings.Manual;
         var command = GameUninstaller.Resolve(game, sourceName);
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -181,6 +180,7 @@ public partial class MainViewModel
         var status = _completionStatusRepository.GetOrCreateByName(statusName);
         SelectedGame.CompletionStatusId = status.Id;
         _gameRepository.Update(SelectedGame);
+        InvalidateReferenceCaches();
         RefreshReferenceFields(SelectedGame);
         RefreshStatistics();
     }

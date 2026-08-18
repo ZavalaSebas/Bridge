@@ -1,5 +1,6 @@
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
+using Bridge.Resources;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -60,7 +61,7 @@ public partial class EmulatorSetupViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Executable))
         {
-            StatusMessage = "Name and Executable are required.";
+            StatusMessage = Strings.EmulatorNameExecutableRequired;
             return;
         }
 
@@ -93,7 +94,7 @@ public partial class EmulatorSetupViewModel : ObservableObject
             _emulatorRepository.Update(emulator);
         }
 
-        StatusMessage = $"Saved '{emulator.Name}'.";
+        StatusMessage = Strings.Format(nameof(Strings.EmulatorSavedFormat), emulator.Name);
         Saved?.Invoke();
     }
 }

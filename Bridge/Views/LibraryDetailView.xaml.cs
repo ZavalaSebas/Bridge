@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Bridge.Core.Entities;
+using Bridge.Core.Enums;
 using Bridge.Services;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -212,5 +213,93 @@ public partial class LibraryDetailView : UserControl
         animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.9, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(260)), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
         animation.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(380)), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
         return animation;
+    }
+
+    public double? GetScrollOffset(ViewMode mode) => mode switch
+    {
+        ViewMode.Covers => GetScrollViewer(CoversList)?.VerticalOffset,
+        ViewMode.List => GetScrollViewer(GamesList)?.VerticalOffset,
+        ViewMode.Table => GetScrollViewer(TableList)?.VerticalOffset,
+        _ => null
+    };
+
+    public void SetScrollOffset(ViewMode mode, double offset)
+    {
+        if (mode == ViewMode.Covers)
+            GetScrollViewer(CoversList)?.ScrollToVerticalOffset(offset);
+        else if (mode == ViewMode.List)
+            GetScrollViewer(GamesList)?.ScrollToVerticalOffset(offset);
+        else if (mode == ViewMode.Table)
+            GetScrollViewer(TableList)?.ScrollToVerticalOffset(offset);
+    }
+
+    public void ApplyViewModeLayout(ViewMode mode)
+    {
+        switch (mode)
+        {
+            case ViewMode.List:
+                ShowFullWidthDetail();
+                CompactInfoPanel.Visibility = Visibility.Collapsed;
+                break;
+            case ViewMode.Covers:
+            case ViewMode.Table:
+                CompactInfoPanel.Visibility = Visibility.Collapsed;
+                HideDetailPanel();
+                break;
+        }
+    }
+
+    public void ScrollSelectedCoverIntoView()
+    {
+        if (ViewModel?.SelectedGame is { } game)
+            CoversList.ScrollIntoView(game);
+    }
+
+    public void RestoreTableNameWidth(double width)
+    {
+        if (TableList.View is not GridView gridView || gridView.Columns.Count < 1 || width <= 0)
+            return;
+
+        gridView.Columns[0].Width = width;
+    }
+
+    public void SaveTableNameWidth()
+    {
+        if (TableList.View is not GridView gridView || gridView.Columns.Count < 1)
+            return;
+
+        ScrollPositionSettingsStore.SaveTableNameWidth(gridView.Columns[0].Width);
+    }
+
+    private void ShowFullWidthDetail()
+    {
+        ViewsColumn.Width = new GridLength(360);
+        DetailColumn.MinWidth = 320;
+        DetailColumn.Width = new GridLength(1, GridUnitType.Star);
+        DetailSeparator.Visibility = Visibility.Visible;
+        DetailSplitter.Visibility = Visibility.Visible;
+    }
+
+    private void HideDetailPanel()
+    {
+        ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
+        DetailColumn.MinWidth = 0;
+        DetailColumn.Width = new GridLength(0);
+        DetailSeparator.Visibility = Visibility.Collapsed;
+        DetailSplitter.Visibility = Visibility.Collapsed;
+    }
+
+    private static ScrollViewer? GetScrollViewer(DependencyObject root)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is ScrollViewer viewer)
+                return viewer;
+            if (GetScrollViewer(child) is { } found)
+                return found;
+        }
+
+        return null;
     }
 }

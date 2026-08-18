@@ -140,6 +140,7 @@ namespace Bridge
             // Singleton: it's a stateless launcher, and MainViewModel needs to
             // subscribe to its events once for the lifetime of the app.
             services.AddSingleton<GameLauncher>();
+            services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<RomScanner>();
             services.AddSingleton<SteamLibraryImporter>();
             services.AddSingleton<EpicLibraryImporter>();
@@ -188,6 +189,7 @@ namespace Bridge
 
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();
+            services.AddTransient<GameEditViewModelFactory>();
             services.AddTransient<EmulatorSetupViewModel>();
             services.AddTransient<EmulationSettingsViewModel>();
             services.AddTransient<IgdbSettingsViewModel>();
