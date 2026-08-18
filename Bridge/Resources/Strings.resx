@@ -59,6 +59,16 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Downloading" xml:space="preserve"><value>Downloading...</value></data>
+  <data name="CompletionStatusAbandoned" xml:space="preserve"><value>Abandoned</value></data>
+  <data name="CompletionStatusBeaten" xml:space="preserve"><value>Beaten</value></data>
+  <data name="CompletionStatusCompleted" xml:space="preserve"><value>Completed</value></data>
+  <data name="CompletionStatusNotPlayed" xml:space="preserve"><value>Not Played</value></data>
+  <data name="CompletionStatusOnHold" xml:space="preserve"><value>On Hold</value></data>
+  <data name="CompletionStatusPlanToPlay" xml:space="preserve"><value>Plan to Play</value></data>
+  <data name="CompletionStatusPlaying" xml:space="preserve"><value>Playing</value></data>
   <data name="Save" xml:space="preserve"><value>Save</value></data>
   <data name="Close" xml:space="preserve"><value>Close</value></data>
   <data name="Select" xml:space="preserve"><value>Select</value></data>
