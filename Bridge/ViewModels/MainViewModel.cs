@@ -567,27 +567,48 @@ public partial class MainViewModel : ObservableObject
     // background; a failed/unreachable one simply never enters the cache. Each
     // Image in the UI picks up its artwork the moment it's cached via
     // CachedImage.SourceUrl.
-    private Task PreloadArtworkAsync()
+    private Task PreloadArtworkAsync() =>
+        RemoteImageCache.PreloadAndWaitAsync(CollectArtworkUrls(Games));
+
+    private static IEnumerable<string> CollectArtworkUrls(IEnumerable<Game> games) =>
+        games.SelectMany(g => new[] { g.Icon, g.CoverImage, g.BackgroundImage })
+            .Where(url => !string.IsNullOrWhiteSpace(url))!;
+
+    // Startup preload: selected game hero art + the first grid page, not the
+    // entire library — keeps cold start snappy on large collections.
+    private IEnumerable<string> CollectStartupPreloadUrls()
     {
-        return RemoteImageCache.PreloadAndWaitAsync(
-            Games.Select(g => g.Icon)
-                .Concat(Games.Select(g => g.CoverImage))
-                .Concat(Games.Select(g => g.BackgroundImage)));
+        const int gridWarmCount = 32;
+        var urls = new List<string>();
+
+        if (SelectedGame is { } selected)
+        {
+            if (!string.IsNullOrWhiteSpace(selected.Icon))
+                urls.Add(selected.Icon);
+            if (!string.IsNullOrWhiteSpace(selected.CoverImage))
+                urls.Add(selected.CoverImage);
+            if (!string.IsNullOrWhiteSpace(selected.BackgroundImage))
+                urls.Add(selected.BackgroundImage);
+        }
+
+        foreach (var game in Games.Take(gridWarmCount))
+        {
+            if (!string.IsNullOrWhiteSpace(game.Icon))
+                urls.Add(game.Icon);
+            if (!string.IsNullOrWhiteSpace(game.CoverImage))
+                urls.Add(game.CoverImage);
+        }
+
+        return urls;
     }
 
-    // Awaited by App.xaml.cs right before showing the window: the artwork must
-    // be decoded (from disk when cached) before the first paint, otherwise the
-    // Grid's covers and the hero background render black and pop in a moment
-    // later. A short timeout keeps startup snappy if a download stalls; the
-    // window then shows with whatever is ready and the rest fade in.
+    // Awaited asynchronously after the window is shown: decode from disk when
+    // cached so the hero and first covers appear quickly without blocking the
+    // UI thread. A short timeout keeps startup snappy if a download stalls.
     public async Task WaitForStartupArtworkAsync()
     {
-        var preload = PreloadArtworkAsync();
-        // ConfigureAwait(false): called from App.xaml.cs with GetResult() on the
-        // UI thread — the continuation must not try to return to a blocked context.
-        var completed = await Task.WhenAny(preload, Task.Delay(TimeSpan.FromSeconds(3)))
-            .ConfigureAwait(false);
-        _ = completed; // preload keeps running in the background if it timed out
+        var preload = RemoteImageCache.PreloadAndWaitAsync(CollectStartupPreloadUrls());
+        await Task.WhenAny(preload, Task.Delay(TimeSpan.FromSeconds(3))).ConfigureAwait(false);
     }
 
     private void LoadGames()

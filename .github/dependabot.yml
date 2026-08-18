@@ -14,8 +14,3 @@ updates:
       - "dependencies"
     reviewers:
       - ZavalaSebas
-    ignore:
-      # Ignorar si hay razón para no actualizar un paquete específico
-      - dependency-name: "Microsoft.*" # Ejemplo: no actualizar paquetes Microsoft
-        # reasons:
-        #   - reason-name

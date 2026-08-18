@@ -10,10 +10,11 @@ namespace Bridge.Services;
 /// </summary>
 public sealed class MetadataSyncService(
     IEnumerable<IGameMetadataProvider> metadataProviders,
-    SteamMetadataProvider steamMetadataProvider,
+    IGameMetadataProvider steamProvider,
     BridgeIgdbProvider bridgeIgdbProvider)
 {
     private readonly IGameMetadataProvider[] _chain = metadataProviders.ToArray();
+    private readonly SteamMetadataProvider? _steamByAppId = steamProvider as SteamMetadataProvider;
 
     public async Task<(GameMetadata Metadata, string ProviderName)?> SearchForManualDownloadAsync(
         string gameName,
@@ -21,13 +22,14 @@ public sealed class MetadataSyncService(
         string? steamAppId,
         CancellationToken cancellationToken = default)
     {
-        if (!romImport && !string.IsNullOrWhiteSpace(steamAppId) && uint.TryParse(steamAppId, out _))
+        if (!romImport && !string.IsNullOrWhiteSpace(steamAppId) && uint.TryParse(steamAppId, out _) &&
+            _steamByAppId is { } steamByAppId)
         {
             try
             {
-                var steam = await steamMetadataProvider.GetByAppIdAsync(steamAppId, cancellationToken);
+                var steam = await steamByAppId.GetByAppIdAsync(steamAppId, cancellationToken);
                 if (steam is not null)
-                    return (steam, steamMetadataProvider.Name);
+                    return (steam, steamByAppId.Name);
             }
             catch
             {
@@ -74,8 +76,8 @@ public sealed class MetadataSyncService(
         {
             try
             {
-                if (await steamMetadataProvider.SearchAsync(gameName, cancellationToken) is { } steamFound)
-                    return (steamFound, steamMetadataProvider.Name);
+                if (await steamProvider.SearchAsync(gameName, cancellationToken) is { } steamFound)
+                    return (steamFound, steamProvider.Name);
             }
             catch
             {
@@ -85,7 +87,7 @@ public sealed class MetadataSyncService(
 
         foreach (var provider in _chain)
         {
-            if (ReferenceEquals(provider, steamMetadataProvider))
+            if (ReferenceEquals(provider, steamProvider))
                 continue;
 
             try
@@ -103,8 +105,8 @@ public sealed class MetadataSyncService(
         {
             try
             {
-                if (await steamMetadataProvider.SearchAsync(gameName, cancellationToken) is { } steamFound)
-                    return (steamFound, steamMetadataProvider.Name);
+                if (await steamProvider.SearchAsync(gameName, cancellationToken) is { } steamFound)
+                    return (steamFound, steamProvider.Name);
             }
             catch
             {

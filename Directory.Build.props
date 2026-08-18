@@ -1,5 +1,9 @@
 <Project>
 
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
   <!-- Applies to every project in the solution, current and future — avoids
        repeating the same setting in each .csproj. See DEVELOPMENT.md >
        "Bridge.Storage" / Fase 8 notes for why DebugType=none matters for

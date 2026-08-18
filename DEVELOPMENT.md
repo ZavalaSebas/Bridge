@@ -84,7 +84,7 @@ Bridge/
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
 ├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
-└── Bridge.Tests/        # created — 102 tests, all passing (see below)
+└── Bridge.Tests/        # ~220 unit tests (see Tests section below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
@@ -157,7 +157,7 @@ Bridge.Metadata/
 └── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
 ```
 
-See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `MainViewModel.DownloadMissingSteamMetadataAsync` fire-and-forget fetches metadata for all newly imported Steam games. Cover/background URLs are stored as-is on the Game, and rendered through an in-memory cache of decoded (frozen) bitmaps — `Bridge/Converters/RemoteImageCache.cs`, bounded at 512 entries (LRU trim, not a full clear), with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
+See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible; it **awaits** `DownloadMissingSteamMetadataAsync` (and the Epic name sync) so metadata can continue downloading in the background while the UI stays responsive. Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU (512 entries) plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
 
 ### `Bridge.Import` — what's in it
 
@@ -206,7 +206,7 @@ View modes switch via 3 toggle buttons in the Top Panel:
 
 Detail panel (right): `CoverImage` 200px + title/scores/checkboxes + Play (uses `SystemAccentColorPrimaryBrush`, `#007ACC`, `CornerRadius="2"`) / More (ContextMenu with Save/Download Metadata/Delete) / Edit buttons. Below: Details (label/value pairs in accent blue) + Description (read-only here — editable via the Edit window, `GameEditWindow`). Background image (`SelectedGame.BackgroundImage`) fills the panel at 60% opacity with dark overlay.
 
-Below the Details/Description row, when the selected game has screenshots (`SelectedGame.Screenshots.Count > 0`), the **screenshot gallery** renders (`Bridge/Controls/ScreenshotGallery.xaml(.cs)`): a large main image floating over a frosted backdrop of the same screenshot, with previous/next arrows, a counter (`1 / N`), a drag-to-scroll thumbnail strip (no scrollbar — `Preview*` mouse events pan the `ScrollViewer`), and click-to-expand into a full-window dark overlay with its own thumbnail strip, arrows and counter. The carousel auto-advances every 4s (paused while the mouse is over the main image or the overlay is open; only runs with 2+ screenshots). The main image sizes to 72% height / 82% width of its container via `Converters/FractionConverter`, keeping the "image inside image" look proportional at any window size. The gallery only appears in the **Details** view (`ViewMode.List`), matching the detail panel that hosts it. Screenshots come from either provider — Steam (`path_full`) or the IGDB Worker (`t_1080p`, non-Steam games) — they all land in the same `Game.Screenshots` JSON column. A `CompactMode` property (used by the covers info panel) hides the header and main image, shows only a smaller thumbnail strip (110×62 tiles), and opens the fullscreen overlay straight from a thumbnail tap; auto-advance never runs in that mode.
+Below the Details/Description row, when the selected game has screenshots (`SelectedGame.Screenshots.Count > 0`), the **screenshot gallery** renders (`Bridge/Controls/ScreenshotGallery.xaml(.cs)`): a large main image floating over a frosted backdrop of the same screenshot, with previous/next arrows, a counter (`1 / N`), a drag-to-scroll thumbnail strip (no scrollbar — `Preview*` mouse events pan the `ScrollViewer`), and click-to-expand into a full-window dark overlay with its own thumbnail strip, arrows and counter. The carousel auto-advances every 4s (paused while the mouse is over the main image or the overlay is open; only runs with 2+ screenshots). The main image sizes to 72% height / 82% width of its container via `Converters/FractionConverter`, keeping the "image inside image" look proportional at any window size. The gallery appears in the **Details** table view (`ViewMode.Table`) and as a compact strip in the **Covers** info panel (`ViewMode.Grid`, `CompactMode="True"`). Screenshots come from either provider — Steam (`path_full`) or the IGDB Worker (`t_1080p`, non-Steam games) — they all land in the same `Game.Screenshots` JSON column. A `CompactMode` property (used by the covers info panel) hides the header and main image, shows only a smaller thumbnail strip (110×62 tiles), and opens the fullscreen overlay straight from a thumbnail tap; auto-advance never runs in that mode.
 
 The **covers info panel** (`CompactInfoPanel`) shows its own compact layout: the hero art fades into the panel background via a strong vertical gradient (ending in the panel's `#CC1B2132` so there's no hard edge), a larger game title (22px bold, drop shadow) with the favorite star inline after it (`InlineUIContainer` in the title `TextBlock`, so the star follows the title's wrapping lines and never gets cut), the Play/More/Edit row sitting on the hero under the title, and a theme-colored square close button in the top-right. The link list wraps to two columns (`WrapPanel` + per-item `MaxWidth`). The Play button is the same animated Play/Stop template as the Details hero — there its `IsRunning` DataTriggers bind to `SelectedGame.IsRunning` because the panel's DataContext is the `MainViewModel`, not the game.
 
@@ -247,7 +247,7 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 **Single source of truth**: `<Version>` in `Bridge/Bridge.csproj`
 
 ```xml
-<Version>0.1.0</Version>
+<Version>0.2.0</Version>
 <AssemblyVersion>$(Version).0</AssemblyVersion>
 ```
 
@@ -582,13 +582,16 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release` — 102 tests, all passing as of this writing.
+Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — ~220 unit tests as of this writing. Live-network IGDB provider tests are tagged `Integration` and run with `dotnet test --filter Category=Integration`.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`. Schema via `MigrateToLatest()`.
 - `Storage/RepositoryTests.cs` — `GetOrCreateByName` dedup, including case-insensitivity and retry on unique-index races. Schema via `MigrateToLatest()`.
-- `Core/PathContainmentTests.cs` — `PathContainment.IsPathUnderDirectory` (normal paths, trailing separators, `..` rejection).
-- `Services/SafeLauncherTests.cs` — URL allowlist (`UrlValidator`) and uninstall-string parsing/rejection.
+- `Core/PathContainmentTests.cs` — `PathContainment.IsPathUnderDirectory`.
+- `Core/UrlValidatorTests.cs` — URL allowlist and SSRF host blocking.
+- `Services/SafeLauncherTests.cs` — uninstall-string parsing/rejection.
+- `Services/MetadataSyncServiceTests.cs` — metadata provider fallback chains.
+- `Metadata/BridgeIgdbProviderTests.cs`, `Metadata/PlayniteIgdbProviderTests.cs` — live-network integration tests (`Category=Integration`).
 - `Import/SteamLibraryImporterTests.cs` — library folder detection, StateFlags filtering, re-scan update behavior (test content shaped exactly like real Steam files, verified against a real install, `PROJECT_FOUNDATION.md` §28.26).
 - `Import/VdfParserTests.cs` — the hand-rolled VDF tokenizer/parser: key/value pairs, nested blocks, escape sequences, unquoted-junk tolerance.
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
@@ -909,7 +912,7 @@ is false, instead of reporting a misleading "No metadata found".
 
 Bridge installs and maintains its **own** RetroArch so ROMs launch with zero
 setup — no emulator configuration required. The user-configured
-`EmulatorSetupWindow` path still exists for third-party emulators; this section
+`EmulatorSetupWindow` still exists for third-party emulators but is **not linked from the app menu** — **Settings → Configure Emulator...** opens `EmulationSettingsWindow` (managed RetroArch). This section
 is the managed RetroArch flow.
 
 **Install pipeline (`RetroArchService`):**
@@ -1078,7 +1081,7 @@ dotnet run --project Bridge/Bridge.csproj
 
 ## Branding & Sponsorship
 
-> **Partially implemented.** There's a **Support** submenu in the logo menu (Ko-fi + GitHub Sponsors, heart icon) that opens the links in the browser, and an **About Bridge...** item opening `Bridge/AboutWindow.xaml` (version, repo/license links, its own Support section). What's still missing: `Config.SponsorUrl` / `OpenSponsorCommand` don't exist — the URLs are hard-coded in `MainWindow.xaml`/`AboutWindow.xaml` (including the placeholder `https://ko-fi.com/YOUR_KOFI`). The status-bar heart and `CreditsWindow` snippets below remain templates for that remaining gap.
+> **Partially implemented.** There's a **Support** submenu in the logo menu (Ko-fi + GitHub Sponsors, heart icon) that opens the links in the browser via `SafeLauncher`, and an **About Bridge...** item opening `Bridge/AboutWindow.xaml` (version, repo/license links, its own Support section with the same Ko-fi + GitHub Sponsors links). What's still missing: `Config.SponsorUrl` / `OpenSponsorCommand` don't exist — the URLs are hard-coded in `MainWindow.xaml`/`AboutWindow.xaml`. The status-bar heart and `CreditsWindow` snippets below remain templates for that remaining gap.
 
 ### Heart Icon in Status Bar
 
