@@ -160,8 +160,14 @@ public partial class MainViewModel
     // applies whichever one the user picks.
     public IReadOnlyList<string> CompletionStatuses { get; } =
     [
-        "Abandoned", "Beaten", "Completed", "Not Played",
-        "On Hold", "Plan to Play", "Played", "Playing"
+        Strings.CompletionStatusAbandoned,
+        Strings.CompletionStatusBeaten,
+        Strings.CompletionStatusCompleted,
+        Strings.CompletionStatusNotPlayed,
+        Strings.CompletionStatusOnHold,
+        Strings.CompletionStatusPlanToPlay,
+        Strings.Played,
+        Strings.CompletionStatusPlaying
     ];
 
     [RelayCommand]

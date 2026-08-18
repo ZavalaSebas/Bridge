@@ -39,7 +39,7 @@ Bridge is an original game library manager: it unifies games from external libra
 
 ## How It Works
 
-Bridge is a modular-monolith WPF application: internal modules (`Core`, `Storage`, `Import`, `Metadata`, `App`) each own one responsibility, with no UI/domain mixing and no runtime plugin boundary. ROM scanning and emulator launching live in `Bridge/Services` (there is no separate `Bridge.Emulation` project). Games and their metadata are stored locally — images and metadata are cached on first fetch so nothing gets re-downloaded unnecessarily, and library imports run incrementally so re-scanning a source only updates what changed.
+Bridge is a modular-monolith WPF application: internal modules (`Core`, `Storage`, `Import`, `Metadata`, `Emulation`, `App`) each own one responsibility, with no UI/domain mixing and no runtime plugin boundary. Games and their metadata are stored locally — images and metadata are cached on first fetch so nothing gets re-downloaded unnecessarily, and library imports run incrementally so re-scanning a source only updates what changed.
 
 The app uses [WPF-UI](https://github.com/lepoco/wpfui) 4.3.0 with a custom dark theme, Mica backdrop, Inter variable font, and sidebar-based navigation. It ships as a single self-contained `.exe` (~155 MB, verified — one file, no sidecar DLLs) — no .NET runtime install required, no external services beyond what's needed to fetch metadata. Measured cold-start time is ~2.6 seconds and ~180 MB RAM at rest (see `DEVELOPMENT.md` for the full measurement notes).
 

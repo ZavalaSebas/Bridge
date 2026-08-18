@@ -6,6 +6,16 @@ namespace Bridge.Resources;
 public static class Strings
 {
     public static string Cancel => Get(nameof(Cancel));
+    public static string OK => Get(nameof(OK));
+    public static string Download => Get(nameof(Download));
+    public static string Downloading => Get(nameof(Downloading));
+    public static string CompletionStatusAbandoned => Get(nameof(CompletionStatusAbandoned));
+    public static string CompletionStatusBeaten => Get(nameof(CompletionStatusBeaten));
+    public static string CompletionStatusCompleted => Get(nameof(CompletionStatusCompleted));
+    public static string CompletionStatusNotPlayed => Get(nameof(CompletionStatusNotPlayed));
+    public static string CompletionStatusOnHold => Get(nameof(CompletionStatusOnHold));
+    public static string CompletionStatusPlanToPlay => Get(nameof(CompletionStatusPlanToPlay));
+    public static string CompletionStatusPlaying => Get(nameof(CompletionStatusPlaying));
     public static string Save => Get(nameof(Save));
     public static string Close => Get(nameof(Close));
     public static string Select => Get(nameof(Select));

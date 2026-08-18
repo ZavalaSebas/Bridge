@@ -45,11 +45,7 @@ App (Bridge)                                        │ WPF
 │  MainWindow, ViewModels, Views, Controls, DI root
 ├─────────────────────────────────────────────────┤
 Import / Metadata / Emulation                       │ Use-case modules
-│  Bridge.Import, Bridge.Metadata, Bridge.Emulation │  (Bridge.Emulation has no
-│                                                    │   project — RomScanner and
-│                                                    │   the emulator-launch half of
-│                                                    │   GameLauncher live in
-│                                                    │   Bridge/Services, see PLAN.md)
+│  Bridge.Import, Bridge.Metadata, Bridge.Emulation │
 ├─────────────────────────────────────────────────┤
 Storage                                              │ Persistence
 │  Bridge.Storage — repositories, DB context, file/image cache
@@ -59,7 +55,7 @@ Core                                                 │ Domain
 └─────────────────────────────────────────────────┘
 ```
 
-`App` depends on everything below it; `Storage` depends on `Core`; `Import` and `Metadata` depend on `Core` only (neither references `Bridge.Storage` — importers and metadata providers are pure, persistence comes from the caller); `Core` depends on nothing else in the solution. There is no `Bridge.Emulation` project — emulator/ROM logic lives in `Bridge/Services` (see Project Structure). All of this is enforced by project references, not convention — see [ARCHITECTURE.md ADR-5](ARCHITECTURE.md#adr-5-internal-modularity-only--no-runtime-module-boundaries).
+`App` depends on everything below it; `Storage` depends on `Core`; `Import`, `Metadata`, and `Emulation` depend on `Core` only (none references `Bridge.Storage` — importers, metadata providers, and ROM scanning are pure; persistence comes from the caller); `Core` depends on nothing else in the solution. `GameLauncher` (launch + playtime tracking for all game types) stays in `Bridge/Services` because it orchestrates app-level process monitoring beyond the emulation module's ROM/RetroArch scope. All of this is enforced by project references, not convention — see [ARCHITECTURE.md ADR-5](ARCHITECTURE.md#adr-5-internal-modularity-only--no-runtime-module-boundaries).
 
 ### Key Design Decisions
 
@@ -83,13 +79,13 @@ Bridge/
 ├── Bridge.Storage/      # EF Core DbContext + repository implementations — created (see below)
 ├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
 ├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
-├── Bridge.Emulation/    # not created — RomScanner/emulator-launch logic lives in Bridge/Services instead
+├── Bridge.Emulation/    # created — RomScanner, RomPlatformCatalog, RetroArchService, EmulationPaths (see below)
 └── Bridge.Tests/        # ~242 unit tests (see Tests section below)
 ```
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
 
-> **Status:** `Bridge.slnx`, `Bridge/Bridge.csproj`, `Bridge.Core/Bridge.Core.csproj`, `Bridge.Storage/Bridge.Storage.csproj`, `Bridge.Metadata/Bridge.Metadata.csproj`, `Bridge.Import/Bridge.Import.csproj`, and `Bridge.Tests/Bridge.Tests.csproj` all exist and build/test clean. **Module-boundary note** (see `PLAN.md` > Project Structure for the fuller version): `Bridge.Emulation` was never actually created as a separate project — that logic lives inside `Bridge` (the app project) instead, a real deviation from the original plan, flagged there for a deliberate decision before Fase 9, not silently accepted. `Bridge.Metadata` and `Bridge.Import` were built as real separate projects.
+> **Status:** `Bridge.slnx`, `Bridge/Bridge.csproj`, `Bridge.Core/Bridge.Core.csproj`, `Bridge.Storage/Bridge.Storage.csproj`, `Bridge.Metadata/Bridge.Metadata.csproj`, `Bridge.Import/Bridge.Import.csproj`, `Bridge.Emulation/Bridge.Emulation.csproj`, and `Bridge.Tests/Bridge.Tests.csproj` all exist and build/test clean. The consolidation batch (2026-08-18) also split `MainViewModel` into partials (`Games`, `Import`, `Metadata`, `Updates`, `Play`), extracted `LibraryDetailView` from `MainWindow`, and redesigned Settings as a unified preferences overlay.
 
 ### `Bridge.Core` — what's in it
 
@@ -866,9 +862,9 @@ public static class Config
 | `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
 | `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
 | `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
-| `Bridge/Services/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |
-| `Bridge/Services/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions) that drives ROM recognition |
-| `Bridge/Services/RomScanner.cs` | Recursive ROM scan by extension, companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
+| `Bridge.Emulation/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |
+| `Bridge.Emulation/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions) that drives ROM recognition |
+| `Bridge.Emulation/RomScanner.cs` | Recursive ROM scan by extension, companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
 | `Bridge/Services/AppUpdateService.cs` | Self-updater: checks GitHub Releases against `Config.AssemblyVersion`, downloads the `Bridge.exe` asset with host-allowlist + size-cap + progress, applies the safe swap (running exe → `.old`, downloaded → current, restart, startup cleanup) — see "Version Management" above |
 
 ## IGDB Metadata Infrastructure

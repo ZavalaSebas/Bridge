@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:res="clr-namespace:Bridge.Resources"
         x:Name="Root"
         Width="480"
         SizeToContent="Height"
@@ -60,7 +61,7 @@
                 Background="{DynamicResource Bridge.Sidebar.Background}">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="CancelButton"
-                        Content="Cancel"
+                        Content="{x:Static res:Strings.Cancel}"
                         Width="100"
                         Padding="0,7"
                         Margin="0,0,8,0"
@@ -68,7 +69,7 @@
                         IsCancel="True"
                         Click="Cancel_Click"/>
                 <Button x:Name="OkButton"
-                        Content="OK"
+                        Content="{x:Static res:Strings.OK}"
                         Width="100"
                         Padding="0,7"
                         IsDefault="True"
