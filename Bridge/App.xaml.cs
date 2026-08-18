@@ -57,6 +57,10 @@ namespace Bridge
             Directory.CreateDirectory(Config.AppDataPath);
             AppUpdateService.HandleUpdateHandshake();
 
+            // Numbered file/folder migrations under AppData (settings layout, legacy
+            // paths). See AppDataMigrator — runs before bridge.db EF migrations.
+            AppDataMigrator.MigrateToLatest();
+
             var services = new ServiceCollection();
             ConfigureServices(services);
             Services = services.BuildServiceProvider();

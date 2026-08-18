@@ -99,4 +99,47 @@ public static class ScrollPositionSettingsStore
             // Persisting must never crash the app.
         }
     }
+
+    /// <summary>
+    /// Renames legacy "Grid=" keys to "Covers=" on disk. Called from
+    /// <see cref="AppDataMigrator"/>; load-time normalization remains as fallback.
+    /// </summary>
+    internal static void MigrateLegacyViewKeys(AppDataMigrationContext ctx)
+    {
+        ctx.ReplaceFileLinesIfExists(["scrollpositions.txt"], static lines =>
+        {
+            var updated = new List<string>(lines.Count);
+            var coversOffset = (string?)null;
+
+            foreach (var line in lines)
+            {
+                var idx = line.IndexOf('=');
+                if (idx <= 0)
+                {
+                    updated.Add(line);
+                    continue;
+                }
+
+                var key = line[..idx];
+                var value = line[(idx + 1)..];
+                var normalizedKey = NormalizeLegacyViewKey(key);
+
+                if (normalizedKey.Equals(nameof(ViewMode.Covers), StringComparison.OrdinalIgnoreCase))
+                {
+                    coversOffset ??= value;
+                    continue;
+                }
+
+                updated.Add($"{normalizedKey}={value}");
+            }
+
+            if (coversOffset is not null &&
+                !updated.Any(l => l.StartsWith(nameof(ViewMode.Covers) + "=", StringComparison.OrdinalIgnoreCase)))
+            {
+                updated.Add($"{nameof(ViewMode.Covers)}={coversOffset}");
+            }
+
+            return updated;
+        });
+    }
 }
