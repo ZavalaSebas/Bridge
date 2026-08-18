@@ -130,7 +130,7 @@ The original ADR-3 (2026-08-05) planned to ship with plain WPF and introduce WPF
 
 1. **Library:** `WPF-UI` (with hyphen) **4.3.0** from lepoco, target `net10.0-windows`. Controls: `FluentWindow` (Mica via `WindowBackdropType`), `TitleBar` (3-zone: Icon + Header + Caption), `SymbolIcon/SymbolRegular` (Fluent System Icons v1.1.316), `ui:Button`, `ui:ThemesDictionary`/`ui:ControlsDictionary`.
 
-2. **Shell architecture (3-zone):** `TitleBar` (search, ViewMode selector, overflow menu) + sidebar (52px icon rail with Library and Statistics buttons — collapsible and re-positionable via right-click; Favorites/Sources/Settings exist in the `NavigationSection` enum but have no UI) + Content Area (placeholder in Fase 1, filled across Fases 2-5).
+2. **Shell architecture (3-zone):** `TitleBar` (search, ViewMode selector, overflow menu) + sidebar (52px icon rail: Library, Favorites, Sources, Statistics, Settings — collapsible and re-positionable via right-click) + Content Area.
 
 3. **Palette (dark-first):** `Bridge/Styles/Theme.xaml` overrides WPF-UI 3.x semantic tokens (`Color`+`Brush` paired, because WPF-UI brushes reference their colors via `StaticResource`). Primary accent `#007ACC` (nav/focus/selection). Secondary accent `#10B981` (Emerald) **exclusive** to Play/CTA buttons.
 

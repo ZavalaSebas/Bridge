@@ -188,15 +188,18 @@ public partial class MainViewModel : ObservableObject
         {
             case NavigationSection.Library:
                 // The sidebar "Library" shortcut means "show the whole library":
-                // reset the filter preset that a filter menu entry may have left
-                // active (otherwise "Favorites" stays stuck on with no way to
-                // clear it from the sidebar).
+                // reset filter/group shortcuts other sidebar entries may have left
+                // active (otherwise "Favorites" or "Sources" stays stuck with no
+                // way to clear it from the sidebar).
                 FilterPreset = LibraryFilterPreset.All;
+                GroupField = GameGroupField.None;
                 break;
             case NavigationSection.Favorites:
                 FilterPreset = LibraryFilterPreset.Favorite;
+                GroupField = GameGroupField.None;
                 break;
             case NavigationSection.Sources:
+                FilterPreset = LibraryFilterPreset.All;
                 GroupField = GameGroupField.Library;
                 break;
         }
@@ -215,11 +218,6 @@ public partial class MainViewModel : ObservableObject
 
     // Sort menu's direction entry label: shows what toggling will switch to.
     public string SortDirectionText => SortDescending ? "Ascending (A-Z)" : "Descending (Z-A)";
-
-    partial void OnGroupFieldChanged(GameGroupField value)
-    {
-        ApplyGrouping();
-    }
 
     private void ApplySort()
     {
@@ -268,6 +266,45 @@ public partial class MainViewModel : ObservableObject
     partial void OnFilterPresetChanged(LibraryFilterPreset value)
     {
         ApplyFilterPreset();
+        SyncNavigationSectionFromFilters();
+    }
+
+    partial void OnGroupFieldChanged(GameGroupField value)
+    {
+        ApplyGrouping();
+        SyncNavigationSectionFromGrouping();
+    }
+
+    private void SyncNavigationSectionFromFilters()
+    {
+        if (NavigationSection is NavigationSection.Statistics or NavigationSection.Settings)
+            return;
+
+        if (FilterPreset == LibraryFilterPreset.Favorite)
+        {
+            if (NavigationSection != NavigationSection.Favorites)
+                NavigationSection = NavigationSection.Favorites;
+        }
+        else if (NavigationSection == NavigationSection.Favorites)
+        {
+            NavigationSection = NavigationSection.Library;
+        }
+    }
+
+    private void SyncNavigationSectionFromGrouping()
+    {
+        if (NavigationSection is NavigationSection.Statistics or NavigationSection.Settings)
+            return;
+
+        if (GroupField == GameGroupField.Library)
+        {
+            if (NavigationSection != NavigationSection.Sources)
+                NavigationSection = NavigationSection.Sources;
+        }
+        else if (NavigationSection == NavigationSection.Sources)
+        {
+            NavigationSection = NavigationSection.Library;
+        }
     }
 
     private void ApplyFilterPreset()

@@ -45,6 +45,9 @@ public static class Strings
     public static string GroupSettings => Get(nameof(GroupSettings));
     public static string SelectRandomGame => Get(nameof(SelectRandomGame));
     public static string Library => Get(nameof(Library));
+    public static string Favorites => Get(nameof(Favorites));
+    public static string Sources => Get(nameof(Sources));
+    public static string SupportProject => Get(nameof(SupportProject));
     public static string Statistics => Get(nameof(Statistics));
     public static string Play => Get(nameof(Play));
     public static string DownloadMetadata => Get(nameof(DownloadMetadata));

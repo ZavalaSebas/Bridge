@@ -428,6 +428,18 @@ public partial class MainWindow
             vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Library;
     }
 
+    private void ShowFavorites_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Favorites;
+    }
+
+    private void ShowSources_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Sources;
+    }
+
     private void ShowStatistics_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
