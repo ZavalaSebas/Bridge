@@ -139,11 +139,11 @@ Bridge.Storage/
     └── GameRepository.cs       # IGameRepository impl, adds FindByExternalId
 ```
 
-Uses `Microsoft.EntityFrameworkCore.Sqlite` (see [ADR-4](ARCHITECTURE.md#adr-4-local-storage-engine--sqlite-vs-litedb)). Every `List<T>`/`ReleaseDate` property on an entity is stored as a JSON text column rather than a separate EF owned-entity table — a deliberate simplicity tradeoff, see the comment at the top of `JsonValueConverter.cs` for why, and `BridgeDbContext.OnModelCreating` for exactly which properties use it. There is no EF migrations setup yet — `Database.EnsureCreated()` creates the schema for a fresh DB, and `Bridge/App.xaml.cs` runs raw-SQL mini-migrations (`EnsureColumn`) right after it to add `DescriptionImages`, `DescriptionBlocks` and `Screenshots` to a pre-existing DB that predates those columns (each `ALTER TABLE` step is guarded so a missing column can't crash startup). Switch to real EF migrations (`dotnet ef migrations add ...`) once the schema is stable enough that "just drop and recreate" stops being acceptable (almost certainly before Fase 9, likely as soon as real user data needs to survive a schema change).
+Uses `Microsoft.EntityFrameworkCore.Sqlite` (see [ADR-4](ARCHITECTURE.md#adr-4-local-storage-engine--sqlite-vs-litedb)). Every `List<T>`/`ReleaseDate` property on an entity is stored as a JSON text column rather than a separate EF owned-entity table — a deliberate simplicity tradeoff, see the comment at the top of `JsonValueConverter.cs` for why, and `BridgeDbContext.OnModelCreating` for exactly which properties use it. Schema changes use **real EF migrations** (`Bridge.Storage/Migrations/`, applied at startup by `BridgeDbMigrator.MigrateToLatest` — see the Updater/Migrations section below).
 
 Verified at runtime (not just compiled) against a real SQLite database file: create → save a `Game` with populated `GameActions`/`Roms`/`Links`/`GenreIds`/`ReleaseDate` → close the context → reopen a fresh context pointing at the same file → every field reads back correctly, including the dedup lookup by `(ExternalId, SourceId)`.
 
-**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` and every repository are registered `Singleton`, matching this doc's own Lifetime Guidelines for WPF), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `Database.EnsureCreated()` (plus the `EnsureColumn` mini-migrations for `DescriptionImages`/`DescriptionBlocks`/`Screenshots` on a pre-existing DB). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\errors.log` via `App.LogException` — minimal, deliberately not a full `ILogger` setup (see Logging).
+**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` and every repository are registered `Singleton`, matching this doc's own Lifetime Guidelines for WPF), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `BridgeDbMigrator.MigrateToLatest()` (migrates to the latest schema, baselining pre-migrations DBs — see the Updater/Migrations section below). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\errors.log` via `App.LogException` — minimal, deliberately not a full `ILogger` setup (see Logging).
 
 ### `Bridge.Metadata` — what's in it
 
@@ -302,6 +302,51 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
   replace a non-published exe. Covered by `Bridge.Tests/Services/AppUpdateServiceTests.cs`.
 
 **To bump the version**: edit `<Version>` in the csproj, commit with a descriptive message, push to `main`.
+
+### Schema Migrations
+
+> The auto-updater replaces the exe; the **schema** of `bridge.db` is updated by
+> the app itself at startup, applying EF Core migrations on top of the user's
+> existing AppData DB — so a release can change the DB structure without the
+> user re-downloading or losing data. This is how the updater "updates
+> everything, not just the exe": the exe swap ships new code **and** new
+> migrations, and the migrations run on the user's next launch.
+
+**Real EF migrations** replaced the old `EnsureCreated()` + raw-SQL `EnsureColumn`
+mini-migrations:
+
+- **Migrations live in `Bridge.Storage/Migrations/`** — generated with
+  `dotnet ef migrations add <Name> --project Bridge.Storage --startup-project Bridge.Storage`
+  (a `BridgeDbContextDesignTimeFactory` lets the tools build the context without
+  launching the WPF app; it points at the same `%LOCALAPPDATA%\Bridge\bridge.db`
+  the app uses).
+- **Applied at startup** by `BridgeDbMigrator.MigrateToLatest()` in
+  `Bridge/App.xaml.cs` (where `EnsureCreated` + the three `EnsureColumn` calls
+  used to be). `Database.Migrate()` applies every pending migration in order.
+- **Pre-migrations DBs are baselined, not rebuilt.** A DB created by the old
+  `EnsureCreated` era has all 14 tables but no `__EFMigrationsHistory` table,
+  so a bare `Migrate()` would fail trying to recreate tables that already
+  exist. `MigrateToLatest` detects that case (tables present, no history) and
+  baselines it: it creates the history table and records `InitialCreate` as
+  already applied, so the user's existing schema **and data** survive untouched
+  and only future migrations apply on top. Verified against the real
+  `%LOCALAPPDATA%\Bridge\bridge.db` (46 games, 20 genres) and covered by
+  `Bridge.Tests/Storage/MigrationTests.cs` (fresh-DB and pre-migration baseline).
+
+**To change the schema** (add/remove a column or table, etc.):
+
+```powershell
+# 1. Edit the entity in Bridge.Core and/or BridgeDbContext.OnModelCreating
+dotnet ef migrations add <Name> --project Bridge.Storage --startup-project Bridge.Storage
+# 2. Review Bridge.Storage/Migrations/<Timestamp>_<Name>.cs (the generated SQL)
+```
+
+The migration ships with the release; users on any older version get the new
+schema automatically on their next launch — no re-download, no data loss. SQLite
+only supports a subset of `ALTER TABLE` natively; EF Core generates table-rebuild
+migrations for anything else, which is fine but heavier (a large `Games` table is
+copied). Prefer additive changes (new columns/tables) where possible; a column
+**drop or rename** rebuilds the table.
 
 ### Welcome Sentinel
 
@@ -566,7 +611,7 @@ The project does **not** use `Microsoft.Extensions.Logging` / `ILogger` — that
 ### Requirements
 
 - **Route exceptions through `App.LogException`** — the one place unhandled errors reach disk
-- **Never swallow exceptions silently** — code that catches and continues (e.g. the per-column `EnsureColumn` guards in `App.xaml.cs`, `RemoteImageCache`'s decode catch) must still call `App.LogException`
+- **Never swallow exceptions silently** — code that catches and continues (e.g. `RemoteImageCache`'s decode catch) must still call `App.LogException`
 - **No `Debug.WriteLine`** — `App.LogException` is the only logging surface
 - **Logging must never crash the app** — `App.LogException` swallows its own failures by design
 
@@ -775,7 +820,7 @@ public static class Config
 | `Bridge.Core/Contracts/IGameRepository.cs` | The persistence contract `Bridge.Storage` implements |
 | `Bridge/App.xaml.cs` | Composition root — DI setup, theme dictionaries, logging |
 | `Bridge/Config.cs` | App constants (AppName, paths) |
-| `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via `EnsureCreated()` + `EnsureColumn` raw-SQL mini-migrations in `App.xaml.cs`, no EF migrations yet) |
+| `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via EF migrations — `Bridge.Storage/Migrations/`, applied by `BridgeDbMigrator.MigrateToLatest`) |
 | `Bridge.Metadata/BridgeIgdbProvider.cs` | IGDB metadata via Bridge's own Cloudflare Worker (zero-config) — first in the metadata chain |
 | `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via Playnite's public proxy — fallback if the Worker is unreachable |
 | `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
@@ -884,7 +929,7 @@ database so deleting an emulator install never risks library data.
 | No plugin system | Deliberate scope decision, see [ADR-1](ARCHITECTURE.md#adr-1-no-plugin-system-in-v1) | Add a library source or metadata provider by editing `Bridge.Import`/`Bridge.Metadata` directly and releasing |
 | No fullscreen/controller mode | Deliberate scope decision, see [ADR-2](ARCHITECTURE.md#adr-2-single-application-no-separate-fullscreen-frontend-in-v1) | Use the desktop app; revisit if there's real demand |
 | `%LOCALAPPDATA%\Bridge\` collided with an unrelated older "Bridge" project's real app data on this machine (`bridge.db`, `settings.json`, `ImageCache/`, last modified 2026-08-04) | Both projects independently chose the app name "Bridge" | The old folder was renamed (not deleted) to `%LOCALAPPDATA%\Bridge_OLD_BACKUP_1785967008\` on 2026-08-05 before this project's `bridge.db` was first created, so no data was lost. If you're reading this on a different machine, or that backup folder is gone, this row no longer applies — safe to delete |
-| EF Core migrations not set up | MVP uses `Database.EnsureCreated()` instead — see `Bridge.Storage` section above | Switch to `dotnet ef migrations` before any schema change needs to preserve existing user data across an update |
+| SQLite lacks native ALTER for some schema changes (column drop/rename, etc.) | EF Core generates a table-rebuild migration for operations SQLite can't do in place — fine, but heavier (a large `Games` table gets copied) | Prefer additive changes (new columns/tables). Baseline assumes a pre-migration DB already matches `InitialCreate`; the `EnsureColumn` era ran at every startup since those columns were added, so every real DB has them |
 | ROM matching is filename/extension-based only | No CRC/serial/DAT matching against emulation databases yet (future scope — see `PLAN.md` Backlog) | Rename ROMs to recognizable titles; the scanner still enriches them through the IGDB metadata pipeline |
 | Only Bridge-managed RetroArch gets a curated catalog | `RomPlatformCatalog` covers 15 systems; third-party emulators still need manual configuration (`EmulatorSetupWindow`) — see [ADR-9](ARCHITECTURE.md#adr-9-single-emulatorprofile-shape-no-built-in-emulator-catalog-yet) | Configure the emulator manually, or add its core to the catalog |
 

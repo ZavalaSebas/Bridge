@@ -39,21 +39,14 @@ namespace Bridge
             ConfigureServices(services);
             Services = services.BuildServiceProvider();
 
-            // Fase 1 MVP: EnsureCreated, not real migrations — see DEVELOPMENT.md
-            // "Bridge.Storage — what's in it" for why, and when to switch.
+            // Real EF migrations (see Bridge.Storage — Migrations/ and
+            // BridgeDbMigrator). A fresh DB gets InitialCreate applied by
+            // Migrate(); a DB created by the pre-migrations era (EnsureCreated,
+            // no __EFMigrationsHistory) is baselined first so its existing
+            // schema is treated as the initial migration, then only future
+            // migrations apply on top.
             var dbContext = Services.GetRequiredService<BridgeDbContext>();
-            dbContext.Database.EnsureCreated();
-
-            // Mini-migration: EnsureCreated won't alter an existing database, so
-            // add columns added after the initial schema (DescriptionImages, then
-            // DescriptionBlocks) if a pre-existing DB is missing them. Raw text
-            // columns defaulting to an empty JSON list — JsonValueConverter reads
-            // those as empty lists. Each step is individually guarded so a DB
-            // corruption issue can't crash startup (the app still runs; the
-            // missing column just stays empty).
-            EnsureColumn(dbContext, "DescriptionImages");
-            EnsureColumn(dbContext, "DescriptionBlocks");
-            EnsureColumn(dbContext, "Screenshots");
+            dbContext.MigrateToLatest();
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.
@@ -207,44 +200,12 @@ namespace Bridge
             if (Application.Current.MainWindow is null)
             {
                 // If the very first launch after an update failed (e.g. a corrupt
-                // DB threw inside EnsureCreated, before OnStartup's try block),
+                // DB threw inside MigrateToLatest, before OnStartup's try block),
                 // restore the previous exe so the user isn't stuck on a broken
                 // build.
                 AppUpdateService.RollbackToPrevious();
                 Shutdown();
             }
-        }
-
-        // Adds a column to Games when it's missing, logging (not throwing) on any
-        // failure so a schema problem never blocks startup. column is validated
-        // against a compile-time whitelist before being interpolated into SQL.
-        private static void EnsureColumn(BridgeDbContext dbContext, string column)
-        {
-            if (column is not ("DescriptionImages" or "DescriptionBlocks" or "Screenshots"))
-            {
-                LogException(new InvalidOperationException($"Unknown migration column: {column}"));
-                return;
-            }
-
-            // EF1002: interpolated SQL is normally an injection risk, but column
-            // is whitelisted above (two compile-time constants), never user input.
-#pragma warning disable EF1002
-            try
-            {
-                dbContext.Database.ExecuteSqlRaw($"SELECT {column} FROM Games LIMIT 1");
-            }
-            catch
-            {
-                try
-                {
-                    dbContext.Database.ExecuteSqlRaw($"ALTER TABLE Games ADD COLUMN {column} TEXT NOT NULL DEFAULT '[]'");
-                }
-                catch (Exception ex)
-                {
-                    LogException(ex);
-                }
-            }
-#pragma warning restore EF1002
         }
 
         // Errors from the fire-and-forget tasks (_ = ...) never reach the
