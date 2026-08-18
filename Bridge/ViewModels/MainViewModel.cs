@@ -1687,6 +1687,9 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private Task CheckForUpdates() => CheckForUpdatesCoreAsync(promptWhenUpToDate: true);
 
+    [RelayCommand]
+    private void OpenSponsor() => SafeLauncher.TryOpenUrl(Config.PrimarySponsorUrl);
+
     private async Task CheckForUpdatesCoreAsync(bool promptWhenUpToDate)
     {
         if (!IsNetworkAvailable())

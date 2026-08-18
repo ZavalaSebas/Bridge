@@ -23,6 +23,13 @@ public static class Config
 
     public const string UpdateAssetName = "Bridge.exe";
 
+    public const string KoFiUrl = "https://ko-fi.com/sebastianzavala82573";
+
+    public const string GitHubSponsorsUrl = "https://github.com/sponsors/ZavalaSebas";
+
+    /// <summary>Default sponsor link for commands and future status-bar affordances.</summary>
+    public const string PrimarySponsorUrl = GitHubSponsorsUrl;
+
     public static string AppDataPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         AppName);
