@@ -1,4 +1,4 @@
-namespace Bridge.Services;
+namespace Bridge.Emulation;
 
 /// <summary>
 /// Bridge's curated ROM recognition table. This deliberately contains stable

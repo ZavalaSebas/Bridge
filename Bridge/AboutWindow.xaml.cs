@@ -22,8 +22,6 @@ namespace Bridge
             RuntimeText.Text = $".NET {Environment.Version}";
             OsText.Text = RuntimeInformation.OSDescription;
 
-            BetaChannelToggle.IsChecked = UpdateChannelSettingsStore.Load() == UpdateChannel.Beta;
-
             ProjectLinks.ItemsSource = new[]
             {
                 new AboutLink("Source code", "https://github.com/ZavalaSebas/Bridge",
@@ -54,16 +52,6 @@ namespace Bridge
                 return;
 
             SafeLauncher.TryOpenUrl(url);
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e) => Close();
-
-        // Persists the update channel choice as the toggle flips; the update
-        // check reads it via UpdateChannelSettingsStore on every run.
-        private void BetaChannelToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            UpdateChannelSettingsStore.Save(
-                BetaChannelToggle.IsChecked == true ? UpdateChannel.Beta : UpdateChannel.Stable);
         }
     }
 

@@ -4,7 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:controls="clr-namespace:Bridge.Controls"
-             xmlns:converters="clr-namespace:Bridge.Converters"
+             xmlns:res="clr-namespace:Bridge.Resources" xmlns:converters="clr-namespace:Bridge.Converters"
              x:Name="Root"
              mc:Ignorable="d"
              d:DesignHeight="420" d:DesignWidth="900">
@@ -23,7 +23,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel x:Name="GalleryHeader" Grid.Row="0" Orientation="Horizontal" Margin="0,20,0,10">
-            <TextBlock Text="Screenshots" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{x:Static res:Strings.Screenshots}" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding CounterText, ElementName=Root, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
@@ -35,7 +35,7 @@
                 <Border Background="#66000000" IsHitTestVisible="False"/>
 
                 <Button x:Name="MainImageHost" Click="MainImage_Click" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                        ToolTip="Click to expand">
+                        ToolTip="{x:Static res:Strings.ClickToExpand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <ContentPresenter/>
@@ -70,7 +70,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Click="Thumbnail_Click" Tag="{Binding}" Padding="0" Margin="0,0,8,0" Background="Transparent" BorderThickness="2" Cursor="Hand" ToolTip="View screenshot">
+                        <Button Click="Thumbnail_Click" Tag="{Binding}" Padding="0" Margin="0,0,8,0" Background="Transparent" BorderThickness="2" Cursor="Hand" ToolTip="{x:Static res:Strings.ViewScreenshotTooltip}">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="ThumbBorder" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Background="#151A28" Width="150" Height="84">
@@ -119,7 +119,7 @@
                                 <TextBlock x:Name="FullscreenCounter" Text="{Binding CounterText, ElementName=Root, Mode=OneWay}"
                                            FontSize="14" Foreground="{StaticResource TextFillColorSecondaryBrush}"
                                            VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,18,0,0"/>
-                                <Button x:Name="FullscreenClose" Click="CloseFullscreen_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16,16" ToolTip="Close (Esc)" Padding="0">
+                                <Button x:Name="FullscreenClose" Click="CloseFullscreen_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16,16" ToolTip="{x:Static res:Strings.CloseEscTooltip}" Padding="0">
                                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                                     <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
                                 </Button>
@@ -141,7 +141,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Click="Thumbnail_Click" Tag="{Binding}" Padding="0" Margin="0,0,8,0" Background="Transparent" BorderThickness="2" Cursor="Hand" ToolTip="View screenshot">
+                                        <Button Click="Thumbnail_Click" Tag="{Binding}" Padding="0" Margin="0,0,8,0" Background="Transparent" BorderThickness="2" Cursor="Hand" ToolTip="{x:Static res:Strings.ViewScreenshotTooltip}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border x:Name="ThumbBorder" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Background="#151A28" Width="130" Height="73">

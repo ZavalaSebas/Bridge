@@ -1,6 +1,6 @@
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
-using Bridge.Services;
+using Bridge.Emulation;
 
 namespace Bridge.Tests.Services;
 

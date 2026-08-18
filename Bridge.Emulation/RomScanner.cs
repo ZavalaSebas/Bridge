@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 
-namespace Bridge.Services;
+namespace Bridge.Emulation;
 
 /// <summary>
 /// Bridge-managed ROM import. It recursively finds ROMs recognised by
