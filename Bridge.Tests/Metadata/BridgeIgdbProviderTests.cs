@@ -3,11 +3,11 @@ using Bridge.Metadata;
 namespace Bridge.Tests.Metadata;
 
 // Tests the Bridge Cloudflare Worker IGDB proxy integration. These hit the real
-// endpoint (like the app does) — network tests, kept small and focused on the
-// mapping shape.
+// endpoint (like the app does) — excluded from default CI via Category=Integration.
 public class BridgeIgdbProviderTests
 {
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task Map_RealGenshinResponse_ProducesMetadata()
     {
         var provider = new BridgeIgdbProvider(new HttpClient());
@@ -25,6 +25,7 @@ public class BridgeIgdbProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task SearchAsync_ReturnsNull_ForGibberish()
     {
         var provider = new BridgeIgdbProvider(new HttpClient());

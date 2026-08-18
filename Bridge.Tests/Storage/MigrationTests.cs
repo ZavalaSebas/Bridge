@@ -31,8 +31,8 @@ public class MigrationTests : IDisposable
 
         var applied = context.Database.GetAppliedMigrations();
         Assert.Contains(applied, m => m.EndsWith("InitialCreate", StringComparison.Ordinal));
+        Assert.Contains(applied, m => m.EndsWith("AddUniqueIndexes", StringComparison.Ordinal));
 
-        // The reference entities are queryable — the schema is real.
         context.Genres.Add(new Genre { Name = "Action" });
         context.SaveChanges();
         Assert.Single(context.Genres.ToList());
@@ -60,6 +60,20 @@ public class MigrationTests : IDisposable
         // applies on top instead of failing to recreate the tables).
         var applied = context.Database.GetAppliedMigrations();
         Assert.Contains(applied, m => m.EndsWith("InitialCreate", StringComparison.Ordinal));
+        Assert.Contains(applied, m => m.EndsWith("AddUniqueIndexes", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AddUniqueIndexes_RejectsDuplicateGenreNames()
+    {
+        using var context = new BridgeDbContext(_options);
+        context.MigrateToLatest();
+
+        context.Genres.Add(new Genre { Name = "Action" });
+        context.SaveChanges();
+
+        context.Genres.Add(new Genre { Name = "Action" });
+        Assert.Throws<DbUpdateException>(() => context.SaveChanges());
     }
 
     public void Dispose()

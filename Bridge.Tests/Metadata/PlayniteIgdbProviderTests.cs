@@ -3,11 +3,11 @@ using Bridge.Metadata;
 namespace Bridge.Tests.Metadata;
 
 // Tests the Playnite public IGDB proxy integration. These hit the real
-// endpoint (like the app does) — they're network tests, so they're kept small
-// and focused on the mapping shape rather than exhaustive coverage.
+// endpoint — excluded from default CI via Category=Integration.
 public class PlayniteIgdbProviderTests
 {
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task Map_RealGenshinResponse_ProducesMetadata()
     {
         var provider = new PlayniteIgdbProvider(new HttpClient());
@@ -24,6 +24,7 @@ public class PlayniteIgdbProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task SearchAsync_ReturnsNull_ForGibberish()
     {
         var provider = new PlayniteIgdbProvider(new HttpClient());

@@ -1,5 +1,6 @@
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bridge.Storage.Repositories;
 
@@ -7,7 +8,7 @@ public class GameRepository(BridgeDbContext context) : Repository<Game>(context)
 {
     public Game? FindByExternalId(string externalId, Guid sourceId)
     {
-        var game = Set.FirstOrDefault(g => g.ExternalId == externalId && g.SourceId == sourceId);
+        var game = Set.AsNoTracking().FirstOrDefault(g => g.ExternalId == externalId && g.SourceId == sourceId);
         ResetTransientFlags(game);
         return game;
     }

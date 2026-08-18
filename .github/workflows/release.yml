@@ -70,15 +70,23 @@ jobs:
       - name: Restore packages
         run: dotnet restore Bridge.slnx
 
-      # No --no-build: this job runs on its own fresh runner, not the build job's — there's no
-      # build output to reuse here, so --no-build always failed with "test source file not found".
       - name: Test
-        run: dotnet test Bridge.slnx -c Release --verbosity normal
+        run: >
+          dotnet test Bridge.slnx -c Release --verbosity normal
+          --filter "Category!=Integration"
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
 
   codeql:
     needs: build
     runs-on: windows-latest
-    continue-on-error: true
     permissions:
       security-events: write
     steps:
@@ -109,8 +117,14 @@ jobs:
         run: dotnet restore Bridge.slnx
 
       - name: Audit NuGet packages
-        run: dotnet nuget audit
-        continue-on-error: true
+        shell: pwsh
+        run: |
+          $output = dotnet list Bridge.slnx package --vulnerable --include-transitive 2>&1 | Out-String
+          Write-Host $output
+          if ($output -match 'has the following vulnerable packages') {
+            Write-Error 'Vulnerable NuGet packages found.'
+            exit 1
+          }
 
   release:
     if: needs.build.outputs.version_changed == 'true'
