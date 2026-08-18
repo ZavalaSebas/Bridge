@@ -67,15 +67,11 @@ namespace Bridge
                     DataContext = viewModel
                 };
                 MainWindow = mainWindow;
-
-                // Decode the library's artwork (from the disk cache when
-                // available) BEFORE the first paint, so the Grid's covers and
-                // the selected game's background are already loaded when the
-                // window shows instead of rendering black and popping in a
-                // second later. Bounded by a timeout inside the VM.
-                viewModel.WaitForStartupArtworkAsync().GetAwaiter().GetResult();
-
                 mainWindow.Show();
+
+                // Warm selected-game and first-grid artwork without blocking the UI
+                // thread — covers may pop in briefly, but startup stays responsive.
+                _ = viewModel.WaitForStartupArtworkAsync();
 
                 // The new exe has now proven it starts (the window is up), so a
                 // pending update's rollback copy (.old) and handshake marker can

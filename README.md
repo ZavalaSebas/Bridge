@@ -31,7 +31,7 @@ Bridge is an original game library manager: it unifies games from external libra
 
 <div align="center">
 
-> Screenshot coming soon — v0.1.0
+> Screenshot coming soon — v0.2.0
 
 </div>
 
@@ -78,9 +78,9 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
 - **Epic Games support** — detects installed Epic games from the launcher's local files, launches via the Epic client, and shows each game's exe icon
 - **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
-- **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Most Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
-- **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade), **Details** (themed table with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
-- **Cinematic screenshot gallery** — in the Details view, games with screenshots show them as a carousel: a large image floating over a frosted backdrop, a drag-to-scroll thumbnail strip, counter, arrow buttons, keyboard navigation, click-to-expand into a full-window dark overlay, and auto-advance
+- **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Installed / Not Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
+- **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + overlay fade; compact screenshot strip in the info panel), **Details** (themed table with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
+- **Cinematic screenshot gallery** — in the Details table view and as a compact strip in Covers, games with screenshots show them as a carousel: a large image floating over a frosted backdrop, a drag-to-scroll thumbnail strip, counter, arrow buttons, keyboard navigation, click-to-expand into a full-window dark overlay, and auto-advance
 - **Sidebar navigation** — Icon rail (52px) with Library and Statistics shortcuts, collapsible and re-positionable
 - **Dark theme + Mica + runtime theming** — custom indigo dark palette with Inter variable font, Mica backdrop on Windows 11, and a runtime accent switcher (9 color presets + custom picker) that recolors the whole UI
 - Manual game entries with add (Playnite-style editor with Sorting Name, create-on-the-fly genres/devs/publishers/platforms, and web image search), edit, and delete
@@ -123,6 +123,7 @@ Bridge's design is informed by studying [Playnite](https://playnite.link/)'s beh
 
 If you find Bridge useful, consider supporting the project:
 
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white&labelColor=1a1a2e)](https://ko-fi.com/sebastianzavala82573)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=flat-square&logo=githubsponsors&logoColor=white&labelColor=1a1a2e)](https://github.com/sponsors/ZavalaSebas)
 
 ---

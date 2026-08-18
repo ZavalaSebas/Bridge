@@ -19,7 +19,7 @@ public class Repository<T>(BridgeDbContext context) : IRepository<T> where T : D
 
     public virtual T? Get(Guid id) => Set.Find(id);
 
-    public virtual IReadOnlyList<T> GetAll() => Set.ToList();
+    public virtual IReadOnlyList<T> GetAll() => Set.AsNoTracking().ToList();
 
     public void Add(T item)
     {
