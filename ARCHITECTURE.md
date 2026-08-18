@@ -543,12 +543,18 @@ safely: Windows won't let a running exe be overwritten in place.
 
 **Decision:**
 `Bridge/Services/AppUpdateService.cs` checks
-`api.github.com/repos/ZavalaSebas/Bridge/releases/latest`, compares the release
-`tag_name` (via `Version.TryParse(tag.TrimStart('v'))`) against
-`Config.AssemblyVersion`, and when remote is newer resolves the `Bridge.exe`
-asset. Applying the update follows the safe swap from DEVELOPMENT.md: download
-to a temp path, rename the running exe to `.old`, move the downloaded exe into
-the current path, start the new process and `Environment.Exit(0)`.
+`api.github.com/repos/ZavalaSebas/Bridge/releases?per_page=100` (the full list,
+newest first — not `/releases/latest`, which silently drops prereleases) and
+picks the newest release that matches the **update channel**: **Stable** (the
+default) skips GitHub prereleases, **Beta** accepts them. The channel is a
+user choice persisted in `update-channel.txt` (`UpdateChannelSettingsStore`)
+and toggled in the About window. Release tags are compared by their **numeric
+prefix** (`v0.3.0-beta1` parses as `0.3.0`) so a beta never beats an installed
+stable of the same number — the `prerelease` flag, not the tag text, decides
+channels. When remote is newer, the check resolves the `Bridge.exe` asset.
+Applying the update follows the safe swap from DEVELOPMENT.md: download to a
+temp path, rename the running exe to `.old`, move the downloaded exe into the
+current path, start the new process and `Environment.Exit(0)`.
 
 **The swap is made survivable by an update handshake** (added 2026-08-17, in
 response to a beta-consideration review). Three files next to the exe drive it:

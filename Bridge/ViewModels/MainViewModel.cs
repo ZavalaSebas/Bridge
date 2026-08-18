@@ -1802,7 +1802,7 @@ public partial class MainViewModel : ObservableObject
                     if (promptWhenUpToDate)
                     {
                         MessageDialogWindow.Show(
-                            $"Bridge {Config.AssemblyVersion.ToString(3)} is the latest version.",
+                            result.Message ?? $"Bridge {Config.AssemblyVersion.ToString(3)} is the latest version.",
                             "Check for updates",
                             SymbolRegular.Checkmark24);
                     }

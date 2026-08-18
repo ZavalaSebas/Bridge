@@ -252,7 +252,7 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 ```
 
 - `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.1.0.0`)
-- **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases/latest` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), compares `Version.TryParse(tag.TrimStart('v'))` against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`).
+- **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases?per_page=100` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), picks the newest release that matches the **update channel**, compares its `tag_name` numeric prefix against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). The channel lives in `UpdateChannelSettingsStore` (`update-channel.txt` under AppDataPath): **Stable** (default) skips GitHub prereleases, **Beta** accepts them, toggled in the About window. Prerelease tags keep their suffix in the repo but are compared by numeric prefix only (`v0.3.0-beta1` never beats an installed `0.3.0` stable, so a stable user can't be downgraded onto a beta); the `prerelease` flag is what distinguishes channels. Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`). On the stable channel, when a newer prerelease exists but no newer stable, the up-to-date message points the user to the beta toggle.
 
   The most critical part is the **safe executable swap** — never overwrite the running `.exe` directly:
 
@@ -380,7 +380,7 @@ When the user dismisses the dialog with "Don't show again", write the current ve
 
 ### Constants Pattern (`Config.cs`)
 
-> **Implemented** — the real `Bridge/Config.cs` holds `AppName`, `AppDataPath`, `DatabasePath`, the emulator paths, `GitHubApiUrl`, `RequestTimeoutSeconds`, `UpdateAssetName`, and `AssemblyVersion` (read from the executing assembly).
+> **Implemented** — the real `Bridge/Config.cs` holds `AppName`, `AppDataPath`, `DatabasePath`, the emulator paths, `GitHubReleasesUrl`, `RequestTimeoutSeconds`, `UpdateAssetName`, and `AssemblyVersion` (read from the executing assembly).
 
 **Prefer keeping constants centralized** in a dedicated `Config.cs` file rather than scattered across classes.
 
@@ -388,7 +388,7 @@ When the user dismisses the dialog with "Don't show again", write the current ve
 public static class Config
 {
     public const string AppName = "Bridge";
-    public const string GitHubApiUrl = "https://api.github.com/repos/ZavalaSebas/Bridge/releases/latest";
+    public const string GitHubReleasesUrl = "https://api.github.com/repos/ZavalaSebas/Bridge/releases?per_page=100";
     public const int RequestTimeoutSeconds = 10;
     // ... etc
 }
@@ -461,6 +461,17 @@ On push or PR to `main` (and on manual `workflow_dispatch`), `.github/workflows/
 - `permissions: contents: write` — required for release creation
 - Csproj path: `Bridge/Bridge.csproj`
 - Release body comes from the **commit body** — write it with `### Added/Fixed/Changed` sections
+
+### Publishing a beta/prerelease
+
+To ship a test build to the **Beta** channel only: bump `<Version>` to the
+numeric version the beta targets (e.g. `0.3.0`), commit with a body
+describing the changes, and on GitHub create the release with **"Set as a
+pre-release"** checked and a tag like `v0.3.0-beta1` (any `-suffix` is fine —
+Bridge compares the numeric prefix, so `v0.3.0-beta1` won't offer itself to a
+user already on `0.3.0`). The `Bridge.exe` asset must use the same name as
+stable releases. Stable users never see it; users who enabled **Receive beta
+builds** in About will.
 
 ### Additional Quality Gates (optional)
 
