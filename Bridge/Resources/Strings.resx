@@ -311,6 +311,8 @@
   <data name="Screenshots" xml:space="preserve"><value>Screenshots</value></data>
   <data name="AboutBridgeTitle" xml:space="preserve"><value>About Bridge</value></data>
   <data name="AboutDescription" xml:space="preserve"><value>Bridge unifies your games — from external libraries, manual entries and emulated ROMs — into one fast, local, self-contained catalog. Incremental import, local metadata, fast virtualized views and emulation support, without a plugin runtime or a separate fullscreen frontend. Playnite is an inspiration, not a specification: Bridge's structure, architecture and implementation are its own.</value></data>
+  <data name="Credits" xml:space="preserve"><value>Credits</value></data>
+  <data name="AboutArtCredit" xml:space="preserve"><value>App icon and logo artwork by Erick Nuñez.</value></data>
   <data name="Project" xml:space="preserve"><value>Project</value></data>
   <data name="Environment" xml:space="preserve"><value>Environment</value></data>
   <data name="Updates" xml:space="preserve"><value>Updates</value></data>

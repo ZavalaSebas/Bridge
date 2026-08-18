@@ -258,6 +258,8 @@ public static class Strings
     public static string Screenshots => Get(nameof(Screenshots));
     public static string AboutBridgeTitle => Get(nameof(AboutBridgeTitle));
     public static string AboutDescription => Get(nameof(AboutDescription));
+    public static string Credits => Get(nameof(Credits));
+    public static string AboutArtCredit => Get(nameof(AboutArtCredit));
     public static string Project => Get(nameof(Project));
     public static string Environment => Get(nameof(Environment));
     public static string Updates => Get(nameof(Updates));
