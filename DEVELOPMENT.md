@@ -262,15 +262,44 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
   var oldExe = currentExe + ".old";
 
   await DownloadFileAsync(downloadUrl, tempExe, progress);
+  BackupDatabase();              // copy bridge.db → bridge.db.bak-update (recovery net)
   File.Delete(oldExe);           // discard any stale .old
   File.Move(currentExe, oldExe); // rename running exe → .old
   File.Move(tempExe, currentExe); // rename downloaded → current location
+  File.WriteAllText(currentExe + ".update-pending", version); // arm the handshake
 
   Process.Start(new ProcessStartInfo { FileName = currentExe, UseShellExecute = true });
   Environment.Exit(0);           // terminate running instance so new exe takes over
   ```
 
-  On next launch, `AppUpdateService.CleanupOldExe()` (called from `App.OnStartup`, before any window opens) deletes the `.old`. If the swap throws, `RollbackSwap` restores `.old` back to the current path and removes the temp file (best-effort). Security constraints: downloads only over HTTPS, only from GitHub's hosts (`api.github.com`, `github.com`, `*.githubusercontent.com` — with redirects manually followed against the allowlist), capped at 256 MB, with a 15-minute timeout and byte-count progress reported to the status bar. `CanSelfUpdate` returns false in dev (`dotnet run`/the build output) so updates never try to replace a non-published exe. Covered by `Bridge.Tests/Services/AppUpdateServiceTests.cs`.
+  On the next launch the **update handshake** (replacing the old one-shot `CleanupOldExe`)
+  decides what the new exe owns:
+
+  - `AppUpdateService.HandleUpdateHandshake()` runs at the very top of
+    `App.OnStartup`, before any window/DB/DI work. Three files next to the exe
+    drive it: `<exe>.update-pending` (armed by `ApplyUpdateAsync` after the swap),
+    `<exe>.old` (the previously working exe), and `<exe>.failed` (a broken new
+    exe a rollback moved aside). When pending + old are both present, the old
+    exe is **kept** as the rollback copy — it is not deleted yet.
+  - If startup succeeds (the window shows), `AppUpdateService.ConfirmUpdateApplied()`
+    deletes the `.old` and the pending marker: the new exe has proven it runs.
+  - If startup **fails** (an exception from `OnStartup`'s try block or the
+    dispatcher handler — bad XAML, DB/DI failure), `AppUpdateService.RollbackToPrevious()`
+    moves the broken new exe to `<exe>.failed`, restores the previous exe from
+    `.old`, clears the pending marker and relaunches it. The `.failed` leftover
+    is cleaned up by the next `HandleUpdateHandshake`. The user ends up on the
+    version that worked instead of a broken build.
+
+  `BackupDatabase()` copies `bridge.db` to `bridge.db.bak-update` (next to the DB,
+  overwritten each update) before the swap — a manual-recovery safety net for the
+  day a schema migration goes wrong, **not** auto-restored.
+
+  Security constraints: downloads only over HTTPS, only from GitHub's hosts
+  (`api.github.com`, `github.com`, `*.githubusercontent.com` — with redirects
+  manually followed against the allowlist), capped at 256 MB, with a 15-minute
+  timeout and byte-count progress reported to the status bar. `CanSelfUpdate`
+  returns false in dev (`dotnet run`/the build output) so updates never try to
+  replace a non-published exe. Covered by `Bridge.Tests/Services/AppUpdateServiceTests.cs`.
 
 **To bump the version**: edit `<Version>` in the csproj, commit with a descriptive message, push to `main`.
 

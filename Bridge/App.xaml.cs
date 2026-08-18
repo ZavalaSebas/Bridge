@@ -33,7 +33,7 @@ namespace Bridge
             RemoteImageCache.UiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
             Directory.CreateDirectory(Config.AppDataPath);
-            AppUpdateService.CleanupOldExe();
+            AppUpdateService.HandleUpdateHandshake();
 
             var services = new ServiceCollection();
             ConfigureServices(services);
@@ -83,10 +83,25 @@ namespace Bridge
                 viewModel.WaitForStartupArtworkAsync().GetAwaiter().GetResult();
 
                 mainWindow.Show();
+
+                // The new exe has now proven it starts (the window is up), so a
+                // pending update's rollback copy (.old) and handshake marker can
+                // be cleared. Only reached when nothing above threw.
+                AppUpdateService.ConfirmUpdateApplied();
             }
             catch (Exception ex)
             {
                 LogException(ex);
+
+                // If this is the first launch after an update and it failed to
+                // start (bad XAML, DB/DI failure), restore the previous exe and
+                // relaunch it so the user isn't stuck with a broken build.
+                if (AppUpdateService.RollbackToPrevious())
+                {
+                    Shutdown();
+                    return;
+                }
+
                 Shutdown();
             }
 
@@ -191,6 +206,11 @@ namespace Bridge
             // strand an invisible process. Exit cleanly instead.
             if (Application.Current.MainWindow is null)
             {
+                // If the very first launch after an update failed (e.g. a corrupt
+                // DB threw inside EnsureCreated, before OnStartup's try block),
+                // restore the previous exe so the user isn't stuck on a broken
+                // build.
+                AppUpdateService.RollbackToPrevious();
                 Shutdown();
             }
         }

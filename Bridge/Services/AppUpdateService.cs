@@ -47,7 +47,18 @@ public sealed class AppUpdateService
 
     public AppUpdateService(HttpClient httpClient) => _httpClient = httpClient;
 
-    public static void CleanupOldExe()
+    // The update handshake relies on marker files living next to the exe:
+    //
+    //   <exe>.update-pending   written by ApplyUpdateAsync right after the swap,
+    //                          before the new exe is launched. Means "a new exe
+    //                          was just swapped in and has not yet proven it starts".
+    //   <exe>.old              the previously working exe, kept as the rollback copy.
+    //   <exe>.failed           a broken new exe moved aside by a rollback.
+    //
+    // Runs at the very start of OnStartup (before any window/DB/DI work). It
+    // either keeps the rollback copy armed (pending + old present), or cleans up
+    // a confirmed/abandoned update.
+    public static void HandleUpdateHandshake()
     {
         var currentExe = Environment.ProcessPath;
         if (string.IsNullOrWhiteSpace(currentExe))
@@ -56,16 +67,117 @@ public sealed class AppUpdateService
         }
 
         var oldExe = currentExe + ".old";
+        var pendingMarker = currentExe + ".update-pending";
+        var failedExe = currentExe + ".failed";
+        try
+        {
+            if (File.Exists(pendingMarker))
+            {
+                // Pending + old present: the new exe is running for the first
+                // time after a swap and the previous exe is still armed as the
+                // rollback copy. Do NOT delete it here — ConfirmUpdateApplied()
+                // clears it after a successful startup, or RollbackToPrevious()
+                // restores it if startup fails.
+                if (File.Exists(oldExe))
+                {
+                    return;
+                }
+
+                // Pending marker with no old exe: the swap was confirmed on a
+                // previous run (or abandoned); the marker is just stale.
+                File.Delete(pendingMarker);
+                return;
+            }
+
+            // No pending update: clear leftovers from a previous swap. The old
+            // exe is a leftover when the new one already ran fine; a .failed is
+            // the broken exe a rollback moved aside.
+            if (File.Exists(oldExe))
+            {
+                File.Delete(oldExe);
+            }
+
+            if (File.Exists(failedExe))
+            {
+                File.Delete(failedExe);
+            }
+        }
+        catch
+        {
+            // Best-effort; a locked .old must not block startup.
+        }
+    }
+
+    // Called after the new exe's startup succeeded (main window shown). The new
+    // exe has proven it runs, so the rollback copy and handshake markers go away.
+    public static void ConfirmUpdateApplied()
+    {
+        var currentExe = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(currentExe))
+        {
+            return;
+        }
+
+        var oldExe = currentExe + ".old";
+        var pendingMarker = currentExe + ".update-pending";
         try
         {
             if (File.Exists(oldExe))
             {
                 File.Delete(oldExe);
             }
+
+            if (File.Exists(pendingMarker))
+            {
+                File.Delete(pendingMarker);
+            }
         }
         catch
         {
-            // Best-effort; a locked .old from a failed delete must not block startup.
+            // Best-effort; a locked .old must not break the running app.
+        }
+    }
+
+    // Called from OnStartup's catch when the NEW exe failed to start (bad XAML,
+    // DB/DI failure, etc.). If a pending update is armed, restores the previous
+    // exe over the broken one and relaunches it. Returns true when a rollback
+    // happened (the caller should not continue starting the current process).
+    public static bool RollbackToPrevious()
+    {
+        var currentExe = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(currentExe))
+        {
+            return false;
+        }
+
+        var oldExe = currentExe + ".old";
+        var pendingMarker = currentExe + ".update-pending";
+        if (!File.Exists(oldExe) || !File.Exists(pendingMarker))
+        {
+            return false;
+        }
+
+        var failedExe = currentExe + ".failed";
+        try
+        {
+            // Move the broken new exe aside, restore the previous working exe,
+            // clear the handshake, and relaunch it. The .failed leftover is
+            // removed on the next HandleUpdateHandshake.
+            File.Move(currentExe, failedExe);
+            File.Move(oldExe, currentExe);
+            File.Delete(pendingMarker);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = currentExe,
+                UseShellExecute = true
+            });
+            return true;
+        }
+        catch
+        {
+            // Best-effort rollback; the user may need to restore manually.
+            return false;
         }
     }
 
@@ -157,6 +269,12 @@ public sealed class AppUpdateService
 
             progress?.Report(new AppUpdateProgress("Installing update...", null));
 
+            // Back up the library DB before touching the exe. If the new version
+            // corrupts or migrates the DB and then fails, the user can restore
+            // this copy by hand (documented in DEVELOPMENT.md). Best-effort: a
+            // locked DB must never abort the update.
+            BackupDatabase();
+
             if (File.Exists(oldExe))
             {
                 File.Delete(oldExe);
@@ -164,6 +282,19 @@ public sealed class AppUpdateService
 
             File.Move(currentExe, oldExe);
             File.Move(tempExe, currentExe);
+
+            // Arm the handshake so the new exe knows to keep the rollback copy
+            // until it has proven it starts. Written after the swap so a failure
+            // mid-swap leaves no pending marker.
+            try
+            {
+                File.WriteAllText(currentExe + ".update-pending", update.Version.ToString());
+            }
+            catch
+            {
+                // Best-effort; without the marker the .old is cleaned up next
+                // launch, losing the rollback copy but not breaking the update.
+            }
 
             Process.Start(new ProcessStartInfo
             {
@@ -209,6 +340,27 @@ public sealed class AppUpdateService
         catch
         {
             // Ignore leftover temp files.
+        }
+    }
+
+    // Copies the library DB (bridge.db) to bridge.db.bak-update next to it before
+    // an update applies. The copy is a manual-recovery safety net, not an
+    // auto-restored state: if an update corrupts the DB, the user (or support)
+    // can restore this file. Kept next to the DB so it lives with the data.
+    private static void BackupDatabase()
+    {
+        try
+        {
+            if (!File.Exists(Config.DatabasePath))
+            {
+                return;
+            }
+
+            File.Copy(Config.DatabasePath, Config.DatabasePath + ".bak-update", overwrite: true);
+        }
+        catch
+        {
+            // Best-effort; a locked DB must never abort an update.
         }
     }
 
