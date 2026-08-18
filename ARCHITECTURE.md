@@ -573,17 +573,17 @@ Why this over the alternatives:
   the exe may hit permission/AV issues; the download goes to the OS temp dir and
   only the final swap touches the install location.
 - **Version from the csproj hard-coded in the check** — rejected: the assembly
-  version is the single source of truth; the dev build is deliberately set back
-  to the latest *released* version (0.1.0 vs the published v0.2.0) so the
-  updater can actually detect the next release instead of always reporting
-  up-to-date.
+  version is the single source of truth; the check just compares the installed
+  version against the newest release tag, so a released build reports
+  up-to-date until a newer tag ships (no special-casing needed).
 
 **Consequences:**
 - Users get updates automatically with one click (and a pending-update button
   in the title bar if they skip).
-- The version in `Bridge/Bridge.csproj` must stay lower than the newest release
-  tag for the check to work — the Release Process section in DEVELOPMENT.md is
-  the place that owns bumping it.
+- The version in `Bridge/Bridge.csproj` is the "installed" version the check
+  compares against — it must be bumped together with the release tag (the
+  Release Process section in DEVELOPMENT.md owns that), so an update is detected
+  whenever a newer tag ships.
 - The updater only covers the single-file publish; the 7z/archive installs
   (RetroArch) are managed separately by `RetroArchService`.
 - No integrity signature (code-signing) yet — the trust model is "GitHub host
