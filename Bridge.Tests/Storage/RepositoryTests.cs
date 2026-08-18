@@ -20,7 +20,7 @@ public class RepositoryTests : IDisposable
             .Options;
         _context = new BridgeDbContext(options);
         _context.MigrateToLatest();
-        _repository = new Repository<Genre>(_context);
+        _repository = new Repository<Genre>(new TestDbContextFactory(options));
     }
 
     [Fact]

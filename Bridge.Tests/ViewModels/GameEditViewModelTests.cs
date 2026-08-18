@@ -1,6 +1,7 @@
 using Bridge.Core.Entities;
 using Bridge.Storage;
 using Bridge.Storage.Repositories;
+using Bridge.Tests.Storage;
 using Bridge.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,10 +24,11 @@ public class GameEditViewModelTests : IDisposable
             .Options;
         _context = new BridgeDbContext(options);
         _context.MigrateToLatest();
-        _gameRepository = new GameRepository(_context);
-        _genreRepository = new Repository<Genre>(_context);
-        _companyRepository = new Repository<Company>(_context);
-        _platformRepository = new Repository<Platform>(_context);
+        var factory = new TestDbContextFactory(options);
+        _gameRepository = new GameRepository(factory);
+        _genreRepository = new Repository<Genre>(factory);
+        _companyRepository = new Repository<Company>(factory);
+        _platformRepository = new Repository<Platform>(factory);
     }
 
     private GameEditViewModel Build(Game game, bool isNew = false)

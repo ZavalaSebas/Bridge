@@ -28,7 +28,7 @@ public class GameRepositoryTests : IDisposable
             .Options;
         _context = new BridgeDbContext(_options);
         _context.MigrateToLatest();
-        _repository = new GameRepository(_context);
+        _repository = new GameRepository(new TestDbContextFactory(_options));
     }
 
     [Fact]
@@ -49,8 +49,7 @@ public class GameRepositoryTests : IDisposable
         _repository.Add(game);
 
         // Fresh context, proves it round-trips from disk, not just the change tracker.
-        using var freshContext = new BridgeDbContext(_options);
-        var loaded = new GameRepository(freshContext).Get(game.Id);
+        var loaded = new GameRepository(new TestDbContextFactory(_options)).Get(game.Id);
 
         Assert.NotNull(loaded);
         Assert.Equal("Test Game", loaded.Name);
@@ -112,8 +111,7 @@ public class GameRepositoryTests : IDisposable
         loaded.GameActions.Add(new GameAction { Name = "Play", Path = "notepad.exe" });
         _repository.Update(loaded);
 
-        using var freshContext = new BridgeDbContext(_options);
-        var reloaded = new GameRepository(freshContext).Get(game.Id)!;
+        var reloaded = new GameRepository(new TestDbContextFactory(_options)).Get(game.Id)!;
 
         Assert.Single(reloaded.GameActions);
         Assert.Equal("notepad.exe", reloaded.GameActions[0].Path);
@@ -152,8 +150,7 @@ public class GameRepositoryTests : IDisposable
             "UPDATE Games SET GenreIds = ']]] broken' WHERE Id = @p0",
             new Microsoft.Data.Sqlite.SqliteParameter("@p0", game2.Id));
 
-        using var freshContext = new BridgeDbContext(_options);
-        var games = new GameRepository(freshContext).GetAll();
+        var games = new GameRepository(new TestDbContextFactory(_options)).GetAll();
 
         Assert.Contains(games, g => g.Name == "Corrupt");
         Assert.Contains(games, g => g.Name == "Corrupt2");
@@ -162,23 +159,21 @@ public class GameRepositoryTests : IDisposable
     }
 
     [Fact]
-    public void GetAll_ResetsTransientRuntimeFlags_ButPreservesIsRunning()
+    public void RuntimeFlags_AreNotPersisted()
     {
-        // A crash or forced close mid-game leaves IsRunning=true persisted. The
-        // stale-flag reset for IsRunning now happens once, in
-        // MainViewModel.LoadGames on startup — ResetTransientFlags must NOT reset
-        // IsRunning here, because the background metadata sync calls GetAll while
-        // a game the user just launched has IsRunning=true (resetting it would
-        // flip the hero button back to Play mid-game). The other transient flags
-        // are still reset on every read.
-        var game = new Game { Name = "Running right now", IsRunning = true, IsLaunching = true };
+        var game = new Game
+        {
+            Name = "Runtime flags",
+            IsRunning = true,
+            IsLaunching = true,
+            IsInstalling = true,
+            IsUninstalling = true
+        };
         _repository.Add(game);
 
-        using var freshContext = new BridgeDbContext(_options);
-        var reloaded = new GameRepository(freshContext).GetAll();
+        var loaded = new GameRepository(new TestDbContextFactory(_options)).Get(game.Id)!;
 
-        var loaded = Assert.Single(reloaded);
-        Assert.True(loaded.IsRunning); // preserved — it's a live launcher flag
+        Assert.False(loaded.IsRunning);
         Assert.False(loaded.IsLaunching);
         Assert.False(loaded.IsInstalling);
         Assert.False(loaded.IsUninstalling);
@@ -195,8 +190,7 @@ public class GameRepositoryTests : IDisposable
         loaded.Hidden = true;
         _repository.Update(loaded);
 
-        using var freshContext = new BridgeDbContext(_options);
-        var reloaded = new GameRepository(freshContext).Get(game.Id)!;
+        var reloaded = new GameRepository(new TestDbContextFactory(_options)).Get(game.Id)!;
 
         Assert.True(reloaded.Favorite);
         Assert.True(reloaded.Hidden);
@@ -213,8 +207,7 @@ public class GameRepositoryTests : IDisposable
         loaded.Hidden = false;
         _repository.Update(loaded);
 
-        using var freshContext = new BridgeDbContext(_options);
-        var reloaded = new GameRepository(freshContext).Get(game.Id)!;
+        var reloaded = new GameRepository(new TestDbContextFactory(_options)).Get(game.Id)!;
 
         Assert.False(reloaded.Favorite);
         Assert.False(reloaded.Hidden);

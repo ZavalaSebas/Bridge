@@ -28,11 +28,17 @@ public partial class MessageDialogWindow : FluentWindow
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 
-    public static void Show(string message, string title, SymbolRegular? icon = null)
+    public static void Show(string message, string title, SymbolRegular? icon = null, Window? owner = null)
     {
-        var dialog = new MessageDialogWindow(message, title, icon) { Owner = Application.Current.MainWindow };
+        var dialog = new MessageDialogWindow(message, title, icon)
+        {
+            Owner = owner ?? Application.Current.MainWindow
+        };
         dialog.ShowDialog();
     }
+
+    public static void ShowWarning(string message, string title, Window? owner = null) =>
+        Show(message, title, SymbolRegular.Warning24, owner);
 
     public static bool ShowConfirm(
         string message,

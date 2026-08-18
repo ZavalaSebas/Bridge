@@ -6,12 +6,11 @@ namespace Bridge.Core.Entities;
 /// PluginId and IncludeLibraryPluginAction are gone. GameId is renamed ExternalId
 /// to read correctly now that it's paired with SourceId instead of a PluginId
 /// (dedup key becomes (ExternalId, SourceId) — see GameSource.cs and ADR-6 in
-/// ARCHITECTURE.md). The install/launch flags (IsInstalling/IsUninstalling/
-/// IsLaunching) are reset on every read by Bridge.Storage's load path, mirroring
-/// Playnite's crash-recovery behavior (§28.10, finding 5). IsRunning is a live
-/// flag set by GameLauncher when the user launches a game, so it is NOT reset on
-/// read — the stale-IsRunning crash reset happens once in
-/// MainViewModel.LoadGames at startup (see GameRepository.ResetTransientFlags).
+/// ARCHITECTURE.md). The install/launch/running flags (IsInstalling/
+/// IsUninstalling/IsLaunching/IsRunning) are runtime-only — EF ignores them, so
+/// they never round-trip to bridge.db. IsRunning is set by GameLauncher when
+/// the user launches a game; MainViewModel.LoadGames clears any stale in-memory
+/// value on startup.
 /// </summary>
 public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 {

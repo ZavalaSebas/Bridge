@@ -1,12 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
+using Bridge.Resources;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
-using MessageBox = System.Windows.MessageBox;
-using MessageBoxButton = System.Windows.MessageBoxButton;
-
 namespace Bridge
 {
     public partial class GameEditWindow : FluentWindow
@@ -30,7 +28,7 @@ namespace Bridge
         {
             if (!_viewModel.Save())
             {
-                MessageBox.Show(this, "Name is required.", "Save", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageDialogWindow.ShowWarning(Strings.NameRequired, Strings.Save, this);
                 return;
             }
 
@@ -60,7 +58,7 @@ namespace Bridge
 
                 if (!created)
                 {
-                    MessageBox.Show(this, $"Could not create {kind.ToLowerInvariant()}.", "Add reference", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageDialogWindow.ShowWarning(Strings.Format(nameof(Strings.CouldNotCreateReferenceFormat), kind.ToLowerInvariant()), Strings.AddReferenceTitle, this);
                 }
             }
         }

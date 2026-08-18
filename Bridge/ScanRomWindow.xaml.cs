@@ -1,5 +1,6 @@
 using System.Windows;
 using Microsoft.Win32;
+using Bridge.Resources;
 using Wpf.Ui.Controls;
 
 namespace Bridge;
@@ -27,7 +28,7 @@ public partial class ScanRomWindow : FluentWindow
     {
         if (string.IsNullOrWhiteSpace(FolderBox.Text))
         {
-            System.Windows.MessageBox.Show(this, "Select a folder to scan.", "Scan ROMs", System.Windows.MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageDialogWindow.ShowWarning(Strings.SelectFolderToScan, Strings.ScanRoms, this);
             return;
         }
 
