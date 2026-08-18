@@ -85,18 +85,33 @@ public static class RemoteImageCache
     /// completes when every decode has finished (failed URLs included). The
     /// caller (startup) awaits this so the first paint already has the artwork.
     /// </summary>
-    public static async Task PreloadAndWaitAsync(IEnumerable<string> urls)
+    public static async Task PreloadAndWaitAsync(
+        IEnumerable<string> urls,
+        IProgress<(int Completed, int Total)>? progress = null)
     {
-        var tasks = new List<Task>();
-        foreach (var url in urls)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                continue;
-            }
+        var distinct = urls
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-            tasks.Add(BeginLoad(url));
-        }
+        var total = distinct.Count;
+        progress?.Report((0, total));
+        if (total == 0)
+            return;
+
+        var completed = 0;
+        var tasks = distinct.Select(async url =>
+        {
+            try
+            {
+                await BeginLoad(url).ConfigureAwait(false);
+            }
+            finally
+            {
+                var done = Interlocked.Increment(ref completed);
+                progress?.Report((done, total));
+            }
+        });
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }

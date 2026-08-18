@@ -133,6 +133,7 @@ public static class Strings
     public static string GameInfo => Get(nameof(GameInfo));
     public static string CoverZoom => Get(nameof(CoverZoom));
     public static string EmulationProgress => Get(nameof(EmulationProgress));
+    public static string StatusProgress => Get(nameof(StatusProgress));
     public static string StatusMessage => Get(nameof(StatusMessage));
     public static string GamesList => Get(nameof(GamesList));
     public static string CoversGrid => Get(nameof(CoversGrid));

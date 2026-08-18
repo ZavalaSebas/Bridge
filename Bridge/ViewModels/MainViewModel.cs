@@ -71,20 +71,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    // RetroArch install progress: shown in the status bar while a managed
-    // frontend/core downloads and extracts, so a long first install reads as
-    // progress instead of a frozen window.
+    // RetroArch install in progress — drives the Play button label/symbol only;
+    // the status-bar ProgressBar uses ShowStatusProgress/StatusProgress instead.
     [ObservableProperty]
     private bool _isEmulationBusy;
-
-    // The install bar is indeterminate while a phase can't report a percentage
-    // (resolving the release, extracting the archive); determinate during the
-    // download, which knows its byte count.
-    [ObservableProperty]
-    private bool _isEmulationIndeterminate;
-
-    [ObservableProperty]
-    private double _emulationProgress;
 
     // True when the selected managed ROM has no installed frontend/core yet, so
     // the Play button reads "Download" and installs on first click instead of
@@ -694,8 +684,28 @@ public partial class MainViewModel : ObservableObject
             if (_artworkPreloadTask is { IsCompleted: false } running)
                 return running;
 
-            _artworkPreloadTask = RemoteImageCache.PreloadAndWaitAsync(CollectStartupPreloadUrls());
+            _artworkPreloadTask = PreloadArtworkCoreAsync();
             return _artworkPreloadTask;
+        }
+    }
+
+    private async Task PreloadArtworkCoreAsync()
+    {
+        var urls = CollectStartupPreloadUrls().ToList();
+        if (urls.Count == 0)
+            return;
+
+        BeginStatusProgress(indeterminate: urls.Count <= 1);
+        ReportBatchProgress(0, urls.Count);
+        try
+        {
+            await RemoteImageCache.PreloadAndWaitAsync(
+                urls,
+                new Progress<(int Completed, int Total)>(p => ReportBatchProgress(p.Completed, p.Total)));
+        }
+        finally
+        {
+            EndStatusProgress();
         }
     }
 

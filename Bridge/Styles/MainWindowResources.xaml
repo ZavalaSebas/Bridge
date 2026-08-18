@@ -124,7 +124,19 @@
          GameContextMenu_Opened, so the command bindings resolve like the
          More menu's. -->
     <ContextMenu x:Key="Bridge.GameContextMenu">
-        <MenuItem Header="{x:Static res:Strings.Play}" Command="{Binding PlayGameCommand}">
+        <MenuItem>
+            <MenuItem.Style>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Header" Value="{x:Static res:Strings.Play}" />
+                    <Setter Property="Command" Value="{Binding PlayGameCommand}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGame.IsRunning}" Value="True">
+                            <Setter Property="Header" Value="{x:Static res:Strings.Stop}" />
+                            <Setter Property="Command" Value="{Binding StopGameCommand}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </MenuItem.Style>
             <MenuItem.Icon>
                 <ui:SymbolIcon Symbol="Play24"
                                FontSize="16"
@@ -163,7 +175,10 @@
                                Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
             </MenuItem.Icon>
             <MenuItem.ItemContainerStyle>
-                <Style TargetType="MenuItem" BasedOn="{StaticResource Bridge.LinkMenuItemStyle}" />
+                <Style TargetType="MenuItem" BasedOn="{StaticResource Bridge.LinkMenuItemStyle}">
+                    <Setter Property="Command" Value="{Binding OpenLinkCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                    <Setter Property="CommandParameter" Value="{Binding}" />
+                </Style>
             </MenuItem.ItemContainerStyle>
         </MenuItem>
         <MenuItem Header="{x:Static res:Strings.OpenGameLocation}" Command="{Binding OpenGameLocationCommand}">

@@ -25,31 +25,39 @@ public partial class MainViewModel
 
         StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGameFormat), game.Name);
 
-        var result = await _metadataSync.SearchForManualDownloadAsync(
-            gameName,
-            romImport,
-            game.SourceId != GameSource.ManualId ? game.ExternalId : null);
-
-        if (result is null)
+        BeginStatusProgress(indeterminate: true);
+        try
         {
-            StatusMessage = IsNetworkAvailable()
-                ? Strings.Format(nameof(Strings.NoMetadataFoundFormat), gameName)
-                : Strings.NoInternetMetadataDeferred;
-            return;
+            var result = await _metadataSync.SearchForManualDownloadAsync(
+                gameName,
+                romImport,
+                game.SourceId != GameSource.ManualId ? game.ExternalId : null);
+
+            if (result is null)
+            {
+                StatusMessage = IsNetworkAvailable()
+                    ? Strings.Format(nameof(Strings.NoMetadataFoundFormat), gameName)
+                    : Strings.NoInternetMetadataDeferred;
+                return;
+            }
+
+            var (metadata, providerName) = result.Value;
+
+            if (providerName == _steamMetadataProvider.Name)
+                await _metadataSync.EnrichSteamLinksFromIgdbAsync(gameName, metadata);
+
+            ApplyMetadata(game, metadata);
+            ApplyMetadataReferences(game, metadata);
+            ApplySteamLocalArtwork(game);
+
+            _gameRepository.Update(game);
+            RefreshListDisplay(game);
+            StatusMessage = Strings.Format(nameof(Strings.MetadataAppliedToGameFormat), game.Name, providerName);
         }
-
-        var (metadata, providerName) = result.Value;
-
-        if (providerName == _steamMetadataProvider.Name)
-            await _metadataSync.EnrichSteamLinksFromIgdbAsync(gameName, metadata);
-
-        ApplyMetadata(game, metadata);
-        ApplyMetadataReferences(game, metadata);
-        ApplySteamLocalArtwork(game);
-
-        _gameRepository.Update(game);
-        RefreshListDisplay(game);
-        StatusMessage = Strings.Format(nameof(Strings.MetadataAppliedToGameFormat), game.Name, providerName);
+        finally
+        {
+            EndStatusProgress();
+        }
     }
 
     // Downloads metadata for games just added from "Scan Automatically". Unlike
@@ -82,57 +90,70 @@ public partial class MainViewModel
 
         StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
 
-        using var throttle = new SemaphoreSlim(4);
-        var results = await Task.WhenAll(candidates.Select(game =>
-            Task.Run(async () =>
-            {
-                await throttle.WaitAsync();
-                try
-                {
-                    var searchName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
-                    var found = await _metadataSync.SearchForAddedGameAsync(searchName, romImport);
-                    return found is null
-                        ? (game, metadata: (GameMetadata?)null, provider: (string?)null)
-                        : (game, metadata: found.Value.Metadata, provider: found.Value.ProviderName);
-                }
-                finally
-                {
-                    throttle.Release();
-                }
-            })));
-
-        int applied = 0;
-        foreach (var (game, metadata, providerName) in results)
+        var completed = 0;
+        var total = candidates.Count;
+        BeginStatusProgress(indeterminate: total <= 1);
+        ReportBatchProgress(0, total);
+        try
         {
-            if (metadata is null || providerName is null)
-                continue;
+            using var throttle = new SemaphoreSlim(4);
+            var results = await Task.WhenAll(candidates.Select(game =>
+                Task.Run(async () =>
+                {
+                    await throttle.WaitAsync();
+                    try
+                    {
+                        var searchName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
+                        var found = await _metadataSync.SearchForAddedGameAsync(searchName, romImport);
+                        return found is null
+                            ? (game, metadata: (GameMetadata?)null, provider: (string?)null)
+                            : (game, metadata: found.Value.Metadata, provider: found.Value.ProviderName);
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                        var done = Interlocked.Increment(ref completed);
+                        RunOnUiThread(() => ReportBatchProgress(done, total));
+                    }
+                })));
 
-            try
+            int applied = 0;
+            foreach (var (game, metadata, providerName) in results)
             {
-                var live = TryGetLiveGame(game);
-                if (live is null)
+                if (metadata is null || providerName is null)
                     continue;
 
-                if (providerName == _steamMetadataProvider.Name)
-                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                try
+                {
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
+                        continue;
 
-                ApplyMetadata(live, metadata);
-                ApplyMetadataReferences(live, metadata);
-                ApplySteamLocalArtwork(live);
+                    if (providerName == _steamMetadataProvider.Name)
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                _gameRepository.Update(live);
-                RefreshListDisplay(live);
-                applied++;
+                    ApplyMetadata(live, metadata);
+                    ApplyMetadataReferences(live, metadata);
+                    ApplySteamLocalArtwork(live);
+
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                }
             }
-            catch (Exception ex)
-            {
-                App.LogException(ex);
-            }
+
+            StatusMessage = applied > 0
+                ? Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count)
+                : Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count);
         }
-
-        StatusMessage = applied > 0
-            ? Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count)
-            : Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count);
+        finally
+        {
+            EndStatusProgress();
+        }
     }
 
     private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
@@ -392,92 +413,121 @@ public partial class MainViewModel
             .ToList();
 
         int applied = 0;
-        if (needMetadata.Count > 0)
+        var totalWork = needMetadata.Count + needLinksOnly.Count;
+        var completed = 0;
+        if (totalWork > 0)
         {
-            StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), needMetadata.Count);
+            BeginStatusProgress(indeterminate: totalWork <= 1);
+            ReportBatchProgress(0, totalWork);
+        }
 
-            // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
-            // requests are the slow part, and firing all of them at once would trip
-            // Steam's store throttling (429s → "partial" metadata). Task.Run puts
-            // the work on pool threads so the HTTP continuations don't come back to
-            // the UI thread; only reads (game.ExternalId) happen off the UI thread
-            // here — entity mutation and the DbContext saves stay on the UI thread
-            // in the loop below.
-            using var throttle = new SemaphoreSlim(4);
-            var results = await Task.WhenAll(needMetadata.Select(game =>
-                Task.Run(async () =>
+        try
+        {
+            if (needMetadata.Count > 0)
+            {
+                StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), needMetadata.Count);
+
+                // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
+                // requests are the slow part, and firing all of them at once would trip
+                // Steam's store throttling (429s → "partial" metadata). Task.Run puts
+                // the work on pool threads so the HTTP continuations don't come back to
+                // the UI thread; only reads (game.ExternalId) happen off the UI thread
+                // here — entity mutation and the DbContext saves stay on the UI thread
+                // in the loop below.
+                using var throttle = new SemaphoreSlim(4);
+                var results = await Task.WhenAll(needMetadata.Select(game =>
+                    Task.Run(async () =>
+                    {
+                        await throttle.WaitAsync();
+                        try
+                        {
+                            return (game, metadata: await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId));
+                        }
+                        finally
+                        {
+                            throttle.Release();
+                            if (totalWork > 0)
+                            {
+                                var done = Interlocked.Increment(ref completed);
+                                RunOnUiThread(() => ReportBatchProgress(done, totalWork));
+                            }
+                        }
+                    })));
+
+                foreach (var (game, metadata) in results)
                 {
-                    await throttle.WaitAsync();
+                    if (metadata is null)
+                        continue;
+
                     try
                     {
-                        return (game, metadata: await _steamMetadataProvider.GetByAppIdAsync(game.ExternalId));
+                        // This sync runs after the window is interactive — the game may
+                        // have been deleted (or had its actions edited) while the awaits
+                        // above were in flight. Only mutate/save what's still live.
+                        var live = TryGetLiveGame(game);
+                        if (live is null)
+                            continue;
+
+                        // Steam provides store/community links; our IGDB Worker adds the
+                        // social links (YouTube, Reddit, ...) so the automatic sync is
+                        // complete, not just the manual one.
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+
+                        ApplyMetadata(live, metadata, overwrite: false);
+                        ApplyMetadataReferences(live, metadata);
+                        ApplySteamLocalArtwork(live);
+
+                        _gameRepository.Update(live);
+                        RefreshListDisplay(live);
+                        applied++;
                     }
-                    finally
+                    catch (Exception ex)
                     {
-                        throttle.Release();
+                        // One bad game shouldn't abort the whole sync — log and continue.
+                        App.LogException(ex);
                     }
-                })));
+                }
+            }
 
-            foreach (var (game, metadata) in results)
+            // Games that already have their description but never got the IGDB social
+            // links (e.g. the Worker was unreachable on a previous run). Add just the
+            // links — a light IGDB call, no Steam metadata re-download.
+            foreach (var game in needLinksOnly)
             {
-                if (metadata is null)
-                    continue;
-
                 try
                 {
-                    // This sync runs after the window is interactive — the game may
-                    // have been deleted (or had its actions edited) while the awaits
-                    // above were in flight. Only mutate/save what's still live.
                     var live = TryGetLiveGame(game);
                     if (live is null)
                         continue;
 
-                    // Steam provides store/community links; our IGDB Worker adds the
-                    // social links (YouTube, Reddit, ...) so the automatic sync is
-                    // complete, not just the manual one.
+                    var metadata = new GameMetadata();
                     await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                    if (metadata.Links.Count == 0)
+                        continue;
 
                     ApplyMetadata(live, metadata, overwrite: false);
-                    ApplyMetadataReferences(live, metadata);
-                    ApplySteamLocalArtwork(live);
-
                     _gameRepository.Update(live);
                     RefreshListDisplay(live);
                     applied++;
                 }
                 catch (Exception ex)
                 {
-                    // One bad game shouldn't abort the whole sync — log and continue.
                     App.LogException(ex);
+                }
+                finally
+                {
+                    if (totalWork > 0)
+                    {
+                        completed++;
+                        ReportBatchProgress(completed, totalWork);
+                    }
                 }
             }
         }
-
-        // Games that already have their description but never got the IGDB social
-        // links (e.g. the Worker was unreachable on a previous run). Add just the
-        // links — a light IGDB call, no Steam metadata re-download.
-        foreach (var game in needLinksOnly)
+        finally
         {
-            try
-            {
-                var live = TryGetLiveGame(game);
-                if (live is null)
-                    continue;
-
-                var metadata = new GameMetadata();
-                await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
-                if (metadata.Links.Count == 0)
-                    continue;
-
-                ApplyMetadata(live, metadata, overwrite: false);
-                _gameRepository.Update(live);
-                RefreshListDisplay(live);
-                applied++;
-            }
-            catch (Exception ex)
-            {
-                App.LogException(ex);
-            }
+            if (totalWork > 0)
+                EndStatusProgress();
         }
 
         StatusMessage = applied > 0
@@ -511,53 +561,66 @@ public partial class MainViewModel
 
         StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
 
-        using var throttle = new SemaphoreSlim(4);
-        var results = await Task.WhenAll(candidates.Select(game =>
-            Task.Run(async () =>
-            {
-                await throttle.WaitAsync();
-                try
-                {
-                    var found = await _metadataSync.SearchByNameChainAsync(game.Name);
-                    return found is null
-                        ? (game, metadata: (GameMetadata?)null)
-                        : (game, metadata: found.Value.Metadata);
-                }
-                finally
-                {
-                    throttle.Release();
-                }
-            })));
-
-        int applied = 0;
-        foreach (var (game, metadata) in results)
+        var completed = 0;
+        var total = candidates.Count;
+        BeginStatusProgress(indeterminate: total <= 1);
+        ReportBatchProgress(0, total);
+        try
         {
-            if (metadata is null)
-                continue;
+            using var throttle = new SemaphoreSlim(4);
+            var results = await Task.WhenAll(candidates.Select(game =>
+                Task.Run(async () =>
+                {
+                    await throttle.WaitAsync();
+                    try
+                    {
+                        var found = await _metadataSync.SearchByNameChainAsync(game.Name);
+                        return found is null
+                            ? (game, metadata: (GameMetadata?)null)
+                            : (game, metadata: found.Value.Metadata);
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                        var done = Interlocked.Increment(ref completed);
+                        RunOnUiThread(() => ReportBatchProgress(done, total));
+                    }
+                })));
 
-            try
+            int applied = 0;
+            foreach (var (game, metadata) in results)
             {
-                var live = TryGetLiveGame(game);
-                if (live is null)
+                if (metadata is null)
                     continue;
 
-                ApplyMetadata(live, metadata, overwrite: false);
-                ApplyMetadataReferences(live, metadata);
+                try
+                {
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
+                        continue;
 
-                _gameRepository.Update(live);
-                RefreshListDisplay(live);
-                applied++;
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                }
             }
-            catch (Exception ex)
-            {
-                App.LogException(ex);
-            }
+
+            StatusMessage = applied > 0
+                ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count)
+                : !IsNetworkAvailable()
+                    ? Strings.MetadataSyncNoInternet
+                    : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), candidates.Count);
         }
-
-        StatusMessage = applied > 0
-            ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count)
-            : !IsNetworkAvailable()
-                ? Strings.MetadataSyncNoInternet
-                : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), candidates.Count);
+        finally
+        {
+            EndStatusProgress();
+        }
     }
 }

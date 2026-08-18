@@ -106,6 +106,16 @@ public partial class FadeImage : UserControl
                 ApplyShortFrameFade();
             }
         };
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_loadCallback is { } callback && currentUrl is { } url)
+        {
+            RemoteImageCache.Unsubscribe(url, callback);
+            _loadCallback = null;
+        }
     }
 
     private static void OnSourceUrlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

@@ -135,11 +135,16 @@ public partial class MainViewModel
         {
             SetPendingUpdate(null);
             StatusMessage = Strings.DownloadingUpdate;
+            BeginStatusProgress(indeterminate: true);
             await _appUpdateService.ApplyUpdateAsync(
                 update,
                 new Progress<AppUpdateProgress>(p =>
                 {
                     StatusMessage = p.Message;
+                    if (p.Percent is { } percent)
+                        ReportStatusProgress(percent, indeterminate: false);
+                    else
+                        ReportStatusProgress(StatusProgress, indeterminate: true);
                 }));
         }
         catch (Exception ex)
@@ -150,6 +155,10 @@ public partial class MainViewModel
                 Strings.Format(nameof(Strings.UpdateFailedMessageFormat), ex.Message),
                 Strings.UpdateFailedTitle,
                 SymbolRegular.Warning24);
+        }
+        finally
+        {
+            EndStatusProgress();
         }
     }
 }

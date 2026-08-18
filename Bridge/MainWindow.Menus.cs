@@ -15,18 +15,6 @@ namespace Bridge;
 
 public partial class MainWindow
 {
-    // Event handlers in Styles/MainWindowResources.xaml cannot be declared
-    // inline (MC6024: ResourceDictionary requires x:Class). Wire them here so
-    // they still live on MainWindow.
-    private void WireMainWindowResourceHandlers()
-    {
-        if (FindResource("Bridge.GameContextMenu") is ContextMenu contextMenu)
-            contextMenu.Opened += GameContextMenu_Opened;
-
-        if (FindResource("Bridge.LinkMenuItemStyle") is Style linkStyle)
-            linkStyle.Setters.Add(new EventSetter(System.Windows.Controls.MenuItem.ClickEvent, new RoutedEventHandler(OpenLinkMenuItem_Click)));
-    }
-
     private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
@@ -179,31 +167,6 @@ public partial class MainWindow
         menu.DataContext = DataContext;
     }
 
-    // Opens a game link from a More-menu "Links" submenu item. The submenu
-    // items are generated from SelectedGameLinks, so the item's DataContext
-    // is the Link itself.
-    private void OpenLinkMenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainViewModel vm
-            && sender is MenuItem { DataContext: Link link })
-        {
-            vm.OpenLinkCommand.Execute(link);
-        }
-    }
-
-    // Applies a completion status from the More-menu submenu. The items are
-    // generated from CompletionStatuses, so the DataContext is the status
-    // name string.
-    private void CompletionStatusMenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not MenuItem { DataContext: string status })
-            return;
-
-        var vm = Window.GetWindow((DependencyObject)sender)?.DataContext as MainViewModel
-            ?? DataContext as MainViewModel;
-        vm?.SetCompletionStatusCommand.Execute(status);
-    }
-
     // View > Sidebar: show/hide the sidebar (and its divider). The state
     // lives in the VM so the menus' icons (Eye / EyeOff) reflect it.
     private void ToggleSidebar_Click(object sender, RoutedEventArgs e)
@@ -293,7 +256,7 @@ public partial class MainWindow
             var steamExe = Path.Combine(steamPath, "steam.exe");
             if (File.Exists(steamExe))
             {
-                menu.Items.Add(CreateClientMenuItem("Steam", steamExe));
+                menu.Items.Add(CreateClientMenuItem(Strings.Steam, steamExe));
             }
         }
 
@@ -303,7 +266,7 @@ public partial class MainWindow
             var epicExe = EpicPaths.GetExecutablePath(epicPath);
             if (File.Exists(epicExe))
             {
-                menu.Items.Add(CreateClientMenuItem("Epic", epicExe));
+                menu.Items.Add(CreateClientMenuItem(Strings.Epic, epicExe));
             }
         }
     }
