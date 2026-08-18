@@ -17,7 +17,7 @@ namespace Bridge
             _viewModel = viewModel;
             DataContext = viewModel;
             BackgroundArt.SourceUrl = backgroundImage;
-            Title = viewModel.IsNewGame ? "New Game" : "Edit Game";
+            Title = viewModel.IsNewGame ? Strings.NewGame : Strings.EditGame;
             WindowTitleText.Text = Title;
             WindowIcon.Symbol = viewModel.IsNewGame
                 ? Wpf.Ui.Controls.SymbolRegular.Add24

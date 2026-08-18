@@ -266,4 +266,78 @@
   <data name="LabelCriticScore" xml:space="preserve"><value>Critic Score:</value></data>
   <data name="LabelCommunityScore" xml:space="preserve"><value>Community Score:</value></data>
   <data name="LabelLinks" xml:space="preserve"><value>Links:</value></data>
+  <data name="Platforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="EditGame" xml:space="preserve"><value>Edit Game</value></data>
+  <data name="NewGame" xml:space="preserve"><value>New Game</value></data>
+  <data name="SteamManagedMetadataNotice" xml:space="preserve"><value>This Steam game's metadata is managed by Bridge and stays in sync with Steam. Only the artwork (icon, cover, background) can be customized here.</value></data>
+  <data name="General" xml:space="preserve"><value>General</value></data>
+  <data name="Media" xml:space="preserve"><value>Media</value></data>
+  <data name="SortingName" xml:space="preserve"><value>Sorting Name</value></data>
+  <data name="SortingNameTooltip" xml:space="preserve"><value>Name used for sorting (e.g. 'Witcher 3' for 'The Witcher 3: Wild Hunt'). Leave empty to sort by Name.</value></data>
+  <data name="ReleaseDateTooltip" xml:space="preserve"><value>YYYY, YYYY-MM or YYYY-MM-DD</value></data>
+  <data name="AddNewGenre" xml:space="preserve"><value>Add new genre</value></data>
+  <data name="AddNewDeveloper" xml:space="preserve"><value>Add new developer</value></data>
+  <data name="AddNewPublisher" xml:space="preserve"><value>Add new publisher</value></data>
+  <data name="AddNewPlatform" xml:space="preserve"><value>Add new platform</value></data>
+  <data name="IconLabel" xml:space="preserve"><value>Icon</value></data>
+  <data name="CoverImageLabel" xml:space="preserve"><value>Cover Image</value></data>
+  <data name="BackgroundImageLabel" xml:space="preserve"><value>Background Image</value></data>
+  <data name="Browse" xml:space="preserve"><value>Browse...</value></data>
+  <data name="SearchWeb" xml:space="preserve"><value>Search web...</value></data>
+  <data name="ScanRomsTitle" xml:space="preserve"><value>Scan ROMs</value></data>
+  <data name="FolderToScanForRoms" xml:space="preserve"><value>Folder to scan for ROMs</value></data>
+  <data name="ScanRomsHelp" xml:space="preserve"><value>Bridge scans this folder and its subfolders, identifies supported systems from each ROM extension, and downloads metadata automatically. RetroArch is installed only when you first play a ROM.</value></data>
+  <data name="Scan" xml:space="preserve"><value>Scan</value></data>
+  <data name="ScanAutomaticallyTitle" xml:space="preserve"><value>Scan Automatically</value></data>
+  <data name="ScanFolder" xml:space="preserve"><value>Scan Folder...</value></data>
+  <data name="DetectInstalled" xml:space="preserve"><value>Detect Installed</value></data>
+  <data name="SelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="SelectNone" xml:space="preserve"><value>Select None</value></data>
+  <data name="SelectAllTooltip" xml:space="preserve"><value>Check every game in the list</value></data>
+  <data name="SelectNoneTooltip" xml:space="preserve"><value>Uncheck every game in the list</value></data>
+  <data name="HideAlreadyImported" xml:space="preserve"><value>Hide already imported</value></data>
+  <data name="AddGames" xml:space="preserve"><value>Add Games</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Screenshots</value></data>
+  <data name="AboutBridgeTitle" xml:space="preserve"><value>About Bridge</value></data>
+  <data name="AboutDescription" xml:space="preserve"><value>Bridge unifies your games — from external libraries, manual entries and emulated ROMs — into one fast, local, self-contained catalog. Incremental import, local metadata, fast virtualized views and emulation support, without a plugin runtime or a separate fullscreen frontend. Playnite is an inspiration, not a specification: Bridge's structure, architecture and implementation are its own.</value></data>
+  <data name="Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Environment" xml:space="preserve"><value>Environment</value></data>
+  <data name="Updates" xml:space="preserve"><value>Updates</value></data>
+  <data name="ReceiveBetaBuilds" xml:space="preserve"><value>Receive beta builds</value></data>
+  <data name="BetaBuildsDescription" xml:space="preserve"><value>Install prereleases published before their stable release.</value></data>
+  <data name="AboutDisclaimer" xml:space="preserve"><value>Made with care by ZavalaSebas. This software is provided "as is", without warranty of any kind. Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG or any platform or emulator project.</value></data>
+  <data name="BridgeAppName" xml:space="preserve"><value>Bridge</value></data>
+  <data name="RemoveFromFavorites" xml:space="preserve"><value>Remove from Favorites</value></data>
+  <data name="AddToFavorites" xml:space="preserve"><value>Add to Favorites</value></data>
+  <data name="ShowGame" xml:space="preserve"><value>Show Game</value></data>
+  <data name="HideGame" xml:space="preserve"><value>Hide Game</value></data>
+  <data name="RemoveGameTitle" xml:space="preserve"><value>Remove game</value></data>
+  <data name="RemoveGameConfirmFormat" xml:space="preserve"><value>Remove "{0}" from your Bridge library? This cannot be undone.</value></data>
+  <data name="SettingsIntegrations" xml:space="preserve"><value>Integrations</value></data>
+  <data name="SettingsAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="SettingsUpdatesSection" xml:space="preserve"><value>Updates &amp; About</value></data>
+  <data name="SettingsEmulationCardDescription" xml:space="preserve"><value>Managed RetroArch install, core updates, and supported systems.</value></data>
+  <data name="SettingsIgdbCardDescription" xml:space="preserve"><value>IGDB credentials and metadata provider configuration.</value></data>
+  <data name="SettingsThemeCardDescription" xml:space="preserve"><value>Accent color presets and custom theme color.</value></data>
+  <data name="SettingsAboutCardDescription" xml:space="preserve"><value>Version, support links, and project information.</value></data>
+  <data name="OpenSettings" xml:space="preserve"><value>Open</value></data>
+  <data name="UpdateAvailableTitle" xml:space="preserve"><value>Update available</value></data>
+  <data name="UpdateAvailableMessageFormat" xml:space="preserve"><value>Version {0} is available (you have {1}).&#xA;&#xA;Download and restart now?</value></data>
+  <data name="UpdateConfirm" xml:space="preserve"><value>Update</value></data>
+  <data name="NotNow" xml:space="preserve"><value>Not now</value></data>
+  <data name="UpdateFailedTitle" xml:space="preserve"><value>Update failed</value></data>
+  <data name="UpdateFailedMessageFormat" xml:space="preserve"><value>Could not install the update: {0}</value></data>
+  <data name="PendingUpdateTooltipFormat" xml:space="preserve"><value>Version {0} is available — click to download and restart</value></data>
+  <data name="NoInternetCheckUpdates" xml:space="preserve"><value>No internet connection. Check for updates again when you're back online.</value></data>
+  <data name="LatestVersionMessageFormat" xml:space="preserve"><value>Bridge {0} is the latest version.</value></data>
+  <data name="UpdatesNotApplicableMessage" xml:space="preserve"><value>Updates apply only to the published Bridge.exe.</value></data>
+  <data name="CouldNotCheckUpdatesMessage" xml:space="preserve"><value>Could not check for updates.</value></data>
+  <data name="CouldNotCheckUpdatesFormat" xml:space="preserve"><value>Could not check for updates: {0}</value></data>
+  <data name="ClickToExpand" xml:space="preserve"><value>Click to expand</value></data>
+  <data name="PreviousScreenshotTooltip" xml:space="preserve"><value>Previous (←)</value></data>
+  <data name="NextScreenshotTooltip" xml:space="preserve"><value>Next (→)</value></data>
+  <data name="ViewScreenshotTooltip" xml:space="preserve"><value>View screenshot</value></data>
+  <data name="CloseEscTooltip" xml:space="preserve"><value>Close (Esc)</value></data>
+  <data name="RuntimeFormat" xml:space="preserve"><value>.NET {0}</value></data>
+  <data name="OsFormat" xml:space="preserve"><value>{0} ({1}-bit)</value></data>
 </root>

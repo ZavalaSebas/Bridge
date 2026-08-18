@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using Bridge.Converters;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
+using Bridge.Emulation;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
@@ -175,10 +176,15 @@ namespace Bridge
 
             services.AddSingleton(sp => new WebImageSearchService(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton(sp => new AppUpdateService(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(new EmulationPaths(
+                Config.EmulatorInstallPath,
+                Config.EmulatorDownloadPath,
+                Config.RetroArchVersionPath));
             services.AddSingleton(sp => new RetroArchService(
                 sp.GetRequiredService<IRepository<Emulator>>(),
                 sp.GetRequiredService<IRepository<Platform>>(),
-                sp.GetRequiredService<DownloadHttpClient>().Client));
+                sp.GetRequiredService<DownloadHttpClient>().Client,
+                sp.GetRequiredService<EmulationPaths>()));
 
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();

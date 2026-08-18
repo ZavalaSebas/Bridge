@@ -22,6 +22,8 @@ public partial class MainWindow
 
     // Edit game: opens the dedicated edit window (Playnite-style). No more
     // inline editing — the details panel fields are read-only.
+    internal void HandleEditGameClick(object sender, RoutedEventArgs e) => EditGame_Click(sender, e);
+
     private void EditGame_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel mainVm || mainVm.SelectedGame is not { } game)
