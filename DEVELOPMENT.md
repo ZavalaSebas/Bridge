@@ -193,11 +193,11 @@ The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver li
 
 The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), laid out as 3 rows:
 
-1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (List/Covers/Details, segmented control) + a Random-game placeholder button.
+1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values remain `ViewMode.List/Grid/Table` for persisted settings) + a Random-game placeholder button.
 
 2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail, **Library**/**Statistics** buttons via the `NavigationSection` enum in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Details views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns.
 
-3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it.
+3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error).
 
 View modes switch via 3 toggle buttons in the Top Panel:
 - **List** (`ViewMode.List`): `ListBox` with 28×28 icons + white game names (grouped via `GamesView`). Double-click launches the game.
@@ -1260,7 +1260,17 @@ WPFUI (the project's UI framework) provides visible focus indicators by default 
 
 ### Keyboard Shortcuts
 
-Define application-level shortcuts in `Window.InputBindings`:
+Implemented in `MainWindow.xaml.cs` (`PreviewKeyDown`):
+
+| Shortcut | Action |
+|----------|--------|
+| **Ctrl+F** | Focus the search box |
+| **Enter** | Play the selected game (when search is not focused) |
+| **← / → / Esc** | Screenshot gallery navigation (Details/Covers gallery) |
+
+**Remove game** asks for confirmation via `MessageDialogWindow` before deleting from the library.
+
+Define additional application-level shortcuts in `Window.InputBindings` when needed:
 
 ```xml
 <Window.InputBindings>
