@@ -1,8 +1,11 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Bridge.Controls;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Services;
@@ -17,6 +20,8 @@ public partial class LibraryDetailView : UserControl
 
     private readonly DispatcherTimer _favoriteHideTimer;
     private bool _suppressTableResize;
+    private bool _suppressTableSelectionSync;
+    private MainViewModel? _subscribedViewModel;
 
     public LibraryDetailView()
     {
@@ -29,6 +34,87 @@ public partial class LibraryDetailView : UserControl
             if (CoverFavoriteButton.IsChecked != true && CoverHost.IsMouseOver is false)
                 AnimateFavoriteStar(inView: false);
         };
+
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            if (FindResource("Bridge.GameContextMenu") is ContextMenu contextMenu)
+                contextMenu.Opened += mainWindow.HandleGameContextMenuOpened;
+
+            if (FindResource("Bridge.CompletionStatusMenuItemStyle") is Style completionStyle)
+                completionStyle.Setters.Add(new EventSetter(MenuItem.ClickEvent, new RoutedEventHandler(CompletionStatusMenuItem_Click)));
+
+            if (FindResource("VmProxy") is BindingProxy proxy && mainWindow.DataContext is MainViewModel vm)
+            {
+                proxy.Data = vm;
+                SubscribeToViewModel(vm);
+            }
+        }
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        UnsubscribeFromViewModel();
+    }
+
+    private void SubscribeToViewModel(MainViewModel vm)
+    {
+        if (ReferenceEquals(_subscribedViewModel, vm))
+            return;
+
+        UnsubscribeFromViewModel();
+        _subscribedViewModel = vm;
+        vm.PropertyChanged += OnViewModelPropertyChanged;
+        vm.DetailedRows.CollectionChanged += OnDetailedRowsChanged;
+        SyncTableSelection();
+    }
+
+    private void UnsubscribeFromViewModel()
+    {
+        if (_subscribedViewModel is null)
+            return;
+
+        _subscribedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        _subscribedViewModel.DetailedRows.CollectionChanged -= OnDetailedRowsChanged;
+        _subscribedViewModel = null;
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MainViewModel.SelectedGame) or nameof(MainViewModel.ViewMode))
+            SyncTableSelection();
+    }
+
+    private void OnDetailedRowsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        SyncTableSelection();
+
+    private void SyncTableSelection()
+    {
+        if (_suppressTableSelectionSync || ViewModel?.ViewMode != ViewMode.Table)
+            return;
+
+        if (ViewModel.SelectedGame is not { } selected)
+        {
+            if (TableList.SelectedItem is not null)
+                TableList.SelectedItem = null;
+            return;
+        }
+
+        var row = ViewModel.DetailedRows.FirstOrDefault(r => r.Game.Id == selected.Id);
+        if (row is null)
+        {
+            if (TableList.SelectedItem is not null)
+                TableList.SelectedItem = null;
+            return;
+        }
+
+        if (!ReferenceEquals(TableList.SelectedItem, row))
+            TableList.SelectedItem = row;
     }
 
     private MainViewModel? ViewModel => Window.GetWindow(this)?.DataContext as MainViewModel;
@@ -37,6 +123,14 @@ public partial class LibraryDetailView : UserControl
     {
         if (Window.GetWindow(this) is MainWindow mainWindow)
             mainWindow.HandleMenuButtonClick(sender, e);
+    }
+
+    private void CompletionStatusMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { DataContext: string status } || ViewModel is not { } vm)
+            return;
+
+        vm.SetCompletionStatusCommand.Execute(status);
     }
 
     private void EditGame_Click(object sender, RoutedEventArgs e)
@@ -52,10 +146,24 @@ public partial class LibraryDetailView : UserControl
 
     private void TableList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ListView { SelectedItem: GameDetailRow row }
-            && ViewModel is { } vm)
+        if (_suppressTableSelectionSync
+            || sender is not ListView { SelectedItem: GameDetailRow row }
+            || ViewModel is not { } vm)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(vm.SelectedGame, row.Game))
+            return;
+
+        _suppressTableSelectionSync = true;
+        try
         {
             vm.SelectedGame = row.Game;
+        }
+        finally
+        {
+            _suppressTableSelectionSync = false;
         }
     }
 

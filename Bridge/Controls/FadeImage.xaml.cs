@@ -81,6 +81,7 @@ public partial class FadeImage : UserControl
 
     private Image? activeImage;
     private string? currentUrl;
+    private Action? _loadCallback;
     private double image1Aspect;
     private double image2Aspect;
 
@@ -112,6 +113,12 @@ public partial class FadeImage : UserControl
 
     private void OnSourceChanged(string? url)
     {
+        if (_loadCallback is { } oldCallback && currentUrl is { } oldUrl)
+        {
+            RemoteImageCache.Unsubscribe(oldUrl, oldCallback);
+            _loadCallback = null;
+        }
+
         if (string.IsNullOrWhiteSpace(url))
         {
             currentUrl = null;
@@ -132,13 +139,15 @@ public partial class FadeImage : UserControl
             return;
         }
 
-        RemoteImageCache.Subscribe(url, () =>
+        Action callback = () =>
         {
             if (currentUrl == url && RemoteImageCache.Get(url) is { } image)
             {
                 ShowImage(image);
             }
-        });
+        };
+        _loadCallback = callback;
+        RemoteImageCache.Subscribe(url, callback);
     }
 
     // Smooth crossfade between the two Image frames. Each image keeps its own

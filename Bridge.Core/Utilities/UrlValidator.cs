@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Sockets;
+
 namespace Bridge.Core.Utilities;
 
 /// <summary>
@@ -53,25 +56,57 @@ public static class UrlValidator
         if (uri.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (!System.Net.IPAddress.TryParse(uri.Host, out var address))
-            return false;
+        if (IPAddress.TryParse(uri.Host, out var address))
+            return IsBlockedIpAddress(address);
 
-        if (System.Net.IPAddress.IsLoopback(address))
+        return HostResolvesToBlockedAddress(uri.Host);
+    }
+
+    private static bool HostResolvesToBlockedAddress(string host)
+    {
+        try
+        {
+            foreach (var address in Dns.GetHostAddresses(host))
+            {
+                if (IsBlockedIpAddress(address))
+                    return true;
+            }
+        }
+        catch
+        {
+            // Unknown/unresolvable hostnames are rejected — artwork and links
+            // must use a reachable public host.
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsBlockedIpAddress(IPAddress address)
+    {
+        if (IPAddress.IsLoopback(address))
             return true;
 
-        var bytes = address.GetAddressBytes();
-        if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+        if (address.AddressFamily == AddressFamily.InterNetworkV6)
         {
-            // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16
-            if (bytes[0] == 10)
+            if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal)
                 return true;
-            if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-                return true;
-            if (bytes[0] == 192 && bytes[1] == 168)
-                return true;
-            if (bytes[0] == 169 && bytes[1] == 254)
-                return true;
+
+            // ::1 already covered by IsLoopback; fc00::/7 unique local.
+            var bytes = address.GetAddressBytes();
+            return bytes[0] == 0xFC || bytes[0] == 0xFD;
         }
+
+        var ipv4 = address.GetAddressBytes();
+        // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16
+        if (ipv4[0] == 10)
+            return true;
+        if (ipv4[0] == 172 && ipv4[1] >= 16 && ipv4[1] <= 31)
+            return true;
+        if (ipv4[0] == 192 && ipv4[1] == 168)
+            return true;
+        if (ipv4[0] == 169 && ipv4[1] == 254)
+            return true;
 
         return false;
     }

@@ -86,11 +86,22 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             _ => throw new NotSupportedException($"Action type {action.Type} isn't supported yet.")
         };
 
+        if (!TryStartTracking(game, action, process))
+        {
+            return;
+        }
+
         game.IsRunning = true;
         game.LastActivity = DateTime.Now;
         game.PlayCount++;
         GameStarted?.Invoke(game);
+    }
 
+    // Sets up the polling loop for this launch. Returns false when tracking
+    // cannot start (e.g. PID unavailable and no install directory to fall back
+    // to) so PlayCount/IsRunning are never incremented for a failed launch.
+    private bool TryStartTracking(Game game, GameAction action, Process process)
+    {
         switch (action.TrackingMode)
         {
             case TrackingMode.Directory:
@@ -102,7 +113,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 }
                 TrackDirectoryAsync(game, directoryTracking.Cancellation.Token, action.InitialTrackingDelayMs, action.TrackingFrequencyMs)
                     .FireAndForget("GameLauncher.TrackDirectory");
-                break;
+                return true;
 
             // Process-tree tracking: the launched process AND every descendant it
             // spawns (the launcher-spawns-game-and-exits case — Genshin's
@@ -122,6 +133,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                     }
                     TrackProcessTreeAsync(game, pid, treeTracking.Cancellation.Token, action.TrackingFrequencyMs)
                         .FireAndForget("GameLauncher.TrackProcessTree");
+                    return true;
                 }
                 catch
                 {
@@ -139,15 +151,11 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
                         TrackDirectoryAsync(game, fallbackTracking.Cancellation.Token, action.InitialTrackingDelayMs, action.TrackingFrequencyMs)
                             .FireAndForget("GameLauncher.TrackDirectoryFallback");
+                        return true;
                     }
-                    else
-                    {
-                        game.IsRunning = false;
-                        GameStopped?.Invoke(game, 0);
-                        UnregisterActive(game);
-                    }
+
+                    return false;
                 }
-                break;
 
             default:
                 ActiveTracking exactTracking;
@@ -158,7 +166,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
                 }
                 TrackAsync(game, process, exactTracking.Cancellation.Token, action.TrackingFrequencyMs)
                     .FireAndForget("GameLauncher.TrackExact");
-                break;
+                return true;
         }
     }
 
@@ -799,25 +807,31 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
 
                 if (!string.IsNullOrWhiteSpace(path) &&
                     PathContainment.IsPathUnderDirectory(path, installDirectory))
+                {
+                    return true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    // Path is readable but outside the install folder — do not
+                    // fall back to process name (would match unrelated copies of
+                    // the same exe name elsewhere on the machine).
+                    continue;
+                }
+
+                // Path unreadable (elevated launcher like Genshin's HYP.exe) —
+                // the process name alone is still readable. Match it against the
+                // executables under the install directory.
+                try
+                {
+                    if (executableNames.Contains(process.ProcessName))
                     {
                         return true;
                     }
-                else
+                }
+                catch
                 {
-                    // Path unreadable (elevated launcher like Genshin's HYP.exe) — the
-                    // process name alone is still readable. Match it against the
-                    // executables under the install directory.
-                    try
-                    {
-                        if (executableNames.Contains(process.ProcessName))
-                        {
-                            return true;
-                        }
-                    }
-                    catch
-                    {
-                        // Process exited between enumeration and name read — skip it.
-                    }
+                    // Process exited between enumeration and name read — skip it.
                 }
             }
 

@@ -12,6 +12,8 @@
     <converters:ZoomToSizeConverter x:Key="ZoomToSize" />
     <converters:ScoreToBrushConverter x:Key="ScoreToBrush" />
     <converters:CompletionStatusToColorConverter x:Key="CompletionStatusToColor" />
+    <converters:CompletionStatusIdToTextConverter x:Key="CompletionStatusIdToText" />
+    <converters:EmptyGuidToVisibilityConverter x:Key="EmptyGuidToVis" />
     <converters:EnumMatchConverter x:Key="EnumMatch" />
     <converters:RoundedRectClipConverter x:Key="RoundedClip" />
     <converters:EmptyToVisibilityConverter x:Key="EmptyToVis" />
@@ -20,6 +22,7 @@
     <converters:DescriptionBlocksConverter x:Key="DescriptionBlocks" />
     <converters:StatusMessageKindToBrushConverter x:Key="StatusMessageBrush" />
     <converters:PlayButtonDisplayConverter x:Key="PlayButtonDisplay" />
+    <converters:GamesCountConverter x:Key="GamesCount" />
 
     <DataTemplate x:Key="DescTextTemplate">
         <TextBlock Text="{Binding Text}"
@@ -273,7 +276,7 @@
                                         Background="{DynamicResource Bridge.Card.Background}"
                                         Padding="8,2"
                                         VerticalAlignment="Center"
-                                        ToolTip="Games in group">
+                                        ToolTip="{x:Static res:Strings.GamesInGroupTooltip}">
                                     <TextBlock Text="{Binding ItemCount}"
                                                FontSize="11"
                                                FontWeight="SemiBold"

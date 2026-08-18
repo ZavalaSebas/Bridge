@@ -95,6 +95,20 @@ public class EpicLibraryImporter
                 continue;
             }
 
+            try
+            {
+                installLocation = Path.GetFullPath(installLocation.TrimEnd('\\', '/'));
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (!Directory.Exists(installLocation))
+            {
+                continue;
+            }
+
             var metadata = new GameMetadata
             {
                 ExternalId = appName,

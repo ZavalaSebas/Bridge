@@ -25,9 +25,6 @@ public partial class MainWindow
 
         if (FindResource("Bridge.LinkMenuItemStyle") is Style linkStyle)
             linkStyle.Setters.Add(new EventSetter(System.Windows.Controls.MenuItem.ClickEvent, new RoutedEventHandler(OpenLinkMenuItem_Click)));
-
-        if (FindResource("Bridge.CompletionStatusMenuItemStyle") is Style completionStyle)
-            completionStyle.Setters.Add(new EventSetter(System.Windows.Controls.MenuItem.ClickEvent, new RoutedEventHandler(CompletionStatusMenuItem_Click)));
     }
 
     private void ToggleSortDirection_Click(object sender, RoutedEventArgs e)
@@ -39,6 +36,8 @@ public partial class MainWindow
     // Opens the sender's ContextMenu on left-click (used by icon
     // buttons in the top panel).
     internal void HandleMenuButtonClick(object sender, RoutedEventArgs e) => MenuButton_Click(sender, e);
+
+    internal void HandleGameContextMenuOpened(object sender, RoutedEventArgs e) => GameContextMenu_Opened(sender, e);
 
     private void MenuButton_Click(object sender, RoutedEventArgs e)
     {
@@ -197,11 +196,12 @@ public partial class MainWindow
     // name string.
     private void CompletionStatusMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm
-            && sender is MenuItem { DataContext: string status })
-        {
-            vm.SetCompletionStatusCommand.Execute(status);
-        }
+        if (sender is not MenuItem { DataContext: string status })
+            return;
+
+        var vm = Window.GetWindow((DependencyObject)sender)?.DataContext as MainViewModel
+            ?? DataContext as MainViewModel;
+        vm?.SetCompletionStatusCommand.Execute(status);
     }
 
     // View > Sidebar: show/hide the sidebar (and its divider). The state
@@ -267,7 +267,11 @@ public partial class MainWindow
     {
         foreach (var child in menu.Items.OfType<MenuItem>())
         {
-            if (child.Header?.ToString() == Strings.Position)
+            if (child.Header?.ToString() == Strings.ShowSidebar)
+            {
+                child.IsChecked = (DataContext as MainViewModel)?.SidebarVisible ?? true;
+            }
+            else if (child.Header?.ToString() == Strings.Position)
             {
                 foreach (var position in child.Items.OfType<MenuItem>())
                 {

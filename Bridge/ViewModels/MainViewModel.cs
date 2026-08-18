@@ -120,6 +120,19 @@ public partial class MainViewModel : ObservableObject
         UpdatePlayButtonState();
     }
 
+    // Per-row Download state for managed ROMs in covers/table views.
+    public void RefreshAllEmulatorDownloadStates()
+    {
+        foreach (var game in Games)
+        {
+            var needs = _retroArch.IsManagedRom(game) && _retroArch.NeedsInstall(game);
+            if (game.NeedsEmulatorDownload != needs)
+                game.NeedsEmulatorDownload = needs;
+        }
+
+        UpdateNeedsEmulatorDownload();
+    }
+
     partial void OnIsEmulationBusyChanged(bool value) => UpdatePlayButtonState();
 
     private void UpdatePlayButtonState()
@@ -430,6 +443,11 @@ public partial class MainViewModel : ObservableObject
         {
             UpdatePlayButtonState();
         }
+        else if (e.PropertyName == nameof(Game.CompletionStatusId) && sender is Game game)
+        {
+            if (ReferenceEquals(game, SelectedGame))
+                CompletionStatusText = ResolveCompletionStatusName(game);
+        }
     }
 
     private void RefreshReferenceFields(Game? game)
@@ -471,14 +489,25 @@ public partial class MainViewModel : ObservableObject
         LibraryText = _sourceNames!.TryGetValue(game.SourceId, out var sourceName) && sourceName.Length > 0
             ? sourceName
             : Strings.Manual;
-        CompletionStatusText = game.CompletionStatusId != Guid.Empty
-            && _completionStatusNames!.TryGetValue(game.CompletionStatusId, out var statusName)
-                ? statusName
-                : string.Empty;
+        CompletionStatusText = ResolveCompletionStatusName(game);
         VersionText = game.Version;
         InstallSizeText = game.InstallSizeBytes is { } bytes ? PlaytimeFormatter.FormatBytes(bytes) : string.Empty;
         AddedText = game.Added is { } added ? added.ToString("d") : string.Empty;
         LastPlayedText = game.LastActivity is { } last ? last.ToString("d") : string.Empty;
+    }
+
+    private string ResolveCompletionStatusName(Game game)
+    {
+        if (game.CompletionStatusId == Guid.Empty)
+            return string.Empty;
+
+        EnsureReferenceCaches();
+        if (_completionStatusNames!.TryGetValue(game.CompletionStatusId, out var cached))
+            return cached;
+
+        // Cache may lag behind a status just created via GetOrCreateByName — fall
+        // back to a direct lookup so the hero badge updates immediately.
+        return _completionStatusRepository.Get(game.CompletionStatusId)?.Name ?? string.Empty;
     }
 
     private static string JoinNames(IEnumerable<Guid> ids, IReadOnlyDictionary<Guid, string> names)
@@ -517,6 +546,9 @@ public partial class MainViewModel : ObservableObject
         _regionNames = null;
         _sourceNames = null;
         _completionStatusNames = null;
+
+        if (SelectedGame is not null)
+            RefreshReferenceFields(SelectedGame);
     }
 
     // Rebuilds the detailed-list rows from whatever GamesView currently shows
@@ -638,6 +670,7 @@ public partial class MainViewModel : ObservableObject
             await DownloadMissingMetadataByNameAsync([epicSourceId]);
             _ = PreloadArtworkAsync();
             await CheckForUpdatesCoreAsync(promptWhenUpToDate: false);
+            RefreshAllEmulatorDownloadStates();
         }
         catch (Exception ex)
         {
@@ -700,7 +733,7 @@ public partial class MainViewModel : ObservableObject
     // UI thread. A short timeout keeps startup snappy if a download stalls.
     public async Task WaitForStartupArtworkAsync()
     {
-        var preload = RemoteImageCache.PreloadAndWaitAsync(CollectStartupPreloadUrls());
+        var preload = PreloadArtworkAsync();
         await Task.WhenAny(preload, Task.Delay(TimeSpan.FromSeconds(3))).ConfigureAwait(false);
     }
 
@@ -722,10 +755,10 @@ public partial class MainViewModel : ObservableObject
         }
 
         RefreshStatistics();
+        RefreshAllEmulatorDownloadStates();
     }
 
     // Startup selection: resume where the user left off. On a fresh app start the
-    // first game is selected; on subsequent starts the most recently played game
     // is selected (LastActivity is persisted when a game is launched). Falls back
     // to the first game when nothing has been played yet. Pure so it can be
     // unit-tested without constructing the whole MainViewModel.
@@ -841,6 +874,8 @@ public partial class MainViewModel : ObservableObject
     {
         AddGameSorted(game);
         SelectedGame = game;
+        InvalidateReferenceCaches();
+        RefreshAllEmulatorDownloadStates();
         RefreshStatistics();
     }
 

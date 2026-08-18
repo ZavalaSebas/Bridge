@@ -28,6 +28,9 @@ public class PlayButtonDisplayConverter : IMultiValueConverter
         if (game.IsRunning)
             return useSymbol ? "Stop24" : Strings.Stop;
 
+        if (game.NeedsEmulatorDownload)
+            return useSymbol ? "ArrowDownload24" : Strings.Download;
+
         return useSymbol ? "Play24" : Strings.Play;
     }
 

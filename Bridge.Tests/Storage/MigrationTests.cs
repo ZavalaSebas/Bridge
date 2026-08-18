@@ -76,6 +76,20 @@ public class MigrationTests : IDisposable
         Assert.Throws<DbUpdateException>(() => context.SaveChanges());
     }
 
+    [Fact]
+    public void AddUniqueIndexes_RejectsDuplicateExternalIdAndSourceId()
+    {
+        using var context = new BridgeDbContext(_options);
+        context.MigrateToLatest();
+
+        var sourceId = Guid.NewGuid();
+        context.Games.Add(new Game { Name = "One", ExternalId = "app-1", SourceId = sourceId });
+        context.SaveChanges();
+
+        context.Games.Add(new Game { Name = "Duplicate", ExternalId = "app-1", SourceId = sourceId });
+        Assert.Throws<DbUpdateException>(() => context.SaveChanges());
+    }
+
     public void Dispose()
     {
         if (File.Exists(_dbPath))
