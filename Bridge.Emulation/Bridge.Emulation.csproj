@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bridge.Core\Bridge.Core.csproj" />
-    <ProjectReference Include="..\Bridge.Storage\Bridge.Storage.csproj" />
   </ItemGroup>
 
   <ItemGroup>

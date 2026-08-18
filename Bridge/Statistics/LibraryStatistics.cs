@@ -28,9 +28,9 @@ public class LibraryStatistics
     public double PlayedPercent => Percent(PlayedCount);
     public double NotPlayedPercent => Percent(NotPlayedCount);
 
-    public string TotalPlaytimeDisplay => FormatDuration(TotalPlaytimeSeconds);
-    public string AveragePlaytimeDisplay => FormatDuration(AveragePlaytimeSeconds);
-    public string TotalInstallSizeDisplay => FormatBytes(TotalInstallSizeBytes);
+    public string TotalPlaytimeDisplay => PlaytimeFormatter.FormatSeconds(TotalPlaytimeSeconds);
+    public string AveragePlaytimeDisplay => PlaytimeFormatter.FormatSeconds(AveragePlaytimeSeconds);
+    public string TotalInstallSizeDisplay => PlaytimeFormatter.FormatBytes(TotalInstallSizeBytes);
 
     public static LibraryStatistics Compute(IEnumerable<Game> games, int topCount = 5)
     {
@@ -57,20 +57,4 @@ public class LibraryStatistics
     private double Percent(int count) =>
         TotalCount > 0 ? count * 100.0 / TotalCount : 0;
 
-    private static string FormatDuration(ulong seconds) => seconds switch
-    {
-        0 => "Not played",
-        < 60 => $"{seconds} seconds",
-        < 3600 => $"{seconds / 60} minutes",
-        _ => $"{seconds / 3600.0:0.#} hours"
-    };
-
-    private static string FormatBytes(ulong bytes) => bytes switch
-    {
-        0 => "0 B",
-        < 1024 => $"{bytes} B",
-        < 1024 * 1024 => $"{bytes / 1024.0:0.#} KB",
-        < 1024UL * 1024 * 1024 => $"{bytes / 1048576.0:0.#} MB",
-        _ => $"{bytes / 1073741824.0:0.#} GB"
-    };
 }

@@ -7,6 +7,7 @@ using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Core.Utilities;
+using Bridge.Resources;
 using Bridge.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -54,13 +55,15 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
             // Start-menu enumeration can hit permission-denied subfolders on
             // corporate machines — show a friendly message instead of a raw
             // .NET exception to the global handler.
-            await ShowMessageAsync($"Couldn't scan the start menu: {ex.Message}", "Scan");
+            await ShowMessageAsync(
+                Strings.Format(nameof(Strings.ScanStartMenuFailedFormat), ex.Message),
+                Strings.ScanTitle);
         }
     }
 
     private async void ScanFolder_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Select folder to scan for games" };
+        var dialog = new OpenFolderDialog { Title = Strings.SelectFolderToScanGames };
         if (dialog.ShowDialog(this) == true)
         {
             try
@@ -69,7 +72,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync(ex.Message, "Scan");
+                await ShowMessageAsync(ex.Message, Strings.ScanTitle);
             }
         }
     }
@@ -78,7 +81,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Select executable",
+            Title = Strings.SelectExecutable,
             Filter = "Executables (*.exe;*.lnk)|*.exe;*.lnk"
         };
         if (dialog.ShowDialog(this) == true)
@@ -86,7 +89,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
             var candidate = await Task.Run(() => _detector.FromFile(dialog.FileName));
             if (candidate is null)
             {
-                await ShowMessageAsync("Not a valid executable.", "Add game");
+                await ShowMessageAsync(Strings.InvalidExecutable, Strings.AddGame);
                 return;
             }
 
@@ -114,15 +117,14 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
     private void SetScanning(bool scanning)
     {
         ScanProgress.Visibility = scanning ? Visibility.Visible : Visibility.Collapsed;
-        StatusText.Text = scanning ? "Scanning..." : StatusText.Text;
+        StatusText.Text = scanning ? Strings.Scanning : StatusText.Text;
         DetectInstalledButton.IsEnabled = !scanning;
         ScanFolderButton.IsEnabled = !scanning;
         BrowseButton.IsEnabled = !scanning;
     }
 
-    // The app's styled message dialog (custom FluentWindow, follows the theme).
-    private static async Task ShowMessageAsync(string message, string title)
-        => await MessageDialogWindow.ShowAsync(message, title);
+    private Task ShowMessageAsync(string message, string title) =>
+        MessageDialogWindow.ShowAsync(message, title, owner: this);
 
     private void LoadCandidates(IReadOnlyList<InstalledGameCandidate> candidates)
     {
@@ -157,7 +159,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         }
 
         RefreshFilter();
-        StatusText.Text = $"{_allCandidates.Count} found";
+        StatusText.Text = Strings.Format(nameof(Strings.CandidatesFoundFormat), _allCandidates.Count);
     }
 
     private static long ExeSize(InstalledGameCandidate c)
@@ -240,7 +242,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         if (CandidatesList is not null)
             CandidatesList.ItemsSource = filtered;
         if (StatusText is not null)
-            StatusText.Text = $"{filtered.Count} of {_allCandidates.Count} shown";
+            StatusText.Text = Strings.Format(nameof(Strings.CandidatesShownFormat), filtered.Count, _allCandidates.Count);
     }
 
     // Games persisted during AddGames_Click, so the owner can insert them into
@@ -252,7 +254,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         var selected = _allCandidates.Where(c => c.Import).ToList();
         if (selected.Count == 0)
         {
-            await ShowMessageAsync("No games selected.", "Add games");
+            await ShowMessageAsync(Strings.NoGamesSelected, Strings.AddGamesTitle);
             return;
         }
 
@@ -282,7 +284,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
             };
             game.GameActions.Add(new GameAction
             {
-                Name = "Play",
+                Name = Strings.Play,
                 Type = GameActionType.File,
                 IsPlayAction = true,
                 Path = entry.Path,
@@ -295,17 +297,20 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         }
 
         CreatedGames = added;
-        DialogResult = true;
 
-        // Let the user know why some of their selections weren't added — the
-        // dialog closes immediately, so surface it before returning.
+        // Surface skipped duplicates while this window is still open — setting
+        // DialogResult closes it, and a closed window can't be a dialog owner.
         if (skipped.Count > 0)
         {
             var preview = string.Join(", ", skipped.Take(3));
-            var more = skipped.Count > 3 ? $", +{skipped.Count - 3} more" : string.Empty;
+            var more = skipped.Count > 3
+                ? Strings.Format(nameof(Strings.MoreSkippedFormat), skipped.Count - 3)
+                : string.Empty;
             await ShowMessageAsync(
-                $"Already in your library ({skipped.Count}): {preview}{more}. They were skipped.",
-                "Add games");
+                Strings.Format(nameof(Strings.AlreadyInLibrarySkippedFormat), skipped.Count, preview, more),
+                Strings.AddGamesTitle);
         }
+
+        DialogResult = true;
     }
 }

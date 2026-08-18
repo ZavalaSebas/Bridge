@@ -19,6 +19,7 @@
     <converters:NonZeroToVisibilityConverter x:Key="NonZeroToVis" />
     <converters:DescriptionBlocksConverter x:Key="DescriptionBlocks" />
     <converters:StatusMessageKindToBrushConverter x:Key="StatusMessageBrush" />
+    <converters:PlayButtonDisplayConverter x:Key="PlayButtonDisplay" />
 
     <DataTemplate x:Key="DescTextTemplate">
         <TextBlock Text="{Binding Text}"

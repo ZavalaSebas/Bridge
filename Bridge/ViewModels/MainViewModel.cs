@@ -23,7 +23,6 @@ namespace Bridge.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly IGameRepository _gameRepository;
-    private readonly IRepository<Emulator> _emulatorRepository;
     private readonly IRepository<Genre> _genreRepository;
     private readonly IRepository<Company> _companyRepository;
     private readonly IRepository<Platform> _platformRepository;
@@ -38,12 +37,27 @@ public partial class MainViewModel : ObservableObject
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
     private readonly RetroArchService _retroArch;
-    private readonly IEnumerable<IGameMetadataProvider> _metadataProviders;
     private readonly MetadataSyncService _metadataSync;
     private readonly SteamMetadataProvider _steamMetadataProvider;
     private readonly SteamLibraryImporter _steamImporter;
     private readonly EpicLibraryImporter _epicImporter;
     private readonly AppUpdateService _appUpdateService;
+    private readonly IDialogService _dialogService;
+
+    private IReadOnlyDictionary<Guid, string>? _companyNames;
+    private IReadOnlyDictionary<Guid, string>? _platformNames;
+    private IReadOnlyDictionary<Guid, string>? _genreNames;
+    private IReadOnlyDictionary<Guid, string>? _categoryNames;
+    private IReadOnlyDictionary<Guid, string>? _tagNames;
+    private IReadOnlyDictionary<Guid, string>? _featureNames;
+    private IReadOnlyDictionary<Guid, string>? _seriesNames;
+    private IReadOnlyDictionary<Guid, string>? _ageRatingNames;
+    private IReadOnlyDictionary<Guid, string>? _regionNames;
+    private IReadOnlyDictionary<Guid, string>? _sourceNames;
+    private IReadOnlyDictionary<Guid, string>? _completionStatusNames;
+
+    private Task? _artworkPreloadTask;
+    private readonly object _artworkPreloadLock = new();
 
     public ObservableCollection<Game> Games { get; } = [];
 
@@ -441,47 +455,75 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Resolve stored ids back to display names. Straight lookup per id —
-        // fine for the MVP's small reference collections; don't build a
-        // caching dictionary until profiling shows these resolve calls matter.
-        DevelopersText = JoinNames(game.DeveloperIds, _companyRepository);
-        PublishersText = JoinNames(game.PublisherIds, _companyRepository);
-        PlatformsText = JoinNames(game.PlatformIds, _platformRepository);
-        GenresText = JoinNames(game.GenreIds, _genreRepository);
-        CategoriesText = JoinNames(game.CategoryIds, _categoryRepository);
-        TagsText = JoinNames(game.TagIds, _tagRepository);
-        FeaturesText = JoinNames(game.FeatureIds, _featureRepository);
-        SeriesText = JoinNames(game.SeriesIds, _seriesRepository);
-        AgeRatingsText = JoinNames(game.AgeRatingIds, _ageRatingRepository);
-        RegionsText = JoinNames(game.RegionIds, _regionRepository);
-        LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual";
+        // Resolve stored ids back to display names from in-memory lookups so
+        // RebuildDetailedRows doesn't hit the DB once per id per game.
+        EnsureReferenceCaches();
+        DevelopersText = JoinNames(game.DeveloperIds, _companyNames!);
+        PublishersText = JoinNames(game.PublisherIds, _companyNames!);
+        PlatformsText = JoinNames(game.PlatformIds, _platformNames!);
+        GenresText = JoinNames(game.GenreIds, _genreNames!);
+        CategoriesText = JoinNames(game.CategoryIds, _categoryNames!);
+        TagsText = JoinNames(game.TagIds, _tagNames!);
+        FeaturesText = JoinNames(game.FeatureIds, _featureNames!);
+        SeriesText = JoinNames(game.SeriesIds, _seriesNames!);
+        AgeRatingsText = JoinNames(game.AgeRatingIds, _ageRatingNames!);
+        RegionsText = JoinNames(game.RegionIds, _regionNames!);
+        LibraryText = _sourceNames!.TryGetValue(game.SourceId, out var sourceName) && sourceName.Length > 0
+            ? sourceName
+            : Strings.Manual;
         CompletionStatusText = game.CompletionStatusId != Guid.Empty
-            ? _completionStatusRepository.Get(game.CompletionStatusId)?.Name ?? string.Empty
-            : string.Empty;
+            && _completionStatusNames!.TryGetValue(game.CompletionStatusId, out var statusName)
+                ? statusName
+                : string.Empty;
         VersionText = game.Version;
-        InstallSizeText = game.InstallSizeBytes is { } bytes ? FormatBytes(bytes) : string.Empty;
+        InstallSizeText = game.InstallSizeBytes is { } bytes ? PlaytimeFormatter.FormatBytes(bytes) : string.Empty;
         AddedText = game.Added is { } added ? added.ToString("d") : string.Empty;
         LastPlayedText = game.LastActivity is { } last ? last.ToString("d") : string.Empty;
     }
 
-    private static string FormatBytes(ulong bytes) => bytes switch
-    {
-        >= 1L << 40 => $"{bytes / (double)(1L << 40):0.#} TB",
-        >= 1L << 30 => $"{bytes / (double)(1L << 30):0.#} GB",
-        >= 1L << 20 => $"{bytes / (double)(1L << 20):0.#} MB",
-        _ => $"{bytes / 1024.0:0} KB"
-    };
-
-    private static string JoinNames<T>(IEnumerable<Guid> ids, IRepository<T> repo)
-        where T : DatabaseObject
+    private static string JoinNames(IEnumerable<Guid> ids, IReadOnlyDictionary<Guid, string> names)
         => string.Join(", ", ids
-            .Select(id => repo.Get(id)?.Name)
+            .Select(id => names.TryGetValue(id, out var name) ? name : null)
             .Where(n => !string.IsNullOrWhiteSpace(n)));
+
+    private void EnsureReferenceCaches()
+    {
+        if (_companyNames is not null)
+            return;
+
+        _companyNames = BuildNameLookup(_companyRepository);
+        _platformNames = BuildNameLookup(_platformRepository);
+        _genreNames = BuildNameLookup(_genreRepository);
+        _categoryNames = BuildNameLookup(_categoryRepository);
+        _tagNames = BuildNameLookup(_tagRepository);
+        _featureNames = BuildNameLookup(_featureRepository);
+        _seriesNames = BuildNameLookup(_seriesRepository);
+        _ageRatingNames = BuildNameLookup(_ageRatingRepository);
+        _regionNames = BuildNameLookup(_regionRepository);
+        _sourceNames = BuildNameLookup(_sourceRepository);
+        _completionStatusNames = BuildNameLookup(_completionStatusRepository);
+    }
+
+    public void InvalidateReferenceCaches()
+    {
+        _companyNames = null;
+        _platformNames = null;
+        _genreNames = null;
+        _categoryNames = null;
+        _tagNames = null;
+        _featureNames = null;
+        _seriesNames = null;
+        _ageRatingNames = null;
+        _regionNames = null;
+        _sourceNames = null;
+        _completionStatusNames = null;
+    }
 
     // Rebuilds the detailed-list rows from whatever GamesView currently shows
     // (respects search/filter/sort/group). Called on every view refresh.
     private void RebuildDetailedRows()
     {
+        EnsureReferenceCaches();
         DetailedRows.Clear();
         foreach (var item in GamesView)
         {
@@ -491,18 +533,19 @@ public partial class MainViewModel : ObservableObject
             DetailedRows.Add(new GameDetailRow
             {
                 Game = game,
-                DevelopersText = JoinNames(game.DeveloperIds, _companyRepository),
-                PublishersText = JoinNames(game.PublisherIds, _companyRepository),
-                PlatformsText = JoinNames(game.PlatformIds, _platformRepository),
-                GenresText = JoinNames(game.GenreIds, _genreRepository),
-                LibraryText = _sourceRepository.Get(game.SourceId)?.Name ?? "Manual"
+                DevelopersText = JoinNames(game.DeveloperIds, _companyNames!),
+                PublishersText = JoinNames(game.PublisherIds, _companyNames!),
+                PlatformsText = JoinNames(game.PlatformIds, _platformNames!),
+                GenresText = JoinNames(game.GenreIds, _genreNames!),
+                LibraryText = _sourceNames!.TryGetValue(game.SourceId, out var sourceName) && sourceName.Length > 0
+                    ? sourceName
+                    : Strings.Manual
             });
         }
     }
 
     public MainViewModel(
         IGameRepository gameRepository,
-        IRepository<Emulator> emulatorRepository,
         IRepository<Genre> genreRepository,
         IRepository<Company> companyRepository,
         IRepository<Platform> platformRepository,
@@ -517,15 +560,14 @@ public partial class MainViewModel : ObservableObject
         GameLauncher launcher,
         RomScanner romScanner,
         RetroArchService retroArch,
-        IEnumerable<IGameMetadataProvider> metadataProviders,
         SteamMetadataProvider steamMetadataProvider,
         SteamLibraryImporter steamImporter,
         EpicLibraryImporter epicImporter,
         AppUpdateService appUpdateService,
-        MetadataSyncService metadataSyncService)
+        MetadataSyncService metadataSyncService,
+        IDialogService dialogService)
     {
         _gameRepository = gameRepository;
-        _emulatorRepository = emulatorRepository;
         _genreRepository = genreRepository;
         _companyRepository = companyRepository;
         _platformRepository = platformRepository;
@@ -540,12 +582,12 @@ public partial class MainViewModel : ObservableObject
         _launcher = launcher;
         _romScanner = romScanner;
         _retroArch = retroArch;
-        _metadataProviders = metadataProviders;
         _metadataSync = metadataSyncService;
         _steamMetadataProvider = steamMetadataProvider;
         _steamImporter = steamImporter;
         _epicImporter = epicImporter;
         _appUpdateService = appUpdateService;
+        _dialogService = dialogService;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
@@ -612,12 +654,18 @@ public partial class MainViewModel : ObservableObject
     // background; a failed/unreachable one simply never enters the cache. Each
     // Image in the UI picks up its artwork the moment it's cached via
     // CachedImage.SourceUrl.
-    private Task PreloadArtworkAsync() =>
-        RemoteImageCache.PreloadAndWaitAsync(CollectArtworkUrls(Games));
+    private Task PreloadArtworkAsync()
+    {
+        lock (_artworkPreloadLock)
+        {
+            if (_artworkPreloadTask is { IsCompleted: false } running)
+                return running;
 
-    private static IEnumerable<string> CollectArtworkUrls(IEnumerable<Game> games) =>
-        games.SelectMany(g => new[] { g.Icon, g.CoverImage, g.BackgroundImage })
-            .Where(url => !string.IsNullOrWhiteSpace(url))!;
+            _artworkPreloadTask = RemoteImageCache.PreloadAndWaitAsync(CollectStartupPreloadUrls());
+            return _artworkPreloadTask;
+        }
+    }
+
 
     // Startup preload: selected game hero art + the first grid page, not the
     // entire library — keeps cold start snappy on large collections.
@@ -778,11 +826,13 @@ public partial class MainViewModel : ObservableObject
     {
         var stats = LibraryStatistics.Compute(Games);
         Statistics = stats;
-        var hours = stats.TotalPlaytimeSeconds / 3600.0;
-        StatisticsSummary =
-            $"Total: {stats.TotalCount} | Installed: {stats.InstalledCount} | " +
-            $"Favorites: {stats.FavoriteCount} | Hidden: {stats.HiddenCount} | " +
-            $"Total playtime: {hours:0.0}h";
+        StatisticsSummary = Strings.Format(
+            nameof(Strings.StatisticsSummaryFormat),
+            stats.TotalCount,
+            stats.InstalledCount,
+            stats.FavoriteCount,
+            stats.HiddenCount,
+            stats.TotalPlaytimeDisplay);
     }
 
     // Adds an already-persisted game to the in-memory library and selects it.

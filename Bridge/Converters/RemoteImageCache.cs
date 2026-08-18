@@ -134,6 +134,22 @@ public static class RemoteImageCache
         BeginLoad(url);
     }
 
+    /// <summary>Removes a callback registered by <see cref="Subscribe"/>.</summary>
+    public static void Unsubscribe(string url, Action callback)
+    {
+        lock (CallbacksLock)
+        {
+            if (PendingCallbacks.TryGetValue(url, out var callbacks))
+            {
+                callbacks.Remove(callback);
+                if (callbacks.Count == 0)
+                {
+                    PendingCallbacks.Remove(url);
+                }
+            }
+        }
+    }
+
     private static Task BeginLoad(string url)
     {
         if (InFlight.TryGetValue(url, out var existing))

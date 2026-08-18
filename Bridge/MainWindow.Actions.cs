@@ -31,12 +31,7 @@ public partial class MainWindow
             return;
         }
 
-        var editViewModel = new ViewModels.GameEditViewModel(
-            game,
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IGameRepository>(),
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Genre>>(),
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Company>>(),
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Platform>>());
+        var editViewModel = App.Services.GetRequiredService<GameEditViewModelFactory>().Create(game);
 
         var window = new GameEditWindow(editViewModel, game.BackgroundImage) { Owner = this };
         if (window.ShowDialog() == true)
@@ -70,13 +65,7 @@ public partial class MainWindow
         }
 
         var game = new Bridge.Core.Entities.Game();
-        var editViewModel = new ViewModels.GameEditViewModel(
-            game,
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IGameRepository>(),
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Genre>>(),
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Company>>(),
-            App.Services.GetRequiredService<Bridge.Core.Contracts.IRepository<Bridge.Core.Entities.Platform>>(),
-            isNew: true);
+        var editViewModel = App.Services.GetRequiredService<GameEditViewModelFactory>().Create(game, isNew: true);
 
         var window = new GameEditWindow(editViewModel, game.BackgroundImage ?? mainVm.SelectedGame?.BackgroundImage) { Owner = this };
         if (window.ShowDialog() == true)

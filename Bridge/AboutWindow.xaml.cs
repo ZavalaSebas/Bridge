@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Navigation;
+using Bridge.Resources;
 using Bridge.Services;
 using Wpf.Ui.Controls;
 
@@ -17,25 +18,25 @@ namespace Bridge
             BackgroundArt.SourceUrl = backgroundImage;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            VersionText.Text = $"Version {version?.ToString(3) ?? "?"}";
+            VersionText.Text = Strings.Format(nameof(Strings.VersionFormat), version?.ToString(3) ?? "?");
 
-            RuntimeText.Text = $".NET {Environment.Version}";
+            RuntimeText.Text = Strings.Format(nameof(Strings.RuntimeFormat), Environment.Version);
             OsText.Text = RuntimeInformation.OSDescription;
 
             ProjectLinks.ItemsSource = new[]
             {
-                new AboutLink("Source code", "https://github.com/ZavalaSebas/Bridge",
-                    "github.com/ZavalaSebas/Bridge", SymbolRegular.Code24),
-                new AboutLink("License", "https://github.com/ZavalaSebas/Bridge/blob/main/LICENSE",
-                    "GNU General Public License v3.0", SymbolRegular.Document24)
+                new AboutLink(Strings.SourceCode, "https://github.com/ZavalaSebas/Bridge",
+                    Strings.BridgeRepositoryPath, SymbolRegular.Code24),
+                new AboutLink(Strings.License, "https://github.com/ZavalaSebas/Bridge/blob/main/LICENSE",
+                    Strings.GnuGplLicense, SymbolRegular.Document24)
             };
 
             SupportLinks.ItemsSource = new[]
             {
-                new AboutLink("Ko-fi", Config.KoFiUrl,
-                    "Buy me a coffee", SymbolRegular.DrinkCoffee24),
-                new AboutLink("GitHub Sponsors", Config.GitHubSponsorsUrl,
-                    "Support development on GitHub", SymbolRegular.Heart24)
+                new AboutLink(Strings.KoFi, Config.KoFiUrl,
+                    Strings.BuyMeACoffee, SymbolRegular.DrinkCoffee24),
+                new AboutLink(Strings.GitHubSponsors, Config.GitHubSponsorsUrl,
+                    Strings.SupportDevelopmentOnGitHub, SymbolRegular.Heart24)
             };
         }
 

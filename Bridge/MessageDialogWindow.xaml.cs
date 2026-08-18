@@ -31,10 +31,8 @@ public partial class MessageDialogWindow : FluentWindow
 
     public static void Show(string message, string title, SymbolRegular? icon = null, Window? owner = null)
     {
-        var dialog = new MessageDialogWindow(message, title, icon)
-        {
-            Owner = owner ?? Application.Current.MainWindow
-        };
+        var dialog = new MessageDialogWindow(message, title, icon);
+        AssignOwner(dialog, owner);
         dialog.ShowDialog();
     }
 
@@ -46,18 +44,32 @@ public partial class MessageDialogWindow : FluentWindow
         string title,
         SymbolRegular? icon = null,
         string? confirmText = null,
-        string? cancelText = null)
+        string? cancelText = null,
+        Window? owner = null)
     {
-        var dialog = new MessageDialogWindow(message, title, icon) { Owner = Application.Current.MainWindow };
+        var dialog = new MessageDialogWindow(message, title, icon);
+        AssignOwner(dialog, owner);
         dialog.CancelButton.Visibility = Visibility.Visible;
         dialog.OkButton.Content = confirmText ?? Strings.OK;
         dialog.CancelButton.Content = cancelText ?? Strings.Cancel;
         return dialog.ShowDialog() == true;
     }
 
-    public static Task ShowAsync(string message, string title, SymbolRegular? icon = null)
+    public static Task ShowAsync(string message, string title, SymbolRegular? icon = null, Window? owner = null)
     {
-        Show(message, title, icon);
+        Show(message, title, icon, owner);
         return Task.CompletedTask;
+    }
+
+    private static void AssignOwner(Window dialog, Window? owner)
+    {
+        if (owner is { IsLoaded: true })
+        {
+            dialog.Owner = owner;
+            return;
+        }
+
+        if (Application.Current.MainWindow is { IsLoaded: true } mainWindow)
+            dialog.Owner = mainWindow;
     }
 }

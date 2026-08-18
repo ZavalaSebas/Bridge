@@ -31,12 +31,29 @@ public static class CachedImage
             typeof(CachedImage),
             new PropertyMetadata(null, OnSourceUrlChanged));
 
+    private static readonly DependencyProperty LoadCallbackProperty =
+        DependencyProperty.RegisterAttached(
+            "LoadCallback",
+            typeof(Action),
+            typeof(CachedImage),
+            new PropertyMetadata(null));
+
     public static string? GetSourceUrl(DependencyObject d) => (string?)d.GetValue(SourceUrlProperty);
 
     public static void SetSourceUrl(DependencyObject d, string? value) => d.SetValue(SourceUrlProperty, value);
 
+    private static Action? GetLoadCallback(DependencyObject d) => (Action?)d.GetValue(LoadCallbackProperty);
+
+    private static void SetLoadCallback(DependencyObject d, Action? value) => d.SetValue(LoadCallbackProperty, value);
+
     private static void OnSourceUrlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
+        if (e.OldValue is string oldUrl && GetLoadCallback(d) is { } oldCallback)
+        {
+            RemoteImageCache.Unsubscribe(oldUrl, oldCallback);
+            SetLoadCallback(d, null);
+        }
+
         var url = e.NewValue as string;
         switch (d)
         {
@@ -78,7 +95,7 @@ public static class CachedImage
 
         // Not decoded yet — keep blank and refresh as soon as it lands.
         image.Source = null;
-        RemoteImageCache.Subscribe(url, () =>
+        Action callback = () =>
         {
             // The container may have been recycled to a different item while the
             // download was in flight — only apply if still bound to this URL.
@@ -86,7 +103,9 @@ public static class CachedImage
             {
                 image.Source = RemoteImageCache.Get(url);
             }
-        });
+        };
+        SetLoadCallback(image, callback);
+        RemoteImageCache.Subscribe(url, callback);
     }
 
     // Grid/Border variant used by the covers cards: paints the artwork as the
@@ -116,13 +135,15 @@ public static class CachedImage
 
         // Not decoded yet — paint nothing and refresh as soon as it lands.
         SetBackground(target, null);
-        RemoteImageCache.Subscribe(url, () =>
+        Action callback = () =>
         {
             if (GetSourceUrl(target) == url)
             {
                 SetBackground(target, MakeFillBrush(RemoteImageCache.Get(url)));
             }
-        });
+        };
+        SetLoadCallback(target, callback);
+        RemoteImageCache.Subscribe(url, callback);
     }
 
     private static void SetBackground(DependencyObject target, Brush? brush)

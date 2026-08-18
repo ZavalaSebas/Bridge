@@ -1,5 +1,6 @@
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Resources;
 using Bridge.Statistics;
 
 namespace Bridge.Tests.Statistics;
@@ -26,7 +27,7 @@ public class GameGroupResolverTests
 
         Assert.Equal("A", resolver.GetGroupKey(new Game { Name = "alpha" }, GameGroupField.Name));
         Assert.Equal("B", resolver.GetGroupKey(new Game { Name = "Borderlands" }, GameGroupField.Name));
-        Assert.Equal("Unknown", resolver.GetGroupKey(new Game { Name = "" }, GameGroupField.Name));
+        Assert.Equal(Strings.Unknown, resolver.GetGroupKey(new Game { Name = "" }, GameGroupField.Name));
     }
 
     [Fact]
@@ -35,7 +36,7 @@ public class GameGroupResolverTests
         var resolver = CreateResolver();
 
         Assert.Equal("Bethesda", resolver.GetGroupKey(new Game { DeveloperIds = [Bethesda] }, GameGroupField.Developer));
-        Assert.Equal("Unknown", resolver.GetGroupKey(new Game(), GameGroupField.Developer));
+        Assert.Equal(Strings.Unknown, resolver.GetGroupKey(new Game(), GameGroupField.Developer));
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public class GameGroupResolverTests
         var resolver = CreateResolver();
 
         Assert.Equal("Steam", resolver.GetGroupKey(new Game { SourceId = Steam }, GameGroupField.Library));
-        Assert.Equal("Manual", resolver.GetGroupKey(new Game { SourceId = Guid.Empty }, GameGroupField.Library));
+        Assert.Equal(Strings.Manual, resolver.GetGroupKey(new Game { SourceId = Guid.Empty }, GameGroupField.Library));
     }
 
     [Fact]
@@ -52,8 +53,8 @@ public class GameGroupResolverTests
     {
         var resolver = CreateResolver();
 
-        Assert.Equal("Installed", resolver.GetGroupKey(new Game { IsInstalled = true }, GameGroupField.IsInstalled));
-        Assert.Equal("Not installed", resolver.GetGroupKey(new Game { IsInstalled = false }, GameGroupField.IsInstalled));
+        Assert.Equal(Strings.Installed, resolver.GetGroupKey(new Game { IsInstalled = true }, GameGroupField.IsInstalled));
+        Assert.Equal(Strings.NotInstalled, resolver.GetGroupKey(new Game { IsInstalled = false }, GameGroupField.IsInstalled));
     }
 
     [Fact]
@@ -62,7 +63,7 @@ public class GameGroupResolverTests
         var resolver = CreateResolver();
 
         Assert.Equal("Completed", resolver.GetGroupKey(new Game { CompletionStatusId = Completed }, GameGroupField.CompletionStatus));
-        Assert.Equal("None", resolver.GetGroupKey(new Game(), GameGroupField.CompletionStatus));
+        Assert.Equal(Strings.None, resolver.GetGroupKey(new Game(), GameGroupField.CompletionStatus));
     }
 
     [Fact]
@@ -70,9 +71,9 @@ public class GameGroupResolverTests
     {
         var resolver = CreateResolver();
 
-        Assert.Equal("Not played", resolver.GetGroupKey(new Game { PlaytimeSeconds = 0 }, GameGroupField.PlaytimeSeconds));
-        Assert.Equal("Less than 1 hour", resolver.GetGroupKey(new Game { PlaytimeSeconds = 3000 }, GameGroupField.PlaytimeSeconds));
-        Assert.Equal("100+ hours", resolver.GetGroupKey(new Game { PlaytimeSeconds = 3600 * 500 }, GameGroupField.PlaytimeSeconds));
+        Assert.Equal(Strings.PlaytimeNotPlayed, resolver.GetGroupKey(new Game { PlaytimeSeconds = 0 }, GameGroupField.PlaytimeSeconds));
+        Assert.Equal(Strings.GroupLessThanOneHour, resolver.GetGroupKey(new Game { PlaytimeSeconds = 3000 }, GameGroupField.PlaytimeSeconds));
+        Assert.Equal(Strings.GroupHundredPlusHours, resolver.GetGroupKey(new Game { PlaytimeSeconds = 3600 * 500 }, GameGroupField.PlaytimeSeconds));
     }
 
     [Fact]
@@ -80,9 +81,9 @@ public class GameGroupResolverTests
     {
         var resolver = CreateResolver();
 
-        Assert.Equal("Not installed", resolver.GetGroupKey(new Game(), GameGroupField.InstallSizeBytes));
-        Assert.Equal("Less than 1 GB", resolver.GetGroupKey(new Game { IsInstalled = true, InstallSizeBytes = 500 }, GameGroupField.InstallSizeBytes));
-        Assert.Equal("100+ GB", resolver.GetGroupKey(new Game { IsInstalled = true, InstallSizeBytes = 200UL * 1024 * 1024 * 1024 }, GameGroupField.InstallSizeBytes));
+        Assert.Equal(Strings.NotInstalled, resolver.GetGroupKey(new Game(), GameGroupField.InstallSizeBytes));
+        Assert.Equal(Strings.GroupLessThanOneGb, resolver.GetGroupKey(new Game { IsInstalled = true, InstallSizeBytes = 500 }, GameGroupField.InstallSizeBytes));
+        Assert.Equal(Strings.GroupHundredPlusGb, resolver.GetGroupKey(new Game { IsInstalled = true, InstallSizeBytes = 200UL * 1024 * 1024 * 1024 }, GameGroupField.InstallSizeBytes));
     }
 
     [Fact]
@@ -91,7 +92,7 @@ public class GameGroupResolverTests
         var resolver = CreateResolver();
 
         Assert.Equal("C:\\", resolver.GetGroupKey(new Game { InstallDirectory = @"C:\Games\Game" }, GameGroupField.InstallDrive));
-        Assert.Equal("Unknown", resolver.GetGroupKey(new Game(), GameGroupField.InstallDrive));
+        Assert.Equal(Strings.Unknown, resolver.GetGroupKey(new Game(), GameGroupField.InstallDrive));
     }
 
     [Fact]
@@ -100,7 +101,7 @@ public class GameGroupResolverTests
         var resolver = CreateResolver();
 
         Assert.Equal("2020", resolver.GetGroupKey(new Game { ReleaseDate = new ReleaseDate(2020) }, GameGroupField.ReleaseYear));
-        Assert.Equal("Unknown", resolver.GetGroupKey(new Game(), GameGroupField.ReleaseYear));
+        Assert.Equal(Strings.Unknown, resolver.GetGroupKey(new Game(), GameGroupField.ReleaseYear));
     }
 
     [Fact]

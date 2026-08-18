@@ -1,4 +1,5 @@
 using Bridge.Metadata;
+using Bridge.Resources;
 using Bridge.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -39,11 +40,11 @@ public partial class IgdbSettingsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Save failed: {ex.Message}";
+            StatusMessage = Strings.Format(nameof(Strings.SaveFailedFormat), ex.Message);
             return;
         }
 
-        StatusMessage = "Saved.";
+        StatusMessage = Strings.Saved;
         Saved?.Invoke();
     }
 }

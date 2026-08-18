@@ -1,4 +1,3 @@
-using Bridge;
 using Bridge.Resources;
 using Bridge.Services;
 using CommunityToolkit.Mvvm.Input;
@@ -20,7 +19,7 @@ public partial class MainViewModel
         {
             if (promptWhenUpToDate)
             {
-                MessageDialogWindow.Show(
+                _dialogService.Show(
                     Strings.NoInternetCheckUpdates,
                     Strings.CheckForUpdates,
                     SymbolRegular.CloudOff24);
@@ -38,7 +37,7 @@ public partial class MainViewModel
                     SetPendingUpdate(null);
                     if (promptWhenUpToDate)
                     {
-                        MessageDialogWindow.Show(
+                        _dialogService.Show(
                             result.Message ?? Strings.Format(nameof(Strings.LatestVersionMessageFormat), Config.AssemblyVersion.ToString(3)),
                             Strings.CheckForUpdates,
                             SymbolRegular.Checkmark24);
@@ -49,7 +48,7 @@ public partial class MainViewModel
                 case AppUpdateStatus.NotApplicable:
                     if (promptWhenUpToDate)
                     {
-                        MessageDialogWindow.Show(
+                        _dialogService.Show(
                             result.Message ?? Strings.UpdatesNotApplicableMessage,
                             Strings.CheckForUpdates,
                             SymbolRegular.Info24);
@@ -60,7 +59,7 @@ public partial class MainViewModel
                 case AppUpdateStatus.Failed:
                     if (promptWhenUpToDate)
                     {
-                        MessageDialogWindow.Show(
+                        _dialogService.Show(
                             result.Message ?? Strings.CouldNotCheckUpdatesMessage,
                             Strings.CheckForUpdates,
                             SymbolRegular.Warning24);
@@ -78,7 +77,7 @@ public partial class MainViewModel
         {
             if (promptWhenUpToDate)
             {
-                MessageDialogWindow.Show(
+                _dialogService.Show(
                     Strings.Format(nameof(Strings.CouldNotCheckUpdatesFormat), ex.Message),
                     Strings.CheckForUpdates,
                     SymbolRegular.Warning24);
@@ -112,7 +111,7 @@ public partial class MainViewModel
             nameof(Strings.UpdateAvailableMessageFormat),
             update.Version.ToString(3),
             Config.AssemblyVersion.ToString(3));
-        if (!MessageDialogWindow.ShowConfirm(
+        if (!_dialogService.ShowConfirm(
                 message,
                 Strings.UpdateAvailableTitle,
                 SymbolRegular.ArrowDownload24,
@@ -147,7 +146,7 @@ public partial class MainViewModel
         {
             SetPendingUpdate(update);
             StatusMessage = Strings.Format(nameof(Strings.UpdateFailedFormat), ex.Message);
-            MessageDialogWindow.Show(
+            _dialogService.Show(
                 Strings.Format(nameof(Strings.UpdateFailedMessageFormat), ex.Message),
                 Strings.UpdateFailedTitle,
                 SymbolRegular.Warning24);

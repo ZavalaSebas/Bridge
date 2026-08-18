@@ -1,6 +1,7 @@
 using System.IO;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Resources;
 
 namespace Bridge.Statistics;
 
@@ -38,22 +39,22 @@ public class GameGroupResolver
     public string GetGroupKey(Game game, GameGroupField field) => field switch
     {
         GameGroupField.Name => FirstLetter(game.Name),
-        GameGroupField.Library => ResolveName(game.SourceId, _sourceNames, "Manual"),
+        GameGroupField.Library => ResolveName(game.SourceId, _sourceNames, Strings.Manual),
         GameGroupField.Developer => FirstName(game.DeveloperIds, _companyNames),
         GameGroupField.Publisher => FirstName(game.PublisherIds, _companyNames),
         GameGroupField.Platform => FirstName(game.PlatformIds, _platformNames),
         GameGroupField.Genre => FirstName(game.GenreIds, _genreNames),
-        GameGroupField.IsInstalled => game.IsInstalled ? "Installed" : "Not installed",
+        GameGroupField.IsInstalled => game.IsInstalled ? Strings.Installed : Strings.NotInstalled,
         GameGroupField.CompletionStatus => game.CompletionStatusId == Guid.Empty
-            ? "None"
-            : ResolveName(game.CompletionStatusId, _completionStatusNames, "Unknown"),
+            ? Strings.None
+            : ResolveName(game.CompletionStatusId, _completionStatusNames, Strings.Unknown),
         GameGroupField.PlaytimeSeconds => PlaytimeBucket(game.PlaytimeSeconds),
         GameGroupField.PlayCount => PlayCountBucket(game.PlayCount),
         GameGroupField.InstallSizeBytes => InstallSizeBucket(game.IsInstalled, game.InstallSizeBytes),
         GameGroupField.InstallDrive => DriveLetter(game.InstallDirectory),
         GameGroupField.LastPlayed => DateBucket(game.LastActivity),
         GameGroupField.RecentActivity => DateBucket(game.LastActivity),
-        GameGroupField.ReleaseYear => game.ReleaseDate?.Year.ToString() ?? "Unknown",
+        GameGroupField.ReleaseYear => game.ReleaseDate?.Year.ToString() ?? Strings.Unknown,
         GameGroupField.Added => DateBucket(game.Added),
         GameGroupField.Modified => DateBucket(game.Modified),
         GameGroupField.CommunityScore => ScoreBucket(game.CommunityScore),
@@ -63,7 +64,7 @@ public class GameGroupResolver
     };
 
     private static string FirstLetter(string name) =>
-        name.Length > 0 ? name[..1].ToUpperInvariant() : "Unknown";
+        name.Length > 0 ? name[..1].ToUpperInvariant() : Strings.Unknown;
 
     private static string ResolveName(Guid id, IReadOnlyDictionary<Guid, string> names, string fallback) =>
         names.TryGetValue(id, out var name) && name.Length > 0 ? name : fallback;
@@ -73,67 +74,64 @@ public class GameGroupResolver
         foreach (var id in ids)
             if (names.TryGetValue(id, out var name) && name.Length > 0)
                 return name;
-        return "Unknown";
+        return Strings.Unknown;
     }
 
     private static string PlaytimeBucket(ulong seconds) => seconds switch
     {
-        0 => "Not played",
-        < 3600 => "Less than 1 hour",
-        < 3600 * 10 => "1 - 10 hours",
-        < 3600 * 100 => "10 - 100 hours",
-        _ => "100+ hours"
+        0 => Strings.PlaytimeNotPlayed,
+        < 3600 => Strings.GroupLessThanOneHour,
+        < 3600 * 10 => Strings.GroupOneToTenHours,
+        < 3600 * 100 => Strings.GroupTenToHundredHours,
+        _ => Strings.GroupHundredPlusHours
     };
 
     private static string PlayCountBucket(ulong count) => count switch
     {
-        0 => "Never played",
-        1 => "Once",
-        _ => "Multiple times"
+        0 => Strings.GroupNeverPlayed,
+        1 => Strings.GroupPlayedOnce,
+        _ => Strings.GroupPlayedMultiple
     };
 
     private static string InstallSizeBucket(bool installed, ulong? bytes) => bytes switch
     {
-        null when !installed => "Not installed",
-        null => "Unknown size",
-        < 1024UL * 1024 * 1024 => "Less than 1 GB",
-        < 10UL * 1024 * 1024 * 1024 => "1 - 10 GB",
-        < 100UL * 1024 * 1024 * 1024 => "10 - 100 GB",
-        _ => "100+ GB"
+        null when !installed => Strings.NotInstalled,
+        null => Strings.GroupUnknownSize,
+        < 1024UL * 1024 * 1024 => Strings.GroupLessThanOneGb,
+        < 10UL * 1024 * 1024 * 1024 => Strings.GroupOneToTenGb,
+        < 100UL * 1024 * 1024 * 1024 => Strings.GroupTenToHundredGb,
+        _ => Strings.GroupHundredPlusGb
     };
 
     private static string DriveLetter(string installDirectory)
     {
         if (string.IsNullOrWhiteSpace(installDirectory))
-            return "Unknown";
+            return Strings.Unknown;
         var root = Path.GetPathRoot(installDirectory);
-        return string.IsNullOrEmpty(root) ? "Unknown" : root;
+        return string.IsNullOrEmpty(root) ? Strings.Unknown : root;
     }
 
-    // Coarse buckets for MVP grouping: Never / last 7 days / last 30 days /
-    // last year / older. Kept simple on purpose — revisit when real usage data
-    // exists.
     private static string DateBucket(DateTime? date)
     {
         if (!date.HasValue)
-            return "Never";
+            return Strings.GroupNever;
         var age = DateTime.Now - date.Value;
         return age switch
         {
-            { TotalDays: < 1 } => "Today",
-            { TotalDays: < 7 } => "Last 7 days",
-            { TotalDays: < 30 } => "Last 30 days",
-            { TotalDays: < 365 } => "Last year",
-            _ => "Older"
+            { TotalDays: < 1 } => Strings.GroupToday,
+            { TotalDays: < 7 } => Strings.GroupLastSevenDays,
+            { TotalDays: < 30 } => Strings.GroupLastThirtyDays,
+            { TotalDays: < 365 } => Strings.GroupLastYear,
+            _ => Strings.GroupOlder
         };
     }
 
     private static string ScoreBucket(int? score) => score switch
     {
-        null => "No score",
-        < 50 => "0 - 49",
-        < 70 => "50 - 69",
-        < 90 => "70 - 89",
-        _ => "90 - 100"
+        null => Strings.GroupNoScore,
+        < 50 => Strings.GroupScore0To49,
+        < 70 => Strings.GroupScore50To69,
+        < 90 => Strings.GroupScore70To89,
+        _ => Strings.GroupScore90To100
     };
 }
