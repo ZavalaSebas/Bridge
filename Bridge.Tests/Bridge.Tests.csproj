@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net10.0-windows, not plain net10.0: RomScanner/LibraryStatistics/
-         GameLauncher live in the Bridge (WPF) project, and a plain net10.0
-         test project can't reference a net10.0-windows one (platform
-         compatibility check fails the other way around). -->
+    <!-- net10.0-windows, not plain net10.0: GameLauncher and other WPF-only
+         types live in the Bridge project, and a plain net10.0 test project
+         can't reference a net10.0-windows one (platform compatibility check
+         fails the other way around). -->
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Bridge.Storage\Bridge.Storage.csproj" />
     <ProjectReference Include="..\Bridge.Metadata\Bridge.Metadata.csproj" />
     <ProjectReference Include="..\Bridge.Import\Bridge.Import.csproj" />
+    <ProjectReference Include="..\Bridge.Emulation\Bridge.Emulation.csproj" />
     <ProjectReference Include="..\Bridge\Bridge.csproj" />
   </ItemGroup>
 

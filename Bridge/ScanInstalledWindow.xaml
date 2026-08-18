@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:Bridge.Converters"
         xmlns:controls="clr-namespace:Bridge.Controls"
-        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:res="clr-namespace:Bridge.Resources" xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         x:Name="Root"
-        Title="Scan Automatically" Width="860" Height="620"
+        Title="{x:Static res:Strings.ScanAutomaticallyTitle}" Width="860" Height="620"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         ResizeMode="NoResize"
         ExtendsContentIntoTitleBar="True"
@@ -26,7 +26,7 @@
         <ui:TitleBar Grid.Row="0" Background="{DynamicResource Bridge.Sidebar.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="0,0,0,1" Height="56" ShowMinimize="False" ShowMaximize="False" ShowClose="True"><ui:TitleBar.Header>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                 <ui:SymbolIcon Symbol="Search24" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="Scan Automatically" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.ScanAutomaticallyTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 <TextBlock x:Name="StatusText" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="12,0,0,2"/>
                 <ui:ProgressRing x:Name="ScanProgress" IsIndeterminate="True" Width="18" Height="18" Margin="10,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
             </StackPanel>
@@ -38,12 +38,12 @@
 
                 <!-- Toolbar -->
                 <DockPanel Grid.Row="0" Margin="0,0,0,12">
-                    <Button x:Name="ScanFolderButton" DockPanel.Dock="Right" Content="Scan Folder..." Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
-                    <Button x:Name="BrowseButton" DockPanel.Dock="Right" Content="Browse..." Padding="12,6" Click="Browse_Click"/>
-                    <Button x:Name="DetectInstalledButton" DockPanel.Dock="Left" Content="Detect Installed" Padding="12,6" Click="DetectInstalled_Click"/>
-                    <Button DockPanel.Dock="Left" Content="Select All" Padding="10,6" Margin="0,0,6,0" Click="SelectAll_Click" ToolTip="Check every game in the list"/>
-                    <Button DockPanel.Dock="Left" Content="Select None" Padding="10,6" Click="SelectNone_Click" ToolTip="Uncheck every game in the list"/>
-                    <CheckBox x:Name="HideImportedCheck" DockPanel.Dock="Right" Content="Hide already imported" VerticalAlignment="Center" Margin="14,0,0,0" IsChecked="True" Checked="RefreshFilter_Click" Unchecked="RefreshFilter_Click"/>
+                    <Button x:Name="ScanFolderButton" DockPanel.Dock="Right" Content="{x:Static res:Strings.ScanFolder}" Margin="6,0,0,0" Padding="12,6" Click="ScanFolder_Click"/>
+                    <Button x:Name="BrowseButton" DockPanel.Dock="Right" Content="{x:Static res:Strings.Browse}" Padding="12,6" Click="Browse_Click"/>
+                    <Button x:Name="DetectInstalledButton" DockPanel.Dock="Left" Content="{x:Static res:Strings.DetectInstalled}" Padding="12,6" Click="DetectInstalled_Click"/>
+                    <Button DockPanel.Dock="Left" Content="{x:Static res:Strings.SelectAll}" Padding="10,6" Margin="0,0,6,0" Click="SelectAll_Click" ToolTip="{x:Static res:Strings.SelectAllTooltip}"/>
+                    <Button DockPanel.Dock="Left" Content="{x:Static res:Strings.SelectNone}" Padding="10,6" Click="SelectNone_Click" ToolTip="{x:Static res:Strings.SelectNoneTooltip}"/>
+                    <CheckBox x:Name="HideImportedCheck" DockPanel.Dock="Right" Content="{x:Static res:Strings.HideAlreadyImported}" VerticalAlignment="Center" Margin="14,0,0,0" IsChecked="True" Checked="RefreshFilter_Click" Unchecked="RefreshFilter_Click"/>
                 </DockPanel>
 
                 <Border Grid.Row="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
@@ -94,8 +94,8 @@
                 </Border>
 
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                    <Button Content="Cancel" Width="90" IsCancel="True" Padding="10,6"/>
-                    <Button Content="Add Games" Width="110" Margin="8,0,0,0" Padding="10,6" Click="AddGames_Click"/>
+                    <Button Content="{x:Static res:Strings.Cancel}" Width="90" IsCancel="True" Padding="10,6"/>
+                    <Button Content="{x:Static res:Strings.AddGames}" Width="110" Margin="8,0,0,0" Padding="10,6" Click="AddGames_Click"/>
                 </StackPanel>
             </Grid>
         </Border>

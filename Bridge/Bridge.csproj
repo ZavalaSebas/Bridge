@@ -34,12 +34,12 @@
     <ProjectReference Include="..\Bridge.Storage\Bridge.Storage.csproj" />
     <ProjectReference Include="..\Bridge.Metadata\Bridge.Metadata.csproj" />
     <ProjectReference Include="..\Bridge.Import\Bridge.Import.csproj" />
+    <ProjectReference Include="..\Bridge.Emulation\Bridge.Emulation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="SharpCompress" />
     <PackageReference Include="WPF-UI" />
   </ItemGroup>
 

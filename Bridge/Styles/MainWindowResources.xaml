@@ -15,6 +15,7 @@
     <converters:EnumMatchConverter x:Key="EnumMatch" />
     <converters:RoundedRectClipConverter x:Key="RoundedClip" />
     <converters:EmptyToVisibilityConverter x:Key="EmptyToVis" />
+    <converters:NullFallbackConverter x:Key="NullFallback" />
     <converters:NonZeroToVisibilityConverter x:Key="NonZeroToVis" />
     <converters:DescriptionBlocksConverter x:Key="DescriptionBlocks" />
     <converters:StatusMessageKindToBrushConverter x:Key="StatusMessageBrush" />

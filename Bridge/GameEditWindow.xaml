@@ -4,8 +4,9 @@
         xmlns:converters="clr-namespace:Bridge.Converters"
         xmlns:controls="clr-namespace:Bridge.Controls"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:res="clr-namespace:Bridge.Resources"
         x:Name="Root"
-        Title="Edit Game"
+        Title="{x:Static res:Strings.EditGame}"
         Width="660" Height="740"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
@@ -31,7 +32,7 @@
         <ui:TitleBar Grid.Row="0" Background="{DynamicResource Bridge.Sidebar.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="0,0,0,1" Height="56" ShowMinimize="False" ShowMaximize="False" ShowClose="True"><ui:TitleBar.Header>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                 <ui:SymbolIcon x:Name="WindowIcon" Symbol="Edit24" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock x:Name="WindowTitleText" Text="Edit Game" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock x:Name="WindowTitleText" Text="{x:Static res:Strings.EditGame}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </StackPanel>
         </ui:TitleBar.Header></ui:TitleBar>
 
@@ -41,12 +42,12 @@
             <Border Grid.Row="0" Background="#332A6EB8" CornerRadius="8" Padding="12,8" Margin="0,0,0,12" Visibility="{Binding IsSteamManaged, Converter={StaticResource BoolToVis}}">
                 <StackPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Info24" FontSize="16" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock Text="This Steam game's metadata is managed by Bridge and stays in sync with Steam. Only the artwork (icon, cover, background) can be customized here." FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{x:Static res:Strings.SteamManagedMetadataNotice}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 
             <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
-                <TabItem Header="General" Visibility="{Binding CanEditMetadata, Converter={StaticResource BoolToVis}}">
+                <TabItem Header="{x:Static res:Strings.General}" Visibility="{Binding CanEditMetadata, Converter={StaticResource BoolToVis}}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <Border Margin="2,4,2,2" Background="{DynamicResource Bridge.Sidebar.Background}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
                             <Grid MaxWidth="520">
@@ -56,40 +57,40 @@
                                     <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static res:Strings.Name}" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Sorting Name" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}" ToolTip="Name used for sorting (e.g. 'Witcher 3' for 'The Witcher 3: Wild Hunt'). Leave empty to sort by Name."/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static res:Strings.SortingName}" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}" ToolTip="{x:Static res:Strings.SortingNameTooltip}"/>
                                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SortingName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Release Date" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ReleaseDateText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8" ToolTip="YYYY, YYYY-MM or YYYY-MM-DD"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{x:Static res:Strings.ReleaseDate}" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ReleaseDateText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8" ToolTip="{x:Static res:Strings.ReleaseDateTooltip}"/>
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Critic Score" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static res:Strings.CriticScore}" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                                 <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CriticScoreText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Community Score" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static res:Strings.CommunityScore}" VerticalAlignment="Center" Margin="0,0,10,8" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                                 <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding CommunityScoreText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditMetadata}" Padding="6,4" Margin="0,0,0,8"/>
 
                                 <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
-                                    <CheckBox Content="Favorite" IsChecked="{Binding Favorite}" Margin="0,0,16,0"/>
-                                    <CheckBox Content="Hidden" IsChecked="{Binding Hidden}"/>
+                                    <CheckBox Content="{x:Static res:Strings.Favorite}" IsChecked="{Binding Favorite}" Margin="0,0,16,0"/>
+                                    <CheckBox Content="{x:Static res:Strings.Hidden}" IsChecked="{Binding Hidden}"/>
                                 </StackPanel>
 
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Description" VerticalAlignment="Top" Margin="0,2,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static res:Strings.Description}" VerticalAlignment="Top" Margin="0,2,10,0" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                                 <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="120" Padding="6,4" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding CanEditMetadata}"/>
                             </Grid>
                         </Border>
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Details" Visibility="{Binding CanEditMetadata, Converter={StaticResource BoolToVis}}">
+                <TabItem Header="{x:Static res:Strings.Details}" Visibility="{Binding CanEditMetadata, Converter={StaticResource BoolToVis}}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <Border Margin="2,4,2,2" Background="{DynamicResource Bridge.Sidebar.Background}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
                             <StackPanel MaxWidth="520" IsEnabled="{Binding CanEditMetadata}">
                                 <DockPanel Margin="0,0,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new genre" Click="AddReference_Click" Tag="Genre"/>
-                                    <TextBlock Text="Genres" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="{x:Static res:Strings.AddNewGenre}" Click="AddReference_Click" Tag="Genre"/>
+                                    <TextBlock Text="{x:Static res:Strings.Genres}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Genres}">
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -99,8 +100,8 @@
                                 </ItemsControl>
 
                                 <DockPanel Margin="0,14,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new developer" Click="AddReference_Click" Tag="Developer"/>
-                                    <TextBlock Text="Developers" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="{x:Static res:Strings.AddNewDeveloper}" Click="AddReference_Click" Tag="Developer"/>
+                                    <TextBlock Text="{x:Static res:Strings.Developers}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Developers}">
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -110,8 +111,8 @@
                                 </ItemsControl>
 
                                 <DockPanel Margin="0,14,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new publisher" Click="AddReference_Click" Tag="Publisher"/>
-                                    <TextBlock Text="Publishers" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="{x:Static res:Strings.AddNewPublisher}" Click="AddReference_Click" Tag="Publisher"/>
+                                    <TextBlock Text="{x:Static res:Strings.Publishers}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Publishers}">
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -121,8 +122,8 @@
                                 </ItemsControl>
 
                                 <DockPanel Margin="0,14,0,6">
-                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="Add new platform" Click="AddReference_Click" Tag="Platform"/>
-                                    <TextBlock Text="Platforms" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                    <Button DockPanel.Dock="Right" Content="+" FontWeight="Bold" MinWidth="32" MinHeight="32" Width="32" Height="32" Padding="0" ToolTip="{x:Static res:Strings.AddNewPlatform}" Click="AddReference_Click" Tag="Platform"/>
+                                    <TextBlock Text="{x:Static res:Strings.Platforms}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Platforms}">
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -131,45 +132,45 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
-                                <TextBlock Text="Install Directory" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,14,0,6"/>
+                                <TextBlock Text="{x:Static res:Strings.InstallDirectoryLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,14,0,6"/>
                                 <TextBox Text="{Binding InstallDirectory, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>
                             </StackPanel>
                         </Border>
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Media" IsSelected="{Binding IsSteamManaged, Mode=OneWay}">
+                <TabItem Header="{x:Static res:Strings.Media}" IsSelected="{Binding IsSteamManaged, Mode=OneWay}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <Border Margin="2,4,2,2" Background="{DynamicResource Bridge.Sidebar.Background}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
                             <StackPanel MaxWidth="560">
-                                <TextBlock Text="Icon" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,6"/>
+                                <TextBlock Text="{x:Static res:Strings.IconLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,6"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <Border Width="48" Height="48" Background="#1B2132" CornerRadius="4" Margin="0,0,10,0">
                                         <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" RenderOptions.BitmapScalingMode="Fant"/>
                                     </Border>
                                     <TextBox Width="330" VerticalAlignment="Center" Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>
-                                    <Button Content="Browse..." Margin="8,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="Browse_Click" Tag="Icon"/>
-                                    <Button Content="Search web..." Margin="6,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="SearchWeb_Click" Tag="Icon"/>
+                                    <Button Content="{x:Static res:Strings.Browse}" Margin="8,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="Browse_Click" Tag="Icon"/>
+                                    <Button Content="{x:Static res:Strings.SearchWeb}" Margin="6,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="SearchWeb_Click" Tag="Icon"/>
                                 </StackPanel>
 
-                                <TextBlock Text="Cover Image" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,6"/>
+                                <TextBlock Text="{x:Static res:Strings.CoverImageLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,6"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <Border Width="40" Height="60" Background="#1B2132" CornerRadius="4" Margin="0,0,10,0">
                                         <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding CoverImage}" RenderOptions.BitmapScalingMode="Fant"/>
                                     </Border>
                                     <TextBox Width="330" VerticalAlignment="Center" Text="{Binding CoverImage, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>
-                                    <Button Content="Browse..." Margin="8,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="Browse_Click" Tag="CoverImage"/>
-                                    <Button Content="Search web..." Margin="6,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="SearchWeb_Click" Tag="CoverImage"/>
+                                    <Button Content="{x:Static res:Strings.Browse}" Margin="8,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="Browse_Click" Tag="CoverImage"/>
+                                    <Button Content="{x:Static res:Strings.SearchWeb}" Margin="6,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="SearchWeb_Click" Tag="CoverImage"/>
                                 </StackPanel>
 
-                                <TextBlock Text="Background Image" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,6"/>
+                                <TextBlock Text="{x:Static res:Strings.BackgroundImageLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,6"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <Border Width="80" Height="44" Background="#1B2132" CornerRadius="4" Margin="0,0,10,0">
                                         <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding BackgroundImage}" RenderOptions.BitmapScalingMode="Fant"/>
                                     </Border>
                                     <TextBox Width="330" VerticalAlignment="Center" Text="{Binding BackgroundImage, UpdateSourceTrigger=PropertyChanged}" Padding="6,4"/>
-                                    <Button Content="Browse..." Margin="8,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="Browse_Click" Tag="BackgroundImage"/>
-                                    <Button Content="Search web..." Margin="6,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="SearchWeb_Click" Tag="BackgroundImage"/>
+                                    <Button Content="{x:Static res:Strings.Browse}" Margin="8,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="Browse_Click" Tag="BackgroundImage"/>
+                                    <Button Content="{x:Static res:Strings.SearchWeb}" Margin="6,0,0,0" Padding="10,6" VerticalAlignment="Center" Click="SearchWeb_Click" Tag="BackgroundImage"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -179,8 +180,8 @@
         </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,14,20,16">
-            <Button Content="Save" IsDefault="True" Padding="18,7" Click="Save_Click"/>
-            <Button Content="Cancel" IsCancel="True" Margin="8,0,0,0" Padding="18,7"/>
+            <Button Content="{x:Static res:Strings.Save}" IsDefault="True" Padding="18,7" Click="Save_Click"/>
+            <Button Content="{x:Static res:Strings.Cancel}" IsCancel="True" Margin="8,0,0,0" Padding="18,7"/>
         </StackPanel>
     </Grid>
 </ui:FluentWindow>

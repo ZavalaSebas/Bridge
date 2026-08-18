@@ -38,6 +38,8 @@ public partial class MainWindow
 
     // Opens the sender's ContextMenu on left-click (used by icon
     // buttons in the top panel).
+    internal void HandleMenuButtonClick(object sender, RoutedEventArgs e) => MenuButton_Click(sender, e);
+
     private void MenuButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement element && element.ContextMenu is { } menu)

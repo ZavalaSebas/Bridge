@@ -1,15 +1,11 @@
 ﻿using System.Windows;
-using System.Windows.Threading;
 using Bridge.Services;
 using Bridge.ViewModels;
 using Wpf.Ui.Controls;
-
 namespace Bridge
 {
     public partial class MainWindow : FluentWindow
     {
-        private readonly DispatcherTimer _favoriteHideTimer;
-        private bool _suppressTableResize;
         private string _sidebarPosition = "Left";
 
         public MainWindow()
@@ -44,19 +40,6 @@ namespace Bridge
                 SaveTableNameWidth();
                 if (DataContext is MainViewModel vm)
                     SaveScrollPosition(vm.ViewMode);
-            };
-
-            // Debounce the tuck-away: hovering near the seam between the star
-            // and the cover fires MouseLeave/MouseEnter in rapid succession
-            // (the revealed star shifts the hovered area), which would make the
-            // star flicker in and out. Only hide once the mouse has actually
-            // left the cover for a beat.
-            _favoriteHideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            _favoriteHideTimer.Tick += (_, _) =>
-            {
-                _favoriteHideTimer.Stop();
-                if (CoverFavoriteButton.IsChecked != true && CoverHost.IsMouseOver is false)
-                    AnimateFavoriteStar(inView: false);
             };
 
             PreviewKeyDown += MainWindow_PreviewKeyDown;

@@ -1,7 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Threading;
-using Bridge.Core.Entities;
 using Bridge.Services;
 using Bridge.ViewModels;
 
@@ -83,7 +81,7 @@ public partial class MainWindow
     private void RestoreTableNameWidth(Bridge.Core.Enums.ViewMode mode)
     {
         if (mode != Bridge.Core.Enums.ViewMode.Table
-            || TableList.View is not GridView gridView
+            || LibraryDetail.TableList.View is not GridView gridView
             || gridView.Columns.Count < 1)
             return;
 
@@ -99,7 +97,7 @@ public partial class MainWindow
     // resize also persists as it adjusts.
     private void SaveTableNameWidth()
     {
-        if (TableList.View is not GridView gridView
+        if (LibraryDetail.TableList.View is not GridView gridView
             || gridView.Columns.Count < 1)
             return;
 
@@ -110,9 +108,9 @@ public partial class MainWindow
     {
         return mode switch
         {
-            Bridge.Core.Enums.ViewMode.Covers => GetScrollViewer(CoversList)?.VerticalOffset,
-            Bridge.Core.Enums.ViewMode.List => GetScrollViewer(GamesList)?.VerticalOffset,
-            Bridge.Core.Enums.ViewMode.Table => GetScrollViewer(TableList)?.VerticalOffset,
+            Bridge.Core.Enums.ViewMode.Covers => GetScrollViewer(LibraryDetail.CoversList)?.VerticalOffset,
+            Bridge.Core.Enums.ViewMode.List => GetScrollViewer(LibraryDetail.GamesList)?.VerticalOffset,
+            Bridge.Core.Enums.ViewMode.Table => GetScrollViewer(LibraryDetail.TableList)?.VerticalOffset,
             _ => null
         };
     }
@@ -120,11 +118,11 @@ public partial class MainWindow
     private void SetScrollOffset(Bridge.Core.Enums.ViewMode mode, double offset)
     {
         if (mode == Bridge.Core.Enums.ViewMode.Covers)
-            GetScrollViewer(CoversList)?.ScrollToVerticalOffset(offset);
+            GetScrollViewer(LibraryDetail.CoversList)?.ScrollToVerticalOffset(offset);
         else if (mode == Bridge.Core.Enums.ViewMode.List)
-            GetScrollViewer(GamesList)?.ScrollToVerticalOffset(offset);
+            GetScrollViewer(LibraryDetail.GamesList)?.ScrollToVerticalOffset(offset);
         else if (mode == Bridge.Core.Enums.ViewMode.Table)
-            GetScrollViewer(TableList)?.ScrollToVerticalOffset(offset);
+            GetScrollViewer(LibraryDetail.TableList)?.ScrollToVerticalOffset(offset);
     }
 
     // Finds the ScrollViewer WPF wraps inside a ListBox/ListView.
@@ -154,14 +152,14 @@ public partial class MainWindow
         {
             case Bridge.Core.Enums.ViewMode.List:
                 ShowFullWidthDetail();
-                CompactInfoPanel.Visibility = Visibility.Collapsed;
+                LibraryDetail.CompactInfoPanel.Visibility = Visibility.Collapsed;
                 break;
             case Bridge.Core.Enums.ViewMode.Covers:
-                CompactInfoPanel.Visibility = Visibility.Collapsed;
+                LibraryDetail.CompactInfoPanel.Visibility = Visibility.Collapsed;
                 HideDetailPanel();
                 break;
             case Bridge.Core.Enums.ViewMode.Table:
-                CompactInfoPanel.Visibility = Visibility.Collapsed;
+                LibraryDetail.CompactInfoPanel.Visibility = Visibility.Collapsed;
                 HideDetailPanel();
                 break;
         }
@@ -183,97 +181,26 @@ public partial class MainWindow
             return;
         }
 
-        CoversList.ScrollIntoView(game);
+        LibraryDetail.CoversList.ScrollIntoView(game);
     }
 
     // The Details view keeps the full detail panel on the right; the covers
     // (Grid) and the List (Table) views run full-screen without it.
     private void ShowFullWidthDetail()
     {
-        ViewsColumn.Width = new GridLength(360);
-        DetailColumn.MinWidth = 320;
-        DetailColumn.Width = new GridLength(1, GridUnitType.Star);
-        DetailSeparator.Visibility = Visibility.Visible;
-        DetailSplitter.Visibility = Visibility.Visible;
+        LibraryDetail.ViewsColumn.Width = new GridLength(360);
+        LibraryDetail.DetailColumn.MinWidth = 320;
+        LibraryDetail.DetailColumn.Width = new GridLength(1, GridUnitType.Star);
+        LibraryDetail.DetailSeparator.Visibility = Visibility.Visible;
+        LibraryDetail.DetailSplitter.Visibility = Visibility.Visible;
     }
 
     private void HideDetailPanel()
     {
-        ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
-        DetailColumn.MinWidth = 0;
-        DetailColumn.Width = new GridLength(0);
-        DetailSeparator.Visibility = Visibility.Collapsed;
-        DetailSplitter.Visibility = Visibility.Collapsed;
-    }
-
-    private void CloseCompactInfo_Click(object sender, RoutedEventArgs e)
-    {
-        CompactInfoPanel.Visibility = Visibility.Collapsed;
-    }
-
-    // Table view: rows bind to GameDetailRow (not Game directly), so
-    // SelectedItem needs an explicit handler to sync SelectedGame.
-    private void TableList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ListView { SelectedItem: GameDetailRow row }
-            && DataContext is MainViewModel vm)
-        {
-            vm.SelectedGame = row.Game;
-        }
-    }
-
-    // Table view: dynamically adjusts Name column width to fill
-    // remaining space after fixed-width columns. Uses Width (not
-    // ActualWidth) for stable values. Deferred to Loaded priority
-    // to avoid layout race conditions with selection triggers.
-    private void TableList_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (sender is not ListView listView
-            || listView.View is not GridView gridView
-            || gridView.Columns.Count < 2)
-            return;
-
-        if (_suppressTableResize)
-            return;
-
-        _suppressTableResize = true;
-
-        double totalFixed = 0;
-        for (int i = 1; i < gridView.Columns.Count; i++)
-            totalFixed += gridView.Columns[i].Width;
-
-        double available = listView.ActualWidth
-                           - System.Windows.SystemParameters.VerticalScrollBarWidth
-                           - totalFixed;
-
-        // If the available width isn't a sane positive value, the list is
-        // mid-layout (startup, or the detail panel collapsing) — skip this
-        // pass and let the next SizeChanged adjust with real dimensions.
-        // Clamping to a minimum here would permanently shrink the Name
-        // column to that minimum on startup.
-        if (available < 100)
-        {
-            _suppressTableResize = false;
-            return;
-        }
-
-        var nameColumn = gridView.Columns[0];
-        if (Math.Abs(nameColumn.Width - available) > 0.5)
-        {
-            double capture = available;
-            Dispatcher.BeginInvoke(DispatcherPriority.Loaded,
-                new Action(() =>
-                {
-                    nameColumn.Width = capture;
-                    // Persist so the next open (straight into Table) starts
-                    // with this width instead of resizing visibly.
-                    ScrollPositionSettingsStore.SaveTableNameWidth(capture);
-                    _suppressTableResize = false;
-                }));
-        }
-        else
-        {
-            _suppressTableResize = false;
-        }
+        LibraryDetail.ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
+        LibraryDetail.DetailColumn.MinWidth = 0;
+        LibraryDetail.DetailColumn.Width = new GridLength(0);
+        LibraryDetail.DetailSeparator.Visibility = Visibility.Collapsed;
+        LibraryDetail.DetailSplitter.Visibility = Visibility.Collapsed;
     }
 }

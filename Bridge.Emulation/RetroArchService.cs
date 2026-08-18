@@ -7,7 +7,7 @@ using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using SharpCompress.Archives;
 
-namespace Bridge.Services;
+namespace Bridge.Emulation;
 
 /// <summary>
 /// Progress for Bridge-managed emulator operations. <see cref="Percent"/> is
@@ -42,6 +42,7 @@ public sealed class RetroArchService
     private readonly IRepository<Emulator> _emulatorRepository;
     private readonly IRepository<Platform> _platformRepository;
     private readonly HttpClient _httpClient;
+    private readonly EmulationPaths _paths;
 
     // Serializes install/refresh work so two quick Play clicks (or a Play racing
     // a forced update) can never extract over the same install directory.
@@ -50,11 +51,13 @@ public sealed class RetroArchService
     public RetroArchService(
         IRepository<Emulator> emulatorRepository,
         IRepository<Platform> platformRepository,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        EmulationPaths paths)
     {
         _emulatorRepository = emulatorRepository;
         _platformRepository = platformRepository;
         _httpClient = httpClient;
+        _paths = paths;
         CleanupOrphanedArtifacts();
     }
 
@@ -62,19 +65,19 @@ public sealed class RetroArchService
     // leaves a partial .archive; a kill mid-extraction leaves retroarch-staging-*;
     // ReplaceInstallation can leave an .old backup). Runs once at startup so a
     // broken session never leaks hundreds of MB or a stale staging dir.
-    private static void CleanupOrphanedArtifacts()
+    private void CleanupOrphanedArtifacts()
     {
         try
         {
-            if (Directory.Exists(Config.EmulatorDownloadPath))
+            if (Directory.Exists(_paths.DownloadPath))
             {
-                foreach (var file in Directory.EnumerateFiles(Config.EmulatorDownloadPath, "*.archive"))
+                foreach (var file in Directory.EnumerateFiles(_paths.DownloadPath, "*.archive"))
                 {
                     DeleteFile(file);
                 }
             }
 
-            var parent = Path.GetDirectoryName(Config.EmulatorInstallPath);
+            var parent = Path.GetDirectoryName(_paths.InstallPath);
             if (parent is not null && Directory.Exists(parent))
             {
                 foreach (var directory in Directory.EnumerateDirectories(parent, "retroarch-staging-*"))
@@ -83,7 +86,7 @@ public sealed class RetroArchService
                 }
             }
 
-            DeleteDirectory(Config.EmulatorInstallPath + ".old");
+            DeleteDirectory(_paths.InstallPath + ".old");
         }
         catch
         {
@@ -104,7 +107,7 @@ public sealed class RetroArchService
             return false;
         }
 
-        var executable = Path.Combine(Config.EmulatorInstallPath, "retroarch.exe");
+        var executable = Path.Combine(_paths.InstallPath, "retroarch.exe");
         if (!File.Exists(executable))
         {
             return true;
@@ -117,7 +120,7 @@ public sealed class RetroArchService
             return false;
         }
 
-        return !File.Exists(Path.Combine(Config.EmulatorInstallPath, "cores", definition.CoreFileName));
+        return !File.Exists(Path.Combine(_paths.InstallPath, "cores", definition.CoreFileName));
     }
 
     public async Task EnsureReadyAsync(Game game, IProgress<EmulatorProgress>? progress = null, CancellationToken cancellationToken = default)
@@ -151,13 +154,13 @@ public sealed class RetroArchService
 
     public async Task<string> GetStatusAsync(CancellationToken cancellationToken = default)
     {
-        var executable = Path.Combine(Config.EmulatorInstallPath, "retroarch.exe");
+        var executable = Path.Combine(_paths.InstallPath, "retroarch.exe");
         if (!File.Exists(executable))
         {
             return "RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.";
         }
 
-        var coreDirectory = Path.Combine(Config.EmulatorInstallPath, "cores");
+        var coreDirectory = Path.Combine(_paths.InstallPath, "cores");
         var count = Directory.Exists(coreDirectory) ? Directory.EnumerateFiles(coreDirectory, "*_libretro.dll").Count() : 0;
         await Task.CompletedTask;
         return $"RetroArch is installed with {count} managed core(s). Cores are checked for updates when needed.";
@@ -185,7 +188,7 @@ public sealed class RetroArchService
 
     private async Task<Emulator> EnsureFrontendAsync(IProgress<EmulatorProgress>? progress, CancellationToken cancellationToken, bool force = false)
     {
-        var executable = Path.Combine(Config.EmulatorInstallPath, "retroarch.exe");
+        var executable = Path.Combine(_paths.InstallPath, "retroarch.exe");
         // Fast path: an installed frontend is left alone on Play. Repeated Play
         // clicks must never hit the network or re-install anything.
         if (!force && File.Exists(executable))
@@ -218,8 +221,8 @@ public sealed class RetroArchService
             // The buildbot publishes no digest for RetroArch.7z, so the installed
             // version string is the change signal: same resolved version → already
             // current, keep the existing install.
-            if (File.Exists(executable) && File.Exists(Config.RetroArchVersionPath) &&
-                string.Equals(await File.ReadAllTextAsync(Config.RetroArchVersionPath, cancellationToken), asset.Version, StringComparison.OrdinalIgnoreCase))
+            if (File.Exists(executable) && File.Exists(_paths.VersionMarkerPath) &&
+                string.Equals(await File.ReadAllTextAsync(_paths.VersionMarkerPath, cancellationToken), asset.Version, StringComparison.OrdinalIgnoreCase))
             {
                 return GetOrCreateManagedEmulator(executable);
             }
@@ -235,7 +238,7 @@ public sealed class RetroArchService
                     // files takes ~30s and must never block the UI thread. All the
                     // I/O-heavy work (extract + atomic swap) runs on pool threads;
                     // only the progress reports marshal back to the caller.
-                    var staging = Path.Combine(Path.GetDirectoryName(Config.EmulatorInstallPath)!, $"retroarch-staging-{Guid.NewGuid():N}");
+                    var staging = Path.Combine(Path.GetDirectoryName(_paths.InstallPath)!, $"retroarch-staging-{Guid.NewGuid():N}");
                     try
                     {
                         Directory.CreateDirectory(staging);
@@ -251,7 +254,7 @@ public sealed class RetroArchService
                     {
                         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
                     }
-                    await File.WriteAllTextAsync(Config.RetroArchVersionPath, asset.Version, cancellationToken);
+                    await File.WriteAllTextAsync(_paths.VersionMarkerPath, asset.Version, cancellationToken);
                 }
                 finally
                 {
@@ -277,7 +280,7 @@ public sealed class RetroArchService
 
     private async Task<string> EnsureCoreAsync(RomPlatformDefinition definition, IProgress<EmulatorProgress>? progress, CancellationToken cancellationToken, bool force = false)
     {
-        var coresDirectory = Path.Combine(Config.EmulatorInstallPath, "cores");
+        var coresDirectory = Path.Combine(_paths.InstallPath, "cores");
         var corePath = Path.Combine(coresDirectory, definition.CoreFileName);
         if (File.Exists(corePath) && !force)
         {
@@ -330,12 +333,12 @@ public sealed class RetroArchService
         var emulator = _emulatorRepository.GetAll().FirstOrDefault(item => item.Name == "Bridge RetroArch");
         if (emulator is null)
         {
-            emulator = new Emulator { Name = "Bridge RetroArch", InstallDirectory = Config.EmulatorInstallPath };
+            emulator = new Emulator { Name = "Bridge RetroArch", InstallDirectory = _paths.InstallPath };
             _emulatorRepository.Add(emulator);
         }
-        else if (!string.Equals(emulator.InstallDirectory, Config.EmulatorInstallPath, StringComparison.OrdinalIgnoreCase))
+        else if (!string.Equals(emulator.InstallDirectory, _paths.InstallPath, StringComparison.OrdinalIgnoreCase))
         {
-            emulator.InstallDirectory = Config.EmulatorInstallPath;
+            emulator.InstallDirectory = _paths.InstallPath;
             _emulatorRepository.Update(emulator);
         }
 
@@ -369,7 +372,7 @@ public sealed class RetroArchService
             version);
     }
 
-    private static async Task<string> DownloadAsync(string url, IReadOnlySet<string> allowedHosts, long maximumBytes, IProgress<EmulatorProgress>? progress, CancellationToken cancellationToken)
+    private async Task<string> DownloadAsync(string url, IReadOnlySet<string> allowedHosts, long maximumBytes, IProgress<EmulatorProgress>? progress, CancellationToken cancellationToken)
     {
         // The default HttpClient timeout (100s) would abort a ~200 MB frontend
         // download halfway on a slow connection. Streaming a large archive needs
@@ -401,11 +404,11 @@ public sealed class RetroArchService
                 throw new InvalidOperationException("The emulator download is larger than Bridge's safety limit.");
             }
 
-            Directory.CreateDirectory(Config.EmulatorDownloadPath);
+            Directory.CreateDirectory(_paths.DownloadPath);
             // Content format isn't determined by the extension (SharpCompress
             // detects .7z vs .zip from the file itself), so a neutral extension
             // keeps the frontend .7z and core .zip downloads interchangeable.
-            var destination = Path.Combine(Config.EmulatorDownloadPath, $"{Guid.NewGuid():N}.archive");
+            var destination = Path.Combine(_paths.DownloadPath, $"{Guid.NewGuid():N}.archive");
             long written = 0;
             try
             {
@@ -463,9 +466,9 @@ public sealed class RetroArchService
         entries[0].ExtractToFile(destination, overwrite: true);
     }
 
-    private static void ReplaceInstallation(string payload)
+    private void ReplaceInstallation(string payload)
     {
-        var target = Config.EmulatorInstallPath;
+        var target = _paths.InstallPath;
         var backup = target + ".old";
         DeleteDirectory(backup);
         if (Directory.Exists(target)) Directory.Move(target, backup);
