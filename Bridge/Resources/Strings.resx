@@ -186,6 +186,7 @@
   <data name="GameInfo" xml:space="preserve"><value>Game info</value></data>
   <data name="CoverZoom" xml:space="preserve"><value>Cover zoom</value></data>
   <data name="EmulationProgress" xml:space="preserve"><value>Emulation progress</value></data>
+  <data name="StatusProgress" xml:space="preserve"><value>Operation progress</value></data>
   <data name="StatusMessage" xml:space="preserve"><value>Status message</value></data>
   <data name="GamesList" xml:space="preserve"><value>Games list</value></data>
   <data name="CoversGrid" xml:space="preserve"><value>Covers grid</value></data>

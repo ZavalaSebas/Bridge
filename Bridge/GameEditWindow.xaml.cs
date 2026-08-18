@@ -135,7 +135,7 @@ namespace Bridge
             {
                 var dialog = new OpenFileDialog
                 {
-                    Title = "Select image",
+                    Title = Strings.SelectImageTitle,
                     Filter = "Images (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp"
                 };
 
