@@ -228,11 +228,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
                 .ToList();
         }
 
-        // Same link set as Playnite's Steam library plugin
-        // (PlayniteExtensions SteamLibrary/SteamShared/MetadataProvider.cs):
-        // Community Hub, Discussions, Guides, News, Store Page and PCGamingWiki,
-        // plus Achievements/Workshop only when the game has them (category id 22
-        // and 30 respectively).
+        // Store/community links plus Achievements/Workshop when present (category 22/30).
         metadata.Links.AddRange(new[]
         {
             new Link { Name = "Community Hub", Url = $"https://steamcommunity.com/app/{appId}" },

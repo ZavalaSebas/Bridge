@@ -155,9 +155,7 @@ public partial class MainViewModel
         ? Strings.ShowGame
         : Strings.HideGame;
 
-    // The built-in completion status set (Playnite's defaults). Statuses are
-    // reference rows created on first use via GetOrCreateByName; the menu just
-    // applies whichever one the user picks.
+    // Built-in completion statuses seeded on first run via GetOrCreateByName.
     public IReadOnlyList<string> CompletionStatuses { get; } =
     [
         Strings.CompletionStatusAbandoned,

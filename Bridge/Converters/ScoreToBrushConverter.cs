@@ -4,11 +4,7 @@ using System.Windows.Media;
 
 namespace Bridge.Converters;
 
-/// <summary>
-/// Colors a 0-100 score like Playnite's rating brushes: green (good, >=75),
-/// yellow (mixed, >=50) or red (negative). Returns null for an empty score so
-/// the text keeps its inherited color.
-/// </summary>
+/// Score color: green >= 75, yellow >= 50, red below. Null score keeps inherited text color.
 public class ScoreToBrushConverter : IValueConverter
 {
     private static readonly Brush Good = Freeze(Color.FromRgb(0x10, 0xB9, 0x81));

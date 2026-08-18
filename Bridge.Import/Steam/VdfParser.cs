@@ -3,19 +3,9 @@ using System.Text;
 namespace Bridge.Import.Steam;
 
 /// <summary>
-/// Minimal reader for Valve's VDF (KeyValue) text format — used by both
-/// libraryfolders.vdf and appmanifest*.acf (verified against real files on
-/// this machine, and against Playnite's real SteamLibrary extension source,
-/// PROJECT_FOUNDATION.md §28.26, which uses SteamKit2's KeyValue class for
-/// the same job). This is a hand-rolled, read-only subset — just enough to
-/// parse the two file shapes Bridge actually needs, not a general VDF
-/// writer/editor. Format: nested `"key" "value"` pairs and `"key" { ... }`
-/// blocks, `//` line comments, backslash-escaped characters inside quotes
-/// (paths use `\\` for a literal backslash).
-///
-/// A node is either a leaf `string` or a nested `Dictionary&lt;string, object&gt;`
-/// — callers pattern-match on which one they got via `is string` / `is
-/// Dictionary&lt;string, object&gt;`.
+/// Read-only parser for Valve VDF text (libraryfolders.vdf, appmanifest*.acf):
+/// nested "key" "value" pairs and "key" { ... } blocks. A node is either a
+/// string leaf or a Dictionary&lt;string, object&gt;.
 /// </summary>
 public static class VdfParser
 {

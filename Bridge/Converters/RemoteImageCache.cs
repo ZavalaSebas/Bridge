@@ -10,19 +10,8 @@ using Bridge.Core.Utilities;
 namespace Bridge.Converters;
 
 /// <summary>
-/// Shared, bounded cache of fully-decoded (frozen) images for the library's
-/// artwork. The problem it solves: a BitmapImage handed to a virtualized
-/// ListBox/ListView with the default async UriSource loading often doesn't
-/// repaint when the download completes — the icon stays blank until the window
-/// is forced to re-render (minimize/restore). Decoding with CacheOption.OnLoad
-/// on a background thread and handing back a frozen, already-decoded bitmap
-/// fixes that, because the Image element receives a complete image and renders
-/// it immediately.
-///
-/// Loads are keyed by URL, deduplicated (one in-flight task per URL), bounded
-/// (MaxCachedImages), and announced through <see cref="Subscribe"/> so an Image
-/// can refresh the exact moment its artwork lands — no reliance on binding
-/// re-evaluation.
+/// Frozen bitmap cache for library artwork. Virtualized lists often miss async
+/// UriSource repaints; pre-decoded frozen images update through Subscribe callbacks.
 /// </summary>
 public static class RemoteImageCache
 {

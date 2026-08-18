@@ -4,6 +4,6 @@ namespace Bridge.Core.Contracts;
 
 public interface IGameRepository : IRepository<Game>
 {
-    /// <summary>Dedup lookup for import — matches Playnite's exact (GameId, PluginId) key, adapted to (ExternalId, SourceId) since Bridge has no PluginId (PROJECT_FOUNDATION.md §28.2, ADR-6).</summary>
+    /// <summary>Find an existing game by external id and source — import dedup key.</summary>
     Game? FindByExternalId(string externalId, Guid sourceId);
 }

@@ -2,11 +2,7 @@ using Bridge.Core.Entities;
 
 namespace Bridge.Statistics;
 
-/// <summary>
-/// No persisted "GameStatistics" entity exists — same as Playnite's real
-/// StatisticsViewModel (PROJECT_FOUNDATION.md §28.5, §28.6 finding 4): stats
-/// are computed on the fly from the current games list, never stored.
-/// </summary>
+/// <summary>Computed library stats from the in-memory game list — nothing persisted.</summary>
 public class LibraryStatistics
 {
     public int TotalCount { get; init; }

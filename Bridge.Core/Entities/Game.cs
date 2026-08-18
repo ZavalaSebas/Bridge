@@ -1,16 +1,8 @@
 namespace Bridge.Core.Entities;
 
 /// <summary>
-/// Bridge's equivalent of Playnite's Game (PROJECT_FOUNDATION.md §28.1), with the
-/// plugin-specific fields removed since Bridge has no plugin runtime (ADR-1):
-/// PluginId and IncludeLibraryPluginAction are gone. GameId is renamed ExternalId
-/// to read correctly now that it's paired with SourceId instead of a PluginId
-/// (dedup key becomes (ExternalId, SourceId) — see GameSource.cs and ADR-6 in
-/// ARCHITECTURE.md). The install/launch/running flags (IsInstalling/
-/// IsUninstalling/IsLaunching/IsRunning) are runtime-only — EF ignores them, so
-/// they never round-trip to bridge.db. IsRunning is set by GameLauncher when
-/// the user launches a game; MainViewModel.LoadGames clears any stale in-memory
-/// value on startup.
+/// Library game. Dedup key is (ExternalId, SourceId). Install/launch/running flags
+/// marked Is* are runtime-only and are not persisted.
 /// </summary>
 public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 {
@@ -26,8 +18,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public string Version { get; set; } = string.Empty;
     public ReleaseDate? ReleaseDate { get; set; }
 
-    // Artwork (relative paths under the file cache — see Bridge.Storage's
-    // AddFile-equivalent, PROJECT_FOUNDATION.md §28.2)
+    // Paths or URLs — persisted artwork is resolved by Bridge.Storage when saved.
     public string Icon { get; set; } = string.Empty;
     public string CoverImage { get; set; } = string.Empty;
     public string BackgroundImage { get; set; } = string.Empty;
@@ -39,8 +30,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public bool IsUninstalling { get; set; }
     public bool IsLaunching { get; set; }
 
-    // Property-changed notification so the Play button can switch to Stop while
-    // the game runs — the entity stays a POCO otherwise.
+    // Lets the Play button switch to Stop while the game runs.
     public bool IsRunning
     {
         get => _isRunning;
@@ -56,8 +46,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 
     private bool _isRunning;
 
-    // Runtime-only: true when a managed ROM still needs RetroArch/core installed.
-    // Updated by MainViewModel so covers/table play buttons can show Download.
+    // True when a managed ROM still needs RetroArch/core installed.
     public bool NeedsEmulatorDownload
     {
         get => _needsEmulatorDownload;
@@ -84,9 +73,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public DateTime? Added { get; set; }
     public DateTime? Modified { get; set; }
 
-    // Scripts — see PROJECT_FOUNDATION.md §28.9 for exact invocation order
-    // (global pre → per-game pre → launch → per-game started → global started →
-    // stop → per-game post → global post)
+    // Global scripts run before/after launch; per-game scripts can opt out of globals.
     public string PreScript { get; set; } = string.Empty;
     public string PostScript { get; set; } = string.Empty;
     public string GameStartedScript { get; set; } = string.Empty;
@@ -96,9 +83,6 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 
     public bool Hidden { get; set; }
 
-    // Property-changed notification so the hero star (and anything else bound
-    // to Favorite) reacts to a programmatic toggle from the More menu — the
-    // entity stays a POCO otherwise.
     public bool Favorite
     {
         get => _favorite;
@@ -120,9 +104,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public int? CriticScore { get; set; }
     public int? CommunityScore { get; set; }
 
-    // Links and reference-entity ids (resolved to Genre/Company/etc. by the
-    // caller via Bridge.Storage — Game itself only holds ids, per Playnite's
-    // own pattern of keeping the entity flat and letting the read side join)
+    // Flat id lists — Bridge.Storage resolves names when reading or writing.
     public List<Link> Links { get; set; } = [];
     public List<Guid> GenreIds { get; set; } = [];
     public List<Guid> DeveloperIds { get; set; } = [];
@@ -135,8 +117,6 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public List<Guid> AgeRatingIds { get; set; } = [];
     public List<Guid> RegionIds { get; set; } = [];
 
-    // Same pattern as Favorite — the hero badge binds directly to this id, so
-    // programmatic updates from the More menu must raise PropertyChanged.
     public Guid CompletionStatusId
     {
         get => _completionStatusId;
@@ -152,5 +132,5 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     private Guid _completionStatusId;
 }
 
-/// <summary>Minimal stand-in for a release date — a year is always known, month/day are not always available. Matches the shape Playnite's ReleaseDate? implies.</summary>
+/// <summary>Partial release date — year required, month/day optional.</summary>
 public readonly record struct ReleaseDate(int Year, int? Month = null, int? Day = null);

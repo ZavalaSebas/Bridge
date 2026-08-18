@@ -79,9 +79,7 @@ public class NonZeroToVisibilityConverter : IValueConverter
 }
 
 /// <summary>
-/// Collapses the bound element when the value is null/empty/whitespace —
-/// matches Playnite's details view, which hides rows that have no data.
-/// Non-string values (scores, dates) are only hidden when null.
+/// Hides detail rows when the bound value is empty. Non-string values hide only when null.
 /// </summary>
 public class EmptyToVisibilityConverter : IValueConverter
 {

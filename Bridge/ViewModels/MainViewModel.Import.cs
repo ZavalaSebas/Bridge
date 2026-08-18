@@ -159,9 +159,7 @@ public partial class MainViewModel
                         continue;
                     }
 
-                    // Mirrors Playnite's real re-scan behavior (PROJECT_FOUNDATION.md
-                    // §28.2): a re-import only syncs install state, it never touches
-                    // fields the user (or a metadata download) may have already set.
+                    // Re-import only syncs install state — leave user/metadata fields alone.
                     live.IsInstalled = metadata.IsInstalled;
                     live.InstallDirectory = metadata.InstallDirectory;
                     live.InstallSizeBytes = metadata.InstallSizeBytes;

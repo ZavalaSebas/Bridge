@@ -2,9 +2,7 @@ using Bridge.Import.Steam;
 
 namespace Bridge.Tests.Import;
 
-// Mirrors the real Steam layout (PROJECT_FOUNDATION.md §28.26): the square
-// 32x32 clienticon is stored as a 40-hex-character .jpg inside
-// appcache\librarycache\{appid}\ next to the wide header/library artwork.
+// Steam layout: 40-hex clienticon .jpg in appcache\librarycache\{appid}\.
 public class SteamLocalIconResolverTests : IDisposable
 {
     private readonly string _tempDir;

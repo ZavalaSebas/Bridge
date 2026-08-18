@@ -7,12 +7,7 @@ namespace Bridge.Services;
 /// <summary>A single image result from the image search.</summary>
 public sealed record ImageSearchResult(string ThumbnailUrl, string ImageUrl, int Width, int Height);
 
-/// <summary>
-/// Image search backed by DuckDuckGo's public image endpoint — no API key
-/// needed (Playnite's Google image search requires a Custom Search API key,
-/// DDG is the keyless equivalent). Returns thumbnail + original URLs so the
-/// picker can show a grid and the caller stores the full-size URL.
-/// </summary>
+/// Image search via DuckDuckGo — no API key. Returns thumbnail and full-size URLs.
 public sealed class WebImageSearchService(HttpClient httpClient)
 {
     private const string VqdEndpoint = "https://duckduckgo.com/";

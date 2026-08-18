@@ -9,13 +9,8 @@ using ReleaseDate = Bridge.Core.Entities.ReleaseDate;
 namespace Bridge.Metadata;
 
 /// <summary>
-/// Metadata provider backed by Bridge's own Cloudflare Worker
-/// (https://bridge-igdb.sebaszavala120.workers.dev/metadata). The Worker holds
-/// the IGDB/Twitch credentials as Worker Secrets server-side, so Bridge gets
-/// IGDB metadata with zero user configuration — the same architecture Playnite
-/// uses (its own api2.playnite.link backend), but with our own infra instead of
-/// depending on Playnite's. The Worker returns the raw IGDB shape (cover.url,
-/// artworks[].url, websites[].type, ...), mapped here to GameMetadata.
+/// IGDB metadata via Bridge's Cloudflare Worker (credentials live server-side).
+/// Maps the Worker's IGDB-shaped JSON to GameMetadata.
 /// </summary>
 public sealed class BridgeIgdbProvider(HttpClient httpClient) : IGameMetadataProvider
 {

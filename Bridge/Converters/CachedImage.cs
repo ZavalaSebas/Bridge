@@ -7,20 +7,8 @@ using Bridge.Services;
 namespace Bridge.Converters;
 
 /// <summary>
-/// Attached property that loads an Image's artwork through RemoteImageCache and
-/// refreshes the control the moment the decoded (frozen) image is ready.
-///
-/// Usage: &lt;Image converters:CachedImage.SourceUrl="{Binding Icon}" /&gt;
-/// or, for a centered cover-crop on a card:
-/// &lt;Grid converters:CachedImage.SourceUrl="{Binding CoverImage}"&gt;…&lt;/Grid&gt;
-/// (the Grid/Border variant paints the art as a UniformToFill ImageBrush, which
-/// centers its crop — an Image element does not; see ApplyCoverBackground).
-///
-/// This is more reliable than a converter returning a still-downloading
-/// BitmapImage: virtualized list containers don't re-evaluate bindings when the
-/// download completes (and replacing a collection item with the same reference
-/// doesn't either), so the image would stay blank until a forced re-render.
-/// Here the Image element itself subscribes and sets Source directly.
+/// Attached property that loads artwork through RemoteImageCache and sets Source
+/// when the decode finishes — avoids blank icons in virtualized lists.
 /// </summary>
 public static class CachedImage
 {

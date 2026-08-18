@@ -79,10 +79,7 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
                 .ToList();
         }
 
-        // IGDB websites are the source of the social links Playnite shows in
-        // its details view (YouTube, Reddit, Twitter, ...). The category id is
-        // IGDB's website_category enum — Playnite uses the "type_expanded" name
-        // for the link label, so we map ids to those same readable names here.
+        // IGDB website categories → link labels (YouTube, Reddit, Twitter, …).
         if (game.Websites is { Count: > 0 })
         {
             foreach (var website in game.Websites)
@@ -105,8 +102,7 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
         return metadata;
     }
 
-    // IGDB website_category enum → readable label (same set Playnite shows via
-    // type_expanded). Unknown ids fall back to "Website".
+    // IGDB website_category enum → readable label. Unknown ids → "Website".
     internal static string WebsiteCategoryName(int category) => category switch
     {
         1 => "Official",

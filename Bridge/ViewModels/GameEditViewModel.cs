@@ -6,11 +6,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace Bridge.ViewModels;
 
 /// <summary>
-/// Edit form for a single game (Playnite's GameEditWindow but trimmed: Bridge
-/// edits one game at a time, so there are no per-field "save this change"
-/// checkboxes — just an editable copy applied on Save). Reference fields
-/// (genres/devs/publishers/platforms) are multi-select checkbox lists; images
-/// accept a local path or URL.
+/// Edit form for a single game — metadata, artwork, and reference lists.
+/// Changes apply on Save; reference fields are multi-select lists.
 /// </summary>
 public partial class GameEditViewModel : ObservableObject
 {

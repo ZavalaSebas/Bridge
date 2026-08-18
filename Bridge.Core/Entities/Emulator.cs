@@ -1,15 +1,6 @@
 namespace Bridge.Core.Entities;
 
-/// <summary>
-/// Playnite splits emulator profiles into CustomEmulatorProfile (user-configured)
-/// and BuiltInEmulatorProfile (picked from a bundled catalog of known emulators
-/// and their launch conventions, PROJECT_FOUNDATION.md §28.1). Bridge's MVP has
-/// no bundled catalog yet (that's future scope per PLAN.md), so there is only one
-/// EmulatorProfile shape for now — it's Playnite's CustomEmulatorProfile fields.
-/// Reintroducing a BuiltIn variant later, once Bridge ships its own known-emulator
-/// catalog, doesn't require touching this class — it would be an additional type,
-/// not a rewrite of this one.
-/// </summary>
+/// <summary>User-configured emulator install with one or more launch profiles.</summary>
 public class EmulatorProfile
 {
     public string Id { get; set; } = string.Empty;
@@ -19,8 +10,7 @@ public class EmulatorProfile
     public string Executable { get; set; } = string.Empty;
     public string Arguments { get; set; } = string.Empty;
     public string WorkingDirectory { get; set; } = string.Empty;
-    // Set only for Bridge-managed RetroArch profiles. A custom emulator profile
-    // remains fully valid without it.
+    // Set for Bridge-managed RetroArch profiles; optional for custom emulators.
     public string CorePath { get; set; } = string.Empty;
     public string StartupScript { get; set; } = string.Empty;
     public string PreScript { get; set; } = string.Empty;

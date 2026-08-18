@@ -8,14 +8,8 @@ namespace Bridge.Services;
 public sealed record InstalledGameCandidate(string Name, string ExecutablePath, string? Arguments, string? WorkingDirectory, string? IconPath);
 
 /// <summary>
-/// Detects games installed on the PC that aren't covered by a library plugin —
-/// Playnite's "Scan Automatically / Add Game Installed" (Programs2.cs). Three
-/// sources, all returning the same candidate shape:
-///  - Start menu shortcuts (.lnk) under "All Users" and the current user
-///  - Every .exe/.lnk/.bat in a user-chosen folder (recursive)
-///  - A single executable the user browses to
-/// Uninstallers, installers, redists and engine helpers are filtered out with
-/// the same exclusion masks Playnite uses.
+/// Finds installed games from shortcuts, a scanned folder, or a single executable.
+/// Filters out uninstallers, redistributables, and engine helpers.
 /// </summary>
 public sealed class InstalledGameDetector
 {
@@ -133,7 +127,7 @@ public sealed class InstalledGameDetector
         if (string.IsNullOrWhiteSpace(target))
             return null;
 
-        // Ignore uninstallers/helpers and non-application links (Playnite parity).
+        // Skip uninstallers, helpers, and non-game shortcuts.
         if (IsExcludedFile(Path.GetFileName(target)))
             return null;
 

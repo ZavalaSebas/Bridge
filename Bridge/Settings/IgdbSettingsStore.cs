@@ -6,11 +6,7 @@ using Bridge.Metadata;
 
 namespace Bridge.Settings;
 
-/// <summary>
-/// IGDB Client ID/Secret live in a protected JSON file under AppDataPath, not in
-/// bridge.db — same separation Playnite's real PlayniteSettings uses (config
-/// vs. library data, PROJECT_FOUNDATION.md §28.12).
-/// </summary>
+/// <summary>IGDB Client ID/Secret in a protected JSON file under AppData, not in bridge.db.</summary>
 public static class IgdbSettingsStore
 {
     private static readonly byte[] ProtectionEntropy = "Bridge.IgdbSettings.v1"u8.ToArray();

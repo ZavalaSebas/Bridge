@@ -2,10 +2,7 @@ using Bridge.Import.Steam;
 
 namespace Bridge.Tests.Import;
 
-// Uses the real localconfig.vdf shape Steam writes (verified against an actual
-// file on a machine with Steam installed): UserLocalConfigStore >
-// Software > Valve > Steam > apps > {appid} > Playtime (minutes) / LastPlayed
-// (unix seconds).
+// Real localconfig.vdf layout: Playtime (minutes) and LastPlayed (unix) per appid.
 public class SteamLocalPlaytimeResolverTests : IDisposable
 {
     private readonly string _tempDir;
