@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Net.Http;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Bridge.Converters;
 using Bridge.Core.Contracts;
@@ -24,9 +25,27 @@ namespace Bridge
     {
         public static IServiceProvider Services { get; private set; } = null!;
 
+        private static readonly Uri AppIconUri = new("pack://application:,,,/Assets/Bridge.ico", UriKind.Absolute);
+
+        internal static void ApplyWindowIcon(Window window)
+        {
+            if (window.Icon is null)
+                window.Icon = BitmapFrame.Create(AppIconUri);
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            EventManager.RegisterClassHandler(
+                typeof(Window),
+                FrameworkElement.LoadedEvent,
+                new RoutedEventHandler(static (sender, _) =>
+                {
+                    if (sender is Window window)
+                        ApplyWindowIcon(window);
+                }),
+                true);
 
             DispatcherUnhandledException += OnDispatcherUnhandledException;
 

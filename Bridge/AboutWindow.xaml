@@ -34,11 +34,12 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20,12,20,20">
             <StackPanel MaxWidth="452" HorizontalAlignment="Center">
 
-                <!-- Hero: icono + nombre + versión -->
+                <!-- Hero: logo + nombre + versión -->
                 <StackPanel Orientation="Horizontal" Margin="0,4,0,18">
-                    <Border Width="64" Height="64" CornerRadius="16" Background="#33007ACC" BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}" BorderThickness="1">
-                        <ui:SymbolIcon Symbol="Library24" FontSize="30" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <Image Source="{StaticResource Bridge.LogoImage}"
+                           Width="64" Height="64"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{x:Static res:Strings.BridgeAppName}" FontSize="{StaticResource Bridge.FontSize.TitleLarge}" FontWeight="SemiBold"/>
                         <Border Margin="0,3,0,0" Padding="8,2" CornerRadius="10" HorizontalAlignment="Left" Background="{DynamicResource ControlFillColorSecondaryBrush}">
