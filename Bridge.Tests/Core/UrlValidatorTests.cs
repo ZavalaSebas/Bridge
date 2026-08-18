@@ -31,8 +31,15 @@ public class UrlValidatorTests
     [Theory]
     [InlineData("javascript:alert(1)", null)]
     [InlineData("https://example.com/page", "https://example.com/page")]
-    public void SanitizePersistedUrl_rejects_unsafe_urls(string url, string? expected)
+    [InlineData("http://metadata.google.internal/secret", false)]
+    public void SanitizePersistedUrl_rejects_unsafe_urls(string url, object? expected)
     {
+        if (expected is false)
+        {
+            Assert.False(UrlValidator.IsSafeHttpUrl(url));
+            return;
+        }
+
         Assert.Equal(expected, UrlValidator.SanitizePersistedUrl(url));
     }
 }

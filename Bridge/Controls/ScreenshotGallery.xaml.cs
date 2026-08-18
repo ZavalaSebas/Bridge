@@ -17,6 +17,8 @@ public partial class ScreenshotGallery : UserControl
 {
     private readonly List<string> _urls = [];
     private int _index;
+    private string? _backdropUrl;
+    private Action? _backdropCallback;
     private double _dragStartX;
     private double _dragStartOffset;
 
@@ -177,14 +179,25 @@ public partial class ScreenshotGallery : UserControl
         var url = _urls[_index];
         MainImage.SourceUrl = url;
         FullscreenImage.SourceUrl = url;
+
+        if (_backdropCallback is { } oldCallback && _backdropUrl is { } oldUrl)
+        {
+            RemoteImageCache.Unsubscribe(oldUrl, oldCallback);
+            _backdropCallback = null;
+            _backdropUrl = null;
+        }
+
         BackdropImage.Source = RemoteImageCache.Get(url);
-        RemoteImageCache.Subscribe(url, () =>
+        Action callback = () =>
         {
             if (_urls.Count > 0 && _urls[_index] == url)
             {
                 BackdropImage.Source = RemoteImageCache.Get(url);
             }
-        });
+        };
+        _backdropUrl = url;
+        _backdropCallback = callback;
+        RemoteImageCache.Subscribe(url, callback);
 
         CounterText = $"{_index + 1} / {_urls.Count}";
         PrevButton.IsEnabled = _urls.Count > 1;

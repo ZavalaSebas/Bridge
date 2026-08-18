@@ -1,5 +1,6 @@
 using Bridge;
 using System.Diagnostics;
+using System.IO;
 using Bridge.Resources;
 using Bridge.Services;
 using CommunityToolkit.Mvvm.Input;
@@ -181,7 +182,7 @@ public partial class MainViewModel
         SelectedGame.CompletionStatusId = status.Id;
         _gameRepository.Update(SelectedGame);
         InvalidateReferenceCaches();
-        RefreshReferenceFields(SelectedGame);
+        CompletionStatusText = status.Name;
         RefreshStatistics();
     }
 
@@ -195,9 +196,11 @@ public partial class MainViewModel
         }
 
         var dir = SelectedGame.InstallDirectory;
-        if (string.IsNullOrWhiteSpace(dir))
+        if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
         {
-            StatusMessage = Strings.Format(nameof(Strings.NoInstallDirectoryFormat), SelectedGame.Name);
+            StatusMessage = string.IsNullOrWhiteSpace(dir)
+                ? Strings.Format(nameof(Strings.NoInstallDirectoryFormat), SelectedGame.Name)
+                : Strings.Format(nameof(Strings.CouldNotOpenDirectoryFormat), dir);
             return;
         }
 

@@ -11,7 +11,11 @@ public partial class EmulationSettingsViewModel(RetroArchService retroArch) : Ob
     [ObservableProperty]
     private string _statusMessage = Strings.LoadingEmulationStatus;
 
-    public async Task LoadAsync() => StatusMessage = await retroArch.GetStatusAsync();
+    public Task LoadAsync()
+    {
+        StatusMessage = FormatStatus();
+        return Task.CompletedTask;
+    }
 
     [RelayCommand]
     private async Task UpdateAsync()
@@ -19,11 +23,16 @@ public partial class EmulationSettingsViewModel(RetroArchService retroArch) : Ob
         try
         {
             await retroArch.UpdateInstalledAsync(new Progress<EmulatorProgress>(message => StatusMessage = message.Message));
-            StatusMessage = await retroArch.GetStatusAsync();
+            StatusMessage = FormatStatus();
         }
         catch (Exception ex)
         {
             StatusMessage = Strings.Format(nameof(Strings.CouldNotUpdateRetroArchFormat), ex.Message);
         }
     }
+
+    private string FormatStatus() =>
+        retroArch.IsFrontendInstalled
+            ? Strings.Format(nameof(Strings.RetroArchInstalledWithCoresFormat), retroArch.InstalledCoreCount)
+            : Strings.RetroArchNotInstalled;
 }

@@ -40,7 +40,7 @@ public partial class MainViewModel
                     _gameRepository.Update(target);
                     // Now that the frontend/core exist, the button goes back to
                     // "Play" (or "Stop" once the game launches) instead of "Download".
-                    UpdateNeedsEmulatorDownload();
+                    RefreshAllEmulatorDownloadStates();
                 }
                 finally
                 {
@@ -61,15 +61,16 @@ public partial class MainViewModel
     // the game runs). The launcher's tracking loop sees the processes die and
     // finalizes playtime/IsRunning through GameStopped — no bookkeeping here.
     [RelayCommand]
-    private void StopGame()
+    private void StopGame(Game? game = null)
     {
-        if (SelectedGame is null)
+        var target = game ?? SelectedGame;
+        if (target is null)
         {
             return;
         }
 
-        _launcher.Stop(SelectedGame);
-        StatusMessage = Strings.Format(nameof(Strings.StoppingGameFormat), SelectedGame.Name);
+        _launcher.Stop(target);
+        StatusMessage = Strings.Format(nameof(Strings.StoppingGameFormat), target.Name);
     }
 
     // See the threading note on GameLauncher.TrackAsync — both handlers below
@@ -146,6 +147,7 @@ public partial class MainViewModel
     // its row and the detail panel and refresh the statistics.
     public void RefreshGameDisplay(Game game)
     {
+        InvalidateReferenceCaches();
         RefreshListDisplay(game);
         RefreshStatistics();
     }

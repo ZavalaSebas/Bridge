@@ -56,6 +56,22 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 
     private bool _isRunning;
 
+    // Runtime-only: true when a managed ROM still needs RetroArch/core installed.
+    // Updated by MainViewModel so covers/table play buttons can show Download.
+    public bool NeedsEmulatorDownload
+    {
+        get => _needsEmulatorDownload;
+        set
+        {
+            if (_needsEmulatorDownload == value)
+                return;
+            _needsEmulatorDownload = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(NeedsEmulatorDownload)));
+        }
+    }
+
+    private bool _needsEmulatorDownload;
+
     public bool OverrideInstallState { get; set; }
     public string InstallDirectory { get; set; } = string.Empty;
     public ulong? InstallSizeBytes { get; set; }
@@ -118,7 +134,22 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public List<Guid> SeriesIds { get; set; } = [];
     public List<Guid> AgeRatingIds { get; set; } = [];
     public List<Guid> RegionIds { get; set; } = [];
-    public Guid CompletionStatusId { get; set; }
+
+    // Same pattern as Favorite — the hero badge binds directly to this id, so
+    // programmatic updates from the More menu must raise PropertyChanged.
+    public Guid CompletionStatusId
+    {
+        get => _completionStatusId;
+        set
+        {
+            if (_completionStatusId == value)
+                return;
+            _completionStatusId = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(CompletionStatusId)));
+        }
+    }
+
+    private Guid _completionStatusId;
 }
 
 /// <summary>Minimal stand-in for a release date — a year is always known, month/day are not always available. Matches the shape Playnite's ReleaseDate? implies.</summary>

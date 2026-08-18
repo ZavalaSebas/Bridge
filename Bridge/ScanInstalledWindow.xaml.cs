@@ -82,7 +82,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
         var dialog = new OpenFileDialog
         {
             Title = Strings.SelectExecutable,
-            Filter = "Executables (*.exe;*.lnk)|*.exe;*.lnk"
+            Filter = Strings.ExecutablesFilter
         };
         if (dialog.ShowDialog(this) == true)
         {

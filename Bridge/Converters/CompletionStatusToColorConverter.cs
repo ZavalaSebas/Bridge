@@ -28,10 +28,9 @@ public class CompletionStatusToColorConverter : IValueConverter
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is not string status || string.IsNullOrWhiteSpace(status))
-        {
+        var status = CompletionStatusConverterHelpers.ResolveName(value);
+        if (string.IsNullOrWhiteSpace(status))
             return null!;
-        }
 
         return status switch
         {
