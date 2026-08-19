@@ -15,6 +15,37 @@
         Foreground="{StaticResource TextFillColorPrimaryBrush}"
         FontFamily="{StaticResource Bridge.FontFamily}"
         FontSize="{StaticResource Bridge.FontSize.Body}">
+    <ui:FluentWindow.Resources>
+        <DataTemplate x:Key="AboutLinkCardTemplate">
+            <Button Click="LinkRow_Click" Tag="{Binding Url}" Padding="0" Margin="2,0,2,6" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="8" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" Padding="10,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon Grid.Column="0" Symbol="{Binding Icon}" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Top" Margin="0,1,10,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Label}" FontWeight="Medium" FontSize="13" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap" MaxHeight="34" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <ui:SymbolIcon Grid.Column="2" Symbol="ArrowUpRight24" FontSize="14" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Top" Margin="4,1,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#22007ACC"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+    </ui:FluentWindow.Resources>
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/></Grid.RowDefinitions>
 
@@ -60,74 +91,24 @@
 
                 <!-- Proyecto -->
                 <TextBlock Text="{x:Static res:Strings.Project}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="2,0,0,8"/>
-                <ItemsControl x:Name="ProjectLinks">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Click="LinkRow_Click" Tag="{Binding Url}" Padding="0" Margin="0,0,0,6" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" CornerRadius="8" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" Padding="12,10">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <ui:SymbolIcon Grid.Column="0" Symbol="{Binding Icon}" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Label}" FontWeight="Medium" FontSize="13"/>
-                                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
-                                                </StackPanel>
-                                                <ui:SymbolIcon Grid.Column="2" Symbol="ArrowUpRight24" FontSize="14" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#22007ACC"/>
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
+                <ItemsControl x:Name="ProjectLinks"
+                              ItemTemplate="{StaticResource AboutLinkCardTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
                 <!-- Soporte -->
                 <TextBlock Text="{x:Static res:Strings.Support}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="2,10,0,8"/>
-                <ItemsControl x:Name="SupportLinks">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Click="LinkRow_Click" Tag="{Binding Url}" Padding="0" Margin="0,0,0,6" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" CornerRadius="8" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" Padding="12,10">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <ui:SymbolIcon Grid.Column="0" Symbol="{Binding Icon}" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Label}" FontWeight="Medium" FontSize="13"/>
-                                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
-                                                </StackPanel>
-                                                <ui:SymbolIcon Grid.Column="2" Symbol="ArrowUpRight24" FontSize="14" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#22007ACC"/>
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
+                <ItemsControl x:Name="SupportLinks"
+                              ItemTemplate="{StaticResource AboutLinkCardTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
                 <!-- Entorno -->

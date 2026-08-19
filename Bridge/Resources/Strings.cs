@@ -1,7 +1,7 @@
 namespace Bridge.Resources;
 
 /// <summary>
-/// English UI strings. Backed by <c>Strings.resx</c> for future localization.
+/// Localized UI strings backed by <c>Strings.resx</c> and satellite cultures.
 /// </summary>
 public static class Strings
 {
@@ -265,6 +265,10 @@ public static class Strings
     public static string Updates => Get(nameof(Updates));
     public static string ReceiveBetaBuilds => Get(nameof(ReceiveBetaBuilds));
     public static string BetaBuildsDescription => Get(nameof(BetaBuildsDescription));
+    public static string SettingsStartWithWindows => Get(nameof(SettingsStartWithWindows));
+    public static string SettingsStartWithWindowsDescription => Get(nameof(SettingsStartWithWindowsDescription));
+    public static string SettingsStartWithWindowsUnavailable => Get(nameof(SettingsStartWithWindowsUnavailable));
+    public static string SettingsStartWithWindowsFailed => Get(nameof(SettingsStartWithWindowsFailed));
     public static string AboutDisclaimer => Get(nameof(AboutDisclaimer));
     public static string BridgeAppName => Get(nameof(BridgeAppName));
     public static string RemoveFromFavorites => Get(nameof(RemoveFromFavorites));
@@ -275,6 +279,24 @@ public static class Strings
     public static string RemoveGameConfirmFormat => Get(nameof(RemoveGameConfirmFormat));
     public static string SettingsIntegrations => Get(nameof(SettingsIntegrations));
     public static string SettingsAppearance => Get(nameof(SettingsAppearance));
+    public static string SettingsLanguageTitle => Get(nameof(SettingsLanguageTitle));
+    public static string SettingsLanguageDescription => Get(nameof(SettingsLanguageDescription));
+    public static string SettingsLanguageEnglish => Get(nameof(SettingsLanguageEnglish));
+    public static string SettingsLanguageSpanish => Get(nameof(SettingsLanguageSpanish));
+    public static string SettingsTrayIconTitle => Get(nameof(SettingsTrayIconTitle));
+    public static string SettingsTrayIconDescription => Get(nameof(SettingsTrayIconDescription));
+    public static string TrayIconShowBridge => Get(nameof(TrayIconShowBridge));
+    public static string SettingsDataSection => Get(nameof(SettingsDataSection));
+    public static string SettingsBackupTitle => Get(nameof(SettingsBackupTitle));
+    public static string SettingsBackupDescription => Get(nameof(SettingsBackupDescription));
+    public static string CreateBackup => Get(nameof(CreateBackup));
+    public static string RestoreBackup => Get(nameof(RestoreBackup));
+    public static string BackupSaveDialogTitle => Get(nameof(BackupSaveDialogTitle));
+    public static string BackupRestoreDialogTitle => Get(nameof(BackupRestoreDialogTitle));
+    public static string BackupRestoreConfirm => Get(nameof(BackupRestoreConfirm));
+    public static string BackupCreatedFormat => Get(nameof(BackupCreatedFormat));
+    public static string BackupFailedFormat => Get(nameof(BackupFailedFormat));
+    public static string BackupRestoreFailedFormat => Get(nameof(BackupRestoreFailedFormat));
     public static string SettingsUpdatesSection => Get(nameof(SettingsUpdatesSection));
     public static string SettingsEmulationCardDescription => Get(nameof(SettingsEmulationCardDescription));
     public static string SettingsIgdbCardDescription => Get(nameof(SettingsIgdbCardDescription));
@@ -321,9 +343,12 @@ public static class Strings
     public static string SaveFailedFormat => Get(nameof(SaveFailedFormat));
     public static string Saved => Get(nameof(Saved));
     public static string LoadingEmulationStatus => Get(nameof(LoadingEmulationStatus));
+    public static string SplashLoading => Get(nameof(SplashLoading));
     public static string RetroArchNotInstalled => Get(nameof(RetroArchNotInstalled));
     public static string RetroArchInstalledWithCoresFormat => Get(nameof(RetroArchInstalledWithCoresFormat));
     public static string CouldNotUpdateRetroArchFormat => Get(nameof(CouldNotUpdateRetroArchFormat));
+    public static string DatabaseRestoredFromBackup => Get(nameof(DatabaseRestoredFromBackup));
+    public static string DatabaseCorruptNoBackupFormat => Get(nameof(DatabaseCorruptNoBackupFormat));
     public static string VersionFormat => Get(nameof(VersionFormat));
     public static string SourceCode => Get(nameof(SourceCode));
     public static string License => Get(nameof(License));
