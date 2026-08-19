@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-19
+
+### Added
+- **First-run setup wizard** — on first launch, Bridge asks for display name, avatar (photo or preset), external games folder, and ROM folder. Detects Steam/Epic automatically and explains that store libraries import on startup while the external folder is for games outside those stores (`SetupWizardWindow`, `setup-complete.txt`).
+- **What's New dialog** — after an app update (not on first install), Bridge shows summarized release-notes dialog parsed from embedded `CHANGELOG.md` (Added/Changed/Fixed). Tracked in `whats-new-seen.txt`.
+- **Watched scan folders** — Scan ROMs and Scan Automatically (Scan Folder) persist their paths (`rom-scan-folder.txt`, `installed-scan-folder.txt`). On startup and when new files appear, Bridge auto-imports games/ROMs and downloads metadata via `WatchedScanFolderService`.
+- **User profile** — display name + avatar stored in `user-profile.json` with optional custom photo under `profile/`. Shown in Statistics; editable in **Settings → Profile**.
+- **ROMs sidebar section** — new sidebar shortcut filters the library to games with ROMs (`NavigationSection.Roms`, `LibraryFilterPreset.Roms`).
+- **Empty-state scan shortcuts** — when no game is selected, the details panel offers **Scan Automatically** (Library) or **Scan ROMs** (ROMs tab) with theme-colored buttons.
+- **Detail panel position** — Settings toggle to dock the List/Covers detail panel on the left or right (`detail-panel-position.txt`; legacy top/bottom values fall back to right).
+- **Keep selection across views** — Settings toggle to keep the same game selected when switching List/Covers/Table (`keep-selection-across-views.txt`, default on).
+
+### Changed
+- **Sidebar order** — Library → ROMs → Favorites → Sources → Show hidden → Statistics → Settings.
+- **Scan folder UX** — last-used ROM and installed-game folders pre-fill scan dialogs and are saved after a successful scan.
+- **Installed import service** — shared `InstalledGameImportService` powers Scan Automatically, watched-folder import, and the setup wizard.
+- **Main window** — opens centered on screen (`WindowStartupLocation="CenterScreen"`).
+- **Startup flow** — splash closes before the main window shows; first-run dialogs run after the window is fully loaded (avoids splash overlap and a stuck/non-draggable main window after setup).
+
+### Fixed
+- **Covers + left detail panel** — column definitions swap correctly when the panel docks left; layout refreshes on panel show/hide/resize.
+- **CenteringWrapPanel** — wrap uses the ScrollViewer viewport instead of `PositiveInfinity` width, fixing a crash when switching views with a left-docked panel.
+- **Empty-state ROM button** — Style triggers no longer blocked by a local `Visibility="Collapsed"`.
+- **Database recovery** — improved corrupt/missing SQLite detection and restore paths (covered by expanded tests).
+
 ## [0.4.0] - 2026-08-18
 
 ### Added

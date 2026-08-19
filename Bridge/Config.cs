@@ -66,6 +66,37 @@ public static class Config
     // Minimize to the notification area when the main window is closed.
     public static string TrayIconFilePath => Path.Combine(AppDataPath, "tray-icon.txt");
 
+    // Keep the same selected game when switching List/Covers/Table views.
+    public static string KeepSelectionAcrossViewsFilePath =>
+        Path.Combine(AppDataPath, "keep-selection-across-views.txt");
+
+    // Dock edge for the List details panel and Covers compact info panel.
+    public static string DetailPanelPositionFilePath =>
+        Path.Combine(AppDataPath, "detail-panel-position.txt");
+
+    // Last app version for which the What's New dialog was shown.
+    public static string WhatsNewSeenFilePath =>
+        Path.Combine(AppDataPath, "whats-new-seen.txt");
+
+    // Watched ROM folder for Scan ROMs and automatic import.
+    public static string RomScanFolderFilePath =>
+        Path.Combine(AppDataPath, "rom-scan-folder.txt");
+
+    // Watched folder for Scan Automatically (Scan Folder).
+    public static string InstalledScanFolderFilePath =>
+        Path.Combine(AppDataPath, "installed-scan-folder.txt");
+
+    // First-run setup completion flag.
+    public static string SetupCompleteFilePath =>
+        Path.Combine(AppDataPath, "setup-complete.txt");
+
+    // User profile (display name + avatar).
+    public static string UserProfileFilePath =>
+        Path.Combine(AppDataPath, "user-profile.json");
+
+    public static string UserProfileDirectoryPath =>
+        Path.Combine(AppDataPath, "profile");
+
     // Tracks which numbered AppData migration steps have run (see AppDataMigrator).
     public const string AppDataVersionFileName = "appdata-version.txt";
 

@@ -6,22 +6,37 @@ using Bridge.Emulation;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Resources;
+using Bridge.Services;
 using CommunityToolkit.Mvvm.Input;
 
 namespace Bridge.ViewModels;
 
 public partial class MainViewModel
 {
-    public async Task ScanRomFolderAsync(string? romFolder)
+    public async Task ScanRomFolderAsync(string? romFolder, bool silent = false)
     {
         if (string.IsNullOrWhiteSpace(romFolder))
         {
             return;
         }
 
+        var folder = romFolder.Trim();
+        if (!Directory.Exists(folder))
+        {
+            if (!silent)
+            {
+                SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), Strings.SelectFolderToScan), StatusMessageKind.Error);
+            }
+
+            return;
+        }
+
         try
         {
-            var found = _romScanner.Scan(romFolder.Trim(), Games);
+            RomScanFolderSettingsStore.Save(folder);
+            _watchedScanFolders.RestartWatchers();
+
+            var found = _romScanner.Scan(folder, Games);
             var romSource = _sourceRepository.GetOrCreateByName("ROM");
             foreach (var game in found)
             {
@@ -38,13 +53,19 @@ public partial class MainViewModel
 
             RefreshStatistics();
             RefreshAllEmulatorDownloadStates();
-            StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), found.Count, romFolder);
             if (found.Count > 0)
             {
-                // Select the first imported ROM so the user lands on a concrete
-                // game (and its Download/Play button) instead of a stale selection.
-                SelectedGame = found[0];
+                StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), found.Count, folder);
+                if (!silent)
+                {
+                    SelectedGame = found[0];
+                }
+
                 await DownloadMetadataForAddedGamesAsync(found, romImport: true);
+            }
+            else if (!silent)
+            {
+                StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), 0, folder);
             }
         }
         catch (Exception ex)
@@ -52,6 +73,60 @@ public partial class MainViewModel
             SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), ex.Message), StatusMessageKind.Error);
         }
     }
+
+    public async Task ScanInstalledFolderAsync(string? folder, bool silent = false)
+    {
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            return;
+        }
+
+        var scanFolder = folder.Trim();
+        if (!Directory.Exists(scanFolder))
+        {
+            if (!silent)
+            {
+                SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), Strings.SelectFolderToScanGames), StatusMessageKind.Error);
+            }
+
+            return;
+        }
+
+        try
+        {
+            InstalledScanFolderSettingsStore.Save(scanFolder);
+            _watchedScanFolders.RestartWatchers();
+
+            var result = await Task.Run(() => _installedGameImport.ImportNewFromFolder(scanFolder));
+            foreach (var game in result.Added)
+            {
+                AddGameToLibrary(game);
+            }
+
+            RefreshStatistics();
+            RefreshAllEmulatorDownloadStates();
+            if (result.Added.Count > 0)
+            {
+                StatusMessage = Strings.Format(nameof(Strings.InstalledScanCompleteFormat), result.Added.Count, scanFolder);
+                if (!silent)
+                {
+                    SelectedGame = result.Added[0];
+                }
+
+                await DownloadMetadataForAddedGamesAsync(result.Added);
+            }
+            else if (!silent)
+            {
+                StatusMessage = Strings.Format(nameof(Strings.InstalledScanCompleteFormat), 0, scanFolder);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), ex.Message), StatusMessageKind.Error);
+        }
+    }
+
+    public void RestartWatchedScanFolders() => _watchedScanFolders.RestartWatchers();
 
     [RelayCommand]
     private async Task ImportSteamLibrary()

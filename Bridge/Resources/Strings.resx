@@ -111,6 +111,7 @@
   <data name="Sources" xml:space="preserve"><value>Sources</value></data>
   <data name="SupportProject" xml:space="preserve"><value>Support the project</value></data>
   <data name="Library" xml:space="preserve"><value>Library</value></data>
+  <data name="SidebarRoms" xml:space="preserve"><value>ROMs</value></data>
   <data name="Statistics" xml:space="preserve"><value>Statistics</value></data>
   <data name="Play" xml:space="preserve"><value>Play</value></data>
   <data name="DownloadMetadata" xml:space="preserve"><value>Download Metadata</value></data>
@@ -148,6 +149,7 @@
   <data name="NoInstallDirectoryFormat" xml:space="preserve"><value>'{0}' has no install directory.</value></data>
   <data name="CouldNotOpenDirectoryFormat" xml:space="preserve"><value>Couldn't open '{0}'.</value></data>
   <data name="ScanCompleteFormat" xml:space="preserve"><value>Scan complete: {0} new ROM(s) imported from '{1}'.</value></data>
+  <data name="InstalledScanCompleteFormat" xml:space="preserve"><value>Scan complete: {0} new game(s) imported from '{1}'.</value></data>
   <data name="ScanFailedFormat" xml:space="preserve"><value>Scan failed: {0}</value></data>
   <data name="SteamNotDetectedSkippedImport" xml:space="preserve"><value>Steam not detected — skipped import.</value></data>
   <data name="EpicNotDetectedSkippedImport" xml:space="preserve"><value>Epic Games Launcher not detected — skipped import.</value></data>
@@ -247,6 +249,12 @@
   <data name="NotInstalled" xml:space="preserve"><value>Not installed</value></data>
   <data name="Info" xml:space="preserve"><value>Info</value></data>
   <data name="SelectAGame" xml:space="preserve"><value>Select a game</value></data>
+  <data name="WhatsNewTitlePrefix" xml:space="preserve"><value>What's New</value></data>
+  <data name="WhatsNewTitleFormat" xml:space="preserve"><value>What's new in Bridge {0}</value></data>
+  <data name="WhatsNewGotIt" xml:space="preserve"><value>Got it</value></data>
+  <data name="WhatsNewSectionAdded" xml:space="preserve"><value>Added</value></data>
+  <data name="WhatsNewSectionChanged" xml:space="preserve"><value>Changed</value></data>
+  <data name="WhatsNewSectionFixed" xml:space="preserve"><value>Fixed</value></data>
   <data name="Total" xml:space="preserve"><value>Total</value></data>
   <data name="Average" xml:space="preserve"><value>Average</value></data>
   <data name="Played" xml:space="preserve"><value>Played</value></data>
@@ -338,6 +346,10 @@
   <data name="SettingsLanguageSpanish" xml:space="preserve"><value>Español</value></data>
   <data name="SettingsTrayIconTitle" xml:space="preserve"><value>System tray icon</value></data>
   <data name="SettingsTrayIconDescription" xml:space="preserve"><value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value></data>
+  <data name="SettingsKeepSelectionTitle" xml:space="preserve"><value>Keep selection across views</value></data>
+  <data name="SettingsKeepSelectionDescription" xml:space="preserve"><value>When off, switching between List, Covers, and Table clears the selected game.</value></data>
+  <data name="SettingsDetailPanelPositionTitle" xml:space="preserve"><value>Details panel position</value></data>
+  <data name="SettingsDetailPanelPositionDescription" xml:space="preserve"><value>Dock the game details panel to the left or right in List view and on the compact info panel in Covers view.</value></data>
   <data name="TrayIconShowBridge" xml:space="preserve"><value>Show Bridge</value></data>
   <data name="SettingsDataSection" xml:space="preserve"><value>Library &amp; data</value></data>
   <data name="SettingsBackupTitle" xml:space="preserve"><value>Backup library</value></data>
@@ -356,6 +368,7 @@
   <data name="SettingsThemeCardDescription" xml:space="preserve"><value>Accent color presets and custom theme color.</value></data>
   <data name="SettingsAboutCardDescription" xml:space="preserve"><value>Version, support links, and project information.</value></data>
   <data name="OpenSettings" xml:space="preserve"><value>Open</value></data>
+  <data name="MenuAllSettings" xml:space="preserve"><value>All settings...</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>Update available</value></data>
   <data name="UpdateAvailableMessageFormat" xml:space="preserve"><value>Version {0} is available (you have {1}).&#xA;&#xA;Download and restart now?</value></data>
   <data name="UpdateConfirm" xml:space="preserve"><value>Update</value></data>
@@ -401,6 +414,7 @@
   <data name="RetroArchInstalledWithCoresFormat" xml:space="preserve"><value>RetroArch is installed with {0} managed core(s). Cores are checked for updates when needed.</value></data>
   <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve"><value>Could not update RetroArch: {0}</value></data>
   <data name="DatabaseRestoredFromBackup" xml:space="preserve"><value>Your library database was damaged. Bridge restored it from the backup made before your last update.</value></data>
+  <data name="DatabaseFileLocked" xml:space="preserve"><value>Bridge could not access your library database because another Bridge instance is using it. Right-click the Bridge icon in the notification area and choose Exit, then start Bridge again.</value></data>
   <data name="DatabaseCorruptNoBackupFormat" xml:space="preserve"><value>Your library database is damaged and no valid backup was found.
 
 Check for bridge.db.bak-update or bridge.db.corrupt-* in:
@@ -460,4 +474,45 @@ Restore a backup manually, or rename/delete bridge.db to start with an empty lib
   <data name="GroupScore50To69" xml:space="preserve"><value>50 - 69</value></data>
   <data name="GroupScore70To89" xml:space="preserve"><value>70 - 89</value></data>
   <data name="GroupScore90To100" xml:space="preserve"><value>90 - 100</value></data>
+  <data name="SetupWizardTitle" xml:space="preserve"><value>Welcome to Bridge</value></data>
+  <data name="SetupStepFormat" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="SetupBack" xml:space="preserve"><value>Back</value></data>
+  <data name="SetupNext" xml:space="preserve"><value>Next</value></data>
+  <data name="SetupGetStarted" xml:space="preserve"><value>Get started</value></data>
+  <data name="SetupProfileStepTitle" xml:space="preserve"><value>Your profile</value></data>
+  <data name="SetupProfileStepDescription" xml:space="preserve"><value>Tell Bridge what to call you and pick an avatar for your library.</value></data>
+  <data name="SetupDisplayNameLabel" xml:space="preserve"><value>Display name</value></data>
+  <data name="SetupDisplayNameRequired" xml:space="preserve"><value>Enter a display name to continue.</value></data>
+  <data name="SetupAvatarLabel" xml:space="preserve"><value>Avatar</value></data>
+  <data name="SetupChoosePhoto" xml:space="preserve"><value>Choose photo</value></data>
+  <data name="SetupUseDefaultAvatar" xml:space="preserve"><value>Use preset avatar</value></data>
+  <data name="SetupPhotoFilter" xml:space="preserve"><value>Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All files|*.*</value></data>
+  <data name="SetupLibrariesStepTitle" xml:space="preserve"><value>Game libraries</value></data>
+  <data name="SetupLibrariesStepDescription" xml:space="preserve"><value>Bridge imports Steam and Epic automatically. Add a folder for external games outside those stores.</value></data>
+  <data name="SetupStoreLibrariesTitle" xml:space="preserve"><value>Store libraries</value></data>
+  <data name="SetupStoreLibrariesHelp" xml:space="preserve"><value>These launchers are scanned on startup — no folder setup needed.</value></data>
+  <data name="SetupSteamDetected" xml:space="preserve"><value>Steam detected</value></data>
+  <data name="SetupSteamDetectedHelp" xml:space="preserve"><value>Your Steam library will be imported automatically.</value></data>
+  <data name="SetupSteamNotDetected" xml:space="preserve"><value>Steam not detected</value></data>
+  <data name="SetupSteamNotDetectedHelp" xml:space="preserve"><value>Install Steam anytime — Bridge will import your library on the next launch.</value></data>
+  <data name="SetupEpicDetected" xml:space="preserve"><value>Epic Games detected</value></data>
+  <data name="SetupEpicDetectedHelp" xml:space="preserve"><value>Your Epic library will be imported automatically.</value></data>
+  <data name="SetupEpicNotDetected" xml:space="preserve"><value>Epic Games not detected</value></data>
+  <data name="SetupEpicNotDetectedHelp" xml:space="preserve"><value>Install the Epic Games Launcher anytime — Bridge will import your library on the next launch.</value></data>
+  <data name="SetupExternalGamesFolderTitle" xml:space="preserve"><value>External games folder</value></data>
+  <data name="SetupExternalGamesFolderHelp" xml:space="preserve"><value>For games outside Steam and Epic — GOG, itch.io, portable installs, and other local folders. Bridge watches this folder and adds new games automatically.</value></data>
+  <data name="SetupInvalidExternalGamesFolder" xml:space="preserve"><value>The external games folder does not exist.</value></data>
+  <data name="SetupRomStepTitle" xml:space="preserve"><value>ROM folder</value></data>
+  <data name="SetupRomStepDescription" xml:space="preserve"><value>Optionally point Bridge at the folder where you keep ROM files.</value></data>
+  <data name="SetupRomFolderTitle" xml:space="preserve"><value>ROM folder</value></data>
+  <data name="SetupRomFolderHelp" xml:space="preserve"><value>Bridge scans this folder recursively and imports supported ROMs with metadata. New files are added automatically.</value></data>
+  <data name="SetupInvalidRomFolder" xml:space="preserve"><value>The ROM folder does not exist.</value></data>
+  <data name="SetupReadyTitle" xml:space="preserve"><value>You're all set</value></data>
+  <data name="SetupReadyHelp" xml:space="preserve"><value>Bridge will import your libraries, scan the folders you chose, and keep watching them for new games.</value></data>
+  <data name="SetupProfileGreetingFormat" xml:space="preserve"><value>Welcome, {0}</value></data>
+  <data name="SettingsProfileSection" xml:space="preserve"><value>Profile</value></data>
+  <data name="SettingsProfileTitle" xml:space="preserve"><value>Your profile</value></data>
+  <data name="SettingsProfileDescription" xml:space="preserve"><value>Change the name and avatar shown in Statistics.</value></data>
+  <data name="SettingsSaveProfile" xml:space="preserve"><value>Save profile</value></data>
+  <data name="SettingsProfileSaved" xml:space="preserve"><value>Profile saved.</value></data>
 </root>

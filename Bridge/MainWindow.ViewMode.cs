@@ -46,6 +46,9 @@ public partial class MainWindow
 
         SaveScrollPosition(oldMode);
 
+        if (!KeepSelectionAcrossViewsSettingsStore.Load())
+            vm.SelectedGame = null;
+
         vm.ViewMode = newMode;
         LibraryDetail.ApplyViewModeLayout(newMode);
 

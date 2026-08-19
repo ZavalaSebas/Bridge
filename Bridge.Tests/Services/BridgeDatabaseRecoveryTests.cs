@@ -54,6 +54,28 @@ public class BridgeDatabaseRecoveryTests : IDisposable
         Assert.Equal(BridgeDatabaseRecovery.RecoveryResult.BackupUnavailable, result);
     }
 
+    [Fact]
+    public void TryQuarantineInvalidDatabase_MovesCorruptFileAside()
+    {
+        File.WriteAllBytes(_databasePath, [0x01, 0x02]);
+
+        Assert.True(BridgeDatabaseRecovery.TryQuarantineInvalidDatabase(_databasePath));
+        Assert.False(File.Exists(_databasePath));
+        Assert.Single(Directory.GetFiles(_appDataPath, "bridge.db.corrupt-*"));
+    }
+
+    [Fact]
+    public void TryQuarantineInvalidDatabase_DeletesSidecarFiles()
+    {
+        File.WriteAllBytes(_databasePath, [0x01, 0x02]);
+        File.WriteAllText(_databasePath + "-wal", "wal");
+        File.WriteAllText(_databasePath + "-shm", "shm");
+
+        Assert.True(BridgeDatabaseRecovery.TryQuarantineInvalidDatabase(_databasePath));
+        Assert.False(File.Exists(_databasePath + "-wal"));
+        Assert.False(File.Exists(_databasePath + "-shm"));
+    }
+
     private static byte[] CreateMinimalSqliteHeader() => "SQLite format 3\0"u8.ToArray();
 
     public void Dispose()

@@ -43,6 +43,8 @@ public partial class MainViewModel : ObservableObject
     private readonly EpicLibraryImporter _epicImporter;
     private readonly AppUpdateService _appUpdateService;
     private readonly IDialogService _dialogService;
+    private readonly InstalledGameImportService _installedGameImport;
+    private readonly WatchedScanFolderService _watchedScanFolders;
 
     private IReadOnlyDictionary<Guid, string>? _companyNames;
     private IReadOnlyDictionary<Guid, string>? _platformNames;
@@ -168,6 +170,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private LibraryStatistics? _statistics;
 
+    [ObservableProperty]
+    private UserProfile _userProfile = UserProfileSettingsStore.Load();
+
     // True during bulk imports so the per-row collection changes don't each
     // trigger a full RebuildDetailedRows (O(n²) on large libraries); the import
     // calls RebuildDetailedRows once when it finishes.
@@ -206,6 +211,10 @@ public partial class MainViewModel : ObservableObject
                 // active (otherwise "Favorites" or "Sources" stays stuck with no
                 // way to clear it from the sidebar).
                 FilterPreset = LibraryFilterPreset.All;
+                GroupField = GameGroupField.None;
+                break;
+            case NavigationSection.Roms:
+                FilterPreset = LibraryFilterPreset.Roms;
                 GroupField = GameGroupField.None;
                 break;
             case NavigationSection.Favorites:
@@ -299,7 +308,12 @@ public partial class MainViewModel : ObservableObject
             if (NavigationSection != NavigationSection.Favorites)
                 NavigationSection = NavigationSection.Favorites;
         }
-        else if (NavigationSection == NavigationSection.Favorites)
+        else if (FilterPreset == LibraryFilterPreset.Roms)
+        {
+            if (NavigationSection != NavigationSection.Roms)
+                NavigationSection = NavigationSection.Roms;
+        }
+        else if (NavigationSection is NavigationSection.Favorites or NavigationSection.Roms)
         {
             NavigationSection = NavigationSection.Library;
         }
@@ -587,7 +601,9 @@ public partial class MainViewModel : ObservableObject
         EpicLibraryImporter epicImporter,
         AppUpdateService appUpdateService,
         MetadataSyncService metadataSyncService,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        InstalledGameImportService installedGameImport,
+        WatchedScanFolderService watchedScanFolders)
     {
         _gameRepository = gameRepository;
         _genreRepository = genreRepository;
@@ -610,6 +626,8 @@ public partial class MainViewModel : ObservableObject
         _epicImporter = epicImporter;
         _appUpdateService = appUpdateService;
         _dialogService = dialogService;
+        _installedGameImport = installedGameImport;
+        _watchedScanFolders = watchedScanFolders;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
@@ -645,6 +663,19 @@ public partial class MainViewModel : ObservableObject
             await ImportSteamLibraryCoreAsync(steamSourceId);
             await ImportEpicLibraryCoreAsync(epicSourceId);
             _ = PreloadArtworkAsync();
+
+            _watchedScanFolders.Start(this);
+            var romFolder = RomScanFolderSettingsStore.Load();
+            if (!string.IsNullOrWhiteSpace(romFolder))
+            {
+                await ScanRomFolderAsync(romFolder, silent: true);
+            }
+
+            var installedFolder = InstalledScanFolderSettingsStore.Load();
+            if (!string.IsNullOrWhiteSpace(installedFolder))
+            {
+                await ScanInstalledFolderAsync(installedFolder, silent: true);
+            }
 
             // First run: the constructor's SelectInitialGame ran against an empty
             // library, so nothing got selected. Pick the initial game now that the
@@ -819,6 +850,7 @@ public partial class MainViewModel : ObservableObject
         return FilterPreset switch
         {
             LibraryFilterPreset.Favorite => game.Favorite,
+            LibraryFilterPreset.Roms => game.Roms.Count > 0,
             LibraryFilterPreset.Installed => game.IsInstalled,
             LibraryFilterPreset.NotPlayed => game.PlaytimeSeconds == 0 && !game.LastActivity.HasValue,
             LibraryFilterPreset.RecentlyPlayed => game.LastActivity.HasValue,
@@ -867,6 +899,8 @@ public partial class MainViewModel : ObservableObject
             stats.HiddenCount,
             stats.TotalPlaytimeDisplay);
     }
+
+    public void ApplyUserProfile(UserProfile profile) => UserProfile = profile;
 
     // Adds an already-persisted game to the in-memory library and selects it.
     // Used after the edit window saves a brand-new manual game.

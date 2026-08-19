@@ -23,6 +23,10 @@ public partial class MainWindow
     // Edit game in the dedicated editor window; details panel stays read-only.
     internal void HandleEditGameClick(object sender, RoutedEventArgs e) => EditGame_Click(sender, e);
 
+    internal void HandleScanInstalledClick(object sender, RoutedEventArgs e) => ScanInstalled_Click(sender, e);
+
+    internal void HandleScanRomClick(object sender, RoutedEventArgs e) => ScanRom_Click(sender, e);
+
     private void EditGame_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel mainVm || mainVm.SelectedGame is not { } game)
@@ -89,9 +93,12 @@ public partial class MainWindow
                 viewModel.AddGameToLibrary(game);
             }
 
-            // Pull metadata right away for the games that were just added —
-            // Steam first (a manual copy of a Steam game gets its full store
-            // metadata), then IGDB for the rest.
+            if (!string.IsNullOrWhiteSpace(window.LastScannedFolder))
+            {
+                InstalledScanFolderSettingsStore.Save(window.LastScannedFolder);
+                viewModel.RestartWatchedScanFolders();
+            }
+
             if (window.CreatedGames.Count > 0)
             {
                 await viewModel.DownloadMetadataForAddedGamesAsync(window.CreatedGames);

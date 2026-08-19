@@ -3,7 +3,7 @@ using System.ComponentModel;
 namespace Bridge.Core.Enums;
 
 /// <summary>
-/// Sidebar navigation sections. Library / Favorites / Sources are UI shortcuts
+/// Sidebar navigation sections. Library / ROMs / Favorites / Sources are UI shortcuts
 /// over state that already exists in the main view model (they set the existing
 /// FilterPreset / GroupField values); Statistics switches the content area;
 /// Settings shows the in-app settings hub (shortcuts to existing windows). This enum is a UI
@@ -14,6 +14,9 @@ public enum NavigationSection
 {
     [Description("Library")]
     Library,
+
+    [Description("ROMs")]
+    Roms,
 
     [Description("Favorites")]
     Favorites,

@@ -217,6 +217,9 @@
   <data name="Library" xml:space="preserve">
     <value>Biblioteca</value>
   </data>
+  <data name="SidebarRoms" xml:space="preserve">
+    <value>ROMs</value>
+  </data>
   <data name="Statistics" xml:space="preserve">
     <value>Estadísticas</value>
   </data>
@@ -327,6 +330,9 @@
   </data>
   <data name="ScanCompleteFormat" xml:space="preserve">
     <value>Escaneo completo: {0} ROM(s) nuevo(s) importado(s) desde '{1}'.</value>
+  </data>
+  <data name="InstalledScanCompleteFormat" xml:space="preserve">
+    <value>Escaneo completo: {0} juego(s) nuevo(s) importado(s) desde '{1}'.</value>
   </data>
   <data name="ScanFailedFormat" xml:space="preserve">
     <value>Error en el escaneo: {0}</value>
@@ -625,6 +631,24 @@
   <data name="SelectAGame" xml:space="preserve">
     <value>Selecciona un juego</value>
   </data>
+  <data name="WhatsNewTitlePrefix" xml:space="preserve">
+    <value>Novedades</value>
+  </data>
+  <data name="WhatsNewTitleFormat" xml:space="preserve">
+    <value>Novedades en Bridge {0}</value>
+  </data>
+  <data name="WhatsNewGotIt" xml:space="preserve">
+    <value>Entendido</value>
+  </data>
+  <data name="WhatsNewSectionAdded" xml:space="preserve">
+    <value>Nuevo</value>
+  </data>
+  <data name="WhatsNewSectionChanged" xml:space="preserve">
+    <value>Cambios</value>
+  </data>
+  <data name="WhatsNewSectionFixed" xml:space="preserve">
+    <value>Correcciones</value>
+  </data>
   <data name="Total" xml:space="preserve">
     <value>Total</value>
   </data>
@@ -898,6 +922,18 @@
   <data name="SettingsTrayIconDescription" xml:space="preserve">
     <value>Al cerrar la ventana, Bridge permanece en el área de notificaciones. Haz doble clic en el icono para volver a abrirlo.</value>
   </data>
+  <data name="SettingsKeepSelectionTitle" xml:space="preserve">
+    <value>Mantener selección entre vistas</value>
+  </data>
+  <data name="SettingsKeepSelectionDescription" xml:space="preserve">
+    <value>Si está desactivado, al cambiar entre Lista, Portadas y Tabla se borra el juego seleccionado.</value>
+  </data>
+  <data name="SettingsDetailPanelPositionTitle" xml:space="preserve">
+    <value>Posición del panel de detalles</value>
+  </data>
+  <data name="SettingsDetailPanelPositionDescription" xml:space="preserve">
+    <value>Acopla el panel de detalles del juego a la izquierda o derecha en la vista Lista y en el panel compacto de la vista Portadas.</value>
+  </data>
   <data name="TrayIconShowBridge" xml:space="preserve">
     <value>Mostrar Bridge</value>
   </data>
@@ -951,6 +987,9 @@
   </data>
   <data name="OpenSettings" xml:space="preserve">
     <value>Abrir</value>
+  </data>
+  <data name="MenuAllSettings" xml:space="preserve">
+    <value>Todas las configuraciones...</value>
   </data>
   <data name="UpdateAvailableTitle" xml:space="preserve">
     <value>Actualización disponible</value>
@@ -1088,6 +1127,9 @@
   </data>
   <data name="DatabaseRestoredFromBackup" xml:space="preserve">
     <value>La base de datos de tu biblioteca estaba dañada. Bridge la restauró desde la copia de seguridad hecha antes de tu última actualización.</value>
+  </data>
+  <data name="DatabaseFileLocked" xml:space="preserve">
+    <value>Bridge no pudo acceder a la base de datos de tu biblioteca porque otra instancia de Bridge la está usando. Haz clic derecho en el icono de Bridge en el área de notificaciones y elige Salir, luego inicia Bridge de nuevo.</value>
   </data>
   <data name="DatabaseCorruptNoBackupFormat" xml:space="preserve">
     <value>Tu base de datos de biblioteca está dañada y no se encontró una copia de seguridad válida.
@@ -1255,5 +1297,128 @@ Restaura una copia de seguridad manualmente, o renombra/elimina bridge.db para e
   </data>
   <data name="GroupScore90To100" xml:space="preserve">
     <value>90 - 100</value>
+  </data>
+  <data name="SetupWizardTitle" xml:space="preserve">
+    <value>Bienvenido a Bridge</value>
+  </data>
+  <data name="SetupStepFormat" xml:space="preserve">
+    <value>Paso {0} de {1}</value>
+  </data>
+  <data name="SetupBack" xml:space="preserve">
+    <value>Atrás</value>
+  </data>
+  <data name="SetupNext" xml:space="preserve">
+    <value>Siguiente</value>
+  </data>
+  <data name="SetupGetStarted" xml:space="preserve">
+    <value>Empezar</value>
+  </data>
+  <data name="SetupProfileStepTitle" xml:space="preserve">
+    <value>Tu perfil</value>
+  </data>
+  <data name="SetupProfileStepDescription" xml:space="preserve">
+    <value>Dile a Bridge cómo llamarte y elige un avatar para tu biblioteca.</value>
+  </data>
+  <data name="SetupDisplayNameLabel" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="SetupDisplayNameRequired" xml:space="preserve">
+    <value>Introduce un nombre para continuar.</value>
+  </data>
+  <data name="SetupAvatarLabel" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="SetupChoosePhoto" xml:space="preserve">
+    <value>Elegir foto</value>
+  </data>
+  <data name="SetupUseDefaultAvatar" xml:space="preserve">
+    <value>Usar avatar predeterminado</value>
+  </data>
+  <data name="SetupPhotoFilter" xml:space="preserve">
+    <value>Imágenes|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|Todos los archivos|*.*</value>
+  </data>
+  <data name="SetupLibrariesStepTitle" xml:space="preserve">
+    <value>Bibliotecas de juegos</value>
+  </data>
+  <data name="SetupLibrariesStepDescription" xml:space="preserve">
+    <value>Bridge importa Steam y Epic automáticamente. Añade una carpeta para juegos externos fuera de esas tiendas.</value>
+  </data>
+  <data name="SetupStoreLibrariesTitle" xml:space="preserve">
+    <value>Tiendas detectadas</value>
+  </data>
+  <data name="SetupStoreLibrariesHelp" xml:space="preserve">
+    <value>Estos launchers se escanean al iniciar — no necesitas configurar una carpeta.</value>
+  </data>
+  <data name="SetupSteamDetected" xml:space="preserve">
+    <value>Steam detectado</value>
+  </data>
+  <data name="SetupSteamDetectedHelp" xml:space="preserve">
+    <value>Tu biblioteca de Steam se importará automáticamente.</value>
+  </data>
+  <data name="SetupSteamNotDetected" xml:space="preserve">
+    <value>Steam no detectado</value>
+  </data>
+  <data name="SetupSteamNotDetectedHelp" xml:space="preserve">
+    <value>Instala Steam cuando quieras — Bridge importará tu biblioteca en el próximo inicio.</value>
+  </data>
+  <data name="SetupEpicDetected" xml:space="preserve">
+    <value>Epic Games detectado</value>
+  </data>
+  <data name="SetupEpicDetectedHelp" xml:space="preserve">
+    <value>Tu biblioteca de Epic se importará automáticamente.</value>
+  </data>
+  <data name="SetupEpicNotDetected" xml:space="preserve">
+    <value>Epic Games no detectado</value>
+  </data>
+  <data name="SetupEpicNotDetectedHelp" xml:space="preserve">
+    <value>Instala Epic Games Launcher cuando quieras — Bridge importará tu biblioteca en el próximo inicio.</value>
+  </data>
+  <data name="SetupExternalGamesFolderTitle" xml:space="preserve">
+    <value>Carpeta de juegos externos</value>
+  </data>
+  <data name="SetupExternalGamesFolderHelp" xml:space="preserve">
+    <value>Para juegos fuera de Steam y Epic — GOG, itch.io, instalaciones portátiles y otras carpetas locales. Bridge vigila esta carpeta y añade juegos nuevos automáticamente.</value>
+  </data>
+  <data name="SetupInvalidExternalGamesFolder" xml:space="preserve">
+    <value>La carpeta de juegos externos no existe.</value>
+  </data>
+  <data name="SetupRomStepTitle" xml:space="preserve">
+    <value>Carpeta de ROMs</value>
+  </data>
+  <data name="SetupRomStepDescription" xml:space="preserve">
+    <value>Opcionalmente, indica la carpeta donde guardas tus ROMs.</value>
+  </data>
+  <data name="SetupRomFolderTitle" xml:space="preserve">
+    <value>Carpeta de ROMs</value>
+  </data>
+  <data name="SetupRomFolderHelp" xml:space="preserve">
+    <value>Bridge escanea esta carpeta de forma recursiva e importa ROMs compatibles con metadatos. Los archivos nuevos se añaden automáticamente.</value>
+  </data>
+  <data name="SetupInvalidRomFolder" xml:space="preserve">
+    <value>La carpeta de ROMs no existe.</value>
+  </data>
+  <data name="SetupReadyTitle" xml:space="preserve">
+    <value>Todo listo</value>
+  </data>
+  <data name="SetupReadyHelp" xml:space="preserve">
+    <value>Bridge importará tus bibliotecas, escaneará las carpetas que elegiste y seguirá vigilándolas por juegos nuevos.</value>
+  </data>
+  <data name="SetupProfileGreetingFormat" xml:space="preserve">
+    <value>Bienvenido, {0}</value>
+  </data>
+  <data name="SettingsProfileSection" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="SettingsProfileTitle" xml:space="preserve">
+    <value>Tu perfil</value>
+  </data>
+  <data name="SettingsProfileDescription" xml:space="preserve">
+    <value>Cambia el nombre y el avatar que se muestran en Estadísticas.</value>
+  </data>
+  <data name="SettingsSaveProfile" xml:space="preserve">
+    <value>Guardar perfil</value>
+  </data>
+  <data name="SettingsProfileSaved" xml:space="preserve">
+    <value>Perfil guardado.</value>
   </data>
 </root>

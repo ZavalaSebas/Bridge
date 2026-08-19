@@ -38,6 +38,22 @@ public partial class LibraryDetailView : UserControl
 
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        CoversViewsHost.SizeChanged += OnCoversViewsHostSizeChanged;
+        CompactInfoPanel.IsVisibleChanged += OnCompactInfoPanelIsVisibleChanged;
+    }
+
+    private void OnCompactInfoPanelIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        RefreshCoversLayout();
+    }
+
+    private void OnCoversViewsHostSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.WidthChanged && ViewModel?.ViewMode == ViewMode.Covers)
+        {
+            CoversList.InvalidateMeasure();
+            CoversList.InvalidateArrange();
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -61,10 +77,14 @@ public partial class LibraryDetailView : UserControl
             proxy.Data = vm;
             SubscribeToViewModel(vm);
         }
+
+        ApplyDetailPanelPosition();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        CoversViewsHost.SizeChanged -= OnCoversViewsHostSizeChanged;
+        CompactInfoPanel.IsVisibleChanged -= OnCompactInfoPanelIsVisibleChanged;
         UnsubscribeFromViewModel();
     }
 
@@ -143,6 +163,18 @@ public partial class LibraryDetailView : UserControl
     {
         if (Window.GetWindow(this) is MainWindow mainWindow)
             mainWindow.HandleEditGameClick(sender, e);
+    }
+
+    private void EmptyScanInstalled_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.HandleScanInstalledClick(sender, e);
+    }
+
+    private void EmptyScanRom_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.HandleScanRomClick(sender, e);
     }
 
     private void CloseCompactInfo_Click(object sender, RoutedEventArgs e)
@@ -349,18 +381,170 @@ public partial class LibraryDetailView : UserControl
 
     public void ApplyViewModeLayout(ViewMode mode)
     {
-        switch (mode)
+        CompactInfoPanel.Visibility = Visibility.Collapsed;
+        ApplyDetailPanelPosition();
+
+        if (mode == ViewMode.Covers)
         {
-            case ViewMode.List:
-                ShowFullWidthDetail();
-                CompactInfoPanel.Visibility = Visibility.Collapsed;
-                break;
-            case ViewMode.Covers:
-            case ViewMode.Table:
-                CompactInfoPanel.Visibility = Visibility.Collapsed;
-                HideDetailPanel();
-                break;
+            CoversList.InvalidateMeasure();
+            Dispatcher.BeginInvoke(() =>
+            {
+                CoversList.InvalidateMeasure();
+                CoversList.InvalidateArrange();
+            }, DispatcherPriority.Loaded);
         }
+    }
+
+    public void ApplyDetailPanelPosition(string? position = null)
+    {
+        position = DetailPanelPositionSettingsStore.Normalize(position ?? DetailPanelPositionSettingsStore.Load());
+        var showListDetail = ViewModel?.ViewMode == ViewMode.List;
+        ApplyListDetailLayout(position, showListDetail);
+        ApplyCompactDetailLayout(position);
+    }
+
+    private void ApplyListDetailLayout(string position, bool visible)
+    {
+        ResetListDetailGrid();
+
+        if (!visible)
+        {
+            ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
+            ViewsColumn.MinWidth = 200;
+            DetailColumn.Width = new GridLength(0);
+            DetailColumn.MinWidth = 0;
+            DetailSeparator.Visibility = Visibility.Collapsed;
+            DetailSplitter.Visibility = Visibility.Collapsed;
+            PlaceViewsHost(column: 0, row: 0);
+            PlaceDetailHost(column: 2, row: 0);
+            return;
+        }
+
+        DetailSeparator.Visibility = Visibility.Visible;
+        DetailSplitter.Visibility = Visibility.Visible;
+        DetailSplitter.ResizeBehavior = GridResizeBehavior.PreviousAndNext;
+        DetailSplitter.ResizeDirection = GridResizeDirection.Columns;
+        DetailSplitter.Width = 4;
+        DetailSplitter.Height = double.NaN;
+        DetailSeparator.Width = 1;
+        DetailSeparator.Height = double.NaN;
+
+        if (position == DetailPanelPositionSettingsStore.Left)
+        {
+            // Column 0 uses ViewsColumn, column 2 uses DetailColumn — swap widths
+            // so the details panel gets the flexible star column on the left.
+            ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
+            ViewsColumn.MinWidth = 320;
+            DetailColumn.Width = new GridLength(360);
+            DetailColumn.MinWidth = 200;
+            PlaceDetailHost(column: 0, row: 0);
+            PlaceListChrome(column: 1, row: 0);
+            PlaceViewsHost(column: 2, row: 0);
+            SetDetailPanelBorder(DetailPanelPositionSettingsStore.Left);
+            return;
+        }
+
+        ViewsColumn.Width = new GridLength(360);
+        ViewsColumn.MinWidth = 200;
+        DetailColumn.Width = new GridLength(1, GridUnitType.Star);
+        DetailColumn.MinWidth = 320;
+        PlaceViewsHost(column: 0, row: 0);
+        PlaceListChrome(column: 1, row: 0);
+        PlaceDetailHost(column: 2, row: 0);
+        SetDetailPanelBorder(DetailPanelPositionSettingsStore.Right);
+    }
+
+    private void ApplyCompactDetailLayout(string position)
+    {
+        Grid.SetRow(CoversViewsHost, 0);
+        Grid.SetRow(CompactInfoPanel, 0);
+        CompactInfoPanel.Width = 320;
+        CompactInfoPanel.Height = double.NaN;
+        CompactInfoPanel.HorizontalAlignment = HorizontalAlignment.Stretch;
+        CompactInfoPanel.VerticalAlignment = VerticalAlignment.Stretch;
+
+        if (position == DetailPanelPositionSettingsStore.Left)
+        {
+            CoversColumn0.Width = GridLength.Auto;
+            CoversColumn1.Width = new GridLength(1, GridUnitType.Star);
+            Grid.SetColumn(CompactInfoPanel, 0);
+            Grid.SetColumn(CoversViewsHost, 1);
+            SetCompactPanelBorder(DetailPanelPositionSettingsStore.Left);
+            RefreshCoversLayout();
+            return;
+        }
+
+        CoversColumn0.Width = new GridLength(1, GridUnitType.Star);
+        CoversColumn1.Width = GridLength.Auto;
+        Grid.SetColumn(CoversViewsHost, 0);
+        Grid.SetColumn(CompactInfoPanel, 1);
+        SetCompactPanelBorder(DetailPanelPositionSettingsStore.Right);
+        RefreshCoversLayout();
+    }
+
+    private void RefreshCoversLayout()
+    {
+        if (ViewModel?.ViewMode != ViewMode.Covers)
+            return;
+
+        CoversLayoutRoot.InvalidateMeasure();
+        CoversLayoutRoot.InvalidateArrange();
+        CoversViewsHost.InvalidateMeasure();
+        CoversList.InvalidateMeasure();
+        CoversList.InvalidateArrange();
+    }
+
+    private void ResetListDetailGrid()
+    {
+        ViewsColumn.Width = new GridLength(360);
+        ViewsColumn.MinWidth = 200;
+        DetailColumn.Width = new GridLength(1, GridUnitType.Star);
+        DetailColumn.MinWidth = 320;
+        ViewsRow.Height = new GridLength(1, GridUnitType.Star);
+        DetailRow.Height = GridLength.Auto;
+        DetailRow.MinHeight = 0;
+    }
+
+    private void PlaceViewsHost(int column, int row)
+    {
+        Grid.SetColumn(ViewsHost, column);
+        Grid.SetRow(ViewsHost, row);
+        Grid.SetColumnSpan(ViewsHost, 1);
+        Grid.SetRowSpan(ViewsHost, 1);
+    }
+
+    private void PlaceDetailHost(int column, int row)
+    {
+        Grid.SetColumn(DetailPanelHost, column);
+        Grid.SetRow(DetailPanelHost, row);
+        Grid.SetColumnSpan(DetailPanelHost, 1);
+        Grid.SetRowSpan(DetailPanelHost, 1);
+    }
+
+    private void PlaceListChrome(int column, int row)
+    {
+        Grid.SetColumn(DetailSeparator, column);
+        Grid.SetRow(DetailSeparator, row);
+        Grid.SetColumn(DetailSplitter, column);
+        Grid.SetRow(DetailSplitter, row);
+        DetailSeparator.HorizontalAlignment = HorizontalAlignment.Center;
+        DetailSeparator.VerticalAlignment = VerticalAlignment.Stretch;
+        DetailSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+        DetailSplitter.VerticalAlignment = VerticalAlignment.Stretch;
+    }
+
+    private void SetDetailPanelBorder(string position)
+    {
+        DetailPanelHost.BorderThickness = position == DetailPanelPositionSettingsStore.Left
+            ? new Thickness(0, 0, 1, 0)
+            : new Thickness(1, 0, 0, 0);
+    }
+
+    private void SetCompactPanelBorder(string position)
+    {
+        CompactInfoPanel.BorderThickness = position == DetailPanelPositionSettingsStore.Left
+            ? new Thickness(0, 0, 1, 0)
+            : new Thickness(1, 0, 0, 0);
     }
 
     public void ScrollSelectedCoverIntoView()
@@ -383,24 +567,6 @@ public partial class LibraryDetailView : UserControl
             return;
 
         ScrollPositionSettingsStore.SaveTableNameWidth(gridView.Columns[0].Width);
-    }
-
-    private void ShowFullWidthDetail()
-    {
-        ViewsColumn.Width = new GridLength(360);
-        DetailColumn.MinWidth = 320;
-        DetailColumn.Width = new GridLength(1, GridUnitType.Star);
-        DetailSeparator.Visibility = Visibility.Visible;
-        DetailSplitter.Visibility = Visibility.Visible;
-    }
-
-    private void HideDetailPanel()
-    {
-        ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
-        DetailColumn.MinWidth = 0;
-        DetailColumn.Width = new GridLength(0);
-        DetailSeparator.Visibility = Visibility.Collapsed;
-        DetailSplitter.Visibility = Visibility.Collapsed;
     }
 
     private static ScrollViewer? GetScrollViewer(DependencyObject root)

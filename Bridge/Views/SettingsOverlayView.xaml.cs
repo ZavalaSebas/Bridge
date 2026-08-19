@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Bridge.Resources;
 using Bridge.Services;
 using Bridge.ViewModels;
@@ -15,6 +16,15 @@ public partial class SettingsOverlayView : UserControl
     private bool _loadingLanguage;
     private bool _loadingStartWithWindows;
     private bool _loadingTrayIcon;
+    private bool _loadingKeepSelection;
+    private bool _loadingDetailPanelPosition;
+    private ProfileEditorHelper.AvatarEditorState _profileState = new();
+
+    private static readonly string[] DetailPanelPositionValues =
+    [
+        DetailPanelPositionSettingsStore.Left,
+        DetailPanelPositionSettingsStore.Right
+    ];
 
     public SettingsOverlayView()
     {
@@ -40,7 +50,111 @@ public partial class SettingsOverlayView : UserControl
             _loadingTrayIcon = true;
             TrayIconToggle.IsChecked = TrayIconSettingsStore.Load();
             _loadingTrayIcon = false;
+
+            _loadingKeepSelection = true;
+            KeepSelectionToggle.IsChecked = KeepSelectionAcrossViewsSettingsStore.Load();
+            _loadingKeepSelection = false;
+
+            _loadingDetailPanelPosition = true;
+            DetailPanelPositionCombo.SelectedIndex = IndexForDetailPanelPosition(
+                DetailPanelPositionSettingsStore.Load());
+            _loadingDetailPanelPosition = false;
+
+            LoadProfileEditor();
         };
+    }
+
+    private void LoadProfileEditor()
+    {
+        var profile = (DataContext as MainViewModel)?.UserProfile ?? UserProfileSettingsStore.Load();
+        _profileState = ProfileEditorHelper.FromProfile(profile);
+        ProfileDisplayNameBox.Text = profile.DisplayName;
+        ProfileEditorHelper.PopulateDefaultAvatars(
+            ProfileDefaultAvatarGrid,
+            _profileState,
+            RefreshProfilePreview,
+            Application.Current.Resources);
+        RefreshProfilePreview();
+    }
+
+    private void RefreshProfilePreview()
+    {
+        ProfileEditorHelper.RefreshPreview(
+            ProfileAvatarPreview,
+            ProfileEditorHelper.ToProfile(_profileState, ProfileDisplayNameBox.Text));
+    }
+
+    private void ProfileChoosePhoto_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = Strings.SetupChoosePhoto,
+            Filter = Strings.SetupPhotoFilter
+        };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true)
+            return;
+
+        _profileState.CustomAvatarPath = UserProfileAvatarHelper.SaveCustomAvatar(dialog.FileName);
+        _profileState.UseCustomAvatar = true;
+        ProfileEditorHelper.SelectDefaultAvatar(
+            ProfileDefaultAvatarGrid,
+            _profileState.SelectedAvatarId,
+            _profileState,
+            Application.Current.Resources);
+        foreach (var child in ProfileDefaultAvatarGrid.Children)
+        {
+            if (child is System.Windows.Controls.Button button)
+                button.BorderBrush = Brushes.Transparent;
+        }
+
+        RefreshProfilePreview();
+    }
+
+    private void ProfileUseDefaultAvatar_Click(object sender, RoutedEventArgs e)
+    {
+        _profileState.UseCustomAvatar = false;
+        _profileState.CustomAvatarPath = string.Empty;
+        ProfileEditorHelper.SelectDefaultAvatar(
+            ProfileDefaultAvatarGrid,
+            _profileState.SelectedAvatarId,
+            _profileState,
+            Application.Current.Resources);
+        RefreshProfilePreview();
+    }
+
+    private void SaveProfile_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(ProfileDisplayNameBox.Text))
+        {
+            MessageDialogWindow.ShowWarning(
+                Strings.SetupDisplayNameRequired,
+                Strings.SettingsProfileTitle,
+                Window.GetWindow(this));
+            ProfileDisplayNameBox.Focus();
+            return;
+        }
+
+        var profile = ProfileEditorHelper.ToProfile(_profileState, ProfileDisplayNameBox.Text);
+        UserProfileSettingsStore.Save(profile);
+        if (DataContext is MainViewModel viewModel)
+            viewModel.ApplyUserProfile(profile);
+
+        MessageDialogWindow.Show(
+            Strings.SettingsProfileSaved,
+            Config.AppName,
+            SymbolRegular.CheckmarkCircle24,
+            Window.GetWindow(this));
+    }
+
+    private static int IndexForDetailPanelPosition(string position)
+    {
+        for (var i = 0; i < DetailPanelPositionValues.Length; i++)
+        {
+            if (DetailPanelPositionValues[i].Equals(position, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return 1;
     }
 
     private void ConfigureEmulator_Click(object sender, RoutedEventArgs e)
@@ -218,5 +332,32 @@ public partial class SettingsOverlayView : UserControl
 
         TrayIconSettingsStore.Save(enabled);
         App.TrayIcon.Refresh();
+    }
+
+    private void KeepSelectionToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingKeepSelection)
+            return;
+
+        var enabled = KeepSelectionToggle.IsChecked == true;
+        if (enabled == KeepSelectionAcrossViewsSettingsStore.Load())
+            return;
+
+        KeepSelectionAcrossViewsSettingsStore.Save(enabled);
+    }
+
+    private void DetailPanelPositionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingDetailPanelPosition || DetailPanelPositionCombo.SelectedIndex < 0)
+            return;
+
+        var selected = DetailPanelPositionValues[DetailPanelPositionCombo.SelectedIndex];
+        if (selected.Equals(DetailPanelPositionSettingsStore.Load(), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        DetailPanelPositionSettingsStore.Save(selected);
+
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.LibraryDetail.ApplyDetailPanelPosition(selected);
     }
 }

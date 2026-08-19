@@ -7,6 +7,7 @@
 
     <converters:ReleaseDateConverter x:Key="ReleaseDateConverter" />
     <converters:PlaytimeConverter x:Key="PlaytimeConverter" />
+    <converters:UserProfileAvatarConverter x:Key="UserProfileAvatarConverter" />
     <converters:ShortDateConverter x:Key="ShortDateConverter" />
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
     <converters:ZoomToSizeConverter x:Key="ZoomToSize" />

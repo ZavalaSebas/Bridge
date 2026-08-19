@@ -40,6 +40,12 @@ namespace Bridge
         {
             base.OnStartup(e);
 
+            if (!ApplicationSingleInstance.TryBecomeOwner())
+            {
+                Shutdown();
+                return;
+            }
+
             LanguageSettingsStore.ApplySavedLanguage();
             WindowsStartupRegistration.ApplySavedPreference();
 
@@ -85,6 +91,16 @@ namespace Bridge
             AppDataMigrator.MigrateToLatest();
 
             var databaseRecovery = BridgeDatabaseRecovery.TryRestoreFromUpdateBackup();
+            if (databaseRecovery == BridgeDatabaseRecovery.RecoveryResult.FileLocked)
+            {
+                MessageDialogWindow.Show(
+                    Strings.DatabaseFileLocked,
+                    Config.AppName,
+                    SymbolRegular.ErrorCircle24);
+                Shutdown();
+                return;
+            }
+
             if (databaseRecovery == BridgeDatabaseRecovery.RecoveryResult.BackupUnavailable &&
                 File.Exists(Config.DatabasePath) &&
                 !BridgeDatabaseRecovery.IsValidSqliteFile(Config.DatabasePath))
@@ -130,9 +146,10 @@ namespace Bridge
                     DataContext = viewModel
                 };
                 MainWindow = mainWindow;
+                splash.Close();
                 mainWindow.Show();
                 TrayIcon.Attach(mainWindow);
-                splash.Close();
+                ApplicationSingleInstance.ListenForShowWindowRequests(TrayIcon.ShowMainWindow);
 
                 if (databaseRecovery == BridgeDatabaseRecovery.RecoveryResult.RestoredFromUpdateBackup)
                 {
@@ -187,7 +204,10 @@ namespace Bridge
 
             Exit += (_, _) =>
             {
+                ApplicationSingleInstance.Dispose();
                 TrayIcon.Dispose();
+                if (Services.GetService<WatchedScanFolderService>() is IDisposable watchedScanFolders)
+                    watchedScanFolders.Dispose();
                 if (Services.GetService<MetadataHttpClient>() is IDisposable metadataClient)
                     metadataClient.Dispose();
                 if (Services.GetService<DownloadHttpClient>() is IDisposable downloadClient)
@@ -215,6 +235,8 @@ namespace Bridge
             services.AddSingleton<SteamLibraryImporter>();
             services.AddSingleton<EpicLibraryImporter>();
             services.AddSingleton<InstalledGameDetector>();
+            services.AddSingleton<InstalledGameImportService>();
+            services.AddSingleton<WatchedScanFolderService>();
             services.AddSingleton<MetadataSyncService>();
 
             // IGDB: settings loaded from disk once at startup (see

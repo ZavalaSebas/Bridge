@@ -12,7 +12,32 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,28" DataContext="{Binding Statistics}">
+        <StackPanel Margin="32,28">
+            <Border CornerRadius="10"
+                    Background="{DynamicResource Bridge.Card.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    Padding="16"
+                    Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="56" Height="56" CornerRadius="28" ClipToBounds="True"
+                            BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+                        <Image Stretch="UniformToFill"
+                               Source="{Binding UserProfile, Converter={StaticResource UserProfileAvatarConverter}, ConverterParameter=112}"/>
+                    </Border>
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding UserProfile.DisplayName}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="{x:Static res:Strings.Statistics}"
+                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                                   FontSize="12"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <StackPanel DataContext="{Binding Statistics}">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
                 <ui:SymbolIcon Symbol="ChartMultiple24" FontSize="22" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
                 <TextBlock Text="{x:Static res:Strings.Statistics}" FontSize="{StaticResource Bridge.FontSize.Title}" FontWeight="SemiBold" Margin="10,0,0,0"/>
@@ -131,6 +156,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

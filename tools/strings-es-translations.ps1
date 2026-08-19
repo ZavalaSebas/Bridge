@@ -279,6 +279,10 @@
     SettingsLanguageSpanish = 'Español'
     SettingsTrayIconTitle = 'Icono en la bandeja del sistema'
     SettingsTrayIconDescription = 'Al cerrar la ventana, Bridge permanece en el área de notificaciones. Haz doble clic en el icono para volver a abrirlo.'
+    SettingsKeepSelectionTitle = 'Mantener selección entre vistas'
+    SettingsKeepSelectionDescription = 'Si está desactivado, al cambiar entre Lista, Portadas y Tabla se borra el juego seleccionado.'
+    SettingsDetailPanelPositionTitle = 'Posición del panel de detalles'
+    SettingsDetailPanelPositionDescription = 'Acopla el panel de detalles del juego a la izquierda o derecha en la vista Lista y en el panel compacto de la vista Portadas.'
     TrayIconShowBridge = 'Mostrar Bridge'
     SettingsDataSection = 'Biblioteca y datos'
     SettingsBackupTitle = 'Copia de seguridad de la biblioteca'
@@ -297,6 +301,7 @@
     SettingsThemeCardDescription = 'Preajustes de color de acento y color de tema personalizado.'
     SettingsAboutCardDescription = 'Versión, enlaces de soporte e información del proyecto.'
     OpenSettings = 'Abrir'
+    MenuAllSettings = 'Todas las configuraciones...'
     UpdateAvailableTitle = 'Actualización disponible'
 
     UpdateAvailableMessageFormat = "Versión {0} está disponible (tienes {1}).`n`n¿Descargar y reiniciar ahora?"
@@ -343,6 +348,7 @@
     RetroArchInstalledWithCoresFormat = 'RetroArch está instalado con {0} núcleo(s) administrado(s). Los núcleos se revisan en busca de actualizaciones cuando es necesario.'
     CouldNotUpdateRetroArchFormat = 'No se pudo actualizar RetroArch: {0}'
     DatabaseRestoredFromBackup = 'La base de datos de tu biblioteca estaba dañada. Bridge la restauró desde la copia de seguridad hecha antes de tu última actualización.'
+    DatabaseFileLocked = 'Bridge no pudo acceder a la base de datos de tu biblioteca porque otra instancia de Bridge la está usando. Haz clic derecho en el icono de Bridge en el área de notificaciones y elige Salir, luego inicia Bridge de nuevo.'
     DatabaseCorruptNoBackupFormat = "Tu base de datos de biblioteca está dañada y no se encontró una copia de seguridad válida.`n`nBusca bridge.db.bak-update o bridge.db.corrupt-* en:`n{0}`n`nRestaura una copia de seguridad manualmente, o renombra/elimina bridge.db para empezar con una biblioteca vacía."
     VersionFormat = 'Versión {0}'
     SourceCode = 'Código fuente'

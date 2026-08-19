@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
 >
-> **Last updated:** 2026-08-18 (v0.4.0)
+> **Last updated:** 2026-08-19 (v0.5.0)
 
 ## Project Overview
 
@@ -48,7 +48,7 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Current Version (0.4.0)
+### Current Version (0.5.0)
 The MVP defined in the foundation notes:
 - Open the app, create/save/load/edit games, delete
 - Add games manually
@@ -73,6 +73,12 @@ The MVP defined in the foundation notes:
 - **Library backup & restore** — portable `.zip` of database, preferences, and artwork cache; staged restore on restart
 - **System tray icon** — close minimizes to tray by default; double-click or context menu to reopen
 - **Start with Windows** — optional Run-key registration (published exe only)
+- **First-run setup wizard (v0.5.0)** — profile (name + avatar), Steam/Epic detection, external games folder, ROM folder; skips existing users
+- **What's New on update (v0.5.0)** — summarized release notes from embedded `CHANGELOG.md` after each app update
+- **Watched scan folders (v0.5.0)** — persisted ROM and installed-game folders auto-import new files on startup and when they appear (`WatchedScanFolderService`)
+- **User profile (v0.5.0)** — display name + avatar in Statistics; editable in Settings → Profile
+- **ROMs sidebar (v0.5.0)** — filters the library to games with ROMs
+- **Detail panel position / keep selection (v0.5.0)** — dock detail panel left or right; optional keep selection when switching List/Covers/Table
 
 ### Future Versions — Backlog
 - Additional library sources beyond Steam and Epic (GOG, itch.io, ...)

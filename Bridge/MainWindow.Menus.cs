@@ -214,6 +214,10 @@ public partial class MainWindow
                 {
                     SyncThirdPartyClientsMenu(child);
                 }
+                else if (child.Header?.ToString() == Strings.Settings)
+                {
+                    SyncSettingsMenu(child);
+                }
             }
         }
     }
@@ -398,6 +402,12 @@ public partial class MainWindow
             vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Library;
     }
 
+    private void ShowRoms_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Roms;
+    }
+
     private void ShowFavorites_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
@@ -420,6 +430,101 @@ public partial class MainWindow
     {
         if (DataContext is MainViewModel vm)
             vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Settings;
+    }
+
+    private void SyncSettingsMenu(ItemsControl settingsMenu)
+    {
+        var language = LanguageSettingsStore.Load();
+        foreach (var child in settingsMenu.Items.OfType<MenuItem>())
+        {
+            if (child.Header?.ToString() == Strings.SettingsStartWithWindows)
+            {
+                child.IsChecked = StartupSettingsStore.Load();
+                child.IsEnabled = WindowsStartupRegistration.CanRegister;
+            }
+            else if (child.Header?.ToString() == Strings.SettingsTrayIconTitle)
+            {
+                child.IsChecked = TrayIconSettingsStore.Load();
+            }
+            else if (child.Header?.ToString() == Strings.SettingsLanguageTitle)
+            {
+                foreach (var languageItem in child.Items.OfType<MenuItem>())
+                {
+                    languageItem.IsChecked = languageItem.Tag?.ToString() switch
+                    {
+                        "English" => language == AppLanguage.English,
+                        "Spanish" => language == AppLanguage.Spanish,
+                        _ => false
+                    };
+                }
+            }
+        }
+    }
+
+    private void ToggleStartWithWindows_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item)
+            return;
+
+        var enabled = item.IsChecked;
+        if (enabled == StartupSettingsStore.Load())
+            return;
+
+        if (!WindowsStartupRegistration.TrySetRegistered(enabled))
+        {
+            item.IsChecked = StartupSettingsStore.Load();
+            MessageDialogWindow.Show(
+                Strings.SettingsStartWithWindowsFailed,
+                Config.AppName,
+                SymbolRegular.ErrorCircle24,
+                this);
+            return;
+        }
+
+        StartupSettingsStore.Save(enabled);
+    }
+
+    private void ToggleTrayIcon_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item)
+            return;
+
+        var enabled = item.IsChecked;
+        if (enabled == TrayIconSettingsStore.Load())
+            return;
+
+        TrayIconSettingsStore.Save(enabled);
+        App.TrayIcon.Refresh();
+    }
+
+    private void SetLanguage_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string tag })
+            return;
+
+        var selected = tag == "Spanish" ? AppLanguage.Spanish : AppLanguage.English;
+        if (selected == LanguageSettingsStore.Load())
+            return;
+
+        LanguageSettingsStore.Save(selected);
+        RestartApplication();
+    }
+
+    private static void RestartApplication()
+    {
+        var exe = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(exe))
+        {
+            Application.Current.Shutdown();
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = exe,
+            UseShellExecute = true
+        });
+        Application.Current.Shutdown();
     }
 
     // Selects a random game from whatever the current view shows

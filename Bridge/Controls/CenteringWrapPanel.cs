@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace Bridge.Controls;
 
@@ -38,19 +39,26 @@ public class CenteringWrapPanel : Panel
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        var constraintWidth = ResolveConstraintWidth(availableSize.Width);
+        var childConstraint = new Size(
+            double.IsPositiveInfinity(constraintWidth) ? double.PositiveInfinity : constraintWidth,
+            availableSize.Height);
+
         double x = 0;
         double y = 0;
         double lineHeight = 0;
+        double maxLineWidth = 0;
 
         foreach (UIElement child in Children)
         {
-            child.Measure(availableSize);
+            child.Measure(childConstraint);
 
             var width = GetOuterWidth(child);
             var height = GetOuterHeight(child);
 
-            if (x + width > availableSize.Width && x > 0)
+            if (x + width > constraintWidth && x > 0)
             {
+                maxLineWidth = Math.Max(maxLineWidth, x);
                 y += lineHeight;
                 x = 0;
                 lineHeight = 0;
@@ -60,8 +68,48 @@ public class CenteringWrapPanel : Panel
             lineHeight = Math.Max(lineHeight, height);
         }
 
+        maxLineWidth = Math.Max(maxLineWidth, x);
         y += lineHeight;
-        return new Size(availableSize.Width, y);
+
+        var resultWidth = double.IsPositiveInfinity(availableSize.Width)
+            ? (double.IsPositiveInfinity(constraintWidth) ? maxLineWidth : constraintWidth)
+            : availableSize.Width;
+
+        return new Size(resultWidth, y);
+    }
+
+    private double ResolveConstraintWidth(double availableWidth)
+    {
+        if (!double.IsPositiveInfinity(availableWidth))
+            return Math.Max(0, availableWidth);
+
+        var viewportWidth = GetScrollViewerViewportWidth();
+        if (viewportWidth > 0)
+            return viewportWidth;
+
+        // Use an ancestor's width, but never this panel's own ActualWidth — that
+        // creates a feedback loop where a one-column layout keeps shrinking.
+        for (DependencyObject? current = VisualTreeHelper.GetParent(this); current != null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is ScrollViewer)
+                continue;
+
+            if (current is FrameworkElement { ActualWidth: > 0 } element)
+                return element.ActualWidth;
+        }
+
+        return double.PositiveInfinity;
+    }
+
+    private double GetScrollViewerViewportWidth()
+    {
+        for (DependencyObject? current = this; current != null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is ScrollViewer scrollViewer && scrollViewer.ViewportWidth > 0)
+                return scrollViewer.ViewportWidth;
+        }
+
+        return 0;
     }
 
     protected override Size ArrangeOverride(Size finalSize)

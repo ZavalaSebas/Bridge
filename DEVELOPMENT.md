@@ -127,7 +127,7 @@ Bridge.Core/
 │   ├── LibraryFilterPreset.cs   # All/Favorite/Installed/NotPlayed/RecentlyPlayed filter predicates
 │   ├── GameSortField.cs         # 22 sortable fields, Description attribute = display label
 │   ├── GameGroupField.cs        # 21 groupable fields, Description attribute = display label
-│   ├── NavigationSection.cs     # sidebar sections: Library/Favorites/Sources/Statistics/Settings
+│   ├── NavigationSection.cs     # sidebar sections: Library/Roms/Favorites/Sources/Statistics/Settings
 │   └── ViewMode.cs              # List / Covers / Table main-content views
 ├── Import/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
@@ -207,7 +207,7 @@ The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType=
 
 1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values are `ViewMode.List/Covers/Table`; legacy settings may still store `Grid`, mapped to Covers on load) + a Random-game placeholder button.
 
-2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail, **Library**/**Statistics** buttons via the `NavigationSection` enum in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Table views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns.
+2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail — **Library**, **ROMs**, **Favorites**, **Sources**, **Show hidden**, **Statistics**, **Settings** via `NavigationSection` in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Table views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns. The detail panel can dock left or right (Settings → Appearance → Detail panel position).
 
 3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error), and an optional determinate/indeterminate `ProgressBar` (`ShowStatusProgress`, `StatusProgress`, `IsStatusProgressIndeterminate` on `MainViewModel`) for long operations — metadata sync/download, artwork preload, RetroArch install, and app updates.
 
@@ -429,6 +429,14 @@ saving never crashes the app.
 | `language.txt` | `LanguageSettingsStore` | English | UI culture (`English` / `Spanish`) |
 | `startup.txt` | `StartupSettingsStore` | false | Launch at Windows sign-in (Run key) |
 | `tray-icon.txt` | `TrayIconSettingsStore` | **true** | Close window → notification area instead of exit |
+| `keep-selection-across-views.txt` | `KeepSelectionAcrossViewsSettingsStore` | true | Keep selected game when switching List/Covers/Table |
+| `detail-panel-position.txt` | `DetailPanelPositionSettingsStore` | Right | Details panel dock (List + Covers compact panel) |
+| `whats-new-seen.txt` | `WhatsNewSettingsStore` | — | Last app version for which the What's New dialog was shown |
+| `rom-scan-folder.txt` | `RomScanFolderSettingsStore` | — | Watched ROM folder for Scan ROMs + auto-import |
+| `installed-scan-folder.txt` | `InstalledScanFolderSettingsStore` | — | Watched folder for Scan Automatically (Scan Folder) + auto-import |
+| `setup-complete.txt` | `SetupCompleteSettingsStore` | false | First-run setup wizard completed |
+| `user-profile.json` | `UserProfileSettingsStore` | — | Display name + avatar preferences |
+| `profile/` | `UserProfileAvatarHelper` | — | Custom avatar image(s) |
 | `appdata-version.txt` | `AppDataMigrator` | 0 | Last applied numbered AppData migration |
 
 Language, tray, and startup preferences are toggled in **Settings** (sidebar
@@ -439,7 +447,7 @@ gear). Language changes restart Bridge; tray and startup apply immediately.
 `Bridge/Services/AppDataBackupService.cs` packages a portable `.zip`:
 
 - **Included:** `bridge.db` (SQLite online backup while the app runs),
-  preference files above (except logs), `image-cache/`
+  preference files above (except logs), `image-cache/`, `profile/` (custom avatars)
 - **Excluded:** RetroArch under `emulators/`, `emulator-downloads/`, logs
 
 **Create backup** — Settings → Library & data → saves a user-chosen `.zip`.
@@ -453,35 +461,33 @@ connections are open. The previous DB is quarantined as
 
 Covered by `Bridge.Tests/Services/AppDataBackupServiceTests.cs`.
 
-### Welcome Sentinel
+### First-run setup wizard
 
-> **Not implemented** — pattern reference only. `Config.WelcomeSentinelFile`, `Config.ShouldShowWelcome()` and `WelcomeWindow` do not exist in the codebase; nothing on this page creates `welcome_sentinel.txt`.
+On first launch (when `setup-complete.txt` is missing and the user has no prior
+Bridge data), Bridge shows `SetupWizardWindow` — a 3-step modal wizard:
 
-Show a welcome dialog on first launch or after a version change:
+1. **Profile** — display name + avatar (pick a photo or a preset icon).
+2. **Libraries** — detects Steam/Epic automatically; asks for an external games
+   folder (games outside those stores). Steam/Epic import on startup; the folder
+   is watched for new installs via `WatchedScanFolderService`.
+3. **ROMs** — optional ROM folder; watched for new ROMs on startup and when files
+   appear.
 
-```csharp
-// In Config.cs
-public const string WelcomeSentinelFile = "welcome_sentinel.txt";
-public static readonly string AppDataPath =
-    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Bridge");
+Completing the wizard writes `setup-complete.txt`, saves profile/folder paths,
+runs an initial scan/import, and downloads metadata where possible.
+`SetupWizardService.ShouldShowSetup()` skips the wizard for existing users
+(What's New seen, or saved scan folders).
 
-// Sentinel check
-public static bool ShouldShowWelcome()
-{
-    var flagPath = Path.Combine(Config.AppDataPath, Config.WelcomeSentinelFile);
-    if (!File.Exists(flagPath)) return true;
-    return File.ReadAllText(flagPath) != Config.AssemblyVersion;
-}
+| Piece | Location |
+|-------|----------|
+| Window | `Bridge/SetupWizardWindow.xaml` |
+| Orchestration | `Bridge/Services/SetupWizardService.cs` |
+| Flag | `SetupCompleteSettingsStore` → `setup-complete.txt` |
+| Profile | `UserProfileSettingsStore` → `user-profile.json`, `profile/` |
+| Trigger | `MainWindow` `Loaded` (deferred via `Dispatcher.BeginInvoke`) |
 
-// After showing welcome (e.g. in MainWindow startup):
-if (ShouldShowWelcome())
-{
-    var welcome = new WelcomeWindow { Owner = this };
-    welcome.ShowDialog();
-}
-```
-
-When the user dismisses the dialog with "Don't show again", write the current version to the sentinel file so it won't show again until the version changes.
+Profile editing after setup: **Settings → Profile** (`SettingsOverlayView` +
+`ProfileEditorHelper`).
 
 ### Constants Pattern (`Config.cs`)
 
@@ -529,7 +535,27 @@ MAJOR.MINOR.PATCH
 1. **Start at 0.x.y** — while in development, MAJOR is 0
 2. **Once 1.0.0** — public API is stable
 3. **Never reuse versions** — if you delete a release, don't reuse that version number
-4. **Update CHANGELOG.md** — document what changed in each version
+4. **Update CHANGELOG.md** — document what changed in each version (see [What's New](#whats-new) below)
+
+### What's New
+
+After an update (not on first install), Bridge shows a **What's New** dialog on
+the next launch. It reads the embedded `CHANGELOG.md`, extracts the section for
+the running version (`## [x.y.z]`), and summarizes bullets under **Added**,
+**Changed**, and **Fixed** (descriptions truncated to ~180 chars).
+
+| Piece | Location |
+|-------|----------|
+| Parser | `Bridge/Services/WhatsNewParser.cs` |
+| Last-seen version | `WhatsNewSettingsStore` → `whats-new-seen.txt` |
+| Dialog | `Bridge/WhatsNewWindow.xaml` |
+| Trigger | `MainWindow` `Loaded` → `WhatsNewService.ShowIfNeeded` |
+| Source file | Root `CHANGELOG.md`, embedded at build (`Bridge.Changelog.md`) |
+
+**Release checklist:** bump `<Version>` in `Bridge.csproj`, add a dated
+`## [x.y.z]` block to `CHANGELOG.md` with `### Added` / `### Changed` / `### Fixed`
+bullets in the form `- **Short title** — one-line summary.` — that's what users
+see in the dialog. `[Unreleased]` is ignored.
 
 ---
 
@@ -1180,7 +1206,7 @@ dotnet run --project Bridge/Bridge.csproj
 
 ## Branding & Sponsorship
 
-> **Implemented.** Support links live in the logo menu (Ko-fi + GitHub Sponsors), in `AboutWindow`, and via a status-bar heart button (`OpenSponsorCommand` → `Config.PrimarySponsorUrl`). The sidebar exposes **Library**, **Favorites** (favorite filter), **Sources** (group by library), **Statistics**, and **Settings** (shortcuts hub). The `CreditsWindow` snippet below remains an optional template — `AboutWindow` already covers version, links, and legal.
+> **Implemented.** Support links live in the logo menu (Ko-fi + GitHub Sponsors), in `AboutWindow`, and via a status-bar heart button (`OpenSponsorCommand` → `Config.PrimarySponsorUrl`). The sidebar exposes **Library**, **ROMs**, **Favorites** (favorite filter), **Sources** (group by library), **Show hidden**, **Statistics**, and **Settings** (shortcuts hub). The `CreditsWindow` snippet below remains an optional template — `AboutWindow` already covers version, links, and legal.
 
 ### Heart Icon in Status Bar
 

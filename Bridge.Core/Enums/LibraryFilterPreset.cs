@@ -9,6 +9,7 @@ public enum LibraryFilterPreset
 {
     All,
     Favorite,
+    Roms,
     Installed,
     NotPlayed,
     RecentlyPlayed

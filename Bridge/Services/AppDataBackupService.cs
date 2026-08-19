@@ -29,6 +29,13 @@ public static class AppDataBackupService
         "language.txt",
         "startup.txt",
         "tray-icon.txt",
+        "keep-selection-across-views.txt",
+        "detail-panel-position.txt",
+        "whats-new-seen.txt",
+        "rom-scan-folder.txt",
+        "installed-scan-folder.txt",
+        "setup-complete.txt",
+        "user-profile.json",
         Config.AppDataVersionFileName
     ];
 
@@ -117,14 +124,19 @@ public static class AppDataBackupService
         try
         {
             var databasePath = Path.Combine(appDataPath, "bridge.db");
-            if (File.Exists(databasePath))
-                BridgeDatabaseRecovery.QuarantineInvalidDatabase(databasePath);
-            else
+            if (File.Exists(databasePath) &&
+                !BridgeDatabaseRecovery.TryQuarantineInvalidDatabase(databasePath))
+            {
+                return false;
+            }
+
+            if (!File.Exists(databasePath))
                 BridgeDatabaseRecovery.DeleteSidecarFiles(databasePath);
 
             File.Copy(Path.Combine(stagingPath, "bridge.db"), databasePath, overwrite: true);
             RestoreSettingFiles(stagingPath, appDataPath);
             RestoreImageCache(stagingPath, appDataPath);
+            RestoreProfileDirectory(stagingPath, appDataPath);
             return true;
         }
         catch
@@ -153,6 +165,16 @@ public static class AppDataBackupService
     {
         var source = Path.Combine(stagingRoot, "image-cache");
         var destination = Path.Combine(appDataPath, "image-cache");
+        if (Directory.Exists(destination))
+            Directory.Delete(destination, recursive: true);
+
+        CopyDirectoryIfExists(source, destination);
+    }
+
+    private static void RestoreProfileDirectory(string stagingRoot, string appDataPath)
+    {
+        var source = Path.Combine(stagingRoot, "profile");
+        var destination = Config.UserProfileDirectoryPath;
         if (Directory.Exists(destination))
             Directory.Delete(destination, recursive: true);
 
@@ -212,6 +234,9 @@ public static class AppDataBackupService
                 CopyDirectoryIfExists(
                     Path.Combine(appDataPath, "image-cache"),
                     Path.Combine(tempRoot, "image-cache"));
+                CopyDirectoryIfExists(
+                    Config.UserProfileDirectoryPath,
+                    Path.Combine(tempRoot, "profile"));
 
                 WriteManifest(tempRoot);
 

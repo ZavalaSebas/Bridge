@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Threading;
 using Bridge.Services;
 using Bridge.ViewModels;
 using Wpf.Ui.Controls;
@@ -29,6 +30,21 @@ namespace Bridge
                     RestoreScrollPosition(vm.ViewMode);
                     if (ScrollPositionSettingsStore.Load(vm.ViewMode.ToString()) <= 0)
                         ScrollToSelectedGame();
+
+                    // Defer first-run dialogs until after Show() returns and the
+                    // splash is closed — showing a modal during Show()'s Loaded
+                    // stack left the main window disabled or non-draggable.
+                    Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+                    {
+                        _ = RunFirstLaunchDialogsAsync(vm);
+                    });
+                }
+                else
+                {
+                    Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+                    {
+                        WhatsNewService.ShowIfNeeded(this);
+                    });
                 }
             };
 
@@ -58,6 +74,15 @@ namespace Bridge
             _forceExit = true;
             App.TrayIcon.Dispose();
             Close();
+        }
+
+        private async Task RunFirstLaunchDialogsAsync(MainViewModel viewModel)
+        {
+            await SetupWizardService.ShowIfNeededAsync(this, viewModel);
+            WhatsNewService.ShowIfNeeded(this);
+            IsEnabled = true;
+            Activate();
+            Focus();
         }
     }
 }
