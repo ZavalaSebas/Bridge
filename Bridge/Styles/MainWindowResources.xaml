@@ -152,7 +152,48 @@
                                Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
             </MenuItem.Icon>
         </MenuItem>
-        <Separator />
+        <Separator>
+            <Separator.Style>
+                <Style TargetType="Separator" BasedOn="{StaticResource {x:Type Separator}}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameIsManagedRom}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Separator.Style>
+        </Separator>
+        <MenuItem Command="{Binding OpenCheatsCommand}">
+            <MenuItem.Style>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Header" Value="{x:Static res:Strings.Cheats}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameIsManagedRom}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </MenuItem.Style>
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Games24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <Separator>
+            <Separator.Style>
+                <Style TargetType="Separator" BasedOn="{StaticResource {x:Type Separator}}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameIsManagedRom}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Separator.Style>
+        </Separator>
         <MenuItem Header="{x:Static res:Strings.DownloadMetadata}" Command="{Binding DownloadMetadataCommand}">
             <MenuItem.Icon>
                 <ui:SymbolIcon Symbol="ArrowDownload24"

@@ -114,6 +114,10 @@
   <data name="SidebarRoms" xml:space="preserve"><value>ROMs</value></data>
   <data name="Statistics" xml:space="preserve"><value>Statistics</value></data>
   <data name="Play" xml:space="preserve"><value>Play</value></data>
+  <data name="RefreshLibrary" xml:space="preserve"><value>Refresh Library</value></data>
+  <data name="RefreshLibraryInProgress" xml:space="preserve"><value>Refreshing library...</value></data>
+  <data name="RefreshLibraryComplete" xml:space="preserve"><value>Library refreshed.</value></data>
+  <data name="RefreshLibraryFailedFormat" xml:space="preserve"><value>Couldn't refresh the library: {0}</value></data>
   <data name="DownloadMetadata" xml:space="preserve"><value>Download Metadata</value></data>
   <data name="Links" xml:space="preserve"><value>Links</value></data>
   <data name="OpenGameLocation" xml:space="preserve"><value>Open Game Location</value></data>
@@ -413,6 +417,17 @@
   <data name="RetroArchNotInstalled" xml:space="preserve"><value>RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.</value></data>
   <data name="RetroArchInstalledWithCoresFormat" xml:space="preserve"><value>RetroArch is installed with {0} managed core(s). Cores are checked for updates when needed.</value></data>
   <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve"><value>Could not update RetroArch: {0}</value></data>
+  <data name="Cheats" xml:space="preserve"><value>Cheats</value></data>
+  <data name="CheatsAttribution" xml:space="preserve"><value>Cheats sourced from the libretro-database project, licensed CC BY-SA 4.0.</value></data>
+  <data name="CheatsRequireManagedRom" xml:space="preserve"><value>Cheats require a ROM launched through Bridge-managed RetroArch.</value></data>
+  <data name="CheatsPlatformNotSupported" xml:space="preserve"><value>This platform isn't in the public cheat database Bridge uses.</value></data>
+  <data name="CheatsNotFoundForGame" xml:space="preserve"><value>No cheats found for this game.</value></data>
+  <data name="CheatsFetchFailed" xml:space="preserve"><value>Couldn't fetch cheats for this game.</value></data>
+  <data name="CheatsFileCorrupted" xml:space="preserve"><value>This game's cheat file couldn't be read.</value></data>
+  <data name="CouldNotSaveCheatTitle" xml:space="preserve"><value>Couldn't Save Cheat</value></data>
+  <data name="CouldNotSaveCheatFormat" xml:space="preserve"><value>Couldn't save this cheat's state: {0}</value></data>
+  <data name="AutoApplyCheatsOnLaunch" xml:space="preserve"><value>Apply enabled cheats automatically when launching ROMs</value></data>
+  <data name="AutoApplyCheatsOnLaunchDescription" xml:space="preserve"><value>Writes a per-game RetroArch override so enabled cheats take effect on launch. You can still toggle cheats manually in RetroArch's menu.</value></data>
   <data name="DatabaseRestoredFromBackup" xml:space="preserve"><value>Your library database was damaged. Bridge restored it from the backup made before your last update.</value></data>
   <data name="DatabaseFileLocked" xml:space="preserve"><value>Bridge could not access your library database because another Bridge instance is using it. Right-click the Bridge icon in the notification area and choose Exit, then start Bridge again.</value></data>
   <data name="DatabaseCorruptNoBackupFormat" xml:space="preserve"><value>Your library database is damaged and no valid backup was found.

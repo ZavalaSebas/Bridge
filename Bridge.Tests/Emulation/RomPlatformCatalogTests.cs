@@ -27,4 +27,21 @@ public class RomPlatformCatalogTests
         Assert.NotNull(platform);
         Assert.Equal("mgba_libretro.dll", platform!.CoreFileName);
     }
+
+    [Fact]
+    public void WonderSwan_DoesNotSupportCheats()
+    {
+        var platform = RomPlatformCatalog.FindByPlatformName("WonderSwan / WonderSwan Color");
+        Assert.NotNull(platform);
+        Assert.False(platform!.SupportsCheats);
+    }
+
+    [Fact]
+    public void Nes_SupportsCheatsWithExpectedCoreName()
+    {
+        var platform = RomPlatformCatalog.FindByPlatformName("Nintendo Entertainment System");
+        Assert.NotNull(platform);
+        Assert.True(platform!.SupportsCheats);
+        Assert.Equal("FCEUmm", platform.RetroArchCoreName);
+    }
 }

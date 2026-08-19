@@ -278,12 +278,17 @@ namespace Bridge
                 sp.GetRequiredService<IRepository<Platform>>(),
                 sp.GetRequiredService<DownloadHttpClient>().Client,
                 sp.GetRequiredService<EmulationPaths>()));
+            services.AddSingleton(sp => new RetroArchCheatService(
+                sp.GetRequiredService<DownloadHttpClient>().Client,
+                Config.CheatsPath));
+            services.AddSingleton<CheatsWindowOpener>();
 
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();
             services.AddTransient<GameEditViewModelFactory>();
             services.AddTransient<EmulatorSetupViewModel>();
             services.AddTransient<EmulationSettingsViewModel>();
+            services.AddTransient<CheatsViewModel>();
             services.AddTransient<IgdbSettingsViewModel>();
         }
 

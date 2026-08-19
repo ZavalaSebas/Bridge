@@ -37,6 +37,8 @@ public partial class MainViewModel : ObservableObject
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
     private readonly RetroArchService _retroArch;
+    private readonly RetroArchCheatService _cheatService;
+    private readonly CheatsWindowOpener _cheatsWindowOpener;
     private readonly MetadataSyncService _metadataSync;
     private readonly SteamMetadataProvider _steamMetadataProvider;
     private readonly SteamLibraryImporter _steamImporter;
@@ -416,6 +418,9 @@ public partial class MainViewModel : ObservableObject
         SafeLauncher.TryOpenUrl(link.Url);
     }
 
+    public bool SelectedGameIsManagedRom =>
+        SelectedGame is not null && _retroArch.IsManagedRom(SelectedGame);
+
     partial void OnSelectedGameChanged(Game? value)
     {
         if (_selectedGameSubscription is not null)
@@ -426,6 +431,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(FavoriteMenuText));
         OnPropertyChanged(nameof(HiddenMenuText));
         OnPropertyChanged(nameof(SelectedGameLinks));
+        OnPropertyChanged(nameof(SelectedGameIsManagedRom));
         if (value is not null)
         {
             value.PropertyChanged += OnSelectedGamePropertyChanged;
@@ -596,6 +602,8 @@ public partial class MainViewModel : ObservableObject
         GameLauncher launcher,
         RomScanner romScanner,
         RetroArchService retroArch,
+        RetroArchCheatService cheatService,
+        CheatsWindowOpener cheatsWindowOpener,
         SteamMetadataProvider steamMetadataProvider,
         SteamLibraryImporter steamImporter,
         EpicLibraryImporter epicImporter,
@@ -620,6 +628,8 @@ public partial class MainViewModel : ObservableObject
         _launcher = launcher;
         _romScanner = romScanner;
         _retroArch = retroArch;
+        _cheatService = cheatService;
+        _cheatsWindowOpener = cheatsWindowOpener;
         _metadataSync = metadataSyncService;
         _steamMetadataProvider = steamMetadataProvider;
         _steamImporter = steamImporter;
@@ -658,24 +668,9 @@ public partial class MainViewModel : ObservableObject
             // back-to-back first — Steam and Epic games appear together — then
             // the slow per-game HTTP metadata syncs run after.
             _ = PreloadArtworkAsync();
-            var steamSourceId = _sourceRepository.GetOrCreateByName("Steam").Id;
-            var epicSourceId = _sourceRepository.GetOrCreateByName("Epic").Id;
-            await ImportSteamLibraryCoreAsync(steamSourceId);
-            await ImportEpicLibraryCoreAsync(epicSourceId);
-            _ = PreloadArtworkAsync();
+            await RefreshLibraryCoreAsync();
 
             _watchedScanFolders.Start(this);
-            var romFolder = RomScanFolderSettingsStore.Load();
-            if (!string.IsNullOrWhiteSpace(romFolder))
-            {
-                await ScanRomFolderAsync(romFolder, silent: true);
-            }
-
-            var installedFolder = InstalledScanFolderSettingsStore.Load();
-            if (!string.IsNullOrWhiteSpace(installedFolder))
-            {
-                await ScanInstalledFolderAsync(installedFolder, silent: true);
-            }
 
             // First run: the constructor's SelectInitialGame ran against an empty
             // library, so nothing got selected. Pick the initial game now that the
@@ -686,12 +681,8 @@ public partial class MainViewModel : ObservableObject
                 SelectedGame = SelectInitialGame(Games);
             }
 
-            await DownloadMissingSteamMetadataAsync(steamSourceId);
-            _ = PreloadArtworkAsync();
-            await DownloadMissingMetadataByNameAsync([epicSourceId]);
             _ = PreloadArtworkAsync();
             await CheckForUpdatesCoreAsync(promptWhenUpToDate: false);
-            RefreshAllEmulatorDownloadStates();
         }
         catch (Exception ex)
         {

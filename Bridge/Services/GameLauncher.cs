@@ -4,6 +4,7 @@ using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Core.Utilities;
+using Bridge.Emulation;
 using Bridge.Import.Steam;
 
 namespace Bridge.Services;
@@ -90,6 +91,29 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             // Default: process tree for File/Emulator, install directory for Url.
             case TrackingMode.Process:
             case TrackingMode.Default when action.Type is GameActionType.File or GameActionType.Emulator:
+                if (action.Type == GameActionType.Emulator)
+                {
+                    try
+                    {
+                        var pid = process.Id;
+                        ActiveTracking emulatorTracking;
+                        lock (_activeLock)
+                        {
+                            emulatorTracking = new ActiveTracking { LaunchedPid = pid };
+                            _active[game.Id] = emulatorTracking;
+                        }
+
+                        TrackEmulatorProcessAsync(game, process, emulatorTracking.Cancellation.Token)
+                            .FireAndForget("GameLauncher.TrackEmulator");
+                        return true;
+                    }
+                    catch
+                    {
+                        process.Dispose();
+                        return false;
+                    }
+                }
+
                 try
                 {
                     var pid = process.Id;
@@ -422,7 +446,7 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             ?? throw new InvalidOperationException($"Emulator profile {action.EmulatorProfileId} not found on '{emulator.Name}'.");
         var romPath = game.Roms.FirstOrDefault()?.Path
             ?? throw new InvalidOperationException($"'{game.Name}' has no ROM to launch.");
-        if (!File.Exists(romPath))
+        if (!RomArchivePath.RomFileExists(romPath))
         {
             throw new InvalidOperationException($"ROM file not found: {romPath}");
         }
@@ -442,8 +466,42 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
             FileName = executable,
             Arguments = arguments,
             WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory) ? null : workingDirectory,
-            UseShellExecute = true
+            // A direct process handle lets Bridge detect exit immediately via
+            // WaitForExitAsync. UseShellExecute only returns a shell PID whose
+            // tree polling needs multi-second idle grace periods.
+            UseShellExecute = false
         }) ?? throw new InvalidOperationException($"Failed to start emulator: {executable}");
+    }
+
+    private async Task TrackEmulatorProcessAsync(Game game, Process process, CancellationToken token)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            await process.WaitForExitAsync(token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Stop() cancelled tracking — finalize in finally.
+        }
+        catch
+        {
+            // Fallback when the handle isn't usable — poll instead of hanging.
+            while (!process.HasExited)
+            {
+                await Task.Delay(250, token);
+            }
+        }
+        finally
+        {
+            process.Dispose();
+            stopwatch.Stop();
+            var elapsed = (ulong)stopwatch.Elapsed.TotalSeconds;
+            game.IsRunning = false;
+            game.PlaytimeSeconds += elapsed;
+            UnregisterActive(game);
+            GameStopped?.Invoke(game, elapsed);
+        }
     }
 
     // Deliberately no ConfigureAwait(false) anywhere in this method: Launch()

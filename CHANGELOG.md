@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Refresh Library** — logo menu **Refresh Library** re-runs the startup sync on demand: Steam + Epic re-import, rescan of configured ROM and installed-game folders, missing-metadata download, emulator download-state refresh, and artwork preload (`MainViewModel.Refresh.cs`, shared `RefreshLibraryCoreAsync()` with startup).
+- **RetroArch cheats** — ROM context menu **Cheats** opens `CheatsWindow` for managed RetroArch games. Cheats are fetched from the libretro-database on GitHub, cached under AppData, and toggled per game. Optional **Apply enabled cheats automatically when launching ROMs** in emulator settings writes a per-game RetroArch override (`RetroArchCheatService`, `CheatFileParser`, `RomCheatNameResolver`).
+- **Compressed ROM archives** — `.zip` and `.7z` archives are scanned recursively; each ROM inside is stored as a RetroArch-style path (`archive.zip#entry.sfc`), launched, and matched for cheats by the internal entry name (`RomArchivePath`, `RomArchiveCatalog`).
+
+### Changed
+- **RetroArch exit detection** — managed emulator launches use `UseShellExecute = false` and `WaitForExitAsync` on the RetroArch process so closing the emulator returns to Bridge immediately instead of waiting on idle polling.
+- **Cheat name matching** — cheat lookups use the ROM file basename (e.g. `Super Mario World (USA)`) instead of the sanitized library display name, matching libretro-database naming.
+
+### Fixed
+- **Cheats menu visibility** — **Cheats** appears only for ROMs launched through Bridge-managed RetroArch; separators around it follow the same rule so no stray divider shows for Steam/Epic games.
+
 ## [0.5.0] - 2026-08-19
 
 ### Added

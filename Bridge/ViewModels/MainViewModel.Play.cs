@@ -1,7 +1,10 @@
 using Bridge.Core.Entities;
+using Bridge;
 using Bridge.Emulation;
 using Bridge.Resources;
+using Bridge.Services;
 using CommunityToolkit.Mvvm.Input;
+using System.IO;
 
 namespace Bridge.ViewModels;
 
@@ -37,6 +40,7 @@ public partial class MainViewModel
                     // Now that the frontend/core exist, the button goes back to
                     // "Play" (or "Stop" once the game launches) instead of "Download".
                     RefreshAllEmulatorDownloadStates();
+                    await ApplyCheatLaunchOverridesIfNeededAsync(target);
                 }
                 finally
                 {
@@ -44,6 +48,7 @@ public partial class MainViewModel
                     EndStatusProgress();
                 }
             }
+
             _launcher.Launch(target);
         }
         catch (Exception ex)
@@ -145,5 +150,33 @@ public partial class MainViewModel
         InvalidateReferenceCaches();
         RefreshListDisplay(game);
         RefreshStatistics();
+    }
+
+    private async Task ApplyCheatLaunchOverridesIfNeededAsync(Game game)
+    {
+        var platformDefinition = RomPlatformResolver.Resolve(game, _platformRepository);
+        if (platformDefinition is null || !platformDefinition.SupportsCheats)
+        {
+            return;
+        }
+
+        var cheatDirectory = _cheatService.GetCheatDirectoryIfExists(game, platformDefinition);
+        if (cheatDirectory is null)
+        {
+            return;
+        }
+
+        var executablePath = Path.Combine(Config.EmulatorInstallPath, "retroarch.exe");
+        if (!File.Exists(executablePath))
+        {
+            return;
+        }
+
+        await _cheatService.ApplyCheatLaunchOverridesAsync(
+            game,
+            platformDefinition,
+            executablePath,
+            cheatDirectory,
+            AutoApplyCheatsSettingsStore.Load());
     }
 }

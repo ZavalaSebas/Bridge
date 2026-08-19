@@ -40,13 +40,13 @@ public partial class MainViewModel
             var romSource = _sourceRepository.GetOrCreateByName("ROM");
             foreach (var game in found)
             {
-                var extension = Path.GetExtension(game.Roms[0].Path).TrimStart('.');
+                var extension = RomArchivePath.GetRomExtension(game.Roms[0].Path);
                 if (RomPlatformCatalog.TryGetByExtension(extension, out var platform))
                 {
                     game.PlatformIds.Add(_platformRepository.GetOrCreateByName(platform!.PlatformName).Id);
                 }
                 game.SourceId = romSource.Id;
-                game.ExternalId = Path.GetFullPath(game.Roms[0].Path);
+                game.ExternalId = RomArchivePath.Normalize(game.Roms[0].Path);
                 _gameRepository.Add(game);
                 AddGameSorted(game);
             }

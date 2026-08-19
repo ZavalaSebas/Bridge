@@ -1,6 +1,7 @@
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Emulation;
+using System.IO.Compression;
 
 namespace Bridge.Tests.Services;
 
@@ -111,6 +112,42 @@ public class RomScannerTests : IDisposable
         var game = Assert.Single(found);
         Assert.Equal("Game B", game.Name);
         Assert.EndsWith("Game B.gba", Assert.Single(game.Roms).Path);
+    }
+
+    [Fact]
+    public void Scan_ImportsRomInsideZipWithRetroArchArchivePath()
+    {
+        var zipPath = Path.Combine(_tempDir, "Super Mario World (USA).zip");
+        using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        {
+            var entry = archive.CreateEntry("Super Mario World (USA).sfc");
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write("rom");
+        }
+
+        var found = _scanner.Scan(_tempDir, existingGames: []);
+
+        var game = Assert.Single(found);
+        Assert.Equal("Super Mario World", game.Name);
+        Assert.Equal(
+            RomArchivePath.Combine(zipPath, "Super Mario World (USA).sfc"),
+            Assert.Single(game.Roms).Path);
+    }
+
+    [Fact]
+    public void Scan_SkipsZipWithoutSupportedRomEntries()
+    {
+        var zipPath = Path.Combine(_tempDir, "notes.zip");
+        using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        {
+            var entry = archive.CreateEntry("readme.txt");
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write("not a rom");
+        }
+
+        var found = _scanner.Scan(_tempDir, existingGames: []);
+
+        Assert.Empty(found);
     }
 
     public void Dispose()

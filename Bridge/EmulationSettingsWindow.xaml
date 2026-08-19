@@ -54,6 +54,13 @@
                 </Border>
                 <TextBlock Text="{x:Static res:Strings.EmulationSupportedSystems}"
                            TextWrapping="Wrap"
+                           Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                           Margin="0,0,0,14"/>
+                <CheckBox Content="{x:Static res:Strings.AutoApplyCheatsOnLaunch}"
+                          IsChecked="{Binding AutoApplyCheatsOnLaunch, Mode=TwoWay}"
+                          Margin="0,0,0,6"/>
+                <TextBlock Text="{x:Static res:Strings.AutoApplyCheatsOnLaunchDescription}"
+                           TextWrapping="Wrap"
                            Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
             </StackPanel>
         </ScrollViewer>

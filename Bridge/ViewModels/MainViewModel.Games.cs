@@ -187,6 +187,17 @@ public partial class MainViewModel
 
     // Opens the selected game's install folder in Explorer.
     [RelayCommand]
+    private void OpenCheats()
+    {
+        if (SelectedGame is null || !_retroArch.IsManagedRom(SelectedGame))
+        {
+            return;
+        }
+
+        _cheatsWindowOpener.Show(SelectedGame);
+    }
+
+    [RelayCommand]
     private void OpenGameLocation()
     {
         if (SelectedGame is null)

@@ -101,7 +101,7 @@ Bridge/
 
 Flat layout — every project sits directly under the repo root, no `src/`/`tests/` wrapper folders.
 
-> **Status:** `Bridge.slnx`, `Bridge/Bridge.csproj`, `Bridge.Core/Bridge.Core.csproj`, `Bridge.Storage/Bridge.Storage.csproj`, `Bridge.Metadata/Bridge.Metadata.csproj`, `Bridge.Import/Bridge.Import.csproj`, `Bridge.Emulation/Bridge.Emulation.csproj`, and `Bridge.Tests/Bridge.Tests.csproj` all exist and build/test clean. The consolidation batch (2026-08-18) also split `MainViewModel` into partials (`Games`, `Import`, `Metadata`, `Updates`, `Play`), extracted `LibraryDetailView` from `MainWindow`, and redesigned Settings as a unified preferences overlay.
+> **Status:** `Bridge.slnx`, `Bridge/Bridge.csproj`, `Bridge.Core/Bridge.Core.csproj`, `Bridge.Storage/Bridge.Storage.csproj`, `Bridge.Metadata/Bridge.Metadata.csproj`, `Bridge.Import/Bridge.Import.csproj`, `Bridge.Emulation/Bridge.Emulation.csproj`, and `Bridge.Tests/Bridge.Tests.csproj` all exist and build/test clean. The consolidation batch (2026-08-18) also split `MainViewModel` into partials (`Games`, `Import`, `Metadata`, `Updates`, `Play`, `Refresh`), extracted `LibraryDetailView` from `MainWindow`, and redesigned Settings as a unified preferences overlay.
 
 ### `Bridge.Core` — what's in it
 
@@ -169,7 +169,7 @@ Bridge.Metadata/
 └── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
 ```
 
-See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible; it **awaits** `DownloadMissingSteamMetadataAsync` (and the Epic name sync) so metadata can continue downloading in the background while the UI stays responsive. Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU (512 entries) plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
+See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible and calls **`RefreshLibraryCoreAsync()`** (`MainViewModel.Refresh.cs`) — Steam/Epic import, configured folder rescans, then missing-metadata sync — so metadata can continue downloading in the background while the UI stays responsive. The same core method powers the logo-menu **Refresh Library** command for on-demand resync (without re-checking for Bridge app updates). Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU (512 entries) plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
 
 ### `Bridge.Import` — what's in it
 
@@ -205,11 +205,11 @@ The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver li
 
 The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), laid out as 3 rows:
 
-1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Add Manually... / Scan ROMs... / Scan Automatically..., **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values are `ViewMode.List/Covers/Table`; legacy settings may still store `Grid`, mapped to Covers on load) + a Random-game placeholder button.
+1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Epic / Scan ROMs... / Scan Automatically... / Add Manually..., **Refresh Library** (re-import Steam/Epic, rescan configured folders, sync missing metadata), **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **Check for updates…**, **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values are `ViewMode.List/Covers/Table`; legacy settings may still store `Grid`, mapped to Covers on load) + a Random-game placeholder button.
 
 2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail — **Library**, **ROMs**, **Favorites**, **Sources**, **Show hidden**, **Statistics**, **Settings** via `NavigationSection` in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Table views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns. The detail panel can dock left or right (Settings → Appearance → Detail panel position).
 
-3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error), and an optional determinate/indeterminate `ProgressBar` (`ShowStatusProgress`, `StatusProgress`, `IsStatusProgressIndeterminate` on `MainViewModel`) for long operations — metadata sync/download, artwork preload, RetroArch install, and app updates.
+3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error), and an optional determinate/indeterminate `ProgressBar` (`ShowStatusProgress`, `StatusProgress`, `IsStatusProgressIndeterminate` on `MainViewModel`) for long operations — metadata sync/download, **Refresh Library**, artwork preload, RetroArch install, and app updates.
 
 View modes switch via 3 toggle buttons in the Top Panel:
 - **List** (`ViewMode.List`): `ListBox` with 28×28 icons + white game names (grouped via `GamesView`). Double-click launches the game.
@@ -722,7 +722,8 @@ Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integr
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
 - `Import/SteamLocalPlaytimeResolverTests.cs` — reads real `localconfig.vdf` shape: minutes→seconds conversion, LastPlayed→LastActivity, zero-playtime skipped, missing LastPlayed stays null, multi-account merge (max playtime / latest activity), missing files and malformed config return null.
 - `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
-- `Services/RomScannerTests.cs` — extension recognition via `RomPlatformCatalog`, dedup-by-existing-ROM-path, missing-directory error, recursive scan into subfolders, companion-file filtering (`.sav`/`.srm`), `SanitizeName` + `ToSearchName` name normalization, and the managed "Bridge RetroArch" `GameAction` creation.
+- `Services/RomScannerTests.cs` — extension recognition via `RomPlatformCatalog`, dedup-by-existing-ROM-path, missing-directory error, recursive scan into subfolders, companion-file filtering (`.sav`/`.srm`), **`.zip`/`.7z` archive entries** (`archive.zip#entry.sfc`), `SanitizeName` + `ToSearchName` name normalization, and the managed "Bridge RetroArch" `GameAction` creation.
+- `Emulation/CheatFileParserTests.cs`, `Emulation/RetroArchCheatServiceTests.cs`, `Emulation/RomCheatNameResolverTests.cs`, `Emulation/RomArchivePathTests.cs` — libretro `.cht` parsing, cheat fetch/cache/override writes, ROM basename vs display-name matching, and archive path helpers.
 - `Services/AppUpdateServiceTests.cs` — `CheckForUpdateAsync` against the fake `HttpMessageHandler`: a newer remote release → `UpdateAvailable` with the right version + `Bridge.exe` download URL; a matching version → `UpToDate`; a release with no `Bridge.exe` asset → `Failed`. The swap/restart itself is not covered (it replaces the running exe — see the deliberately-not-covered note below).
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
 - `Statistics/GameSortComparerTests.cs` — `GameSortComparer` sort-by-field logic: ascending/descending by name, playtime, last activity, favorite, plus reference resolution (Developer, Source) through the name lookups and the "empty values sort last in both directions" rule.
@@ -993,8 +994,11 @@ public static class Config
 | `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
 | `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
 | `Bridge.Emulation/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |
-| `Bridge.Emulation/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions) that drives ROM recognition |
-| `Bridge.Emulation/RomScanner.cs` | Recursive ROM scan by extension, companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
+| `Bridge.Emulation/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions + libretro-database cheat folder) that drives ROM recognition |
+| `Bridge.Emulation/RomScanner.cs` | Recursive ROM scan by extension (including `.zip`/`.7z` archive contents), companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
+| `Bridge.Emulation/RomArchivePath.cs` | RetroArch-style archive paths (`archive.zip#entry.sfc`), existence checks, cheat basename from internal entry |
+| `Bridge.Emulation/RetroArchCheatService.cs` | Fetches libretro-database `.cht` files, caches under AppData, writes per-game RetroArch override configs for enabled cheats |
+| `Bridge/ViewModels/MainViewModel.Refresh.cs` | Shared `RefreshLibraryCoreAsync()` (startup + logo-menu **Refresh Library**) |
 | `Bridge/Services/AppUpdateService.cs` | Self-updater: checks GitHub Releases against `Config.AssemblyVersion`, downloads the `Bridge.exe` asset with host-allowlist + size-cap + progress, applies the safe swap (running exe → `.old`, downloaded → current, restart, startup cleanup) — see "Version Management" above |
 
 ## IGDB Metadata Infrastructure
@@ -1080,11 +1084,36 @@ and the status bar says so instead of throwing. The Play button shows
 **Download** / **Downloading…** / **Play** / **Stop** based on install + run
 state (`MainViewModel.PlayButtonText`/`PlayButtonSymbol`/`PlayButtonIsStop`).
 
+**Exit detection:** managed RetroArch launches with `UseShellExecute = false`;
+`GameLauncher.TrackEmulatorProcessAsync` waits on the RetroArch process with
+`WaitForExitAsync` so closing the emulator returns play state to Bridge
+immediately (replacing the older idle polling grace period).
+
 **Config paths** (`Bridge/Config.cs`): `EmulatorInstallPath`
 (`AppData\Bridge\emulators\retroarch`), `EmulatorDownloadPath`
 (`AppData\Bridge\emulator-downloads`), `RetroArchVersionPath`
-(`AppData\Bridge\emulators\retroarch.version`) — all separate from the game
+(`AppData\Bridge\emulators\retroarch.version`), `CheatsPath`
+(`AppData\Bridge\cheats`) — all separate from the game
 database so deleting an emulator install never risks library data.
+
+**ROM archives:** `RomScanner` walks `.zip` and `.7z` files with SharpCompress
+(`RomArchiveCatalog`) and stores each ROM as `archivePath#internalEntry`
+(RetroArch's native format). RAR is not supported — RetroArch does not load it
+natively. `GameLauncher` and cheat lookup use `RomArchivePath` so launch,
+existence checks, and libretro-database names follow the internal entry basename
+(e.g. `Super Mario World (USA).sfc`), not Bridge's sanitized display title.
+
+**Cheats:** for ROMs on platforms in libretro-database, the context menu **Cheats**
+item opens `CheatsWindow` (`CheatsViewModel` + `RetroArchCheatService`). On first
+open, Bridge downloads the game's `.cht` from GitHub (`libretro-database` on
+raw.githubusercontent.com), caches it under `Config.CheatsPath`, and parses it
+with `CheatFileParser`. Enabled/disabled state is persisted per game. On launch,
+`MainViewModel.Play` optionally writes a RetroArch override config
+(`apply_cheats_after_load = true`, `cheat_database_path` pointing at the cached
+file) when **Apply enabled cheats automatically when launching ROMs** is on
+(`AutoApplyCheatsSettingsStore`). Cheats require Bridge-managed RetroArch — the
+menu item is hidden for Steam/Epic/manual PC games. WonderSwan is excluded from
+the cheat catalog (`SupportsCheats = false` on its platform row).
 
 ---
 

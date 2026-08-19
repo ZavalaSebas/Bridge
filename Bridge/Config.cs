@@ -53,6 +53,13 @@ public static class Config
     // resolved version means the frontend must be refreshed.
     public static string RetroArchVersionPath => Path.Combine(AppDataPath, "emulators", "retroarch.version");
 
+    // Per-game .cht files RetroArchCheatService fetches and manages.
+    public static string CheatsPath => Path.Combine(AppDataPath, "cheats");
+
+    // Apply enabled cheats automatically when launching a ROM through Bridge RetroArch.
+    public static string AutoApplyCheatsOnLaunchFilePath =>
+        Path.Combine(AppDataPath, "auto-apply-cheats-on-launch.txt");
+
     // The update channel (Stable/Beta) Bridge offers releases from. Kept in a
     // plain file like viewmode.txt: an app-instance preference, not library data.
     public static string UpdateChannelFilePath => Path.Combine(AppDataPath, "update-channel.txt");

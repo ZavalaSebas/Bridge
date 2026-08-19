@@ -1,5 +1,6 @@
 using Bridge.Emulation;
 using Bridge.Resources;
+using Bridge.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -11,11 +12,18 @@ public partial class EmulationSettingsViewModel(RetroArchService retroArch) : Ob
     [ObservableProperty]
     private string _statusMessage = Strings.LoadingEmulationStatus;
 
+    [ObservableProperty]
+    private bool _autoApplyCheatsOnLaunch = AutoApplyCheatsSettingsStore.Load();
+
     public Task LoadAsync()
     {
+        AutoApplyCheatsOnLaunch = AutoApplyCheatsSettingsStore.Load();
         StatusMessage = FormatStatus();
         return Task.CompletedTask;
     }
+
+    partial void OnAutoApplyCheatsOnLaunchChanged(bool value) =>
+        AutoApplyCheatsSettingsStore.Save(value);
 
     [RelayCommand]
     private async Task UpdateAsync()

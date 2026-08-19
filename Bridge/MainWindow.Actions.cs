@@ -53,6 +53,16 @@ public partial class MainWindow
         window.ShowDialog();
     }
 
+    internal void HandleOpenCheatsClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel mainVm || mainVm.SelectedGame is not { } game)
+        {
+            return;
+        }
+
+        App.Services.GetRequiredService<CheatsWindowOpener>().Show(game, this);
+    }
+
     private void IgdbSettings_Click(object sender, RoutedEventArgs e)
     {
         var viewModel = App.Services.GetRequiredService<IgdbSettingsViewModel>();

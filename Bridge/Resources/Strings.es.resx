@@ -226,6 +226,18 @@
   <data name="Play" xml:space="preserve">
     <value>Jugar</value>
   </data>
+  <data name="RefreshLibrary" xml:space="preserve">
+    <value>Actualizar biblioteca</value>
+  </data>
+  <data name="RefreshLibraryInProgress" xml:space="preserve">
+    <value>Actualizando biblioteca...</value>
+  </data>
+  <data name="RefreshLibraryComplete" xml:space="preserve">
+    <value>Biblioteca actualizada.</value>
+  </data>
+  <data name="RefreshLibraryFailedFormat" xml:space="preserve">
+    <value>No se pudo actualizar la biblioteca: {0}</value>
+  </data>
   <data name="DownloadMetadata" xml:space="preserve">
     <value>Descargar metadatos</value>
   </data>
@@ -1124,6 +1136,39 @@
   </data>
   <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve">
     <value>No se pudo actualizar RetroArch: {0}</value>
+  </data>
+  <data name="Cheats" xml:space="preserve">
+    <value>Trucos</value>
+  </data>
+  <data name="CheatsAttribution" xml:space="preserve">
+    <value>Trucos obtenidos del proyecto libretro-database, licencia CC BY-SA 4.0.</value>
+  </data>
+  <data name="CheatsRequireManagedRom" xml:space="preserve">
+    <value>Los trucos requieren una ROM lanzada con RetroArch administrado por Bridge.</value>
+  </data>
+  <data name="CheatsPlatformNotSupported" xml:space="preserve">
+    <value>Esta plataforma no está en la base de datos pública de trucos que usa Bridge.</value>
+  </data>
+  <data name="CheatsNotFoundForGame" xml:space="preserve">
+    <value>No se encontraron trucos para este juego.</value>
+  </data>
+  <data name="CheatsFetchFailed" xml:space="preserve">
+    <value>No se pudieron obtener los trucos de este juego.</value>
+  </data>
+  <data name="CheatsFileCorrupted" xml:space="preserve">
+    <value>No se pudo leer el archivo de trucos de este juego.</value>
+  </data>
+  <data name="CouldNotSaveCheatTitle" xml:space="preserve">
+    <value>No se pudo guardar el truco</value>
+  </data>
+  <data name="CouldNotSaveCheatFormat" xml:space="preserve">
+    <value>No se pudo guardar el estado de este truco: {0}</value>
+  </data>
+  <data name="AutoApplyCheatsOnLaunch" xml:space="preserve">
+    <value>Aplicar trucos habilitados automáticamente al lanzar ROMs</value>
+  </data>
+  <data name="AutoApplyCheatsOnLaunchDescription" xml:space="preserve">
+    <value>Escribe una configuración por juego en RetroArch para que los trucos habilitados surtan efecto al lanzar. Aún puedes alternar trucos manualmente en el menú de RetroArch.</value>
   </data>
   <data name="DatabaseRestoredFromBackup" xml:space="preserve">
     <value>La base de datos de tu biblioteca estaba dañada. Bridge la restauró desde la copia de seguridad hecha antes de tu última actualización.</value>
