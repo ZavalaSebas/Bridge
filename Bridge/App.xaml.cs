@@ -10,6 +10,7 @@ using Bridge.Emulation;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
+using Bridge.Resources;
 using Bridge.Services;
 using Bridge.Settings;
 using Bridge.Storage;
@@ -25,6 +26,8 @@ namespace Bridge
     {
         public static IServiceProvider Services { get; private set; } = null!;
 
+        internal static TrayIconService TrayIcon { get; } = new();
+
         private static readonly Uri AppIconUri = new("pack://application:,,,/Assets/Bridge.ico", UriKind.Absolute);
 
         internal static void ApplyWindowIcon(Window window)
@@ -36,6 +39,9 @@ namespace Bridge
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            LanguageSettingsStore.ApplySavedLanguage();
+            WindowsStartupRegistration.ApplySavedPreference();
 
             EventManager.RegisterClassHandler(
                 typeof(Window),
@@ -49,6 +55,22 @@ namespace Bridge
 
             DispatcherUnhandledException += OnDispatcherUnhandledException;
 
+            var splash = new SplashWindow();
+            splash.Show();
+            splash.PumpFrame();
+
+            try
+            {
+                RunStartup(splash);
+            }
+            finally
+            {
+                splash.Close();
+            }
+        }
+
+        private void RunStartup(SplashWindow splash)
+        {
             // The UI thread's task scheduler, captured once so RemoteImageCache's
             // decode continuations always marshal callbacks back to the UI thread
             // (setting an HTTP UriSource on a pool thread never completes).
@@ -56,10 +78,24 @@ namespace Bridge
 
             Directory.CreateDirectory(Config.AppDataPath);
             AppUpdateService.HandleUpdateHandshake();
+            AppDataBackupService.ApplyPendingRestore();
 
             // Numbered file/folder migrations under AppData (settings layout, legacy
             // paths). See AppDataMigrator — runs before bridge.db EF migrations.
             AppDataMigrator.MigrateToLatest();
+
+            var databaseRecovery = BridgeDatabaseRecovery.TryRestoreFromUpdateBackup();
+            if (databaseRecovery == BridgeDatabaseRecovery.RecoveryResult.BackupUnavailable &&
+                File.Exists(Config.DatabasePath) &&
+                !BridgeDatabaseRecovery.IsValidSqliteFile(Config.DatabasePath))
+            {
+                MessageDialogWindow.Show(
+                    Strings.Format(nameof(Strings.DatabaseCorruptNoBackupFormat), Config.AppDataPath),
+                    Config.AppName,
+                    SymbolRegular.ErrorCircle24);
+                Shutdown();
+                return;
+            }
 
             var services = new ServiceCollection();
             ConfigureServices(services);
@@ -95,6 +131,16 @@ namespace Bridge
                 };
                 MainWindow = mainWindow;
                 mainWindow.Show();
+                TrayIcon.Attach(mainWindow);
+                splash.Close();
+
+                if (databaseRecovery == BridgeDatabaseRecovery.RecoveryResult.RestoredFromUpdateBackup)
+                {
+                    MessageDialogWindow.Show(
+                        Strings.DatabaseRestoredFromBackup,
+                        Config.AppName,
+                        SymbolRegular.Info24);
+                }
 
                 // Warm selected-game and first-grid artwork without blocking the UI
                 // thread — covers may pop in briefly, but startup stays responsive.
@@ -141,6 +187,7 @@ namespace Bridge
 
             Exit += (_, _) =>
             {
+                TrayIcon.Dispose();
                 if (Services.GetService<MetadataHttpClient>() is IDisposable metadataClient)
                     metadataClient.Dispose();
                 if (Services.GetService<DownloadHttpClient>() is IDisposable downloadClient)

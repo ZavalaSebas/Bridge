@@ -191,6 +191,7 @@ public partial class MainWindow
     {
         if (sender is ContextMenu menu)
         {
+            menu.DataContext = DataContext;
             SyncSidebarMenu(menu);
         }
     }

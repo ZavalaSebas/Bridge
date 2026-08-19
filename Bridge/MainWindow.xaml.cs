@@ -7,6 +7,7 @@ namespace Bridge
     public partial class MainWindow : FluentWindow
     {
         private string _sidebarPosition = "Left";
+        private bool _forceExit;
 
         public MainWindow()
         {
@@ -34,14 +35,29 @@ namespace Bridge
             // Persist the Table view's Name-column width and the current view's
             // scroll position on close, so the next open (straight into the same
             // view) restores exactly where you left it instead of jumping.
-            Closing += (_, _) =>
+            Closing += (_, e) =>
             {
-                SaveTableNameWidth();
-                if (DataContext is MainViewModel vm)
-                    SaveScrollPosition(vm.ViewMode);
+                PersistViewStateBeforeHide();
+
+                if (!_forceExit && App.TrayIcon.TryMinimizeToTray())
+                    e.Cancel = true;
             };
 
             PreviewKeyDown += MainWindow_PreviewKeyDown;
+        }
+
+        internal void PersistViewStateBeforeHide()
+        {
+            SaveTableNameWidth();
+            if (DataContext is MainViewModel vm)
+                SaveScrollPosition(vm.ViewMode);
+        }
+
+        internal void RequestExit()
+        {
+            _forceExit = true;
+            App.TrayIcon.Dispose();
+            Close();
         }
     }
 }

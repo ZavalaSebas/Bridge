@@ -263,7 +263,7 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 ```
 
 - `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.2.0.0`)
-- **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases?per_page=100` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), picks the newest release that matches the **update channel**, compares its `tag_name` numeric prefix against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). The channel lives in `UpdateChannelSettingsStore` (`update-channel.txt` under AppDataPath): **Stable** (default) skips GitHub prereleases, **Beta** accepts them, toggled in the About window. Prerelease tags keep their suffix in the repo but are compared by numeric prefix only (`v0.3.0-beta1` never beats an installed `0.3.0` stable, so a stable user can't be downgraded onto a beta); the `prerelease` flag is what distinguishes channels. Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`). On the stable channel, when a newer prerelease exists but no newer stable, the up-to-date message points the user to the beta toggle.
+- **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases?per_page=100` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), picks the newest release that matches the **update channel**, compares its `tag_name` numeric prefix against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). The channel lives in `UpdateChannelSettingsStore` (`update-channel.txt` under AppDataPath): **Stable** (default) skips GitHub prereleases, **Beta** accepts them, toggled in **Settings → Updates**. Prerelease tags keep their suffix in the repo but are compared by numeric prefix only (`v0.3.0-beta1` never beats an installed `0.3.0` stable, so a stable user can't be downgraded onto a beta); the `prerelease` flag is what distinguishes channels. Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`). On the stable channel, when a newer prerelease exists but no newer stable, the up-to-date message points the user to the beta toggle.
 
   The most critical part is the **safe executable swap** — never overwrite the running `.exe` directly:
 
@@ -412,6 +412,46 @@ public static void V2_MoveThemeFile(AppDataMigrationContext ctx)
 ```
 
 Covered by `Bridge.Tests/Services/AppDataMigratorTests.cs`.
+
+### User preferences (AppData text files)
+
+Plain files under `%LOCALAPPDATA%\Bridge\`, same tolerant read/write pattern
+as `ViewModeSettingsStore` — corrupt/missing files fall back to safe defaults;
+saving never crashes the app.
+
+| File | Store | Default | Purpose |
+|------|-------|---------|---------|
+| `theme.json` | `ThemeManager` | Blue accent | Runtime accent color |
+| `viewmode.txt` | `ViewModeSettingsStore` | List | Last library view (List/Covers/Table) |
+| `scrollpositions.txt` | `ScrollPositionSettingsStore` | — | Per-view scroll offsets + table Name column width |
+| `igdb-settings.json` | `IgdbSettingsStore` | empty | Optional IGDB credentials (DPAPI-protected secret) |
+| `update-channel.txt` | `UpdateChannelSettingsStore` | Stable | Stable vs Beta GitHub releases |
+| `language.txt` | `LanguageSettingsStore` | English | UI culture (`English` / `Spanish`) |
+| `startup.txt` | `StartupSettingsStore` | false | Launch at Windows sign-in (Run key) |
+| `tray-icon.txt` | `TrayIconSettingsStore` | **true** | Close window → notification area instead of exit |
+| `appdata-version.txt` | `AppDataMigrator` | 0 | Last applied numbered AppData migration |
+
+Language, tray, and startup preferences are toggled in **Settings** (sidebar
+gear). Language changes restart Bridge; tray and startup apply immediately.
+
+### Library backup & restore
+
+`Bridge/Services/AppDataBackupService.cs` packages a portable `.zip`:
+
+- **Included:** `bridge.db` (SQLite online backup while the app runs),
+  preference files above (except logs), `image-cache/`
+- **Excluded:** RetroArch under `emulators/`, `emulator-downloads/`, logs
+
+**Create backup** — Settings → Library & data → saves a user-chosen `.zip`.
+
+**Restore** — picks a backup zip, confirms, stages it under
+`.restore-staging/` with a `.restore-pending` marker, and restarts. On the
+next launch `ApplyPendingRestore()` runs in `App.xaml.cs` **before**
+`AppDataMigrator` and EF migrations, so the database is replaced while no
+connections are open. The previous DB is quarantined as
+`bridge.db.corrupt-{timestamp}` when needed.
+
+Covered by `Bridge.Tests/Services/AppDataBackupServiceTests.cs`.
 
 ### Welcome Sentinel
 

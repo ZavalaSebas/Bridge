@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <AssemblyVersion>$(Version).0</AssemblyVersion>
     <ApplicationIcon>Assets\Bridge.ico</ApplicationIcon>
 
@@ -29,6 +29,10 @@
          testing — WPF, EF Core, and JSON reflection-based (de)serialization
          are all trim-hazard-prone (see PLAN.md Risk Register). -->
   </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Bridge.Core\Bridge.Core.csproj" />

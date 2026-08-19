@@ -57,6 +57,15 @@ public static class Config
     // plain file like viewmode.txt: an app-instance preference, not library data.
     public static string UpdateChannelFilePath => Path.Combine(AppDataPath, "update-channel.txt");
 
+    // UI language (English/Spanish). Plain file like update-channel.txt.
+    public static string LanguageFilePath => Path.Combine(AppDataPath, "language.txt");
+
+    // Launch Bridge at Windows sign-in. Plain file like update-channel.txt.
+    public static string StartupFilePath => Path.Combine(AppDataPath, "startup.txt");
+
+    // Minimize to the notification area when the main window is closed.
+    public static string TrayIconFilePath => Path.Combine(AppDataPath, "tray-icon.txt");
+
     // Tracks which numbered AppData migration steps have run (see AppDataMigrator).
     public const string AppDataVersionFileName = "appdata-version.txt";
 

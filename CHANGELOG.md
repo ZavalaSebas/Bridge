@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-18
+
+### Added
+- **English / Spanish UI** — `Strings.es.resx` satellite resources, `LanguageSettingsStore` (`language.txt`), and a language picker in Settings → Appearance. Bridge restarts when you change the language so every window reloads with the new culture.
+- **Library backup & restore** — `AppDataBackupService` creates a portable `.zip` with the SQLite library (`bridge.db` via online backup), preferences, and artwork cache. Restore is staged and applied on the next restart (before EF opens the DB). RetroArch installs and logs are excluded. Settings → Library & data.
+- **Start with Windows** — `StartupSettingsStore` + `WindowsStartupRegistration` register Bridge in the current user's Run key. Toggle in Settings → Updates. Published `Bridge.exe` only (dev/`dotnet run` builds show the toggle disabled).
+- **System tray icon** — `TrayIconService` keeps Bridge in the notification area when you close the window (enabled by default via `tray-icon.txt`). Double-click or **Show Bridge** restores the window; **Exit** quits completely. The main menu **Exit** still closes the app for real.
+- **Startup splash** — borderless `SplashWindow` while AppData migrations, DI, and the main window load.
+- **Corrupt database recovery** — `BridgeDatabaseRecovery` detects an invalid `bridge.db` at startup, restores from `bridge.db.bak-update` when possible, and shows recovery guidance when no backup exists.
+
+### Changed
+- **Settings hub** — unified preferences overlay: integrations, appearance (theme, language, tray), library backup, updates (check, beta channel, start with Windows), and About.
+- **About window** — Project (Source + License) and Support (Ko-fi + GitHub Sponsors) cards share one two-column row.
+- **Sidebar context menu** — icons match the Bridge menu Sidebar submenu.
+
+### Fixed
+- **SQLite "file is not a database"** — startup validates the DB header before EF opens it; quarantines corrupt files and restores from the pre-update backup when available.
+
 ## [0.3.0] - 2026-08-18
 
 ### Added

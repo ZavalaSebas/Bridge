@@ -116,6 +116,6 @@ public partial class MainWindow
 
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        RequestExit();
     }
 }

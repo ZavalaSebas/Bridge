@@ -7,7 +7,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10-512bd4?style=flat-square&logo=dotnet&logoColor=white&labelColor=1a1a2e)](https://dotnet.microsoft.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows-00a4ef?style=flat-square&logo=windows&logoColor=white&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge)
-[![Version](https://img.shields.io/badge/Version-0.2.0-57F287?style=flat-square&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge/releases)
+[![Version](https://img.shields.io/badge/Version-0.4.0-57F287?style=flat-square&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge/releases)
 
 Bridge brings your games — from external libraries, manual entries, and emulated ROMs — into one fast, local catalog. No plugin runtime, no bloat.
 
@@ -89,6 +89,11 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - Basic statistics (totals, installed/not installed, favorites, total playtime)
 - **Zero-setup ROM support** — recursively scans folders, detects supported systems from ROM extensions (`RomPlatformCatalog`: NES, SNES, N64, GB/GBC/GBA, NDS, Genesis, Master System, Game Gear, Atari, PC Engine, Lynx, WonderSwan), enriches games through the normal IGDB metadata pipeline, and installs/updates Bridge-managed RetroArch + the required core on first play. The Play button reads **Download** (then **Downloading…**) until the frontend/core is installed, then Play/Stop as usual
 - **Self-updating** — Bridge checks GitHub Releases at startup (and on demand via **Check for updates…** in the app menu), downloads the new `Bridge.exe`, and restarts into it with a safe swap (running exe kept as `.old` until the new one proves it starts; the DB is backed up first). **Schema changes apply automatically too** — EF Core migrations update your existing `bridge.db` in place on the next launch, so a release can change the DB without you re-downloading or losing your library. Skip an update and a download button appears in the title bar until you apply it. See [DEVELOPMENT.md](DEVELOPMENT.md#version-management)
+- **Settings hub** — sidebar gear opens a unified preferences screen: emulator/IGDB shortcuts, theme, **English/Spanish language**, **system tray icon** (close minimizes to tray; on by default), **library backup & restore**, update check, **beta channel**, **start with Windows**, and About
+- **English / Spanish UI** — switch language in Settings; Bridge restarts to apply
+- **Library backup & restore** — zip your database, preferences, and artwork cache; restore on next launch
+- **System tray** — close the window to keep Bridge running in the notification area; double-click the icon to reopen
+- **Start with Windows** — optional sign-in startup (published exe only)
 - Self-contained single-file `.exe` (~155 MB) — no .NET runtime install required
 
 ---

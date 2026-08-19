@@ -1,0 +1,60 @@
+<Window x:Class="Bridge.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:res="clr-namespace:Bridge.Resources"
+        Title="{x:Static res:Strings.BridgeAppName}"
+        Width="380" Height="300"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource ApplicationBackgroundBrush}"
+        Foreground="{StaticResource TextFillColorPrimaryBrush}"
+        FontFamily="{StaticResource Bridge.FontFamily}"
+        FontSize="{StaticResource Bridge.FontSize.Body}">
+    <Border CornerRadius="12"
+            BorderBrush="{StaticResource ControlStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            Background="{StaticResource ApplicationBackgroundBrush}">
+        <Grid Margin="32,28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+                <Image Source="{StaticResource Bridge.LogoImage}"
+                       Width="72" Height="72"
+                       Stretch="Uniform"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Margin="0,0,0,14"/>
+                <TextBlock Text="{x:Static res:Strings.BridgeAppName}"
+                           FontSize="{StaticResource Bridge.FontSize.TitleLarge}"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"/>
+                <Border Margin="0,8,0,0"
+                        Padding="8,2"
+                        CornerRadius="10"
+                        HorizontalAlignment="Center"
+                        Background="{StaticResource ControlFillColorSecondaryBrush}">
+                    <TextBlock x:Name="VersionText"
+                               FontSize="12"
+                               Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <ui:ProgressRing IsIndeterminate="True"
+                                 Width="28" Height="28"
+                                 HorizontalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SplashLoading}"
+                           Margin="0,12,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

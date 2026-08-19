@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
 >
-> **Last updated:** 2026-08-18
+> **Last updated:** 2026-08-18 (v0.4.0)
 
 ## Project Overview
 
@@ -48,7 +48,7 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Current Version (0.2.0)
+### Current Version (0.4.0)
 The MVP defined in the foundation notes:
 - Open the app, create/save/load/edit games, delete
 - Add games manually
@@ -68,6 +68,11 @@ The MVP defined in the foundation notes:
 - **Configurable themes** — `ThemeManager` + `ThemeColorWindow`: 9 accent presets plus a custom color picker, applied at runtime and persisted to `theme.json`
 - **Rich descriptions** — Steam descriptions are stored and rendered as `DescriptionBlocks` (text / heading / subheading / list / image blocks), not a single raw string
 - **Self-updating** — `AppUpdateService` checks GitHub Releases (`ZavalaSebas/Bridge`) against the assembly version: silently at startup and on demand via **Check for updates…** in the app menu, then downloads the new `Bridge.exe` and applies the safe swap (running exe → `.old`, downloaded → current, restart) with an update handshake that keeps `.old` as a rollback copy until the new exe proves it starts (`ConfirmUpdateApplied`), restores it via `RollbackToPrevious` if startup fails, and backs up `bridge.db` → `bridge.db.bak-update` before each update. "Not now" on the confirm dialog keeps the update pending in the title bar (download button next to random game) until applied. Only in the published single-file build (`CanSelfUpdate`); security-bound to GitHub hosts over HTTPS with a 256 MB cap. See the "Version Management" section in DEVELOPMENT.md
+- **Settings hub (v0.4.0)** — sidebar **Settings** opens a unified preferences overlay: integrations, appearance (theme, English/Spanish, system tray), library backup & restore, updates (check, beta channel, start with Windows), and About
+- **English / Spanish UI** — `language.txt` + `Strings.es.resx`; restart on language change
+- **Library backup & restore** — portable `.zip` of database, preferences, and artwork cache; staged restore on restart
+- **System tray icon** — close minimizes to tray by default; double-click or context menu to reopen
+- **Start with Windows** — optional Run-key registration (published exe only)
 
 ### Future Versions — Backlog
 - Additional library sources beyond Steam and Epic (GOG, itch.io, ...)

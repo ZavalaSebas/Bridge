@@ -139,7 +139,7 @@
   <data name="Right" xml:space="preserve"><value>Right</value></data>
   <data name="Top" xml:space="preserve"><value>Top</value></data>
   <data name="Bottom" xml:space="preserve"><value>Bottom</value></data>
-  <data name="SettingsDescription" xml:space="preserve"><value>Manage integrations, appearance, and updates.</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>Manage integrations, appearance, language, library backups, and updates.</value></data>
   <data name="Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="AboutBridge" xml:space="preserve"><value>About Bridge...</value></data>
@@ -318,6 +318,10 @@
   <data name="Updates" xml:space="preserve"><value>Updates</value></data>
   <data name="ReceiveBetaBuilds" xml:space="preserve"><value>Receive beta builds</value></data>
   <data name="BetaBuildsDescription" xml:space="preserve"><value>Install prereleases published before their stable release.</value></data>
+  <data name="SettingsStartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="SettingsStartWithWindowsDescription" xml:space="preserve"><value>Launch Bridge automatically when you sign in to Windows.</value></data>
+  <data name="SettingsStartWithWindowsUnavailable" xml:space="preserve"><value>Available only when running the published Bridge.exe.</value></data>
+  <data name="SettingsStartWithWindowsFailed" xml:space="preserve"><value>Could not update the Windows startup setting.</value></data>
   <data name="AboutDisclaimer" xml:space="preserve"><value>Made with care by ZavalaSebas. This software is provided "as is", without warranty of any kind. Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG or any platform or emulator project.</value></data>
   <data name="BridgeAppName" xml:space="preserve"><value>Bridge</value></data>
   <data name="RemoveFromFavorites" xml:space="preserve"><value>Remove from Favorites</value></data>
@@ -328,6 +332,24 @@
   <data name="RemoveGameConfirmFormat" xml:space="preserve"><value>Remove "{0}" from your Bridge library? This cannot be undone.</value></data>
   <data name="SettingsIntegrations" xml:space="preserve"><value>Integrations</value></data>
   <data name="SettingsAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="SettingsLanguageTitle" xml:space="preserve"><value>Language</value></data>
+  <data name="SettingsLanguageDescription" xml:space="preserve"><value>Interface language. Bridge restarts when you change this setting.</value></data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="SettingsLanguageSpanish" xml:space="preserve"><value>Español</value></data>
+  <data name="SettingsTrayIconTitle" xml:space="preserve"><value>System tray icon</value></data>
+  <data name="SettingsTrayIconDescription" xml:space="preserve"><value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value></data>
+  <data name="TrayIconShowBridge" xml:space="preserve"><value>Show Bridge</value></data>
+  <data name="SettingsDataSection" xml:space="preserve"><value>Library &amp; data</value></data>
+  <data name="SettingsBackupTitle" xml:space="preserve"><value>Backup library</value></data>
+  <data name="SettingsBackupDescription" xml:space="preserve"><value>Save or restore your library database, preferences, and artwork cache from a zip file. RetroArch installs and logs are not included.</value></data>
+  <data name="CreateBackup" xml:space="preserve"><value>Create backup</value></data>
+  <data name="RestoreBackup" xml:space="preserve"><value>Restore backup</value></data>
+  <data name="BackupSaveDialogTitle" xml:space="preserve"><value>Save Bridge backup</value></data>
+  <data name="BackupRestoreDialogTitle" xml:space="preserve"><value>Select Bridge backup</value></data>
+  <data name="BackupRestoreConfirm" xml:space="preserve"><value>Restore this backup? Your current library, preferences, and artwork cache will be replaced. Bridge will restart.</value></data>
+  <data name="BackupCreatedFormat" xml:space="preserve"><value>Backup saved to {0}</value></data>
+  <data name="BackupFailedFormat" xml:space="preserve"><value>Could not create backup: {0}</value></data>
+  <data name="BackupRestoreFailedFormat" xml:space="preserve"><value>Could not restore backup: {0}</value></data>
   <data name="SettingsUpdatesSection" xml:space="preserve"><value>Updates &amp; About</value></data>
   <data name="SettingsEmulationCardDescription" xml:space="preserve"><value>Managed RetroArch install, core updates, and supported systems.</value></data>
   <data name="SettingsIgdbCardDescription" xml:space="preserve"><value>IGDB credentials and metadata provider configuration.</value></data>
@@ -374,9 +396,17 @@
   <data name="SaveFailedFormat" xml:space="preserve"><value>Save failed: {0}</value></data>
   <data name="Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="LoadingEmulationStatus" xml:space="preserve"><value>Loading emulation status...</value></data>
+  <data name="SplashLoading" xml:space="preserve"><value>Starting...</value></data>
   <data name="RetroArchNotInstalled" xml:space="preserve"><value>RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.</value></data>
   <data name="RetroArchInstalledWithCoresFormat" xml:space="preserve"><value>RetroArch is installed with {0} managed core(s). Cores are checked for updates when needed.</value></data>
   <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve"><value>Could not update RetroArch: {0}</value></data>
+  <data name="DatabaseRestoredFromBackup" xml:space="preserve"><value>Your library database was damaged. Bridge restored it from the backup made before your last update.</value></data>
+  <data name="DatabaseCorruptNoBackupFormat" xml:space="preserve"><value>Your library database is damaged and no valid backup was found.
+
+Check for bridge.db.bak-update or bridge.db.corrupt-* in:
+{0}
+
+Restore a backup manually, or rename/delete bridge.db to start with an empty library.</value></data>
   <data name="VersionFormat" xml:space="preserve"><value>Version {0}</value></data>
   <data name="SourceCode" xml:space="preserve"><value>Source code</value></data>
   <data name="License" xml:space="preserve"><value>License</value></data>
