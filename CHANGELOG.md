@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-19
+
 ### Added
 - **Refresh Library** — logo menu **Refresh Library** re-runs the startup sync on demand: Steam + Epic re-import, rescan of configured ROM and installed-game folders, missing-metadata download, emulator download-state refresh, and artwork preload (`MainViewModel.Refresh.cs`, shared `RefreshLibraryCoreAsync()` with startup).
 - **RetroArch cheats** — ROM context menu **Cheats** opens `CheatsWindow` for managed RetroArch games. Cheats are fetched from the libretro-database on GitHub, cached under AppData, and toggled per game. Optional **Apply enabled cheats automatically when launching ROMs** in emulator settings writes a per-game RetroArch override (`RetroArchCheatService`, `CheatFileParser`, `RomCheatNameResolver`).

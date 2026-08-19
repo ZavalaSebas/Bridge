@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
 >
-> **Last updated:** 2026-08-19 (Unreleased — cheats, archive ROMs, Refresh Library)
+> **Last updated:** 2026-08-19 (v0.6.0)
 
 ## Project Overview
 
@@ -48,13 +48,13 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Unreleased (post-0.5.0)
+### Current Version (0.6.0)
 - **Refresh Library** — logo menu command re-runs startup sync: Steam/Epic import, configured folder rescans, missing-metadata download (`RefreshLibraryCoreAsync`)
 - **RetroArch cheats** — libretro-database fetch/cache, `CheatsWindow`, optional auto-apply on launch, ROM-only context menu item
 - **Compressed ROM archives** — `.zip`/`.7z` scan and launch via RetroArch-style `archive#entry` paths
 - **Faster RetroArch exit detection** — process `WaitForExitAsync` instead of idle polling
 
-### Current Version (0.5.0)
+### Previous (0.5.0)
 The MVP defined in the foundation notes:
 - Open the app, create/save/load/edit games, delete
 - Add games manually
