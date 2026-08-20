@@ -68,6 +68,12 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public List<GameAction> GameActions { get; set; } = [];
     public List<GameRom> Roms { get; set; } = [];
     public ulong PlaytimeSeconds { get; set; }
+    /// <summary>HLTB main story — without notable extras.</summary>
+    public ulong? TimeToBeatMainSeconds { get; set; }
+    /// <summary>HLTB main + extras.</summary>
+    public ulong? TimeToBeatExtraSeconds { get; set; }
+    /// <summary>HLTB completionist — 100%.</summary>
+    public ulong? TimeToBeatCompleteSeconds { get; set; }
     public ulong PlayCount { get; set; }
     public DateTime? LastActivity { get; set; }
     public DateTime? Added { get; set; }

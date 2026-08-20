@@ -40,6 +40,7 @@ public partial class MainViewModel : ObservableObject
     private readonly RetroArchCheatService _cheatService;
     private readonly CheatsWindowOpener _cheatsWindowOpener;
     private readonly MetadataSyncService _metadataSync;
+    private readonly HowLongToBeatService _howLongToBeat;
     private readonly SteamMetadataProvider _steamMetadataProvider;
     private readonly SteamLibraryImporter _steamImporter;
     private readonly EpicLibraryImporter _epicImporter;
@@ -609,6 +610,7 @@ public partial class MainViewModel : ObservableObject
         EpicLibraryImporter epicImporter,
         AppUpdateService appUpdateService,
         MetadataSyncService metadataSyncService,
+        HowLongToBeatService howLongToBeatService,
         IDialogService dialogService,
         InstalledGameImportService installedGameImport,
         WatchedScanFolderService watchedScanFolders)
@@ -631,6 +633,7 @@ public partial class MainViewModel : ObservableObject
         _cheatService = cheatService;
         _cheatsWindowOpener = cheatsWindowOpener;
         _metadataSync = metadataSyncService;
+        _howLongToBeat = howLongToBeatService;
         _steamMetadataProvider = steamMetadataProvider;
         _steamImporter = steamImporter;
         _epicImporter = epicImporter;

@@ -352,6 +352,10 @@
   <data name="SettingsTrayIconDescription" xml:space="preserve"><value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value></data>
   <data name="SettingsKeepSelectionTitle" xml:space="preserve"><value>Keep selection across views</value></data>
   <data name="SettingsKeepSelectionDescription" xml:space="preserve"><value>When off, switching between List, Covers, and Table clears the selected game.</value></data>
+  <data name="Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Images" xml:space="preserve"><value>Images</value></data>
+  <data name="SettingsDetailSectionPositionTitle" xml:space="preserve"><value>Details section position</value></data>
+  <data name="SettingsDetailSectionPositionDescription" xml:space="preserve"><value>Place the metadata Details column on the left or right of the Overview and Images tabs in the game details panel.</value></data>
   <data name="SettingsDetailPanelPositionTitle" xml:space="preserve"><value>Details panel position</value></data>
   <data name="SettingsDetailPanelPositionDescription" xml:space="preserve"><value>Dock the game details panel to the left or right in List view and on the compact info panel in Covers view.</value></data>
   <data name="TrayIconShowBridge" xml:space="preserve"><value>Show Bridge</value></data>
@@ -461,6 +465,13 @@ Restore a backup manually, or rename/delete bridge.db to start with an empty lib
   <data name="PlaytimeOneMinute" xml:space="preserve"><value>1 minute</value></data>
   <data name="PlaytimeMinutesFormat" xml:space="preserve"><value>{0} minutes</value></data>
   <data name="PlaytimeHoursFormat" xml:space="preserve"><value>{0} hours</value></data>
+  <data name="HowLongToBeat" xml:space="preserve"><value>How Long to Beat</value></data>
+  <data name="HowLongToBeatAppliedToGameFormat" xml:space="preserve"><value>How Long to Beat data applied to {0}.</value></data>
+  <data name="TimeToBeatMainStory" xml:space="preserve"><value>Main</value></data>
+  <data name="TimeToBeatMainExtra" xml:space="preserve"><value>Main + Extras</value></data>
+  <data name="TimeToBeatCompletionist" xml:space="preserve"><value>Completionist</value></data>
+  <data name="TimeToBeatProgressFormat" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="TimeToBeatZeroDuration" xml:space="preserve"><value>0 hours</value></data>
   <data name="SizeZeroBytes" xml:space="preserve"><value>0 B</value></data>
   <data name="SizeBytesFormat" xml:space="preserve"><value>{0} B</value></data>
   <data name="SizeKilobytesFormat" xml:space="preserve"><value>{0} KB</value></data>

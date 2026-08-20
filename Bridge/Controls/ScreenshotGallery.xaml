@@ -19,16 +19,16 @@
     <Grid x:Name="GalleryContent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="320"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel x:Name="GalleryHeader" Grid.Row="0" Orientation="Horizontal" Margin="0,20,0,10">
+        <StackPanel x:Name="GalleryHeader" Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock Text="{x:Static res:Strings.Screenshots}" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding CounterText, ElementName=Root, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- Vista principal: fondo frosted (la misma screenshot borrosa) + imagen grande con crossfade -->
-        <Border x:Name="MainViewBorder" Grid.Row="1" CornerRadius="10" ClipToBounds="True" Background="#151A28" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+        <Border x:Name="MainViewBorder" Grid.Row="1" Height="320" CornerRadius="10" ClipToBounds="True" Background="#151A28" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
             <Grid>
                 <Image x:Name="BackdropImage" Stretch="UniformToFill" Margin="-60" Opacity="0.45"
                        RenderOptions.BitmapScalingMode="Fant" IsHitTestVisible="False"/>
@@ -45,8 +45,8 @@
                                         Stretch="Uniform"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        MaxHeight="{Binding ActualHeight, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.82}"
-                                        MaxWidth="{Binding ActualWidth, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.92}"
+                                        MaxHeight="{Binding ActualHeight, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.94}"
+                                        MaxWidth="{Binding ActualWidth, ElementName=MainImageHost, Converter={StaticResource Fraction}, ConverterParameter=0.96}"
                                         RenderOptions.BitmapScalingMode="Fant"/>
                 </Button>
 

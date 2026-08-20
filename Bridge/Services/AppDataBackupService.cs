@@ -31,6 +31,7 @@ public static class AppDataBackupService
         "tray-icon.txt",
         "keep-selection-across-views.txt",
         "detail-panel-position.txt",
+        "detail-section-position.txt",
         "whats-new-seen.txt",
         "rom-scan-folder.txt",
         "installed-scan-folder.txt",

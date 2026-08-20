@@ -165,9 +165,12 @@ Bridge.Metadata/
 ├── IgdbAuthClient.cs        # Twitch OAuth2 client-credentials flow, caches the token
 ├── IgdbGame.cs              # raw IGDB /v4/games response shape (only the fields this MVP uses)
 ├── IgdbMetadataProvider.cs  # SearchAsync(name) -> GameMetadata?, implements IGameMetadataProvider
+├── HowLongToBeatClient.cs   # unofficial HLTB API client (auth token + search + name scoring)
 ├── SteamStoreModels.cs      # DTOs for store.steampowered.com/api/appdetails, /appreviews
 └── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
 ```
+
+`HowLongToBeatService` (`Bridge/Services/HowLongToBeatService.cs`) sits in the app layer: it calls the client, writes the three `Game.TimeToBeat*Seconds` columns, and can add an HLTB profile link. Startup/refresh runs `DownloadMissingHowLongToBeatAsync` for games with no estimates; **Download Metadata** also calls it after the IGDB/Steam chain. UI helpers live in `Bridge/Statistics/TimeToBeatHelper.cs` and `Bridge/Converters/TimeToBeatConverters.cs` (hero stats bar in `LibraryDetailView.xaml`).
 
 See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible and calls **`RefreshLibraryCoreAsync()`** (`MainViewModel.Refresh.cs`) — Steam/Epic import, configured folder rescans, then missing-metadata sync — so metadata can continue downloading in the background while the UI stays responsive. The same core method powers the logo-menu **Refresh Library** command for on-demand resync (without re-checking for Bridge app updates). Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU (512 entries) plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
 
@@ -991,6 +994,11 @@ public static class Config
 | `Bridge.Metadata/BridgeIgdbProvider.cs` | IGDB metadata via Bridge's own Cloudflare Worker (zero-config) — first in the metadata chain |
 | `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via legacy public proxy — fallback if the Worker is unreachable |
 | `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
+| `Bridge.Metadata/HowLongToBeatClient.cs` | howlongtobeat.com search client (main / extras / completionist seconds) |
+| `Bridge/Services/HowLongToBeatService.cs` | Applies HLTB results to `Game` and optional profile link |
+| `Bridge/Statistics/TimeToBeatHelper.cs` | HLTB progress target + segmented bar width math |
+| `Bridge/Services/DetailSectionPositionSettingsStore.cs` | Persists Details-left vs Details-right in the game details content area |
+| `Bridge/Views/LibraryDetailView.xaml` | Library views, compact Covers panel, Details hero + HLTB stats bar |
 | `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
 | `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
 | `Bridge.Emulation/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |

@@ -16,10 +16,39 @@ public static class PlaytimeFormatter
         _ => Strings.Format(nameof(Strings.PlaytimeHoursFormat), FormatDecimal(seconds / 3600.0))
     };
 
+    /// <summary>Compact duration for progress labels — never uses the "Not played" phrase.</summary>
+    public static string FormatSecondsCompact(ulong seconds) => seconds switch
+    {
+        0 => Strings.TimeToBeatZeroDuration,
+        < 60 => seconds == 1
+            ? Strings.PlaytimeOneSecond
+            : Strings.Format(nameof(Strings.PlaytimeSecondsFormat), seconds),
+        < 3600 => FormatMinutes(seconds / 60),
+        _ => Strings.Format(nameof(Strings.PlaytimeHoursFormat), FormatDecimal(seconds / 3600.0))
+    };
+
     private static string FormatMinutes(ulong minutes) =>
         minutes == 1
             ? Strings.PlaytimeOneMinute
             : Strings.Format(nameof(Strings.PlaytimeMinutesFormat), minutes);
+
+    /// <summary>HLTB-style label, e.g. 21h 14m.</summary>
+    public static string FormatHoursMinutes(ulong seconds)
+    {
+        if (seconds == 0)
+            return string.Empty;
+
+        var hours = seconds / 3600;
+        var minutes = (seconds % 3600) / 60;
+
+        if (hours > 0 && minutes > 0)
+            return $"{hours}h {minutes}m";
+
+        if (hours > 0)
+            return $"{hours}h";
+
+        return $"{minutes}m";
+    }
 
     public static string FormatBytes(ulong bytes) => bytes switch
     {

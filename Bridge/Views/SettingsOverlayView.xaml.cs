@@ -18,12 +18,19 @@ public partial class SettingsOverlayView : UserControl
     private bool _loadingTrayIcon;
     private bool _loadingKeepSelection;
     private bool _loadingDetailPanelPosition;
+    private bool _loadingDetailSectionPosition;
     private ProfileEditorHelper.AvatarEditorState _profileState = new();
 
     private static readonly string[] DetailPanelPositionValues =
     [
         DetailPanelPositionSettingsStore.Left,
         DetailPanelPositionSettingsStore.Right
+    ];
+
+    private static readonly string[] DetailSectionPositionValues =
+    [
+        DetailSectionPositionSettingsStore.Left,
+        DetailSectionPositionSettingsStore.Right
     ];
 
     public SettingsOverlayView()
@@ -59,6 +66,11 @@ public partial class SettingsOverlayView : UserControl
             DetailPanelPositionCombo.SelectedIndex = IndexForDetailPanelPosition(
                 DetailPanelPositionSettingsStore.Load());
             _loadingDetailPanelPosition = false;
+
+            _loadingDetailSectionPosition = true;
+            DetailSectionPositionCombo.SelectedIndex = IndexForDetailSectionPosition(
+                DetailSectionPositionSettingsStore.Load());
+            _loadingDetailSectionPosition = false;
 
             LoadProfileEditor();
         };
@@ -151,6 +163,17 @@ public partial class SettingsOverlayView : UserControl
         for (var i = 0; i < DetailPanelPositionValues.Length; i++)
         {
             if (DetailPanelPositionValues[i].Equals(position, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return 1;
+    }
+
+    private static int IndexForDetailSectionPosition(string position)
+    {
+        for (var i = 0; i < DetailSectionPositionValues.Length; i++)
+        {
+            if (DetailSectionPositionValues[i].Equals(position, StringComparison.OrdinalIgnoreCase))
                 return i;
         }
 
@@ -359,5 +382,20 @@ public partial class SettingsOverlayView : UserControl
 
         if (Window.GetWindow(this) is MainWindow mainWindow)
             mainWindow.LibraryDetail.ApplyDetailPanelPosition(selected);
+    }
+
+    private void DetailSectionPositionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingDetailSectionPosition || DetailSectionPositionCombo.SelectedIndex < 0)
+            return;
+
+        var selected = DetailSectionPositionValues[DetailSectionPositionCombo.SelectedIndex];
+        if (selected.Equals(DetailSectionPositionSettingsStore.Load(), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        DetailSectionPositionSettingsStore.Save(selected);
+
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.LibraryDetail.ApplyDetailSectionPosition(selected);
     }
 }

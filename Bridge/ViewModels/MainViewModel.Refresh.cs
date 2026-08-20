@@ -61,6 +61,7 @@ public partial class MainViewModel
 
         await DownloadMissingSteamMetadataAsync(steamSourceId);
         await DownloadMissingMetadataByNameAsync([epicSourceId]);
+        await DownloadMissingHowLongToBeatAsync();
         RefreshAllEmulatorDownloadStates();
     }
 }

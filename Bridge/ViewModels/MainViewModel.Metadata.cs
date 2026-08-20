@@ -4,6 +4,7 @@ using Bridge.Core.Utilities;
 using Bridge.Emulation;
 using Bridge.Metadata;
 using Bridge.Resources;
+using Bridge.Statistics;
 using CommunityToolkit.Mvvm.Input;
 
 namespace Bridge.ViewModels;
@@ -33,7 +34,31 @@ public partial class MainViewModel
                 romImport,
                 game.SourceId != GameSource.ManualId ? game.ExternalId : null);
 
-            if (result is null)
+            var metadataApplied = false;
+            string? providerName = null;
+
+            if (result is not null)
+            {
+                (var metadata, providerName) = result.Value;
+
+                if (providerName == _steamMetadataProvider.Name)
+                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(gameName, metadata);
+
+                ApplyMetadata(game, metadata);
+                ApplyMetadataReferences(game, metadata);
+                ApplySteamLocalArtwork(game);
+                metadataApplied = true;
+            }
+
+            var hltbApplied = await _howLongToBeat.TryEnrichGameAsync(game, overwrite: true);
+
+            if (metadataApplied || hltbApplied)
+            {
+                _gameRepository.Update(game);
+                RefreshListDisplay(game);
+            }
+
+            if (!metadataApplied && !hltbApplied)
             {
                 StatusMessage = IsNetworkAvailable()
                     ? Strings.Format(nameof(Strings.NoMetadataFoundFormat), gameName)
@@ -41,18 +66,9 @@ public partial class MainViewModel
                 return;
             }
 
-            var (metadata, providerName) = result.Value;
-
-            if (providerName == _steamMetadataProvider.Name)
-                await _metadataSync.EnrichSteamLinksFromIgdbAsync(gameName, metadata);
-
-            ApplyMetadata(game, metadata);
-            ApplyMetadataReferences(game, metadata);
-            ApplySteamLocalArtwork(game);
-
-            _gameRepository.Update(game);
-            RefreshListDisplay(game);
-            StatusMessage = Strings.Format(nameof(Strings.MetadataAppliedToGameFormat), game.Name, providerName);
+            StatusMessage = metadataApplied
+                ? Strings.Format(nameof(Strings.MetadataAppliedToGameFormat), game.Name, providerName!)
+                : Strings.Format(nameof(Strings.HowLongToBeatAppliedToGameFormat), game.Name);
         }
         finally
         {
@@ -220,6 +236,24 @@ public partial class MainViewModel
 
         if (metadata.UserScore.HasValue)
             game.UserScore = metadata.UserScore;
+
+        if (metadata.TimeToBeatMainSeconds is > 0 &&
+            (overwrite || game.TimeToBeatMainSeconds is null or 0))
+        {
+            game.TimeToBeatMainSeconds = metadata.TimeToBeatMainSeconds;
+        }
+
+        if (metadata.TimeToBeatExtraSeconds is > 0 &&
+            (overwrite || game.TimeToBeatExtraSeconds is null or 0))
+        {
+            game.TimeToBeatExtraSeconds = metadata.TimeToBeatExtraSeconds;
+        }
+
+        if (metadata.TimeToBeatCompleteSeconds is > 0 &&
+            (overwrite || game.TimeToBeatCompleteSeconds is null or 0))
+        {
+            game.TimeToBeatCompleteSeconds = metadata.TimeToBeatCompleteSeconds;
+        }
 
         if (!string.IsNullOrWhiteSpace(metadata.Version))
             game.Version = metadata.Version;
@@ -619,6 +653,49 @@ public partial class MainViewModel
         finally
         {
             EndStatusProgress();
+        }
+    }
+
+    private async Task DownloadMissingHowLongToBeatAsync()
+    {
+        var candidates = Games
+            .Where(g => TimeToBeatHelper.GetProgressTarget(g) == 0)
+            .ToList();
+
+        if (candidates.Count == 0 || !IsNetworkAvailable())
+            return;
+
+        using var throttle = new SemaphoreSlim(2);
+
+        foreach (var batch in candidates.Chunk(8))
+        {
+            await Task.WhenAll(batch.Select(game => Task.Run(async () =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
+                        return;
+
+                    if (!await _howLongToBeat.TryEnrichGameAsync(live))
+                        return;
+
+                    RunOnUiThread(() =>
+                    {
+                        _gameRepository.Update(live);
+                        RefreshListDisplay(live);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            })));
         }
     }
 }

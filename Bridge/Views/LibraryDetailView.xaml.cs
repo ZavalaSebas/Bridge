@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -79,6 +80,7 @@ public partial class LibraryDetailView : UserControl
         }
 
         ApplyDetailPanelPosition();
+        ApplyDetailSectionPosition();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -180,6 +182,67 @@ public partial class LibraryDetailView : UserControl
     private void CloseCompactInfo_Click(object sender, RoutedEventArgs e)
     {
         CompactInfoPanel.Visibility = Visibility.Collapsed;
+    }
+
+    private void DetailPanelPositionMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu)
+            return;
+
+        UpdatePositionMenuChecks(menu, DetailPanelPositionSettingsStore.Load());
+    }
+
+    private void DetailPanelPositionMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string tag })
+            return;
+
+        SetDetailPanelPosition(tag);
+    }
+
+    private void DetailSectionPositionMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu)
+            return;
+
+        UpdatePositionMenuChecks(menu, DetailSectionPositionSettingsStore.Load());
+    }
+
+    private void DetailSectionPositionMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string tag })
+            return;
+
+        SetDetailSectionPosition(tag);
+    }
+
+    private static void UpdatePositionMenuChecks(ContextMenu menu, string current)
+    {
+        foreach (var item in menu.Items.OfType<MenuItem>())
+        {
+            if (item.Tag is string tag && item.IsCheckable)
+                item.IsChecked = tag.Equals(current, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private void SetDetailPanelPosition(string position)
+    {
+        position = DetailPanelPositionSettingsStore.Normalize(position);
+        if (position.Equals(DetailPanelPositionSettingsStore.Load(), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        DetailPanelPositionSettingsStore.Save(position);
+        ApplyDetailPanelPosition(position);
+    }
+
+    private void SetDetailSectionPosition(string position)
+    {
+        position = DetailSectionPositionSettingsStore.Normalize(position);
+        if (position.Equals(DetailSectionPositionSettingsStore.Load(), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        DetailSectionPositionSettingsStore.Save(position);
+        ApplyDetailSectionPosition(position);
     }
 
     private void TableList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -392,6 +455,63 @@ public partial class LibraryDetailView : UserControl
                 CoversList.InvalidateMeasure();
                 CoversList.InvalidateArrange();
             }, DispatcherPriority.Loaded);
+        }
+    }
+
+    public void ApplyDetailSectionPosition(string? position = null)
+    {
+        position = DetailSectionPositionSettingsStore.Normalize(
+            position ?? DetailSectionPositionSettingsStore.Load());
+        var detailsOnLeft = position == DetailSectionPositionSettingsStore.Left;
+
+        if (DetailsSection is not null && OverviewTabsSection is not null
+            && OverviewTabsColumn is not null && DetailsMetadataColumn is not null)
+        {
+            if (detailsOnLeft)
+            {
+                OverviewTabsColumn.Width = new GridLength(220);
+                OverviewTabsColumn.MinWidth = 220;
+                DetailsMetadataColumn.Width = new GridLength(1, GridUnitType.Star);
+                DetailsMetadataColumn.MinWidth = 300;
+
+                Grid.SetColumn(DetailsSection, 0);
+                Grid.SetColumn(OverviewTabsSection, 1);
+                DetailsSection.Margin = new Thickness(0, 0, 20, 0);
+                OverviewTabsSection.Margin = new Thickness(0);
+            }
+            else
+            {
+                OverviewTabsColumn.Width = new GridLength(1, GridUnitType.Star);
+                OverviewTabsColumn.MinWidth = 300;
+                DetailsMetadataColumn.Width = new GridLength(220);
+                DetailsMetadataColumn.MinWidth = 220;
+
+                Grid.SetColumn(OverviewTabsSection, 0);
+                Grid.SetColumn(DetailsSection, 1);
+                OverviewTabsSection.Margin = new Thickness(0, 0, 20, 0);
+                DetailsSection.Margin = new Thickness(0);
+            }
+
+            DetailContentDock.InvalidateMeasure();
+            DetailContentDock.InvalidateArrange();
+        }
+
+        if (CompactContentStack is null || CompactScreenshotsSection is null
+            || CompactDetailsSection is null || CompactDescriptionSection is null)
+            return;
+
+        CompactContentStack.Children.Clear();
+        CompactContentStack.Children.Add(CompactScreenshotsSection);
+
+        if (detailsOnLeft)
+        {
+            CompactContentStack.Children.Add(CompactDetailsSection);
+            CompactContentStack.Children.Add(CompactDescriptionSection);
+        }
+        else
+        {
+            CompactContentStack.Children.Add(CompactDescriptionSection);
+            CompactContentStack.Children.Add(CompactDetailsSection);
         }
     }
 

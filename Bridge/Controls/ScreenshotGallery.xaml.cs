@@ -115,11 +115,12 @@ public partial class ScreenshotGallery : UserControl
         var collapsed = compact ? Visibility.Collapsed : Visibility.Visible;
         GalleryHeader.Visibility = collapsed;
         MainViewBorder.Visibility = collapsed;
+        GalleryContent.RowDefinitions[1].Height = compact ? new GridLength(0) : new GridLength(320);
         if (compact)
         {
             _autoTimer.Stop();
             ThumbScroll.Margin = new Thickness(0);
-            ThumbScroll.Padding = new Thickness(0, 0, 0, 0);
+            ThumbScroll.Padding = new Thickness(0);
         }
         else
         {

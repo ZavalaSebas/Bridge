@@ -301,6 +301,10 @@ public static class Strings
     public static string SettingsKeepSelectionDescription => Get(nameof(SettingsKeepSelectionDescription));
     public static string SettingsDetailPanelPositionTitle => Get(nameof(SettingsDetailPanelPositionTitle));
     public static string SettingsDetailPanelPositionDescription => Get(nameof(SettingsDetailPanelPositionDescription));
+    public static string Overview => Get(nameof(Overview));
+    public static string Images => Get(nameof(Images));
+    public static string SettingsDetailSectionPositionTitle => Get(nameof(SettingsDetailSectionPositionTitle));
+    public static string SettingsDetailSectionPositionDescription => Get(nameof(SettingsDetailSectionPositionDescription));
     public static string TrayIconShowBridge => Get(nameof(TrayIconShowBridge));
     public static string SettingsDataSection => Get(nameof(SettingsDataSection));
     public static string SettingsBackupTitle => Get(nameof(SettingsBackupTitle));
@@ -404,6 +408,13 @@ public static class Strings
     public static string PlaytimeOneMinute => Get(nameof(PlaytimeOneMinute));
     public static string PlaytimeMinutesFormat => Get(nameof(PlaytimeMinutesFormat));
     public static string PlaytimeHoursFormat => Get(nameof(PlaytimeHoursFormat));
+    public static string HowLongToBeat => Get(nameof(HowLongToBeat));
+    public static string HowLongToBeatAppliedToGameFormat => Get(nameof(HowLongToBeatAppliedToGameFormat));
+    public static string TimeToBeatMainStory => Get(nameof(TimeToBeatMainStory));
+    public static string TimeToBeatMainExtra => Get(nameof(TimeToBeatMainExtra));
+    public static string TimeToBeatCompletionist => Get(nameof(TimeToBeatCompletionist));
+    public static string TimeToBeatProgressFormat => Get(nameof(TimeToBeatProgressFormat));
+    public static string TimeToBeatZeroDuration => Get(nameof(TimeToBeatZeroDuration));
     public static string SizeZeroBytes => Get(nameof(SizeZeroBytes));
     public static string SizeBytesFormat => Get(nameof(SizeBytesFormat));
     public static string SizeKilobytesFormat => Get(nameof(SizeKilobytesFormat));

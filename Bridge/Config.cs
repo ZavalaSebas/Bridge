@@ -81,6 +81,10 @@ public static class Config
     public static string DetailPanelPositionFilePath =>
         Path.Combine(AppDataPath, "detail-panel-position.txt");
 
+    // Details column vs Overview/Images tabs within the game details content area.
+    public static string DetailSectionPositionFilePath =>
+        Path.Combine(AppDataPath, "detail-section-position.txt");
+
     // Last app version for which the What's New dialog was shown.
     public static string WhatsNewSeenFilePath =>
         Path.Combine(AppDataPath, "whats-new-seen.txt");

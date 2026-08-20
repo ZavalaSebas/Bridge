@@ -499,6 +499,15 @@ Why this over the alternatives:
 - The Worker `POST /auth` endpoint returns the token — keep it diagnostic-only;
   do not expose it in production without protection.
 
+**Update (2026-08-20 — How Long to Beat):** Bridge also fetches completion-time
+estimates from howlongtobeat.com via `HowLongToBeatClient` (`Bridge.Metadata`)
+and `HowLongToBeatService`. Results land on `Game.TimeToBeatMainSeconds`,
+`TimeToBeatExtraSeconds`, and `TimeToBeatCompleteSeconds` (EF migration
+`AddGameTimeToBeat`) and render in the Details hero as a segmented bar filled
+by the user's real playtime. HLTB is complementary to IGDB/Steam — it does not
+replace cover/description metadata — and runs on startup/refresh for games
+missing estimates plus on **Download Metadata**.
+
 ---
 
 ## ADR-14: GitHub Releases as the update channel (self-replacing `AppUpdateService`)

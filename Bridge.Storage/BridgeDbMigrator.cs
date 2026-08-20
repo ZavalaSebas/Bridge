@@ -73,6 +73,10 @@ public static class BridgeDbMigrator
         if (ignoreRuntime is not null && RuntimeFlagsDropped(context))
             baselined.Add(ignoreRuntime);
 
+        var addTimeToBeat = migrations.FirstOrDefault(m => m.EndsWith("AddGameTimeToBeat", StringComparison.Ordinal));
+        if (addTimeToBeat is not null && TimeToBeatColumnsPresent(context))
+            baselined.Add(addTimeToBeat);
+
         return baselined;
     }
 
@@ -118,6 +122,33 @@ public static class BridgeDbMigrator
             }
 
             return true;
+        }
+        finally
+        {
+            if (!wasOpen)
+                connection.Close();
+        }
+    }
+
+    private static bool TimeToBeatColumnsPresent(BridgeDbContext context)
+    {
+        using var connection = context.Database.GetDbConnection();
+        var wasOpen = connection.State == ConnectionState.Open;
+        if (!wasOpen)
+            connection.Open();
+
+        try
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA table_info(Games)";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                if (reader.GetString(1).Equals("TimeToBeatMainSeconds", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
         finally
         {

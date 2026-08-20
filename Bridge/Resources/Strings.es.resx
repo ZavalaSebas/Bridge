@@ -940,6 +940,18 @@
   <data name="SettingsKeepSelectionDescription" xml:space="preserve">
     <value>Si está desactivado, al cambiar entre Lista, Portadas y Tabla se borra el juego seleccionado.</value>
   </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Resumen</value>
+  </data>
+  <data name="Images" xml:space="preserve">
+    <value>Imágenes</value>
+  </data>
+  <data name="SettingsDetailSectionPositionTitle" xml:space="preserve">
+    <value>Posición de la sección Detalles</value>
+  </data>
+  <data name="SettingsDetailSectionPositionDescription" xml:space="preserve">
+    <value>Coloca la columna de metadatos Detalles a la izquierda o derecha de las pestañas Resumen e Imágenes en el panel de detalles del juego.</value>
+  </data>
   <data name="SettingsDetailPanelPositionTitle" xml:space="preserve">
     <value>Posición del panel de detalles</value>
   </data>
@@ -1258,6 +1270,27 @@ Restaura una copia de seguridad manualmente, o renombra/elimina bridge.db para e
   </data>
   <data name="PlaytimeHoursFormat" xml:space="preserve">
     <value>{0} horas</value>
+  </data>
+  <data name="HowLongToBeat" xml:space="preserve">
+    <value>How Long to Beat</value>
+  </data>
+  <data name="HowLongToBeatAppliedToGameFormat" xml:space="preserve">
+    <value>Datos de How Long to Beat aplicados a {0}.</value>
+  </data>
+  <data name="TimeToBeatMainStory" xml:space="preserve">
+    <value>Historia principal</value>
+  </data>
+  <data name="TimeToBeatMainExtra" xml:space="preserve">
+    <value>Principal + extras</value>
+  </data>
+  <data name="TimeToBeatCompletionist" xml:space="preserve">
+    <value>Completista</value>
+  </data>
+  <data name="TimeToBeatProgressFormat" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="TimeToBeatZeroDuration" xml:space="preserve">
+    <value>0 horas</value>
   </data>
   <data name="SizeZeroBytes" xml:space="preserve">
     <value>0 B</value>

@@ -238,6 +238,8 @@ namespace Bridge
             services.AddSingleton<InstalledGameImportService>();
             services.AddSingleton<WatchedScanFolderService>();
             services.AddSingleton<MetadataSyncService>();
+            services.AddSingleton(sp => new HowLongToBeatClient(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton<HowLongToBeatService>();
 
             // IGDB: settings loaded from disk once at startup (see
             // IgdbSettingsStore — separate JSON file, not bridge.db), then

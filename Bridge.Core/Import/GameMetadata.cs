@@ -23,6 +23,9 @@ public class GameMetadata
     public List<Link> Links { get; set; } = [];
 
     public ulong PlaytimeSeconds { get; set; }
+    public ulong? TimeToBeatMainSeconds { get; set; }
+    public ulong? TimeToBeatExtraSeconds { get; set; }
+    public ulong? TimeToBeatCompleteSeconds { get; set; }
     public ulong PlayCount { get; set; }
     public DateTime? LastActivity { get; set; }
 

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **How Long to Beat metadata** — `HowLongToBeatClient` (`Bridge.Metadata`) searches howlongtobeat.com's internal API for main story, main + extras, and completionist times; `HowLongToBeatService` stores them on `Game` (`TimeToBeatMainSeconds`, `TimeToBeatExtraSeconds`, `TimeToBeatCompleteSeconds`) and adds an HLTB profile link when available. Fetched on **Download Metadata**, during startup/refresh for games missing estimates (`DownloadMissingHowLongToBeatAsync`), and throttled in parallel batches. ROM titles use `RomScanner.ToSearchName` for better matches. Migration `AddGameTimeToBeat`.
+- **HLTB progress in the Details hero** — when a game has time-to-beat data, the stats bar shows a segmented bar (main / extras / completionist) with hours inside each segment, a bright fill clipped to your real playtime, and a tooltip with per-tier labels. Segment widths blend proportional and uniform sizing via `TimeToBeatHelper.ComputeSegmentWidths` (~260px track). Covered by `TimeToBeatSegmentWidthTests`.
+- **Detail section layout preference** — Settings → Appearance and a context menu on the details content area let you place the **Details** column to the left or right of **Overview** (full Details view and compact Covers panel). Persisted in `detail-section-position.txt`; included in library backups. `DetailSectionPositionSettingsStoreTests`.
+
+### Changed
+- **Covers compact info panel** — removed tab control; screenshot strip stays at the top (`ScreenshotGallery.CompactMode`), then Details and **Overview** (description). Section order follows the detail-section setting (screenshots always first). Hero title and Play/More/Edit stay centered on the hero; buttons straddle the hero/content boundary.
+- **Covers grid hover** — selected cards show only a persistent accent border; title and icon buttons appear on hover/focus. Play and Info are icon-only (48×48); Play/Stop/Download icons use explicit `SymbolIcon` triggers. Edit remains on the compact panel More hover only.
+- **Details hero spacing** — slightly tighter gap between title and Play/More/Edit row; more space between the button row and the stats bar.
+
+### Fixed
+- **Covers hover Play icon invisible** — the icon-only Play button no longer binds `SymbolIcon.Symbol` through a `MultiBinding` inside a `ControlTemplate` (which resolved to empty). It uses `ContentPresenter` + literal symbol triggers like the adjacent Info button.
+
 ## [0.6.0] - 2026-08-19
 
 ### Added
