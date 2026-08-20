@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
 >
-> **Last updated:** 2026-08-19 (v0.6.0)
+> **Last updated:** 2026-08-20 (v0.7.0)
 
 ## Project Overview
 
@@ -48,7 +48,12 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Current Version (0.6.0)
+### Current Version (0.7.0)
+- **How Long to Beat** — completion-time estimates from howlongtobeat.com, synced on metadata download and startup/refresh; segmented playtime progress bar in the Details hero stats bar
+- **Detail section layout** — Settings and context menu to place Details left or right of Overview (full Details view and Covers compact panel)
+- **Covers UI polish** — compact panel with screenshot strip at top (no tabs), icon-only Play/Info on cover hover, selection ring only when selected
+
+### Previous (0.6.0)
 - **Refresh Library** — logo menu command re-runs startup sync: Steam/Epic import, configured folder rescans, missing-metadata download (`RefreshLibraryCoreAsync`)
 - **RetroArch cheats** — libretro-database fetch/cache, `CheatsWindow`, optional auto-apply on launch, ROM-only context menu item
 - **Compressed ROM archives** — `.zip`/`.7z` scan and launch via RetroArch-style `archive#entry` paths

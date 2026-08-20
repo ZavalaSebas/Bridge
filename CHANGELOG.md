@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-20
+
 ### Added
 - **How Long to Beat metadata** — `HowLongToBeatClient` (`Bridge.Metadata`) searches howlongtobeat.com's internal API for main story, main + extras, and completionist times; `HowLongToBeatService` stores them on `Game` (`TimeToBeatMainSeconds`, `TimeToBeatExtraSeconds`, `TimeToBeatCompleteSeconds`) and adds an HLTB profile link when available. Fetched on **Download Metadata**, during startup/refresh for games missing estimates (`DownloadMissingHowLongToBeatAsync`), and throttled in parallel batches. ROM titles use `RomScanner.ToSearchName` for better matches. Migration `AddGameTimeToBeat`.
 - **HLTB progress in the Details hero** — when a game has time-to-beat data, the stats bar shows a segmented bar (main / extras / completionist) with hours inside each segment, a bright fill clipped to your real playtime, and a tooltip with per-tier labels. Segment widths blend proportional and uniform sizing via `TimeToBeatHelper.ComputeSegmentWidths` (~260px track). Covered by `TimeToBeatSegmentWidthTests`.
