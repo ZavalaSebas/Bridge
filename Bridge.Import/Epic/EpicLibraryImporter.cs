@@ -31,113 +31,131 @@ public class EpicLibraryImporter
 
     public List<GameMetadata> GetInstalledGames()
     {
-        var games = new List<GameMetadata>();
-        if (!File.Exists(_installedAppListPath))
-        {
-            // No launcher/install data is a normal condition (the import is
-            // optional) — return empty rather than throw.
-            return games;
-        }
-
         var appList = ReadInstalledAppList(_installedAppListPath);
         var manifests = ReadManifests(_manifestsDirectory);
+        var installedByAppName = appList
+            .Where(app => !string.IsNullOrWhiteSpace(app.AppName))
+            .GroupBy(app => app.AppName!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
 
-        foreach (var app in appList)
+        var games = new List<GameMetadata>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var manifest in manifests)
         {
-            var appName = app.AppName;
+            var appName = manifest.AppName;
             if (string.IsNullOrWhiteSpace(appName) || appName.StartsWith("UE_"))
             {
                 continue;
             }
 
-            var manifest = manifests.FirstOrDefault(m => m.AppName == appName);
-            if (manifest is null)
+            if (ShouldSkipManifest(manifest))
             {
                 continue;
             }
 
-            // Skip non-launchable DLC add-ons.
-            if (manifest.AppCategories?.Contains("addons") == true &&
-                manifest.AppCategories?.Any(a => a == "addons/launchable") == false)
+            installedByAppName.TryGetValue(appName, out var installedApp);
+            var installLocation = ResolveInstallLocation(installedApp, manifest);
+            if (installLocation is null || !seen.Add(appName))
             {
                 continue;
             }
 
-            // Unreal Engine plugins / engine bits.
-            if (manifest.AppCategories?.Any(a => a is "plugins" or "plugins/engine") == true ||
-                manifest.CompatibleApps?.Any(a => a.StartsWith("UE_")) == true ||
-                manifest.TechnicalType?.Contains("plugins/engine") == true)
-            {
-                continue;
-            }
+            games.Add(BuildGameMetadata(appName, manifest, installLocation));
+        }
 
-            var gameName = manifest.DisplayName ?? Path.GetFileName(app.InstallLocation?.TrimEnd('\\', '/') ?? string.Empty);
-            if (string.IsNullOrWhiteSpace(gameName))
-            {
-                continue;
-            }
+        return games;
+    }
 
-            // The app list tends to have the correct location; the manifest can
-            // be stale if the install was moved.
-            var installLocation = app.InstallLocation;
-            if (string.IsNullOrWhiteSpace(installLocation) || !Directory.Exists(installLocation))
-            {
-                installLocation = manifest.InstallLocation;
-            }
+    private static bool ShouldSkipManifest(EpicManifest manifest)
+    {
+        if (manifest.IsIncompleteInstall)
+        {
+            return true;
+        }
 
-            if (string.IsNullOrWhiteSpace(installLocation) || !Directory.Exists(installLocation))
+        // Skip non-launchable DLC add-ons.
+        if (manifest.AppCategories?.Contains("addons") == true &&
+            manifest.AppCategories?.Any(a => a == "addons/launchable") == false)
+        {
+            return true;
+        }
+
+        // Unreal Engine plugins / engine bits.
+        if (manifest.AppCategories?.Any(a => a is "plugins" or "plugins/engine") == true ||
+            manifest.CompatibleApps?.Any(a => a.StartsWith("UE_")) == true ||
+            manifest.TechnicalType?.Contains("plugins/engine") == true)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string? ResolveInstallLocation(InstalledApp? installedApp, EpicManifest manifest)
+    {
+        foreach (var candidate in new[] { installedApp?.InstallLocation, manifest.InstallLocation })
+        {
+            if (string.IsNullOrWhiteSpace(candidate))
             {
                 continue;
             }
 
             try
             {
-                installLocation = Path.GetFullPath(installLocation.TrimEnd('\\', '/'));
+                var normalized = Path.GetFullPath(candidate.TrimEnd('\\', '/'));
+                if (Directory.Exists(normalized))
+                {
+                    return normalized;
+                }
             }
             catch
             {
-                continue;
             }
-
-            if (!Directory.Exists(installLocation))
-            {
-                continue;
-            }
-
-            var metadata = new GameMetadata
-            {
-                ExternalId = appName,
-                Name = RemoveTrademarks(gameName),
-                InstallDirectory = installLocation,
-                IsInstalled = true
-            };
-
-            // Epic has no server icon — use the launch exe path; ExeIconLoader renders it.
-            if (!string.IsNullOrWhiteSpace(manifest.LaunchExecutable))
-            {
-                var exePath = PathContainment.TryResolveUnderRoot(installLocation, manifest.LaunchExecutable);
-                if (exePath is not null && File.Exists(exePath))
-                {
-                    metadata.Icon = exePath;
-                }
-            }
-
-            // Track by directory like the Steam action: the launched process is
-            // the Epic client, not the game, so watch for processes under the
-            // game's install directory.
-            metadata.GameActions.Add(new GameAction
-            {
-                Name = "Play via Epic",
-                Type = GameActionType.Url,
-                IsPlayAction = true,
-                Path = $"com.epicgames.launcher://apps/{appName}?action=launch&silent=true",
-                TrackingMode = TrackingMode.Directory
-            });
-
-            games.Add(metadata);
         }
 
-        return games;
+        return null;
+    }
+
+    private static GameMetadata BuildGameMetadata(string appName, EpicManifest manifest, string installLocation)
+    {
+        var gameName = manifest.DisplayName ?? Path.GetFileName(installLocation);
+        if (string.IsNullOrWhiteSpace(gameName))
+        {
+            gameName = appName;
+        }
+
+        var metadata = new GameMetadata
+        {
+            ExternalId = appName,
+            Name = RemoveTrademarks(gameName),
+            InstallDirectory = installLocation,
+            IsInstalled = true
+        };
+
+        // Epic has no server icon — use the launch exe path; ExeIconLoader renders it.
+        if (!string.IsNullOrWhiteSpace(manifest.LaunchExecutable))
+        {
+            var exePath = PathContainment.TryResolveUnderRoot(installLocation, manifest.LaunchExecutable);
+            if (exePath is not null && File.Exists(exePath))
+            {
+                metadata.Icon = exePath;
+            }
+        }
+
+        // Track by directory like the Steam action: the launched process is
+        // the Epic client, not the game, so watch for processes under the
+        // game's install directory.
+        metadata.GameActions.Add(new GameAction
+        {
+            Name = "Play via Epic",
+            Type = GameActionType.Url,
+            IsPlayAction = true,
+            Path = $"com.epicgames.launcher://apps/{appName}?action=launch&silent=true",
+            TrackingMode = TrackingMode.Directory
+        });
+
+        return metadata;
     }
 
     private static List<InstalledApp> ReadInstalledAppList(string path)

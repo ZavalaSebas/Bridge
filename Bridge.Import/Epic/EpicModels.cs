@@ -47,4 +47,13 @@ internal sealed class EpicManifest
 
     [JsonPropertyName("TechnicalType")]
     public string? TechnicalType { get; set; }
+
+    [JsonPropertyName("CatalogNamespace")]
+    public string? CatalogNamespace { get; set; }
+
+    [JsonPropertyName("CatalogItemId")]
+    public string? CatalogItemId { get; set; }
+
+    [JsonPropertyName("bIsIncompleteInstall")]
+    public bool IsIncompleteInstall { get; set; }
 }

@@ -1,5 +1,7 @@
 using Bridge.Core.Contracts;
 using Bridge.Core.Import;
+using Bridge.Emulation;
+using Bridge.Emulation.Dat;
 using Bridge.Metadata;
 
 namespace Bridge.Services;
@@ -11,7 +13,8 @@ namespace Bridge.Services;
 public sealed class MetadataSyncService(
     IEnumerable<IGameMetadataProvider> metadataProviders,
     IGameMetadataProvider steamProvider,
-    BridgeIgdbProvider bridgeIgdbProvider)
+    BridgeIgdbProvider bridgeIgdbProvider,
+    RomDatMatcher romDatMatcher)
 {
     private readonly IGameMetadataProvider[] _chain = metadataProviders.ToArray();
     private readonly SteamMetadataProvider? _steamByAppId = steamProvider as SteamMetadataProvider;
@@ -53,6 +56,29 @@ public sealed class MetadataSyncService(
         string gameName,
         CancellationToken cancellationToken = default) =>
         SearchByNameAsync(gameName, MetadataSearchMode.IgdbFirst, cancellationToken);
+
+    public async Task<(GameMetadata Metadata, string ProviderName)?> SearchRomMetadataAsync(
+        string displayName,
+        string? romPath = null,
+        CancellationToken cancellationToken = default)
+    {
+        string? datName = null;
+        if (!string.IsNullOrWhiteSpace(romPath))
+            romDatMatcher.TryResolve(romPath, out datName, out _);
+
+        var searchNames = RomScanner.GetMetadataSearchNames(displayName, datName);
+        for (var i = 0; i < searchNames.Count; i++)
+        {
+            var mode = i == searchNames.Count - 1
+                ? MetadataSearchMode.RomImport
+                : MetadataSearchMode.IgdbFirst;
+            var found = await SearchByNameAsync(searchNames[i], mode, cancellationToken);
+            if (found is not null)
+                return found;
+        }
+
+        return null;
+    }
 
     public async Task EnrichSteamLinksFromIgdbAsync(string gameName, GameMetadata metadata, CancellationToken cancellationToken = default)
     {

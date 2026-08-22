@@ -211,6 +211,13 @@ public partial class SettingsOverlayView : UserControl
         new SteamGridDbSettingsWindow(viewModel) { Owner = owner }.ShowDialog();
     }
 
+    private void RetroAchievementsSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        var viewModel = App.Services.GetRequiredService<RetroAchievementsSettingsViewModel>();
+        new RetroAchievementsSettingsWindow(viewModel) { Owner = owner }.ShowDialog();
+    }
+
     private void CustomThemeColor_Click(object sender, RoutedEventArgs e)
     {
         var owner = Window.GetWindow(this);

@@ -13,6 +13,7 @@ using Bridge.Import.Steam;
 using Bridge.Metadata;
 using Bridge.Resources;
 using Bridge.Emulation;
+using Bridge.Emulation.Dat;
 using Bridge.Services;
 using Bridge.Statistics;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -36,8 +37,12 @@ public partial class MainViewModel : ObservableObject
     private readonly IRepository<Region> _regionRepository;
     private readonly GameLauncher _launcher;
     private readonly RomScanner _romScanner;
+    private readonly RomDatMatcher _romDatMatcher;
     private readonly RetroArchService _retroArch;
     private readonly RetroArchCheatService _cheatService;
+    private readonly RetroArchCheevosService _cheevosService;
+    private readonly RetroAchievementsSettings _retroAchievementsSettings;
+    private readonly GameAchievementsService _gameAchievementsService;
     private readonly CheatsWindowOpener _cheatsWindowOpener;
     private readonly GameEditWindowOpener _gameEditWindowOpener;
     private readonly MetadataSyncService _metadataSync;
@@ -428,6 +433,12 @@ public partial class MainViewModel : ObservableObject
     private string _regionsText = string.Empty;
 
     [ObservableProperty]
+    private string _romDatRegionText = string.Empty;
+
+    [ObservableProperty]
+    private string _romDatPlatformText = string.Empty;
+
+    [ObservableProperty]
     private string _completionStatusText = string.Empty;
 
     [ObservableProperty]
@@ -509,6 +520,8 @@ public partial class MainViewModel : ObservableObject
             SeriesText = string.Empty;
             AgeRatingsText = string.Empty;
             RegionsText = string.Empty;
+            RomDatRegionText = string.Empty;
+            RomDatPlatformText = string.Empty;
             CompletionStatusText = string.Empty;
             VersionText = string.Empty;
             InstallSizeText = string.Empty;
@@ -535,6 +548,19 @@ public partial class MainViewModel : ObservableObject
         SeriesText = JoinNames(game.SeriesIds, _seriesNames!);
         AgeRatingsText = JoinNames(game.AgeRatingIds, _ageRatingNames!);
         RegionsText = JoinNames(game.RegionIds, _regionNames!);
+        if (game.Roms.Count > 0)
+        {
+            var rom = game.Roms[0];
+            RomDatRegionText = RomDatMatcher.ResolveRegion(rom.DatRegion, rom.Name) ?? string.Empty;
+            RomDatPlatformText = rom.DatPlatform
+                ?? RomDatMatcher.ResolvePlatformName(rom.Path)
+                ?? string.Empty;
+        }
+        else
+        {
+            RomDatRegionText = string.Empty;
+            RomDatPlatformText = string.Empty;
+        }
         LibraryText = _sourceNames!.TryGetValue(game.SourceId, out var sourceName) && sourceName.Length > 0
             ? sourceName
             : Strings.Manual;
@@ -659,8 +685,12 @@ public partial class MainViewModel : ObservableObject
         IRepository<Region> regionRepository,
         GameLauncher launcher,
         RomScanner romScanner,
+        RomDatMatcher romDatMatcher,
         RetroArchService retroArch,
         RetroArchCheatService cheatService,
+        RetroArchCheevosService cheevosService,
+        RetroAchievementsSettings retroAchievementsSettings,
+        GameAchievementsService gameAchievementsService,
         CheatsWindowOpener cheatsWindowOpener,
         GameEditWindowOpener gameEditWindowOpener,
         SteamMetadataProvider steamMetadataProvider,
@@ -687,8 +717,12 @@ public partial class MainViewModel : ObservableObject
         _regionRepository = regionRepository;
         _launcher = launcher;
         _romScanner = romScanner;
+        _romDatMatcher = romDatMatcher;
         _retroArch = retroArch;
         _cheatService = cheatService;
+        _cheevosService = cheevosService;
+        _retroAchievementsSettings = retroAchievementsSettings;
+        _gameAchievementsService = gameAchievementsService;
         _cheatsWindowOpener = cheatsWindowOpener;
         _gameEditWindowOpener = gameEditWindowOpener;
         _metadataSync = metadataSyncService;

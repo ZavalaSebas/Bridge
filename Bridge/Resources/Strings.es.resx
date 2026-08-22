@@ -649,6 +649,12 @@
   <data name="Region" xml:space="preserve">
     <value>Región</value>
   </data>
+  <data name="RomDatRegion" xml:space="preserve">
+    <value>Región ROM</value>
+  </data>
+  <data name="RomDatPlatform" xml:space="preserve">
+    <value>Plataforma ROM</value>
+  </data>
   <data name="Version" xml:space="preserve">
     <value>Versión</value>
   </data>
@@ -892,6 +898,33 @@
   <data name="SettingsSteamGridDbCardDescription" xml:space="preserve">
     <value>API key para artwork comunitario en el editor de media.</value>
   </data>
+  <data name="RetroAchievementsSettingsTitle" xml:space="preserve">
+    <value>RetroAchievements</value>
+  </data>
+  <data name="RetroAchievementsSettingsHelp" xml:space="preserve">
+    <value>Clave web API: progreso de logros en Bridge. Contraseña de cuenta: desbloquear logros al jugar en RetroArch (rcheevos). Obtén ambas en tu panel de control de RetroAchievements.</value>
+  </data>
+  <data name="RetroAchievementsPasswordLabel" xml:space="preserve">
+    <value>Contraseña de cuenta (RetroArch)</value>
+  </data>
+  <data name="RetroAchievementsPasswordHint" xml:space="preserve">
+    <value>Solo para iniciar sesión en RetroArch. No es tu clave web API.</value>
+  </data>
+  <data name="RetroAchievementsOpenControlPanel" xml:space="preserve">
+    <value>Abrir panel de control de RetroAchievements</value>
+  </data>
+  <data name="RetroAchievementsUsernameLabel" xml:space="preserve">
+    <value>Usuario</value>
+  </data>
+  <data name="RetroAchievementsApiKeyLabel" xml:space="preserve">
+    <value>Web API key</value>
+  </data>
+  <data name="OpenRetroAchievementsSettings" xml:space="preserve">
+    <value>Configurar</value>
+  </data>
+  <data name="SettingsRetroAchievementsCardDescription" xml:space="preserve">
+    <value>Credenciales de RetroAchievements para progreso en Bridge y desbloqueos en RetroArch.</value>
+  </data>
   <data name="SteamGridDbPickerTitle" xml:space="preserve">
     <value>Artwork SteamGridDB</value>
   </data>
@@ -1128,6 +1161,75 @@
   </data>
   <data name="Achievements" xml:space="preserve">
     <value>Logros</value>
+  </data>
+  <data name="AchievementsLoading" xml:space="preserve">
+    <value>Cargando logros…</value>
+  </data>
+  <data name="AchievementsNotSupported" xml:space="preserve">
+    <value>Los logros no están disponibles para este juego.</value>
+  </data>
+  <data name="AchievementsEpicLoginRequired" xml:space="preserve">
+    <value>Inicia sesión en Epic Games Launcher para ver los logros.</value>
+  </data>
+  <data name="AchievementsRetroAchievementsRequired" xml:space="preserve">
+    <value>Configura tu cuenta de RetroAchievements para ver los logros de ROMs.</value>
+  </data>
+  <data name="AchievementsRomNotMatched" xml:space="preserve">
+    <value>Esta ROM no está reconocida por RetroAchievements. Solo los dumps verificados que coinciden con la base de hashes de RA muestran logros.</value>
+  </data>
+  <data name="AchievementsRomDatNameNotRaVerified" xml:space="preserve">
+    <value>Bridge identificó este archivo con un juego de tu catálogo DAT, pero RetroAchievements no reconoce su hash. Sustitúyelo por el dump verificado que RA admite para este juego.</value>
+  </data>
+  <data name="AchievementsRomUnsupportedPlatform" xml:space="preserve">
+    <value>RetroAchievements aún no admite esta consola.</value>
+  </data>
+  <data name="AchievementsRomApiError" xml:space="preserve">
+    <value>No se pudieron cargar los datos de RetroAchievements. Revisa tu clave API y la conexión.</value>
+  </data>
+  <data name="AchievementsNone" xml:space="preserve">
+    <value>No se encontraron logros para este juego.</value>
+  </data>
+  <data name="AchievementsProgressFormat" xml:space="preserve">
+    <value>{0} / {1} desbloqueados</value>
+  </data>
+  <data name="AchievementsBarSummaryFormat" xml:space="preserve">
+    <value>{0}/{1} · faltan {2}</value>
+  </data>
+  <data name="AchievementsBarCompleteFormat" xml:space="preserve">
+    <value>{0}/{1} ✓</value>
+  </data>
+  <data name="AchievementsCompletionPercentFormat" xml:space="preserve">
+    <value>{0:0.#}% completado</value>
+  </data>
+  <data name="AchievementsRemainingFormat" xml:space="preserve">
+    <value>{0} restantes</value>
+  </data>
+  <data name="AchievementsCatalogCountFormat" xml:space="preserve">
+    <value>{0} logros</value>
+  </data>
+  <data name="AchievementsCatalogOnlyHint" xml:space="preserve">
+    <value>Solo catálogo — no se rastrea tu progreso en esta copia.</value>
+  </data>
+  <data name="AchievementGlobalPercentFormat" xml:space="preserve">
+    <value>{0:0.#}% de jugadores</value>
+  </data>
+  <data name="AchievementRarityCommon" xml:space="preserve">
+    <value>Común</value>
+  </data>
+  <data name="AchievementRarityUncommon" xml:space="preserve">
+    <value>Poco común</value>
+  </data>
+  <data name="AchievementRarityRare" xml:space="preserve">
+    <value>Raro</value>
+  </data>
+  <data name="AchievementRarityVeryRare" xml:space="preserve">
+    <value>Muy raro</value>
+  </data>
+  <data name="AchievementRarityLegendary" xml:space="preserve">
+    <value>Legendario</value>
+  </data>
+  <data name="HiddenAchievement" xml:space="preserve">
+    <value>Logro oculto</value>
   </data>
   <data name="SettingsDetailSectionPositionTitle" xml:space="preserve">
     <value>Posición de la sección Detalles</value>

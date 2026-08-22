@@ -238,6 +238,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" MinWidth="160" />
+                                                <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0"
                                                         Orientation="Horizontal"
@@ -597,6 +598,8 @@
                                                     </Border>
                                                 </StackPanel>
                                             </Grid>
+                                            <controls:AchievementHeroSummary Grid.Column="6"
+                                                                             VerticalAlignment="Center" />
                                         </Grid>
                                     </Border>
                                 </Grid>
@@ -615,6 +618,7 @@
                                                     <ScrollViewer x:Name="OverviewScrollViewer"
                                                                   VerticalScrollBarVisibility="Auto"
                                                                   HorizontalScrollBarVisibility="Disabled"
+                                                                  VerticalAlignment="Stretch"
                                                                   controls:ScrollViewerChaining.IsEnabled="True">
                                                         <Border Background="{DynamicResource Bridge.MutedSurface.Background}" CornerRadius="8" Padding="12" VerticalAlignment="Top" HorizontalAlignment="Stretch">
                                                             <ItemsControl ItemsSource="{Binding Converter={StaticResource DescriptionBlocks}}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplateSelector><controls:DescriptionBlockTemplateSelector TextTemplate="{StaticResource DescTextTemplate}" HeadingTemplate="{StaticResource DescHeadingTemplate}" SubheadingTemplate="{StaticResource DescSubheadingTemplate}" ListTemplate="{StaticResource DescListTemplate}" ImageTemplate="{StaticResource DescImageTemplate}"/></ItemsControl.ItemTemplateSelector></ItemsControl>
@@ -622,10 +626,10 @@
                                                     </ScrollViewer>
                                                 </TabItem>
                                                 <TabItem Header="{x:Static res:Strings.Images}">
-                                                    <controls:ScreenshotGallery ItemsSource="{Binding Screenshots}" VerticalAlignment="Top"/>
+                                                    <controls:ScreenshotGallery ItemsSource="{Binding Screenshots}" VerticalAlignment="Stretch"/>
                                                 </TabItem>
                                                 <TabItem Header="{x:Static res:Strings.Achievements}">
-                                                    <Grid />
+                                                    <controls:AchievementsPanel DataContext="{Binding}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
                                                 </TabItem>
                                             </TabControl>
                                         </Border>

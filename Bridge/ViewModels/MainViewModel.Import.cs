@@ -3,6 +3,7 @@ using System.Net.NetworkInformation;
 using Bridge.Core.Entities;
 using Bridge.Core.Import;
 using Bridge.Emulation;
+using Bridge.Emulation.Dat;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Resources;
@@ -38,30 +39,42 @@ public partial class MainViewModel
 
             var found = _romScanner.Scan(folder, Games);
             var romSource = _sourceRepository.GetOrCreateByName("ROM");
+            var added = new List<Game>();
             foreach (var game in found)
             {
-                var extension = RomArchivePath.GetRomExtension(game.Roms[0].Path);
+                var rom = game.Roms[0];
+                var existing = FindRomGameByCrc(rom.Crc);
+                if (existing is not null)
+                {
+                    UpdateRomPathFromRescan(existing, rom.Path);
+                    continue;
+                }
+
+                var extension = RomArchivePath.GetRomExtension(rom.Path);
                 if (RomPlatformCatalog.TryGetByExtension(extension, out var platform))
                 {
                     game.PlatformIds.Add(_platformRepository.GetOrCreateByName(platform!.PlatformName).Id);
                 }
                 game.SourceId = romSource.Id;
-                game.ExternalId = RomArchivePath.Normalize(game.Roms[0].Path);
+                game.ExternalId = RomArchivePath.Normalize(rom.Path);
                 _gameRepository.Add(game);
                 AddGameSorted(game);
+                added.Add(game);
             }
+
+            ReidentifyRomGamesFromDat();
 
             RefreshStatistics();
             RefreshAllEmulatorDownloadStates();
-            if (found.Count > 0)
+            if (added.Count > 0)
             {
-                StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), found.Count, folder);
+                StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), added.Count, folder);
                 if (!silent)
                 {
-                    SelectedGame = found[0];
+                    SelectedGame = added[0];
                 }
 
-                await DownloadMetadataForAddedGamesAsync(found, romImport: true);
+                await DownloadMetadataForAddedGamesAsync(added, romImport: true);
             }
             else if (!silent)
             {
@@ -298,6 +311,82 @@ public partial class MainViewModel
             // The check itself failed (rare) — let the normal flow run and
             // report its own outcome rather than guessing.
             return true;
+        }
+    }
+
+    private Game? FindRomGameByCrc(string? crcHex)
+    {
+        if (string.IsNullOrWhiteSpace(crcHex))
+            return null;
+
+        return Games.FirstOrDefault(game =>
+            game.Roms.Any(rom => string.Equals(rom.Crc, crcHex, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void UpdateRomPathFromRescan(Game existing, string newPath)
+    {
+        var rom = existing.Roms[0];
+        var normalized = RomArchivePath.Normalize(newPath);
+        if (string.Equals(rom.Path, normalized, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        rom.Path = normalized;
+        existing.ExternalId = normalized;
+        _gameRepository.Update(existing);
+        RefreshListDisplay(existing);
+    }
+
+    private void ReidentifyRomGamesFromDat()
+    {
+        foreach (var game in Games.Where(g => g.Roms.Count > 0).ToList())
+        {
+            var rom = game.Roms[0];
+            var changed = false;
+
+            var platform = RomDatMatcher.ResolvePlatformName(rom.Path);
+            if (platform is not null && !string.Equals(rom.DatPlatform, platform, StringComparison.Ordinal))
+            {
+                rom.DatPlatform = platform;
+                changed = true;
+            }
+
+            if (_romDatMatcher.TryMatch(rom.Path, out var match))
+            {
+                if (!string.Equals(rom.Crc, match!.Crc, StringComparison.OrdinalIgnoreCase))
+                {
+                    rom.Crc = match.Crc;
+                    changed = true;
+                }
+
+                if (!string.Equals(rom.DatRegion, match.Region, StringComparison.Ordinal))
+                {
+                    rom.DatRegion = match.Region;
+                    changed = true;
+                }
+
+                if (!string.Equals(rom.Name, match.Name, StringComparison.Ordinal))
+                {
+                    rom.Name = match.Name;
+                    changed = true;
+                }
+
+                if (!string.Equals(game.Name, match.Name, StringComparison.Ordinal))
+                {
+                    game.Name = match.Name;
+                    changed = true;
+                }
+            }
+            else if (rom.DatRegion is not null)
+            {
+                rom.DatRegion = null;
+                changed = true;
+            }
+
+            if (!changed)
+                continue;
+
+            _gameRepository.Update(game);
+            RefreshListDisplay(game);
         }
     }
 }

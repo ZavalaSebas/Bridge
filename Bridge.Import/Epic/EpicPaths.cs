@@ -18,6 +18,51 @@ public static class EpicPaths
     public static string ManifestsDirectory =>
         Path.Combine(ProgramDataRoot, "EpicGamesLauncher", "Data", "Manifests");
 
+    public static string LauncherConfigRoot => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "EpicGamesLauncher",
+        "Saved",
+        "Config");
+
+    /// <summary>Legacy path; newer Epic launchers store config under WindowsEditor instead.</summary>
+    public static string LauncherConfigDirectory => Path.Combine(LauncherConfigRoot, "Windows");
+
+    /// <summary>
+    /// Candidate Epic launcher config folders containing GameUserSettings.ini.
+    /// Newer launcher builds (19+) use WindowsEditor; older ones use Windows.
+    /// </summary>
+    public static IEnumerable<string> EnumerateLauncherConfigDirectories()
+    {
+        if (!Directory.Exists(LauncherConfigRoot))
+            yield break;
+
+        var candidates = Directory
+            .EnumerateDirectories(LauncherConfigRoot)
+            .Select(dir => new
+            {
+                Directory = dir,
+                IniPath = Path.Combine(dir, "GameUserSettings.ini"),
+            })
+            .Where(candidate => File.Exists(candidate.IniPath))
+            .Select(candidate => candidate.Directory)
+            .OrderBy(GetLauncherConfigPriority)
+            .ThenBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var directory in candidates)
+            yield return directory;
+    }
+
+    private static int GetLauncherConfigPriority(string directory)
+    {
+        var name = Path.GetFileName(directory);
+        return name switch
+        {
+            "WindowsEditor" => 0,
+            "Windows" => 1,
+            _ => 2,
+        };
+    }
+
     public static string? GetInstallationPath()
     {
         var fromRegistry = Registry.LocalMachine

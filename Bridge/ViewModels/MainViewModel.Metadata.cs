@@ -29,10 +29,14 @@ public partial class MainViewModel
         BeginStatusProgress(indeterminate: true);
         try
         {
-            var result = await _metadataSync.SearchForManualDownloadAsync(
-                gameName,
-                romImport,
-                !romImport && uint.TryParse(game.ExternalId, out _) ? game.ExternalId : null);
+            var result = romImport
+                ? await _metadataSync.SearchRomMetadataAsync(game.Name, GetPrimaryRomPath(game))
+                : await _metadataSync.SearchForManualDownloadAsync(
+                    gameName,
+                    romImport: false,
+                    !string.IsNullOrWhiteSpace(game.ExternalId) && uint.TryParse(game.ExternalId, out _)
+                        ? game.ExternalId
+                        : null);
 
             var metadataApplied = false;
             string? providerName = null;
@@ -119,8 +123,9 @@ public partial class MainViewModel
                     await throttle.WaitAsync();
                     try
                     {
-                        var searchName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
-                        var found = await _metadataSync.SearchForAddedGameAsync(searchName, romImport);
+                        var found = romImport
+                            ? await _metadataSync.SearchRomMetadataAsync(game.Name, GetPrimaryRomPath(game))
+                            : await _metadataSync.SearchForAddedGameAsync(game.Name, romImport: false);
                         return found is null
                             ? (game, metadata: (GameMetadata?)null, provider: (string?)null)
                             : (game, metadata: found.Value.Metadata, provider: found.Value.ProviderName);
@@ -174,6 +179,10 @@ public partial class MainViewModel
 
     private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
     {
+        var renameFromMetadata = game.Roms.Count > 0
+            && !string.IsNullOrWhiteSpace(metadata.Name)
+            && (overwrite || string.IsNullOrWhiteSpace(game.Description));
+
         if (!string.IsNullOrWhiteSpace(metadata.Description))
             game.Description = metadata.Description;
 
@@ -279,6 +288,9 @@ public partial class MainViewModel
                     game.Links.Add(new Link { Name = link.Name, Url = sanitized });
             }
         }
+
+        if (renameFromMetadata)
+            game.Name = metadata.Name.Trim();
     }
 
     // Steam-sourced links (store/community/guides/news/wiki) are identified by
@@ -663,6 +675,89 @@ public partial class MainViewModel
         }
     }
 
+    // ROMs are not tied to a store source id, so fill missing metadata on
+    // startup/refresh by searching IGDB with normalized Spanish/English titles.
+    private async Task DownloadMissingRomMetadataAsync()
+    {
+        var candidates = Games
+            .Where(g => g.Roms.Count > 0 && string.IsNullOrWhiteSpace(g.Description))
+            .ToList();
+
+        if (candidates.Count == 0)
+            return;
+
+        if (!IsNetworkAvailable())
+        {
+            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
+            return;
+        }
+
+        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
+
+        var completed = 0;
+        var total = candidates.Count;
+        BeginStatusProgress(indeterminate: total <= 1);
+        ReportBatchProgress(0, total);
+        try
+        {
+            using var throttle = new SemaphoreSlim(4);
+            var results = await Task.WhenAll(candidates.Select(game =>
+                Task.Run(async () =>
+                {
+                    await throttle.WaitAsync();
+                    try
+                    {
+                        var found = await _metadataSync.SearchRomMetadataAsync(game.Name, GetPrimaryRomPath(game));
+                        return found is null
+                            ? (game, metadata: (GameMetadata?)null, provider: (string?)null)
+                            : (game, metadata: found.Value.Metadata, provider: found.Value.ProviderName);
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                        var done = Interlocked.Increment(ref completed);
+                        RunOnUiThread(() => ReportBatchProgress(done, total));
+                    }
+                })));
+
+            int applied = 0;
+            foreach (var (game, metadata, providerName) in results)
+            {
+                if (metadata is null || providerName is null)
+                    continue;
+
+                try
+                {
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
+                        continue;
+
+                    if (providerName == _steamMetadataProvider.Name)
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+                    ApplySteamLocalArtwork(live);
+
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                }
+            }
+
+            if (applied > 0)
+                StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
+        }
+        finally
+        {
+            EndStatusProgress();
+        }
+    }
+
     // Downloads metadata for Bridge-managed external installs (Steam-first by
     // name, same as the post-scan import path).
     private async Task DownloadMissingBridgeMetadataAsync(Guid bridgeSourceId)
@@ -788,4 +883,7 @@ public partial class MainViewModel
             })));
         }
     }
+
+    private static string? GetPrimaryRomPath(Game game) =>
+        game.Roms.FirstOrDefault()?.Path;
 }

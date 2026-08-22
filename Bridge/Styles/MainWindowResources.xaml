@@ -614,9 +614,14 @@
                                       HorizontalAlignment="Left"
                                       Margin="0,0,0,-1" />
                         </Border>
-                        <ContentPresenter Grid.Row="1"
-                                          Margin="0,12,0,0"
-                                          ContentSource="SelectedContent" />
+                        <Border Grid.Row="1"
+                                Margin="0,12,0,0"
+                                Height="448"
+                                ClipToBounds="True">
+                            <ContentPresenter ContentSource="SelectedContent"
+                                              VerticalAlignment="Stretch"
+                                              HorizontalAlignment="Stretch" />
+                        </Border>
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

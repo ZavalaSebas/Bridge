@@ -3,6 +3,7 @@ using Bridge;
 using Bridge.Emulation;
 using Bridge.Resources;
 using Bridge.Services;
+using Bridge.Settings;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
 
@@ -41,6 +42,7 @@ public partial class MainViewModel
                     // "Play" (or "Stop" once the game launches) instead of "Download".
                     RefreshAllEmulatorDownloadStates();
                     await ApplyCheatLaunchOverridesIfNeededAsync(target);
+                    await ApplyCheevosLaunchConfigIfNeededAsync(target);
                 }
                 finally
                 {
@@ -111,6 +113,27 @@ public partial class MainViewModel
 
         RefreshStatistics();
         StatusMessage = Strings.Format(nameof(Strings.SessionSummaryFormat), game.Name, sessionSeconds, game.PlaytimeSeconds);
+        HandleRetroArchSessionEnded(game);
+    }
+
+    private void HandleRetroArchSessionEnded(Game game)
+    {
+        if (!_retroArch.IsManagedRom(game) || !_retroAchievementsSettings.IsEmulatorConfigured)
+            return;
+
+        var executablePath = Path.Combine(Config.EmulatorInstallPath, "retroarch.exe");
+        if (File.Exists(executablePath) &&
+            _cheevosService.TryReadBackToken(executablePath, out var token) &&
+            !string.IsNullOrWhiteSpace(token) &&
+            !string.Equals(_retroAchievementsSettings.ConnectToken, token, StringComparison.Ordinal))
+        {
+            _retroAchievementsSettings.ConnectToken = token;
+            _retroAchievementsSettings.Password = string.Empty;
+            RetroAchievementsSettingsStore.Save(_retroAchievementsSettings);
+        }
+
+        if (_gameAchievementsService.IsRomGame(game))
+            _gameAchievementsService.NotifyRomSessionEnded(game);
     }
 
     // Game is a plain POCO (no INotifyPropertyChanged — Bridge.Core entities
@@ -178,5 +201,23 @@ public partial class MainViewModel
             executablePath,
             cheatDirectory,
             AutoApplyCheatsSettingsStore.Load());
+    }
+
+    private async Task ApplyCheevosLaunchConfigIfNeededAsync(Game game)
+    {
+        if (!_retroAchievementsSettings.IsEmulatorConfigured)
+            return;
+
+        var executablePath = Path.Combine(Config.EmulatorInstallPath, "retroarch.exe");
+        if (!File.Exists(executablePath))
+            return;
+
+        var credentials = new RetroArchCheevosCredentials(
+            _retroAchievementsSettings.Username.Trim(),
+            _retroAchievementsSettings.Password.Trim(),
+            _retroAchievementsSettings.ConnectToken.Trim(),
+            false);
+
+        await _cheevosService.ApplyLaunchConfigAsync(executablePath, credentials);
     }
 }

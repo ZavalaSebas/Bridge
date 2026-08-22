@@ -255,6 +255,8 @@
   <data name="AgeRating" xml:space="preserve"><value>Age Rating</value></data>
   <data name="Series" xml:space="preserve"><value>Series</value></data>
   <data name="Region" xml:space="preserve"><value>Region</value></data>
+  <data name="RomDatRegion" xml:space="preserve"><value>ROM region</value></data>
+  <data name="RomDatPlatform" xml:space="preserve"><value>ROM platform</value></data>
   <data name="Version" xml:space="preserve"><value>Version</value></data>
   <data name="UserScore" xml:space="preserve"><value>User Score</value></data>
   <data name="CommunityScore" xml:space="preserve"><value>Community Score</value></data>
@@ -336,6 +338,15 @@
   <data name="SteamGridDbApiKeyLabel" xml:space="preserve"><value>API key</value></data>
   <data name="OpenSteamGridDbSettings" xml:space="preserve"><value>Open settings</value></data>
   <data name="SettingsSteamGridDbCardDescription" xml:space="preserve"><value>API key for community game artwork in the media editor.</value></data>
+  <data name="RetroAchievementsSettingsTitle" xml:space="preserve"><value>RetroAchievements</value></data>
+  <data name="RetroAchievementsSettingsHelp" xml:space="preserve"><value>Web API key: achievement progress in Bridge. Account password: unlock achievements while playing in RetroArch (rcheevos). Get both from your RetroAchievements control panel.</value></data>
+  <data name="RetroAchievementsPasswordLabel" xml:space="preserve"><value>Account password (RetroArch)</value></data>
+  <data name="RetroAchievementsPasswordHint" xml:space="preserve"><value>Used only to sign in through RetroArch. Not your web API key.</value></data>
+  <data name="RetroAchievementsOpenControlPanel" xml:space="preserve"><value>Open RetroAchievements control panel</value></data>
+  <data name="RetroAchievementsUsernameLabel" xml:space="preserve"><value>Username</value></data>
+  <data name="RetroAchievementsApiKeyLabel" xml:space="preserve"><value>Web API key</value></data>
+  <data name="OpenRetroAchievementsSettings" xml:space="preserve"><value>Configure</value></data>
+  <data name="SettingsRetroAchievementsCardDescription" xml:space="preserve"><value>RetroAchievements credentials for ROM progress in Bridge and unlocks in RetroArch.</value></data>
   <data name="SteamGridDbPickerTitle" xml:space="preserve"><value>SteamGridDB artwork</value></data>
   <data name="SteamGridDbSelectGame" xml:space="preserve"><value>Select game</value></data>
   <data name="SteamGridDbPickGameHint" xml:space="preserve"><value>Multiple matches — pick the correct game on the left.</value></data>
@@ -415,6 +426,29 @@
   <data name="Overview" xml:space="preserve"><value>Overview</value></data>
   <data name="Images" xml:space="preserve"><value>Images</value></data>
   <data name="Achievements" xml:space="preserve"><value>Achievements</value></data>
+  <data name="AchievementsLoading" xml:space="preserve"><value>Loading achievements…</value></data>
+  <data name="AchievementsNotSupported" xml:space="preserve"><value>Achievements are not available for this game.</value></data>
+  <data name="AchievementsEpicLoginRequired" xml:space="preserve"><value>Sign in to the Epic Games Launcher to view achievements.</value></data>
+  <data name="AchievementsRetroAchievementsRequired" xml:space="preserve"><value>Configure your RetroAchievements account to view ROM achievements.</value></data>
+  <data name="AchievementsRomNotMatched" xml:space="preserve"><value>This ROM is not recognized by RetroAchievements. Only verified dumps that match RA's hash database show achievements.</value></data>
+  <data name="AchievementsRomDatNameNotRaVerified" xml:space="preserve"><value>Bridge matched this file to a game title from your DAT catalog, but RetroAchievements does not recognize its hash. Replace it with the verified dump RA supports for this game.</value></data>
+  <data name="AchievementsRomUnsupportedPlatform" xml:space="preserve"><value>RetroAchievements does not support this console yet.</value></data>
+  <data name="AchievementsRomApiError" xml:space="preserve"><value>Could not load RetroAchievements data. Check your API key and connection.</value></data>
+  <data name="AchievementsNone" xml:space="preserve"><value>No achievements were found for this game.</value></data>
+  <data name="AchievementsProgressFormat" xml:space="preserve"><value>{0} / {1} unlocked</value></data>
+  <data name="AchievementsBarSummaryFormat" xml:space="preserve"><value>{0}/{1} · {2} left</value></data>
+  <data name="AchievementsBarCompleteFormat" xml:space="preserve"><value>{0}/{1} ✓</value></data>
+  <data name="AchievementsCompletionPercentFormat" xml:space="preserve"><value>{0:0.#}% complete</value></data>
+  <data name="AchievementsRemainingFormat" xml:space="preserve"><value>{0} remaining</value></data>
+  <data name="AchievementsCatalogCountFormat" xml:space="preserve"><value>{0} achievements</value></data>
+  <data name="AchievementsCatalogOnlyHint" xml:space="preserve"><value>Catalog only — your progress in this copy is not tracked.</value></data>
+  <data name="AchievementGlobalPercentFormat" xml:space="preserve"><value>{0:0.#}% of players</value></data>
+  <data name="AchievementRarityCommon" xml:space="preserve"><value>Common</value></data>
+  <data name="AchievementRarityUncommon" xml:space="preserve"><value>Uncommon</value></data>
+  <data name="AchievementRarityRare" xml:space="preserve"><value>Rare</value></data>
+  <data name="AchievementRarityVeryRare" xml:space="preserve"><value>Very Rare</value></data>
+  <data name="AchievementRarityLegendary" xml:space="preserve"><value>Legendary</value></data>
+  <data name="HiddenAchievement" xml:space="preserve"><value>Hidden Achievement</value></data>
   <data name="SettingsDetailSectionPositionTitle" xml:space="preserve"><value>Details section position</value></data>
   <data name="SettingsDetailSectionPositionDescription" xml:space="preserve"><value>Place the metadata Details column on the left or right of the Overview and Images tabs in the game details panel.</value></data>
   <data name="SettingsDetailPanelPositionTitle" xml:space="preserve"><value>Details panel position</value></data>

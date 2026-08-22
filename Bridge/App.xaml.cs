@@ -7,6 +7,7 @@ using Bridge.Converters;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Emulation;
+using Bridge.Emulation.Dat;
 using Bridge.Import.Epic;
 using Bridge.Import.Steam;
 using Bridge.Metadata;
@@ -225,6 +226,8 @@ namespace Bridge
             // subscribe to its events once for the lifetime of the app.
             services.AddSingleton<GameLauncher>();
             services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton(sp => new RomDatStore(sp.GetRequiredService<DownloadHttpClient>().Client));
+            services.AddSingleton<RomDatMatcher>();
             services.AddSingleton<RomScanner>();
             services.AddSingleton<SteamLibraryImporter>();
             services.AddSingleton<EpicLibraryImporter>();
@@ -233,7 +236,17 @@ namespace Bridge
             services.AddSingleton<WatchedScanFolderService>();
             services.AddSingleton<MetadataSyncService>();
             services.AddSingleton(sp => new HowLongToBeatClient(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new SteamGlobalAchievementStatsClient(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new SteamCommunityAchievementsClient(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new EpicAuthClient(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new EpicAchievementsClient(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton<HowLongToBeatService>();
+            services.AddSingleton<SteamAchievementsService>();
+            services.AddSingleton<EpicAchievementsService>();
+            services.AddSingleton(sp => new RetroAchievementsClient(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton<RetroAchievementsHashIndex>();
+            services.AddSingleton<RetroAchievementsAchievementsService>();
+            services.AddSingleton<GameAchievementsService>();
 
             // IGDB: settings loaded from disk once at startup (see
             // IgdbSettingsStore — separate JSON file, not bridge.db), then
@@ -242,6 +255,7 @@ namespace Bridge
             // HttpClients are separate so long RetroArch downloads never share
             // timeout state with quick metadata/API calls.
             services.AddSingleton(IgdbSettingsStore.Load());
+            services.AddSingleton(RetroAchievementsSettingsStore.Load());
             services.AddSingleton(SteamGridDbSettingsStore.Load());
             services.AddSingleton<MetadataHttpClient>();
             services.AddSingleton<DownloadHttpClient>();
@@ -281,6 +295,7 @@ namespace Bridge
             services.AddSingleton(sp => new RetroArchCheatService(
                 sp.GetRequiredService<DownloadHttpClient>().Client,
                 Config.CheatsPath));
+            services.AddSingleton<RetroArchCheevosService>();
             services.AddSingleton<CheatsWindowOpener>();
             services.AddSingleton<GameEditWindowOpener>();
 
@@ -291,6 +306,7 @@ namespace Bridge
             services.AddTransient<EmulationSettingsViewModel>();
             services.AddTransient<CheatsViewModel>();
             services.AddTransient<IgdbSettingsViewModel>();
+            services.AddTransient<RetroAchievementsSettingsViewModel>();
             services.AddTransient<SteamGridDbSettingsViewModel>();
         }
 

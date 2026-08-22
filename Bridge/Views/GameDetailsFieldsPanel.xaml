@@ -126,6 +126,22 @@
                 </Button.Style>
             </Button>
         </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.RomDatPlatformText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.RomDatPlatform}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.RomDatPlatformText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.RomDatRegionText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.RomDatRegion}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.RomDatRegionText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
         <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.PlatformsText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>

@@ -33,14 +33,14 @@ public class EpicLibraryImporterTests : IDisposable
         File.WriteAllText(_appListPath, $$"""{"InstallationList":[{{list}}]}""");
     }
 
-    private void WriteManifest(string appName, string displayName, string installLocation, string[]? categories = null, string[]? compatible = null, string launchExecutable = "")
+    private void WriteManifest(string appName, string displayName, string installLocation, string[]? categories = null, string[]? compatible = null, string launchExecutable = "", bool incompleteInstall = false)
     {
         var file = Path.Combine(_manifestsDir, $"{appName}.item");
         var catJson = string.Join(",", (categories ?? []).Select(c => $"\"{c}\""));
         var compJson = string.Join(",", (compatible ?? []).Select(c => $"\"{c}\""));
         var json = $$"""
             {"DisplayName":"{{displayName}}","AppName":"{{appName}}","InstallLocation":"{{JsonEscape(installLocation)}}",
-             "AppCategories":[{{catJson}}],"CompatibleApps":[{{compJson}}],"LaunchExecutable":"{{launchExecutable}}","TechnicalType":"game"}
+             "AppCategories":[{{catJson}}],"CompatibleApps":[{{compJson}}],"LaunchExecutable":"{{launchExecutable}}","TechnicalType":"game","bIsIncompleteInstall":{{incompleteInstall.ToString().ToLowerInvariant()}}}
             """;
         File.WriteAllText(file, json);
     }
@@ -114,6 +114,33 @@ public class EpicLibraryImporterTests : IDisposable
 
         // No manifest for this app → skipped.
         Assert.Empty(games);
+    }
+
+    [Fact]
+    public void GetInstalledGames_ImportsFromManifestWhenMissingFromInstalledList()
+    {
+        var gameDir = Path.Combine(_tempDir, "CatQuest");
+        Directory.CreateDirectory(gameDir);
+        var exePath = Path.Combine(gameDir, "Cat Quest.exe");
+        File.WriteAllText(exePath, "fake exe");
+        WriteManifest("051eaac0842c46d7a5a62858ad534d5a", "Cat Quest", gameDir, launchExecutable: "Cat Quest.exe");
+
+        var game = Assert.Single(Build().GetInstalledGames());
+
+        Assert.Equal("051eaac0842c46d7a5a62858ad534d5a", game.ExternalId);
+        Assert.Equal("Cat Quest", game.Name);
+        Assert.Equal(gameDir, game.InstallDirectory);
+        Assert.Equal(exePath, game.Icon);
+    }
+
+    [Fact]
+    public void GetInstalledGames_SkipsIncompleteManifestInstalls()
+    {
+        var gameDir = Path.Combine(_tempDir, "Incomplete");
+        Directory.CreateDirectory(gameDir);
+        WriteManifest("incompletegame", "Incomplete Game", gameDir, incompleteInstall: true);
+
+        Assert.Empty(Build().GetInstalledGames());
     }
 
     [Fact]

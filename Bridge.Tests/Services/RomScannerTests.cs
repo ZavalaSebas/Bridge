@@ -1,6 +1,7 @@
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using Bridge.Emulation;
+using Bridge.Emulation.Dat;
 using System.IO.Compression;
 
 namespace Bridge.Tests.Services;
@@ -8,7 +9,7 @@ namespace Bridge.Tests.Services;
 public class RomScannerTests : IDisposable
 {
     private readonly string _tempDir;
-    private readonly RomScanner _scanner = new();
+    private readonly RomScanner _scanner = new(RomDatMatcher.Disabled);
 
     public RomScannerTests()
     {
@@ -85,6 +86,41 @@ public class RomScannerTests : IDisposable
     public void ToSearchName_NormalizesForIgdbSearch(string raw, string expected)
     {
         Assert.Equal(expected, RomScanner.ToSearchName(raw));
+    }
+
+    [Fact]
+    public void GetMetadataSearchNames_SpanishPokemonTitle_IncludesEnglishVariants()
+    {
+        var names = RomScanner.GetMetadataSearchNames("Pokemon Amarillo");
+
+        Assert.Contains("Pokemon Amarillo", names);
+        Assert.Contains("Pokemon Yellow Version", names);
+    }
+
+    [Theory]
+    [InlineData(
+        "Pokemon - Edicion Amarilla - Edicion Especial Pikachu  Español",
+        "Pokemon Yellow Version")]
+    [InlineData("Pokemon - Edicion Cristal  Español", "Pokemon Crystal Version")]
+    [InlineData("Pokemon - Edicion Platino  Español", "Pokemon Platinum Version")]
+    [InlineData("Pokemon Snap  Español", "Pokemon Snap")]
+    [InlineData("Alien Storm  Español", "Alien Storm")]
+    [InlineData(
+        "From TV Animation One Piece - Grand Battle Swan Colosseum (Japan) (Sample)",
+        "One Piece Grand Battle Swan Colosseum")]
+    public void GetMetadataSearchNames_SpanishRomNames_IncludeIgdbFriendlyCandidate(string raw, string expected)
+    {
+        var names = RomScanner.GetMetadataSearchNames(raw);
+
+        Assert.Contains(expected, names);
+    }
+
+    [Fact]
+    public void SanitizeName_StripsTrailingLanguageTag()
+    {
+        Assert.Equal(
+            "Pokemon - Edicion Amarilla - Edicion Especial Pikachu",
+            RomScanner.SanitizeName("Pokemon - Edicion Amarilla - Edicion Especial Pikachu [GB] Español"));
     }
 
     [Fact]
