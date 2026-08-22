@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Achievements tab** — library detail panel shows progress for Steam, Epic, and supported ROMs (`AchievementsPanel`, `AchievementHeroSummary`, rarity/global-percent labels).
+- **Steam achievements** — local progress from Steam userdata VDF when available; catalog-only fallback via Steam Community API for linked/manual games (`SteamAchievementsService`, `SteamLocalAchievementsResolver`, `SteamCommunityAchievementsClient`).
+- **Epic achievements** — progress via Epic web API when the launcher session is available (`EpicAchievementsService`, `EpicLauncherSessionReader`, `EpicManifestLookup`).
+- **RetroAchievements (ROMs)** — Web API progress for verified dumps matched by MD5 hash index (`RetroAchievementsAchievementsService`, `RetroAchievementsHashIndex`, `RetroAchievementsClient`). Settings card + configure button when credentials are missing.
+- **No-Intro DAT matching** — ROM scan enriches titles from downloaded clrmamepro DATs (CRC + size); `GameRom` stores `Crc`, `DatRegion`, and `DatPlatform` (`Bridge.Emulation/Dat/*`, `RomDatStore` under AppData).
+- **RetroArch rcheevos** — before launch, Bridge writes cheevos credentials into `retroarch.cfg` so unlocks happen in-game; session token is read back and the achievements panel refreshes after play (`RetroArchCheevosService`, account password in RetroAchievements settings — separate from the web API key).
+
+### Changed
+- **RetroAchievements API parsing** — `Achievements` objects from `API_GetGameInfoAndUserProgress.php` are parsed correctly (not only JSON arrays).
+- **GBC hash lookup** — ROMs on Game Boy Color also search the Game Boy hash index (e.g. Pokémon Yellow indexed under GB on RA).
+
+### Fixed
+- **RetroAchievements empty lists** — games with a valid RA hash match no longer show zero achievements due to response-shape parsing.
+
 ## [0.8.0] - 2026-08-21
 
 ### Added

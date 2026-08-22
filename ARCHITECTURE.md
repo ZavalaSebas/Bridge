@@ -224,7 +224,7 @@ This was decided by proceeding with the standing recommendation below under real
 **Context:**
 The project is split into `Core`, `Storage`, `Import`, `Metadata`, and `App` projects. It would be easy to over-interpret this as a step toward the plugin system explicitly rejected in ADR-1.
 
-**Deviation from the original module sketch (Code = Truth):** as of the 2026-08-18 consolidation batch, `Bridge.Emulation` is a real separate project (`RomScanner`, `RomPlatformCatalog`, `RetroArchService`, `EmulationPaths`). The types were renamed/moved out of `Bridge/Services/` in that batch — nothing remains there. `GameLauncher` (process launch + playtime tracking) stays in `Bridge/Services` because it orchestrates app-level concerns beyond ROM scanning and RetroArch install.
+**Deviation from the original module sketch (Code = Truth):** as of the 2026-08-18 consolidation batch, `Bridge.Emulation` is a real separate project (`RomScanner`, `RomPlatformCatalog`, `RetroArchService`, `EmulationPaths`, DAT matching, `RetroArchCheevosService`). The types were renamed/moved out of `Bridge/Services/` in that batch — launch orchestration, achievements facades, and playtime tracking stay in `Bridge/Services`.
 
 **Decision:**
 The module split exists purely for development-time organization (compile-time boundaries, testability, clear ownership of responsibilities) — not for runtime extensibility. `Core` and `Storage` must never reference `App`; `App` composes the other modules via DI, but nothing is designed to be swapped at runtime by external code.

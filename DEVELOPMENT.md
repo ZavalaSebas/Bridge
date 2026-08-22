@@ -93,9 +93,9 @@ Bridge/
 ├── Bridge/              # WPF host app — created, real ViewModels/Services/Statistics/Settings now, not just scaffold
 ├── Bridge.Core/         # Domain entities and repository contracts — created (see below)
 ├── Bridge.Storage/      # EF Core DbContext + repository implementations — created (see below)
-├── Bridge.Metadata/     # created — IgdbMetadataProvider, SteamMetadataProvider (see below)
-├── Bridge.Import/       # created — SteamLibraryImporter, SteamLocalIconResolver, SteamLocalPlaytimeResolver, SteamPlayActions, VdfParser, SteamPaths (see below)
-├── Bridge.Emulation/    # created — RomScanner, RomPlatformCatalog, RetroArchService, EmulationPaths (see below)
+├── Bridge.Metadata/     # created — IGDB/Steam/HLTB/Epic/RetroAchievements clients (see below)
+├── Bridge.Import/       # created — Steam/Epic importers, Steam local achievements resolver (see below)
+├── Bridge.Emulation/    # created — RomScanner, RomPlatformCatalog, RetroArch*, DAT matching (see below)
 └── Bridge.Tests/        # 273 tests (269 unit + 4 integration; see Tests section below)
 ```
 
@@ -111,7 +111,8 @@ Bridge.Core/
 │   ├── DatabaseObject.cs      # base: Guid Id, string Name
 │   ├── Game.cs                # the central entity, plus the ReleaseDate struct
 │   ├── GameAction.cs
-│   ├── GameRom.cs
+│   ├── GameRom.cs             # Path + optional DAT metadata (Crc, DatRegion, DatPlatform)
+│   ├── GameAchievement.cs     # achievement row for the detail panel (Steam/Epic/RA)
 │   ├── Link.cs
 │   ├── DescriptionBlock.cs     # ordered description chunks (paragraph/heading/subheading/list text + images), stored as JSON on Game
 │   ├── Emulator.cs            # Emulator + EmulatorProfile (EmulatorProfile.CorePath is set only for Bridge-managed RetroArch profiles)
@@ -167,10 +168,20 @@ Bridge.Metadata/
 ├── IgdbMetadataProvider.cs  # SearchAsync(name) -> GameMetadata?, implements IGameMetadataProvider
 ├── HowLongToBeatClient.cs   # unofficial HLTB API client (auth token + search + name scoring)
 ├── SteamStoreModels.cs      # DTOs for store.steampowered.com/api/appdetails, /appreviews
-└── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
+├── SteamMetadataProvider.cs # HTTP-anonymous Steam Store metadata (appid direct + name search), implements IGameMetadataProvider
+├── SteamCommunityAchievementsClient.cs  # Steam Community HTML/API parsing for catalog achievements
+├── SteamGlobalAchievementStatsClient.cs # global unlock percentages for Steam achievements
+├── SteamAchievementRarity.cs          # rarity buckets from global percent
+├── EpicAuthClient.cs        # Epic OAuth helper for achievements API
+├── EpicAchievementsClient.cs
+├── RetroAchievementsClient.cs           # RetroAchievements Web API (progress + hash lists)
+├── RetroAchievementsConsoleCatalog.cs   # Bridge platform name → RA console id
+└── RetroAchievementsSettings.cs         # Username, WebApiKey, Password, ConnectToken DTO
 ```
 
 `HowLongToBeatService` (`Bridge/Services/HowLongToBeatService.cs`) sits in the app layer: it calls the client, writes the three `Game.TimeToBeat*Seconds` columns, and can add an HLTB profile link. Startup/refresh runs `DownloadMissingHowLongToBeatAsync` for games with no estimates; **Download Metadata** also calls it after the IGDB/Steam chain. UI helpers live in `Bridge/Statistics/TimeToBeatHelper.cs` and `Bridge/Converters/TimeToBeatConverters.cs` (hero stats bar in `LibraryDetailView.xaml`).
+
+**Achievements:** `GameAchievementsService` (`Bridge/Services/GameAchievementsService.cs`) is the facade used by `AchievementsPanel`. Steam games use `SteamAchievementsService` (local VDF progress via `Bridge.Import/Steam/SteamLocalAchievementsResolver`, with `SteamCommunityAchievementsClient` as a definitions-only fallback for linked manual games). Epic games use `EpicAchievementsService` (requires an Epic launcher session from `EpicLauncherSessionReader`). ROM games use `RetroAchievementsAchievementsService`: MD5 from `RomMd5`, hash index cached under `AppData\Bridge\ra-hash-index\`, Web API progress via `RetroAchievementsClient`. Credentials live in `RetroAchievementsSettingsStore` (`retroachievements-settings.json`, DPAPI). See **Achievements (detail panel)** and **Managed Emulation** below.
 
 See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible and calls **`RefreshLibraryCoreAsync()`** (`MainViewModel.Refresh.cs`) — Steam/Epic import, configured folder rescans, then missing-metadata sync — so metadata can continue downloading in the background while the UI stays responsive. The same core method powers the logo-menu **Refresh Library** command for on-demand resync (without re-checking for Bridge app updates). Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU (512 entries) plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
 
@@ -178,13 +189,21 @@ See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-sour
 
 ```
 Bridge.Import/
-└── Steam/
-    ├── SteamLibraryImporter.cs     # GetInstalledGames() — registry → libraryfolders.vdf → appmanifest*.acf
-    ├── SteamLocalIconResolver.cs   # local art from appcache\librarycache\{appid}\ — icon (32x32 clienticon), cover, hero background
-    ├── SteamLocalPlaytimeResolver.cs # real Steam playtime from userdata\{steamid}\config\localconfig.vdf
-    ├── SteamPlayActions.cs         # runtime play action resolution for Steam games (steam://rungameid/{appid})
-    ├── VdfParser.cs                # hand-rolled recursive-descent VDF parser (ADR-11)
-    └── SteamPaths.cs               # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
+├── Steam/
+│   ├── SteamLibraryImporter.cs     # GetInstalledGames() — registry → libraryfolders.vdf → appmanifest*.acf
+│   ├── SteamLocalIconResolver.cs   # local art from appcache\librarycache\{appid}\ — icon (32x32 clienticon), cover, hero background
+│   ├── SteamLocalPlaytimeResolver.cs # real Steam playtime from userdata\{steamid}\config\localconfig.vdf
+│   ├── SteamLocalAchievementsResolver.cs # unlocked achievements from localconfig.vdf (apps > {appid} > achievements)
+│   ├── BinaryVdfParser.cs          # shared binary VDF reader for Steam userdata
+│   ├── SteamPlayActions.cs         # runtime play action resolution for Steam games (steam://rungameid/{appid})
+│   ├── VdfParser.cs                # hand-rolled recursive-descent VDF parser (ADR-11)
+│   └── SteamPaths.cs               # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
+└── Epic/
+    ├── EpicLibraryImporter.cs
+    ├── EpicLauncherSessionReader.cs  # reads Epic launcher session for achievements API auth
+    ├── EpicLauncherCrypt.cs
+    ├── EpicManifestLookup.cs
+    └── …
 ```
 
 See [ARCHITECTURE.md ADR-11](ARCHITECTURE.md#adr-11-steam-library-detection--local-files-only-hand-rolled-vdf-parser-bridgeimport-created-for-real). Detection is 100% local — no Steam Web API, no API key, no network call. `SteamPlayActions.CreatePlayAction` builds the `steam://rungameid/{appid}` URL action for Steam games: resolved at runtime, launched via `steam.exe -silent` because Steamworks DRM makes launching the local `.exe` fail. Pure logic, unit-tested in `Bridge.Tests/Import/SteamPlayActionsTests.cs` without needing Steam installed.
@@ -725,7 +744,11 @@ Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integr
 - `Import/SteamLocalIconResolverTests.cs` — `TryGetLocalIconPath` picks the 40-hex clienticon file over `header.jpg`, returns null when there's no cached icon / non-numeric appid / missing Steam install.
 - `Import/SteamLocalPlaytimeResolverTests.cs` — reads real `localconfig.vdf` shape: minutes→seconds conversion, LastPlayed→LastActivity, zero-playtime skipped, missing LastPlayed stays null, multi-account merge (max playtime / latest activity), missing files and malformed config return null.
 - `Import/SteamPlayActionsTests.cs` — the automatic Steam play action resolution (pure logic in `SteamPlayActions`, testable without Steam installed): URL action + Directory tracking for a numeric appid, null for custom games / non-numeric ExternalId.
-- `Services/RomScannerTests.cs` — extension recognition via `RomPlatformCatalog`, dedup-by-existing-ROM-path, missing-directory error, recursive scan into subfolders, companion-file filtering (`.sav`/`.srm`), **`.zip`/`.7z` archive entries** (`archive.zip#entry.sfc`), `SanitizeName` + `ToSearchName` name normalization, and the managed "Bridge RetroArch" `GameAction` creation.
+- `Services/RomScannerTests.cs` — extension recognition via `RomPlatformCatalog`, dedup-by-existing-ROM-path, missing-directory error, recursive scan into subfolders, companion-file filtering (`.sav`/`.srm`), **`.zip`/`.7z` archive entries** (`archive.zip#entry.sfc`), **DAT title resolution** when a matcher is wired, `SanitizeName` + `ToSearchName` name normalization, and the managed "Bridge RetroArch" `GameAction` creation.
+- `Emulation/RomDatTests.cs`, `Emulation/RomMd5Tests.cs` — clrmamepro DAT parsing and ROM MD5.
+- `Emulation/RetroArchCheevosServiceTests.cs` — cheevos config merge and token readback.
+- `Metadata/RetroAchievementsClientParsingTests.cs`, `Metadata/RetroAchievementsConsoleCatalogTests.cs` — RA API response shapes and GBC→GB hash-index fallback.
+- `Import/SteamLocalAchievementsResolverTests.cs`, `Metadata/SteamCommunityAchievementsClientParsingTests.cs`, `Metadata/EpicAchievementsClientParsingTests.cs`, `Services/LinkedSteamAchievementsTests.cs`, `Services/SteamAchievementRarityTests.cs` — achievements providers.
 - `Emulation/CheatFileParserTests.cs`, `Emulation/RetroArchCheatServiceTests.cs`, `Emulation/RomCheatNameResolverTests.cs`, `Emulation/RomArchivePathTests.cs` — libretro `.cht` parsing, cheat fetch/cache/override writes, ROM basename vs display-name matching, and archive path helpers.
 - `Services/AppUpdateServiceTests.cs` — `CheckForUpdateAsync` against the fake `HttpMessageHandler`: a newer remote release → `UpdateAvailable` with the right version + `Bridge.exe` download URL; a matching version → `UpToDate`; a release with no `Bridge.exe` asset → `Failed`. The swap/restart itself is not covered (it replaces the running exe — see the deliberately-not-covered note below).
 - `Statistics/LibraryStatisticsTests.cs` — pure computation, no I/O.
@@ -1013,6 +1036,13 @@ public static class Config
 | `Bridge.Emulation/RomScanner.cs` | Recursive ROM scan by extension (including `.zip`/`.7z` archive contents), companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
 | `Bridge.Emulation/RomArchivePath.cs` | RetroArch-style archive paths (`archive.zip#entry.sfc`), existence checks, cheat basename from internal entry |
 | `Bridge.Emulation/RetroArchCheatService.cs` | Fetches libretro-database `.cht` files, caches under AppData, writes per-game RetroArch override configs for enabled cheats |
+| `Bridge.Emulation/RetroArchCheevosService.cs` | Writes RetroAchievements credentials into `retroarch.cfg` before ROM launch; reads back Connect token after session |
+| `Bridge.Emulation/Dat/RomDatMatcher.cs` | CRC/size match against downloaded No-Intro DAT catalogs |
+| `Bridge.Emulation/RomMd5.cs` | Full-file MD5 for RetroAchievements hash lookup |
+| `Bridge/Services/GameAchievementsService.cs` | Unified achievements loader (Steam / Epic / ROM) |
+| `Bridge/Services/RetroAchievementsAchievementsService.cs` | ROM → RA game id + Web API progress |
+| `Bridge/Controls/AchievementsPanel.xaml` | Achievements tab UI in the game detail panel |
+| `Bridge/Settings/RetroAchievementsSettingsStore.cs` | DPAPI-protected RA credentials under AppData |
 | `Bridge/ViewModels/MainViewModel.Refresh.cs` | Shared `RefreshLibraryCoreAsync()` (startup + logo-menu **Refresh Library**) |
 | `Bridge/Services/AppUpdateService.cs` | Self-updater: checks GitHub Releases against `Config.AssemblyVersion`, downloads the `Bridge.exe` asset with host-allowlist + size-cap + progress, applies the safe swap (running exe → `.old`, downloaded → current, restart, startup cleanup) — see "Version Management" above |
 
@@ -1130,6 +1160,58 @@ file) when **Apply enabled cheats automatically when launching ROMs** is on
 menu item is hidden for Steam/Epic/manual PC games. WonderSwan is excluded from
 the cheat catalog (`SupportsCheats = false` on its platform row).
 
+**No-Intro DAT matching:** on scan/import, `RomDatMatcher` CRC-matches each ROM
+against clrmamepro DAT files downloaded into `AppData\Bridge\rom-dat\`
+(`RomDatStore`, `RomDatCatalog`). When a match is found, Bridge uses the DAT
+game name as the library title and stores `Crc`, `DatRegion`, and `DatPlatform`
+on `GameRom` — the filename can be anything (e.g. `verify_01.gba` still resolves
+to "Pokemon - Emerald Version"). DAT titles are independent of RetroAchievements
+hash matching (RA uses full-file MD5).
+
+**RetroAchievements (read path):** Settings → **RetroAchievements** stores
+username + web API key (Bridge UI) and optionally account password / cached
+Connect token (RetroArch). `RetroAchievementsAchievementsService` maps ROM MD5
+to a RA game id via per-console hash indexes (`ra-hash-index\{consoleId}.json`,
+refreshed weekly). GBC ROMs also search the Game Boy index when needed. The
+**Achievements** tab shows progress; configure inline when credentials are
+missing.
+
+**RetroArch rcheevos (write path):** `MainViewModel.Play` calls
+`RetroArchCheevosService.ApplyLaunchConfigAsync` before launch when emulator
+credentials are configured. It merges `cheevos_enable`, username, password or
+token, and `saveconfig_on_exit` into `retroarch.cfg`. After the session,
+`GameLauncher.GameStopped` reads back `cheevos_token`, persists it, clears the
+achievements cache, and `AchievementsPanel` reloads if the same game is selected.
+Hardcore mode stays off so auto-applied cheats remain compatible.
+
+---
+
+## Achievements (detail panel)
+
+The game detail panel has an **Achievements** tab (`LibraryDetailView` →
+`AchievementsPanel`) plus a compact summary on the hero bar
+(`AchievementHeroSummary`).
+
+| Source | Service | Requirements |
+|--------|---------|--------------|
+| Steam | `SteamAchievementsService` | Steam game with local userdata progress; linked/manual games may show catalog-only via Community API |
+| Epic | `EpicAchievementsService` | Epic game + signed-in Epic Games Launcher session |
+| ROM | `RetroAchievementsAchievementsService` | RetroAchievements settings (username + web API key); ROM MD5 must match RA's verified hash database |
+
+**Settings:** `RetroAchievementsSettingsWindow` (also from Settings overlay and
+from the panel's **Configure** button when RA is not set up). Fields:
+- **Username** — shared
+- **Web API key** — from retroachievements.org control panel; powers Bridge's progress fetch
+- **Account password** — RetroArch/rcheevos sign-in only (stored DPAPI-encrypted; cleared after token is cached)
+
+**AppData paths:** `retroachievements-settings.json`, `ra-hash-index\`,
+`rom-dat\` (see Managed Emulation above).
+
+**Tests:** `Bridge.Tests/Metadata/RetroAchievements*`,
+`SteamCommunityAchievementsClientParsingTests`, `EpicAchievementsClientParsingTests`,
+`SteamLocalAchievementsResolverTests`, `RetroArchCheevosServiceTests`,
+`RomDatTests`, `LinkedSteamAchievementsTests`.
+
 ---
 
 ## Known Limitations
@@ -1140,7 +1222,7 @@ the cheat catalog (`SupportsCheats = false` on its platform row).
 | No fullscreen/controller mode | Deliberate scope decision, see [ADR-2](ARCHITECTURE.md#adr-2-single-application-no-separate-fullscreen-frontend-in-v1) | Use the desktop app; revisit if there's real demand |
 | `%LOCALAPPDATA%\Bridge\` collided with an unrelated older "Bridge" project's real app data on this machine (`bridge.db`, `settings.json`, `ImageCache/`, last modified 2026-08-04) | Both projects independently chose the app name "Bridge" | The old folder was renamed (not deleted) to `%LOCALAPPDATA%\Bridge_OLD_BACKUP_1785967008\` on 2026-08-05 before this project's `bridge.db` was first created, so no data was lost. If you're reading this on a different machine, or that backup folder is gone, this row no longer applies — safe to delete |
 | SQLite lacks native ALTER for some schema changes (column drop/rename, etc.) | EF Core generates a table-rebuild migration for operations SQLite can't do in place — fine, but heavier (a large `Games` table gets copied) | Prefer additive changes (new columns/tables). Baseline assumes a pre-migration DB already matches `InitialCreate`; the `EnsureColumn` era ran at every startup since those columns were added, so every real DB has them |
-| ROM matching is filename/extension-based only | No CRC/serial/DAT matching against emulation databases yet (future scope — see `PLAN.md` Backlog) | Rename ROMs to recognizable titles; the scanner still enriches them through the IGDB metadata pipeline |
+| ROM matching uses DAT CRC for titles; RetroAchievements uses separate MD5 hash lists | A ROM can have a correct DAT title but still show no RA achievements if its dump is not in RA's verified set (or wrong revision/region) | Use a dump that RA lists as supported; see the Achievements tab message (DAT vs RA mismatch) |
 | Only Bridge-managed RetroArch gets a curated catalog | `RomPlatformCatalog` covers 15 systems; third-party emulators still need manual configuration (`EmulatorSetupWindow`) — see [ADR-9](ARCHITECTURE.md#adr-9-single-emulatorprofile-shape-no-built-in-emulator-catalog-yet) | Configure the emulator manually, or add its core to the catalog |
 
 ---
