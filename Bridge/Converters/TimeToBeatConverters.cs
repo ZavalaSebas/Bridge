@@ -31,18 +31,16 @@ public class TimeToBeatProgressWidthConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values.Length < 3)
+        if (values.Length < 5)
             return 0.0;
 
         var playtime = TimeToBeatConverterHelpers.ReadUlong(values[0]);
-        var scale = TimeToBeatConverterHelpers.ReadUlong(values[1]);
-        var trackWidth = values[2] is double width ? width : 0;
+        var main = TimeToBeatConverterHelpers.ReadUlong(values[1]);
+        var extra = TimeToBeatConverterHelpers.ReadUlong(values[2]);
+        var complete = TimeToBeatConverterHelpers.ReadUlong(values[3]);
+        var trackWidth = values[4] is double width ? width : 0;
 
-        if (scale == 0 || trackWidth <= 0)
-            return 0.0;
-
-        var ratio = Math.Min(1.0, playtime / (double)scale);
-        return trackWidth * ratio;
+        return TimeToBeatHelper.ComputeProgressWidth(playtime, main, extra, complete, trackWidth);
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
@@ -53,18 +51,16 @@ public class TimeToBeatUnfilledWidthConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values.Length < 3)
+        if (values.Length < 5)
             return 0.0;
 
         var playtime = TimeToBeatConverterHelpers.ReadUlong(values[0]);
-        var scale = TimeToBeatConverterHelpers.ReadUlong(values[1]);
-        var trackWidth = values[2] is double width ? width : 0;
+        var main = TimeToBeatConverterHelpers.ReadUlong(values[1]);
+        var extra = TimeToBeatConverterHelpers.ReadUlong(values[2]);
+        var complete = TimeToBeatConverterHelpers.ReadUlong(values[3]);
+        var trackWidth = values[4] is double width ? width : 0;
 
-        if (scale == 0 || trackWidth <= 0)
-            return trackWidth;
-
-        var filled = trackWidth * Math.Min(1.0, playtime / (double)scale);
-        return Math.Max(0, trackWidth - filled);
+        return TimeToBeatHelper.ComputeUnfilledWidth(playtime, main, extra, complete, trackWidth);
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)

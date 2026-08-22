@@ -1,0 +1,419 @@
+<UserControl x:Class="Bridge.Views.GameDetailsFieldsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:Bridge.Resources">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Bridge;component/Styles/MainWindowResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <StackPanel x:Name="FieldsHost">
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.AddedText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Added}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.AddedText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Playtime}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding PlaytimeSeconds, Mode=OneWay, Converter={StaticResource PlaytimeConverter}}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.LastPlayedText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.LastPlayed}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.LastPlayedText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding CompletionStatusId, Converter={StaticResource EmptyGuidToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.CompletionStatus}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding CompletionStatusId, Converter={StaticResource CompletionStatusIdToText}, Mode=OneWay}"/>
+        </Grid>
+        <Grid x:Name="InstallDirectoryHost"
+              Margin="0,0,0,8"
+              Visibility="{Binding InstallDirectory, Mode=OneWay, Converter={StaticResource EmptyToVis}}"
+              SizeChanged="InstallDirectoryHost_SizeChanged">
+            <Grid x:Name="InstallDirectoryInline" Style="{StaticResource Bridge.DetailFieldGrid}" Margin="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="InstallDirectoryInlineLabel"
+                           Grid.Column="0"
+                           Style="{StaticResource Bridge.DetailFieldLabel}"
+                           Text="{x:Static res:Strings.InstallDirectoryLabel}"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding InstallDirectory, Mode=OneWay, Converter={StaticResource NullFallback}}"
+                           TextWrapping="NoWrap"
+                           TextAlignment="Left"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Bridge.SystemAccentBrush}"
+                           VerticalAlignment="Top"
+                           Cursor="Hand">
+                    <TextBlock.InputBindings>
+                        <MouseBinding MouseAction="LeftClick"
+                                      Command="{Binding DataContext.OpenGameLocationCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    </TextBlock.InputBindings>
+                </TextBlock>
+            </Grid>
+            <StackPanel x:Name="InstallDirectoryStacked"
+                        Style="{StaticResource Bridge.DetailFieldStacked}"
+                        Margin="0"
+                        Visibility="Collapsed">
+                <TextBlock Style="{StaticResource Bridge.DetailFieldLabel}"
+                           Margin="0,0,0,4"
+                           Text="{x:Static res:Strings.InstallDirectoryLabel}"/>
+                <TextBlock Text="{Binding InstallDirectory, Mode=OneWay, Converter={StaticResource NullFallback}}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Right"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Bridge.SystemAccentBrush}"
+                           Cursor="Hand">
+                    <TextBlock.InputBindings>
+                        <MouseBinding MouseAction="LeftClick"
+                                      Command="{Binding DataContext.OpenGameLocationCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    </TextBlock.InputBindings>
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.InstallSizeText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.InstallSize}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.InstallSizeText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.LibraryText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Library}"/>
+            <Button Grid.Column="1"
+                    Content="{Binding DataContext.LibraryText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
+                    Command="{Binding DataContext.ToggleLibraryFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding DataContext.LibraryText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource Bridge.DetailFieldValueButton}">
+                        <Style.Triggers>
+                            <DataTrigger Value="True">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource DetailFilterContains}">
+                                        <Binding Path="DataContext.LibraryText" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                        <Binding Path="DataContext.ActiveLibraryFilters" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.PlatformsText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Platform}"/>
+            <ItemsControl Grid.Column="1"
+                          ItemsSource="{Binding DataContext.SelectedGamePlatforms, RelativeSource={RelativeSource AncestorType=Window}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel HorizontalAlignment="Right"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding}"
+                                Command="{Binding DataContext.TogglePlatformFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource Bridge.DetailFilterChipButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource DetailFilterContains}">
+                                                    <Binding/>
+                                                    <Binding Path="DataContext.ActivePlatformFilters" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.GenresText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Genres}"/>
+            <ItemsControl Grid.Column="1"
+                          ItemsSource="{Binding DataContext.SelectedGameGenres, RelativeSource={RelativeSource AncestorType=Window}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel HorizontalAlignment="Right"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding}"
+                                Command="{Binding DataContext.ToggleGenreFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource Bridge.DetailFilterChipButton}">
+                                    <Setter Property="Margin" Value="0,0,0,2"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource DetailFilterContains}">
+                                                    <Binding/>
+                                                    <Binding Path="DataContext.ActiveGenreFilters" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.DevelopersText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Developers}"/>
+            <ItemsControl Grid.Column="1"
+                          ItemsSource="{Binding DataContext.SelectedGameDevelopers, RelativeSource={RelativeSource AncestorType=Window}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel HorizontalAlignment="Right"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding}"
+                                PreviewMouseRightButtonDown="CompanyFilterChip_RightClick"
+                                Command="{Binding DataContext.ToggleDeveloperFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource Bridge.DetailFilterChipButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource DetailFilterContains}">
+                                                    <Binding/>
+                                                    <Binding Path="DataContext.ActiveDeveloperFilters" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.PublishersText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Publishers}"/>
+            <ItemsControl Grid.Column="1"
+                          ItemsSource="{Binding DataContext.SelectedGamePublishers, RelativeSource={RelativeSource AncestorType=Window}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel HorizontalAlignment="Right"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding}"
+                                PreviewMouseRightButtonDown="CompanyFilterChip_RightClick"
+                                Command="{Binding DataContext.TogglePublisherFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource Bridge.DetailFilterChipButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource DetailFilterContains}">
+                                                    <Binding/>
+                                                    <Binding Path="DataContext.ActivePublisherFilters" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding ReleaseDate, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.ReleaseDate}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding ReleaseDate, Converter={StaticResource ReleaseDateConverter}}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.CategoriesText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Categories}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.CategoriesText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.TagsText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Tags}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.TagsText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.AgeRatingsText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.AgeRating}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.AgeRatingsText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.SeriesText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Series}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.SeriesText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.RegionsText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Region}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.RegionsText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.VersionText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Version}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Text="{Binding DataContext.VersionText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding UserScore, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.UserScore}"/>
+            <TextBlock Grid.Column="1" Style="{StaticResource Bridge.DetailFieldValue}" Foreground="{Binding UserScore, Mode=OneWay, Converter={StaticResource ScoreToBrush}}" Text="{Binding UserScore, Mode=OneWay, TargetNullValue=''}"/>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding CriticScore, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.CriticScore}"/>
+            <Button Grid.Column="1"
+                    Style="{StaticResource Bridge.DetailFieldValueButton}"
+                    Command="{Binding DataContext.OpenMetacriticCommand, RelativeSource={RelativeSource AncestorType=Window}}">
+                <TextBlock Text="{Binding CriticScore, Mode=OneWay, TargetNullValue=''}"
+                           Foreground="{Binding CriticScore, Mode=OneWay, Converter={StaticResource ScoreToBrush}}"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right"/>
+            </Button>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding CommunityScore, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.CommunityScore}"/>
+            <Button Grid.Column="1"
+                    Style="{StaticResource Bridge.DetailFieldValueButton}"
+                    Command="{Binding DataContext.OpenCommunityScoreCommand, RelativeSource={RelativeSource AncestorType=Window}}">
+                <TextBlock Text="{Binding CommunityScore, Mode=OneWay, TargetNullValue=''}"
+                           Foreground="{Binding CommunityScore, Mode=OneWay, Converter={StaticResource ScoreToBrush}}"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right"/>
+            </Button>
+        </Grid>
+        <Grid Style="{StaticResource Bridge.DetailFieldGrid}" Visibility="{Binding DataContext.FeaturesText, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EmptyToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Bridge.DetailFieldLabel}" Text="{x:Static res:Strings.Features}"/>
+            <ItemsControl Grid.Column="1"
+                          ItemsSource="{Binding DataContext.SelectedGameFeatures, RelativeSource={RelativeSource AncestorType=Window}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel HorizontalAlignment="Right"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding}"
+                                Command="{Binding DataContext.ToggleFeatureFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource Bridge.DetailFilterChipButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource DetailFilterContains}">
+                                                    <Binding/>
+                                                    <Binding Path="DataContext.ActiveFeatureFilters" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </StackPanel>
+</UserControl>

@@ -13,6 +13,28 @@ public sealed class WebImageSearchService(HttpClient httpClient)
     private const string VqdEndpoint = "https://duckduckgo.com/";
     private const string ImageEndpoint = "https://duckduckgo.com/i.js";
 
+    /// <summary>Builds a search query tailored to the artwork field being edited.</summary>
+    public static string BuildMediaSearchQuery(string gameName, string mediaField)
+    {
+        var name = gameName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return mediaField switch
+            {
+                "Icon" => "game icon",
+                "CoverImage" => "game cover art",
+                "BackgroundImage" => "game banner wallpaper",
+                _ => "game artwork"
+            };
+
+        return mediaField switch
+        {
+            "Icon" => $"{name} game icon logo",
+            "CoverImage" => $"{name} game cover box art",
+            "BackgroundImage" => $"{name} game banner wallpaper hero",
+            _ => name
+        };
+    }
+
     public async Task<List<ImageSearchResult>> SearchAsync(string query, int count = 48, CancellationToken cancellationToken = default)
     {
         var results = new List<ImageSearchResult>();

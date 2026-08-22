@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
 >
-> **Last updated:** 2026-08-20 (v0.7.0)
+> **Last updated:** 2026-08-21 (v0.8.0)
 
 ## Project Overview
 
@@ -48,7 +48,15 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Current Version (0.7.0)
+### Current Version (0.8.0)
+- **SteamGridDB artwork** — optional community icons, covers, and hero banners in the game editor (API key setup, picker with preview)
+- **Change art** — context menu shortcut to the Media tab
+- **Hero banner modes** — Default / Black / Custom with preservation across Steam sync
+- **Detail metadata filters** — filter the library from clickable detail fields
+- **Translucent UI** — optional blurred background and semi-transparent sidebar
+- **Redesigned artwork pickers** — responsive web search and SteamGridDB grids with side preview
+
+### Previous (0.7.0)
 - **How Long to Beat** — completion-time estimates from howlongtobeat.com, synced on metadata download and startup/refresh; segmented playtime progress bar in the Details hero stats bar
 - **Detail section layout** — Settings and context menu to place Details left or right of Overview (full Details view and Covers compact panel)
 - **Covers UI polish** — compact panel with screenshot strip at top (no tabs), icon-only Play/Info on cover hover, selection ring only when selected
@@ -75,7 +83,8 @@ The MVP defined in the foundation notes:
 - **Scan installed games automatically** — `ScanInstalledWindow` + `InstalledGameDetector` detect games installed on the PC from Start Menu shortcuts / a chosen folder / a browsed executable (the "Scan Automatically / Add Game Installed" pattern) and import them as manual games
 - **Epic Games support** — `Bridge.Import/Epic/` detects installed Epic games from the launcher's local files (`LauncherInstalled.dat` + `.item` manifests), filters Unreal Engine/DLC/plugins, launches via `com.epicgames.launcher://` (directory tracking), and shows the installed exe's icon. See ADR-13.
 - **Own Cloudflare Worker as the IGDB backend** — `Bridge.Infra/igdb-proxy-worker/` + `BridgeIgdbProvider` give IGDB metadata with zero user configuration (credentials as Worker Secrets server-side). A legacy public IGDB proxy and a user-configured IGDB key are fallbacks. The Worker also returns IGDB's real screenshots (mapped to `Game.Screenshots` at `t_1080p`), so Epic/manual games get the Table-view screenshot gallery like Steam games. See ADR-13.
-- **Web image search in the editor** — `ImageSearchWindow` + `WebImageSearchService` let the user pick Icon/Cover/Background art from web image-search results (plus a local-file browse fallback)
+- **Web image search in the editor** — `ImageSearchWindow` + `WebImageSearchService` let the user pick Icon/Cover/Background art from web image-search results (field-aware layout and preview; plus a local-file browse fallback)
+- **SteamGridDB artwork (optional)** — `SteamGridDbClient` + `SteamGridDbPickerWindow` for community icon/cover/hero art when the user configures a free API key (`SteamGridDbSettingsStore`)
 - **Configurable themes** — `ThemeManager` + `ThemeColorWindow`: 9 accent presets plus a custom color picker, applied at runtime and persisted to `theme.json`
 - **Rich descriptions** — Steam descriptions are stored and rendered as `DescriptionBlocks` (text / heading / subheading / list / image blocks), not a single raw string
 - **Self-updating** — `AppUpdateService` checks GitHub Releases (`ZavalaSebas/Bridge`) against the assembly version: silently at startup and on demand via **Check for updates…** in the app menu, then downloads the new `Bridge.exe` and applies the safe swap (running exe → `.old`, downloaded → current, restart) with an update handshake that keeps `.old` as a rollback copy until the new exe proves it starts (`ConfirmUpdateApplied`), restores it via `RollbackToPrevious` if startup fails, and backs up `bridge.db` → `bridge.db.bak-update` before each update. "Not now" on the confirm dialog keeps the update pending in the title bar (download button next to random game) until applied. Only in the published single-file build (`CanSelfUpdate`); security-bound to GitHub hosts over HTTPS with a 256 MB cap. See the "Version Management" section in DEVELOPMENT.md

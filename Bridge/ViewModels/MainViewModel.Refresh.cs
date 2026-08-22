@@ -60,6 +60,8 @@ public partial class MainViewModel
         }
 
         await DownloadMissingSteamMetadataAsync(steamSourceId);
+        var bridgeSourceId = InstalledGameImportService.EnsureBridgeSource(_sourceRepository);
+        await DownloadMissingBridgeMetadataAsync(bridgeSourceId);
         await DownloadMissingMetadataByNameAsync([epicSourceId]);
         await DownloadMissingHowLongToBeatAsync();
         RefreshAllEmulatorDownloadStates();

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-21
+
+### Added
+- **SteamGridDB artwork** — `SteamGridDbClient`, settings store, setup/settings windows, optional in-app WebView2 browser, and `SteamGridDbPickerWindow` to browse community icons, covers, and hero banners from the game editor's Media tab (free API key from steamgriddb.com).
+- **Change art** — game context menu **Change art** opens `GameEditWindow` on the Media tab via `GameEditWindowOpener`.
+- **Hero banner modes** — `HeroBackground` sentinel (`bridge:hero/black`) plus Default / Black / Custom in the editor; custom and black banners are preserved when Steam local art or metadata sync runs unless the user explicitly overwrites (`ShouldFillHeroFromSteamLocal`, `ShouldFillArtwork`).
+- **Detail metadata filters** — clickable genre, platform, developer, publisher, library, and feature values in `GameDetailsFieldsPanel` filter the library; active filter chips appear in the detail header (`MainViewModel` detail-filter collections).
+- **Translucent appearance** — Settings toggles for a semi-transparent sidebar and blurred game artwork behind list/detail content (`SidebarTranslucentSettingsStore`, `TranslucentBackgroundSettingsStore`, `ThemeManager`).
+- **Default artwork fallbacks** — bundled default icon/cover when a game has no art (`DefaultGameIcon`, `DefaultGameCover`, `GameArtworkFallback`).
+- **Responsive artwork tiles** — `ArtworkFitConverters` and `ArtworkPreviewHelper` size web and SteamGridDB picker thumbnails and previews to the panel viewport (full-width banners, two-column covers, square icons).
+- **Theme accent buttons** — `Bridge.AccentButton` style for primary actions in picker dialogs.
+- **Tests** — `HeroBackgroundTests`, `DefaultGameArtworkTests`, `GameDisplayPreferencesStoreTests`, `GameDetailLinkResolverTests`, translucent/sidebar settings store tests.
+
+### Changed
+- **Web image search** — redesigned `ImageSearchWindow` (grid + preview, field-aware layout: banner / cover / icon); `WebImageSearchService.BuildMediaSearchQuery` tailors DuckDuckGo queries per media field.
+- **Game editor Media tab** — reorganized Icon / Cover / Banner sections with Browse, Search web, and SteamGridDB actions; hero style picker (Default / Black / Custom).
+- **Library detail panel** — extracted `GameDetailsFieldsPanel`, improved hero/stats layout, scroll chaining, and display-preference wiring.
+- **Steam local artwork** — `ApplySteamLocalArtwork` accepts an `overwrite` flag; manual **Download metadata** passes `overwrite: true`, startup/import preserve user artwork otherwise.
+- **Settings hub** — SteamGridDB integration card; translucent sidebar/background toggles under Appearance.
+
+### Fixed
+- **Custom hero overwritten** — Steam local hero and metadata no longer replace a user-chosen custom banner on reload.
+- **Artwork picker layout** — covers and icons use two fixed columns; icons stay square (`Uniform` stretch); banners and web heroes fill the results panel width; preview scales to the preview pane instead of a fixed 260px box.
+
 ## [0.7.0] - 2026-08-20
 
 ### Added

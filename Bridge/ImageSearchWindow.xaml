@@ -5,10 +5,11 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         x:Name="Root"
         Title="{x:Static res:Strings.SearchImagesTitle}"
-        Width="720" Height="560"
+        Width="960" Height="640"
+        MinWidth="760" MinHeight="520"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}"
@@ -16,9 +17,87 @@
         FontFamily="{StaticResource Bridge.FontFamily}"
         FontSize="{StaticResource Bridge.FontSize.Body}"
         xmlns:res="clr-namespace:Bridge.Resources">
+    <ui:FluentWindow.Resources>
+        <converters:ArtworkTileWidthConverter x:Key="ArtworkTileWidth"/>
+        <converters:ArtworkTileHeightConverter x:Key="ArtworkTileHeight"/>
+        <ItemsPanelTemplate x:Key="ArtworkSingleColumnPanel">
+            <WrapPanel HorizontalAlignment="Left"/>
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="ArtworkTwoColumnPanel">
+            <UniformGrid Columns="2" HorizontalAlignment="Stretch"/>
+        </ItemsPanelTemplate>
+        <DataTemplate x:Key="WebHeroTileTemplate">
+            <Border CornerRadius="8" ClipToBounds="True" Background="Transparent" Margin="4" Cursor="Hand">
+                <Border.Width>
+                    <MultiBinding Converter="{StaticResource ArtworkTileWidth}" ConverterParameter="1">
+                        <Binding Path="Width"/>
+                        <Binding Path="Height"/>
+                        <Binding Path="ViewportWidth" ElementName="ResultsScrollViewer"/>
+                    </MultiBinding>
+                </Border.Width>
+                <Border.Height>
+                    <MultiBinding Converter="{StaticResource ArtworkTileHeight}" ConverterParameter="1">
+                        <Binding Path="Width"/>
+                        <Binding Path="Height"/>
+                        <Binding Path="ViewportWidth" ElementName="ResultsScrollViewer"/>
+                    </MultiBinding>
+                </Border.Height>
+                <Image Stretch="Fill"
+                       converters:CachedImage.SourceUrl="{Binding ThumbnailUrl}"
+                       RenderOptions.BitmapScalingMode="Fant"/>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WebCoverTileTemplate">
+            <Border CornerRadius="8" ClipToBounds="True" Background="Transparent" Margin="4" Cursor="Hand"
+                    HorizontalAlignment="Center">
+                <Border.Width>
+                    <MultiBinding Converter="{StaticResource ArtworkTileWidth}" ConverterParameter="2">
+                        <Binding Path="Width"/>
+                        <Binding Path="Height"/>
+                        <Binding Path="ViewportWidth" ElementName="ResultsScrollViewer"/>
+                    </MultiBinding>
+                </Border.Width>
+                <Border.Height>
+                    <MultiBinding Converter="{StaticResource ArtworkTileHeight}" ConverterParameter="2">
+                        <Binding Path="Width"/>
+                        <Binding Path="Height"/>
+                        <Binding Path="ViewportWidth" ElementName="ResultsScrollViewer"/>
+                    </MultiBinding>
+                </Border.Height>
+                <Image Stretch="Fill"
+                       converters:CachedImage.SourceUrl="{Binding ThumbnailUrl}"
+                       RenderOptions.BitmapScalingMode="Fant"/>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WebIconTileTemplate">
+            <Border CornerRadius="8" ClipToBounds="True" Background="Transparent" Margin="4" Cursor="Hand"
+                    HorizontalAlignment="Center">
+                <Border.Width>
+                    <MultiBinding Converter="{StaticResource ArtworkTileWidth}" ConverterParameter="2s">
+                        <Binding Path="Width"/>
+                        <Binding Path="Height"/>
+                        <Binding Path="ViewportWidth" ElementName="ResultsScrollViewer"/>
+                    </MultiBinding>
+                </Border.Width>
+                <Border.Height>
+                    <MultiBinding Converter="{StaticResource ArtworkTileHeight}" ConverterParameter="2s">
+                        <Binding Path="Width"/>
+                        <Binding Path="Height"/>
+                        <Binding Path="ViewportWidth" ElementName="ResultsScrollViewer"/>
+                    </MultiBinding>
+                </Border.Height>
+                <Image Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       converters:CachedImage.SourceUrl="{Binding ThumbnailUrl}"
+                       RenderOptions.BitmapScalingMode="Fant"/>
+            </Border>
+        </DataTemplate>
+    </ui:FluentWindow.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="56"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -42,80 +121,196 @@
             </ui:TitleBar.Header>
         </ui:TitleBar>
 
-        <Grid Grid.Row="1" Margin="20,12,20,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <DockPanel Grid.Row="0" Margin="0,0,0,10">
-                <Button DockPanel.Dock="Right"
-                        Content="{x:Static res:Strings.Search}"
-                        Padding="16,7" Margin="8,0,0,0"
-                        IsDefault="True" Click="Search_Click"/>
-                <TextBox x:Name="QueryBox"
-                         Padding="6,4"
-                         VerticalContentAlignment="Center"
-                         AutomationProperties.Name="{x:Static res:Strings.SearchImagesQueryName}"
-                         ToolTip="{x:Static res:Strings.SearchImagesQueryTooltip}"/>
-            </DockPanel>
-            <ListBox x:Name="ResultsList"
-                     Grid.Row="1"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel/>
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border CornerRadius="6" ClipToBounds="True" Background="#1B2132" Margin="4" Cursor="Hand">
-                            <Image Height="120" Width="160" Stretch="UniformToFill"
-                                   converters:CachedImage.SourceUrl="{Binding ThumbnailUrl}"
-                                   RenderOptions.BitmapScalingMode="Fant"/>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderThickness" Value="2"/>
-                        <Setter Property="BorderBrush" Value="Transparent"/>
-                        <Setter Property="Padding" Value="2"/>
-                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                        <Setter Property="FocusVisualStyle" Value="{StaticResource Bridge.FocusVisualStyle}"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-            </ListBox>
+        <StackPanel Grid.Row="1" Margin="20,14,20,0">
+            <Border Background="{DynamicResource Bridge.MutedSurface.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10,8">
+                <DockPanel LastChildFill="True">
+                    <Button x:Name="SearchButton"
+                            DockPanel.Dock="Right"
+                            Style="{StaticResource Bridge.AccentButton}"
+                            Content="{x:Static res:Strings.Search}"
+                            Padding="18,8"
+                            Margin="10,0,0,0"
+                            MinWidth="96"
+                            IsDefault="True"
+                            Click="Search_Click"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Grid.Column="0"
+                                       Symbol="Search24"
+                                       FontSize="16"
+                                       Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="4,0,10,0"/>
+                        <TextBox x:Name="QueryBox"
+                                 Grid.Column="1"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Padding="0,4"
+                                 VerticalContentAlignment="Center"
+                                 AutomationProperties.Name="{x:Static res:Strings.SearchImagesQueryName}"
+                                 ToolTip="{x:Static res:Strings.SearchImagesQueryTooltip}"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+            <TextBlock Text="{x:Static res:Strings.SearchImagesSelectHint}"
+                       Margin="2,8,0,0"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="20,12,20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="380"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Margin="0,0,12,0"
+                    Background="{DynamicResource Bridge.MutedSurface.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    ClipToBounds="True">
+                <Grid>
+                    <ScrollViewer x:Name="ResultsScrollViewer"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="8">
+                        <ListBox x:Name="ResultsList"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 HorizontalAlignment="Stretch"
+                                 HorizontalContentAlignment="Stretch"
+                                 MinWidth="{Binding ViewportWidth, ElementName=ResultsScrollViewer}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="2"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="Padding" Value="2"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </ScrollViewer>
+                    <StackPanel x:Name="EmptyStatePanel"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Margin="24"
+                                Visibility="Collapsed">
+                        <ui:SymbolIcon Symbol="ImageOff24"
+                                       FontSize="36"
+                                       Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                        <TextBlock Text="{x:Static res:Strings.SearchImagesEmptyState}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   MaxWidth="320"
+                                   Margin="0,12,0,0"
+                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{DynamicResource Bridge.MutedSurface.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0"
+                               Text="{x:Static res:Strings.SearchImagesPreviewCaption}"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+                    <ScrollViewer x:Name="PreviewScrollViewer"
+                                  Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Border x:Name="PreviewFrame"
+                                    Background="Transparent"
+                                    CornerRadius="8"
+                                    ClipToBounds="True"
+                                    MinHeight="120"
+                                    HorizontalAlignment="Center">
+                                <Grid>
+                                    <Image x:Name="PreviewImage"
+                                           Stretch="Fill"
+                                           RenderOptions.BitmapScalingMode="Fant"/>
+                                    <StackPanel x:Name="PreviewPlaceholderPanel"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Margin="16">
+                                        <ui:SymbolIcon Symbol="Image24"
+                                                       FontSize="32"
+                                                       Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                                       HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{x:Static res:Strings.SearchImagesPreviewPlaceholder}"
+                                                   TextWrapping="Wrap"
+                                                   TextAlignment="Center"
+                                                   MaxWidth="320"
+                                                   Margin="0,10,0,0"
+                                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <TextBlock x:Name="PreviewDimensionsText"
+                                       Margin="0,8,0,0"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
         </Grid>
 
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Padding="20,12,20,16"
                 BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
                 BorderThickness="0,1,0,0"
                 Background="{DynamicResource Bridge.Sidebar.Background}">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="{x:Static res:Strings.Cancel}" Width="100" IsCancel="True" Padding="0,8" Margin="0,0,8,0"/>
+                    <Button x:Name="SelectButton"
+                            Style="{StaticResource Bridge.AccentButton}"
+                            Content="{x:Static res:Strings.Select}"
+                            Width="110"
+                            IsEnabled="False"
+                            Padding="0,8"
+                            Click="Select_Click"/>
+                </StackPanel>
                 <TextBlock x:Name="StatusText"
                            VerticalAlignment="Center"
-                           Margin="0,0,14,0"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="0,0,12,0"
                            Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                <Button Content="{x:Static res:Strings.Cancel}" Width="100" IsCancel="True" Padding="0,7" Margin="0,0,8,0"/>
-                <Button x:Name="SelectButton"
-                        Content="{x:Static res:Strings.Select}"
-                        Width="100"
-                        IsEnabled="False"
-                        Padding="0,7"
-                        Click="Select_Click"/>
-            </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </ui:FluentWindow>

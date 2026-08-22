@@ -995,6 +995,13 @@ public static class Config
 | `Bridge.Metadata/PlayniteIgdbProvider.cs` | IGDB via legacy public proxy — fallback if the Worker is unreachable |
 | `Bridge.Metadata/IgdbMetadataProvider.cs` | IGDB with a user-configured Twitch key (optional) |
 | `Bridge.Metadata/HowLongToBeatClient.cs` | howlongtobeat.com search client (main / extras / completionist seconds) |
+| `Bridge.Metadata/SteamGridDbClient.cs` | SteamGridDB API client for game search and icon/cover/hero asset lists |
+| `Bridge/Settings/SteamGridDbSettingsStore.cs` | Persists the user's SteamGridDB API key under AppData |
+| `Bridge/SteamGridDbPickerWindow.xaml` | Community artwork picker (responsive grid + preview) |
+| `Bridge/ImageSearchWindow.xaml` | DuckDuckGo web artwork picker (field-aware layout + preview) |
+| `Bridge/Converters/ArtworkFitConverters.cs` | Viewport-aware tile sizing for artwork pickers |
+| `Bridge.Core/Entities/HeroBackground.cs` | Hero banner Default / Black / Custom sentinels and fill rules |
+| `Bridge/Services/GameEditWindowOpener.cs` | Opens the game editor (optionally on the Media tab) from context menus |
 | `Bridge/Services/HowLongToBeatService.cs` | Applies HLTB results to `Game` and optional profile link |
 | `Bridge/Statistics/TimeToBeatHelper.cs` | HLTB progress target + segmented bar width math |
 | `Bridge/Services/DetailSectionPositionSettingsStore.cs` | Persists Details-left vs Details-right in the game details content area |

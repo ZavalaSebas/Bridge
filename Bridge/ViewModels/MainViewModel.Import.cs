@@ -156,7 +156,7 @@ public partial class MainViewModel
             steamSourceId,
             "Steam",
             () => _steamImporter.GetInstalledGames(),
-            applyLocalArtwork: ApplySteamLocalArtwork);
+            applyLocalArtwork: game => ApplySteamLocalArtwork(game));
     }
 
     private async Task ImportEpicLibraryCoreAsync(Guid epicSourceId)

@@ -16,7 +16,7 @@ public class CenteringWrapPanel : Panel
     public CenteringWrapPanel()
     {
         // The covers list first lays out while the views column is still at its
-        // List-view width (360px), so this panel wraps once for a narrow width
+        // list-view width (260px), so this panel wraps once for a narrow width
         // (one column). When it later receives its real, wider viewport — either
         // because the view switched to Grid or the window resized — its own
         // RenderSize changes, and re-measuring here re-wraps the cards into

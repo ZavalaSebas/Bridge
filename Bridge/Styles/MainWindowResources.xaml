@@ -21,12 +21,105 @@
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
     <converters:ZoomToSizeConverter x:Key="ZoomToSize" />
     <converters:ScoreToBrushConverter x:Key="ScoreToBrush" />
+    <converters:ScoreToBarWidthConverter x:Key="ScoreToBarWidth" />
+    <converters:GameHasScoresVisibilityConverter x:Key="GameHasScoresVis" />
     <converters:CompletionStatusToColorConverter x:Key="CompletionStatusToColor" />
     <converters:CompletionStatusIdToTextConverter x:Key="CompletionStatusIdToText" />
     <converters:EmptyGuidToVisibilityConverter x:Key="EmptyGuidToVis" />
     <converters:EnumMatchConverter x:Key="EnumMatch" />
     <converters:RoundedRectClipConverter x:Key="RoundedClip" />
+    <converters:DetailFilterActiveConverter x:Key="DetailFilterActive" />
+    <converters:DetailFilterContainsConverter x:Key="DetailFilterContains" />
+
+    <Style x:Key="Bridge.DetailFieldGrid" TargetType="Grid">
+        <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{StaticResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="Margin" Value="0,0,10,0"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldValue" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldStacked" TargetType="StackPanel">
+        <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldValueFullWidth" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldValueButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalAlignment="Top"
+                                      RecognizesAccessKey="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="Bridge.ActiveFilterChipButton" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource Bridge.Surface.Background}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="12"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldValueLeftButton" TargetType="Button" BasedOn="{StaticResource Bridge.DetailFieldValueButton}">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFieldValueFullWidthButton" TargetType="Button" BasedOn="{StaticResource Bridge.DetailFieldValueButton}">
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+    <Style x:Key="Bridge.DetailFilterChipButton" TargetType="Button" BasedOn="{StaticResource Bridge.DetailFieldValueButton}">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="4,0,0,2"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
     <converters:EmptyToVisibilityConverter x:Key="EmptyToVis" />
+    <converters:InverseEmptyToVisibilityConverter x:Key="InverseEmptyToVis" />
+    <converters:HeroBlackToVisibilityConverter x:Key="HeroBlackVis" />
+    <converters:HeroDefaultToVisibilityConverter x:Key="HeroDefaultVis" />
+    <converters:HeroArtSourceConverter x:Key="HeroArtSource" />
+    <converters:HeroNonDefaultToVisibilityConverter x:Key="HeroNonDefaultVis" />
     <converters:NullFallbackConverter x:Key="NullFallback" />
     <converters:NonZeroToVisibilityConverter x:Key="NonZeroToVis" />
     <converters:DescriptionBlocksConverter x:Key="DescriptionBlocks" />
@@ -176,6 +269,18 @@
         </Style.Triggers>
     </Style>
 
+    <DataTemplate x:Key="Bridge.MoreButton.ContentTemplate">
+        <StackPanel Orientation="Horizontal">
+            <ui:SymbolIcon Symbol="MoreHorizontal24"
+                           FontSize="18"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0" />
+            <TextBlock Text="{Binding}"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold" />
+        </StackPanel>
+    </DataTemplate>
+
     <Style x:Key="Bridge.LinkMenuItemStyle" TargetType="MenuItem">
         <Setter Property="Header" Value="{Binding Name}" />
     </Style>
@@ -262,6 +367,13 @@
         <MenuItem Header="{x:Static res:Strings.DownloadMetadata}" Command="{Binding DownloadMetadataCommand}">
             <MenuItem.Icon>
                 <ui:SymbolIcon Symbol="ArrowDownload24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="{x:Static res:Strings.ChangeArt}" Command="{Binding ChangeArtCommand}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="ImageEdit24"
                                FontSize="16"
                                Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
             </MenuItem.Icon>
@@ -559,7 +671,6 @@
                         <Border x:Name="TabBody"
                                 Padding="{TemplateBinding Padding}"
                                 Background="Transparent"
-                                BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
                                 BorderThickness="0"
                                 Cursor="Hand"
                                 ClipToBounds="False">
@@ -568,21 +679,13 @@
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                               RecognizesAccessKey="True" />
                         </Border>
-                        <Border x:Name="TabDivider"
-                                Width="1"
-                                HorizontalAlignment="Right"
-                                Background="{DynamicResource Bridge.SeparatorBrush}" />
                         <Border x:Name="AccentLine"
                                 Height="2"
                                 VerticalAlignment="Bottom"
-                                Margin="0,0,1,0"
                                 Background="Transparent" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabBody" Property="Background" Value="#331B2132" />
-                            <Setter TargetName="TabBody" Property="BorderThickness" Value="1,1,1,0" />
-                            <Setter TargetName="TabBody" Property="Margin" Value="0,0,0,-1" />
                             <Setter TargetName="AccentLine" Property="Background" Value="{DynamicResource Bridge.SystemAccentBrush}" />
                             <Setter Property="Foreground" Value="{DynamicResource Bridge.SystemAccentBrush}" />
                             <Setter Property="Panel.ZIndex" Value="1" />

@@ -168,6 +168,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         var metadata = new GameMetadata
         {
             Name = data.Name,
+            ExternalId = appId.ToString(),
             Description = StripHtml(data.AboutTheGame),
             DescriptionImages = ExtractImageUrls(data.AboutTheGame),
             DescriptionBlocks = ParseDescriptionBlocks(data.AboutTheGame),
@@ -185,7 +186,15 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
             metadata.Description = StripHtml(data.ShortDescription);
 
         if (data.Metacritic is { } metacritic)
+        {
             metadata.CriticScore = metacritic.Score;
+            if (!string.IsNullOrWhiteSpace(metacritic.Url))
+            {
+                var sanitized = Bridge.Core.Utilities.UrlValidator.SanitizePersistedUrl(metacritic.Url);
+                if (sanitized is not null)
+                    metadata.Links.Add(new Link { Name = "Metacritic", Url = sanitized });
+            }
+        }
 
         if (communityScore.HasValue)
             metadata.CommunityScore = communityScore.Value;

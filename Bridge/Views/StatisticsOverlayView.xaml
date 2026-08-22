@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:converters="clr-namespace:Bridge.Converters"
+             xmlns:art="clr-namespace:Bridge.Assets"
              xmlns:res="clr-namespace:Bridge.Resources">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -149,7 +150,7 @@
                     <DataTemplate>
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" Height="24" Width="24" Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" RenderOptions.BitmapScalingMode="Fant"/>
+                            <Image Grid.Column="0" Height="24" Width="24" Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}" RenderOptions.BitmapScalingMode="Fant"/>
                             <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis"/>
                             <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="{StaticResource Bridge.FontSize.BodySmall}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Text="{Binding PlaytimeSeconds, Converter={StaticResource PlaytimeConverter}}"/>
                         </Grid>

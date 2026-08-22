@@ -81,6 +81,8 @@
   <data name="Searching" xml:space="preserve"><value>Searching...</value></data>
   <data name="NoResults" xml:space="preserve"><value>No results.</value></data>
   <data name="SearchFailed" xml:space="preserve"><value>Search failed.</value></data>
+  <data name="ImageSelectLoadFailed" xml:space="preserve"><value>Could not load the selected image. Try another result.</value></data>
+  <data name="LoadingImage" xml:space="preserve"><value>Loading image…</value></data>
   <data name="ResultsCountFormat" xml:space="preserve"><value>{0} results</value></data>
   <data name="EmulationSettingsTitle" xml:space="preserve"><value>Emulation</value></data>
   <data name="EmulationManagedRetroArchHeading" xml:space="preserve"><value>Bridge-managed RetroArch</value></data>
@@ -95,6 +97,11 @@
   <data name="SearchImagesTitle" xml:space="preserve"><value>Search images</value></data>
   <data name="SearchImagesQueryName" xml:space="preserve"><value>Image search query</value></data>
   <data name="SearchImagesQueryTooltip" xml:space="preserve"><value>Search term (game name)</value></data>
+  <data name="SearchImagesSelectHint" xml:space="preserve"><value>Double-click a result or use Select. A preview appears on the right.</value></data>
+  <data name="SearchImagesEmptyState" xml:space="preserve"><value>No images found. Try a different search term.</value></data>
+  <data name="SearchImagesPreviewCaption" xml:space="preserve"><value>Preview</value></data>
+  <data name="SearchImagesPreviewPlaceholder" xml:space="preserve"><value>Select an image to preview it here.</value></data>
+  <data name="ImageDimensionsFormat" xml:space="preserve"><value>{0} × {1}</value></data>
   <data name="CustomThemeColorTitle" xml:space="preserve"><value>Custom Theme Color</value></data>
   <data name="CustomThemeColorDescription" xml:space="preserve"><value>Pick an accent color — the whole theme recomputes from it.</value></data>
   <data name="ViewList" xml:space="preserve"><value>List view</value></data>
@@ -104,6 +111,7 @@
   <data name="SearchGamesTooltip" xml:space="preserve"><value>Search games (Ctrl+F)</value></data>
   <data name="BridgeMenu" xml:space="preserve"><value>Bridge menu</value></data>
   <data name="FilterPresets" xml:space="preserve"><value>Filter presets</value></data>
+  <data name="RemoveFilter" xml:space="preserve"><value>Remove filter</value></data>
   <data name="SortSettings" xml:space="preserve"><value>Sort settings</value></data>
   <data name="GroupSettings" xml:space="preserve"><value>Group settings</value></data>
   <data name="SelectRandomGame" xml:space="preserve"><value>Select random game</value></data>
@@ -288,6 +296,8 @@
   <data name="LabelUserScore" xml:space="preserve"><value>User Score:</value></data>
   <data name="LabelCriticScore" xml:space="preserve"><value>Critic Score:</value></data>
   <data name="LabelCommunityScore" xml:space="preserve"><value>Community Score:</value></data>
+  <data name="HeroCriticScoreShort" xml:space="preserve"><value>Critics</value></data>
+  <data name="HeroCommunityScoreShort" xml:space="preserve"><value>Community</value></data>
   <data name="LabelLinks" xml:space="preserve"><value>Links:</value></data>
   <data name="Platforms" xml:space="preserve"><value>Platforms</value></data>
   <data name="EditGame" xml:space="preserve"><value>Edit Game</value></data>
@@ -295,6 +305,52 @@
   <data name="SteamManagedMetadataNotice" xml:space="preserve"><value>This Steam game's metadata is managed by Bridge and stays in sync with Steam. Only the artwork (icon, cover, background) can be customized here.</value></data>
   <data name="General" xml:space="preserve"><value>General</value></data>
   <data name="Media" xml:space="preserve"><value>Media</value></data>
+  <data name="AddBanner" xml:space="preserve"><value>Add banner</value></data>
+  <data name="ChangeArt" xml:space="preserve"><value>Change art</value></data>
+  <data name="BigCovers" xml:space="preserve"><value>Big covers</value></data>
+  <data name="Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="SteamGridDb" xml:space="preserve"><value>SteamGridDB</value></data>
+  <data name="SetupSteamGridDb" xml:space="preserve"><value>Setup SteamGridDB</value></data>
+  <data name="SteamGridDbSetupPrompt" xml:space="preserve"><value>Connect SteamGridDB for community icons, covers, and hero art.</value></data>
+  <data name="SteamGridDbSetupHint" xml:space="preserve"><value>Free API key. Setup opens steamgriddb.com in your browser — the recommended and secure way.</value></data>
+  <data name="SteamGridDbSetupSecureNote" xml:space="preserve"><value>Bridge never sees your Steam password; only the API key you paste.</value></data>
+  <data name="SteamGridDbSettingsTitle" xml:space="preserve"><value>SteamGridDB Settings</value></data>
+  <data name="SteamGridDbSettingsHelp" xml:space="preserve"><value>SteamGridDB provides community-made icons, covers, and hero banners for games.</value></data>
+  <data name="SteamGridDbSettingsIntro" xml:space="preserve"><value>SteamGridDB is a well-known community site for custom game artwork — icons, grid covers, hero banners, and more.</value></data>
+  <data name="SteamGridDbApiKeyNeeded" xml:space="preserve"><value>To browse that artwork from Bridge, you need a free API key from your SteamGridDB profile.</value></data>
+  <data name="SteamGridDbObtainKeyHeading" xml:space="preserve"><value>To obtain it:</value></data>
+  <data name="SteamGridDbTutorialStep1" xml:space="preserve"><value>Click Open SteamGridDB below.</value></data>
+  <data name="SteamGridDbTutorialStep2" xml:space="preserve"><value>Sign in with Steam on steamgriddb.com (official Steam login).</value></data>
+  <data name="SteamGridDbTutorialStep3" xml:space="preserve"><value>Generate an API key on the API tab.</value></data>
+  <data name="SteamGridDbTutorialStep4" xml:space="preserve"><value>Paste the key below and save.</value></data>
+  <data name="SteamGridDbRecommended" xml:space="preserve"><value>Recommended</value></data>
+  <data name="SteamGridDbOpenPreferences" xml:space="preserve"><value>Open SteamGridDB</value></data>
+  <data name="SteamGridDbRefreshCallout" xml:space="preserve"><value>After Steam sign-in, press F5 if the page is blank.</value></data>
+  <data name="SteamGridDbInAppTitle" xml:space="preserve"><value>Only if your browser gives you trouble</value></data>
+  <data name="SteamGridDbOpenInApp" xml:space="preserve"><value>Open in Bridge instead</value></data>
+  <data name="SteamGridDbInAppHint" xml:space="preserve"><value>Embedded WebView2 browser — same steamgriddb.com and Steam sites, with auto-refresh after sign-in. Bridge never sees or stores your Steam password; use this only to simplify the flow.</value></data>
+  <data name="SteamGridDbBrowserTitle" xml:space="preserve"><value>SteamGridDB — API key</value></data>
+  <data name="SteamGridDbBrowserTrustNote" xml:space="preserve"><value>Same steamgriddb.com and Steam sign-in as your browser. Bridge never sees your Steam password.</value></data>
+  <data name="SteamGridDbBrowserOpenExternal" xml:space="preserve"><value>Open in browser</value></data>
+  <data name="SteamGridDbBrowserRefresh" xml:space="preserve"><value>Refresh page</value></data>
+  <data name="SteamGridDbApiKeyLabel" xml:space="preserve"><value>API key</value></data>
+  <data name="OpenSteamGridDbSettings" xml:space="preserve"><value>Open settings</value></data>
+  <data name="SettingsSteamGridDbCardDescription" xml:space="preserve"><value>API key for community game artwork in the media editor.</value></data>
+  <data name="SteamGridDbPickerTitle" xml:space="preserve"><value>SteamGridDB artwork</value></data>
+  <data name="SteamGridDbSelectGame" xml:space="preserve"><value>Select game</value></data>
+  <data name="SteamGridDbPickGameHint" xml:space="preserve"><value>Multiple matches — pick the correct game on the left.</value></data>
+  <data name="SteamGridDbMatchesTitle" xml:space="preserve"><value>Matching games</value></data>
+  <data name="SteamGridDbArtworkForFormat" xml:space="preserve"><value>Artwork for {0}</value></data>
+  <data name="SteamGridDbSearchHint" xml:space="preserve"><value>Search by game name. If several games match, choose one from the list.</value></data>
+  <data name="HeroBackgroundStyleLabel" xml:space="preserve"><value>Banner style</value></data>
+  <data name="HeroBackgroundDefault" xml:space="preserve"><value>Default</value></data>
+  <data name="HeroBackgroundBlack" xml:space="preserve"><value>Black</value></data>
+  <data name="HeroBackgroundCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="IgdbTutorialStep1" xml:space="preserve"><value>Sign in at dev.twitch.tv and open the Developer Console.</value></data>
+  <data name="IgdbTutorialStep2" xml:space="preserve"><value>Register a new application (any name; client type does not matter).</value></data>
+  <data name="IgdbTutorialStep3" xml:space="preserve"><value>Copy the Client ID from the app page.</value></data>
+  <data name="IgdbTutorialStep4" xml:space="preserve"><value>Generate a Client Secret and paste both values below.</value></data>
+  <data name="IgdbOpenDeveloperConsole" xml:space="preserve"><value>Open Twitch Developer Console</value></data>
   <data name="SortingName" xml:space="preserve"><value>Sorting Name</value></data>
   <data name="SortingNameTooltip" xml:space="preserve"><value>Name used for sorting (e.g. 'Witcher 3' for 'The Witcher 3: Wild Hunt'). Leave empty to sort by Name.</value></data>
   <data name="ReleaseDateTooltip" xml:space="preserve"><value>YYYY, YYYY-MM or YYYY-MM-DD</value></data>
@@ -352,8 +408,13 @@
   <data name="SettingsTrayIconDescription" xml:space="preserve"><value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value></data>
   <data name="SettingsKeepSelectionTitle" xml:space="preserve"><value>Keep selection across views</value></data>
   <data name="SettingsKeepSelectionDescription" xml:space="preserve"><value>When off, switching between List, Covers, and Table clears the selected game.</value></data>
+  <data name="SettingsTranslucentSidebarTitle" xml:space="preserve"><value>Translucent sidebar</value></data>
+  <data name="SettingsTranslucentSidebarDescription" xml:space="preserve"><value>Use a semi-transparent sidebar so the selected game's background shows through. The title bar and status bar share the same frosted look.</value></data>
+  <data name="SettingsTranslucentBackgroundTitle" xml:space="preserve"><value>Translucent background</value></data>
+  <data name="SettingsTranslucentBackgroundDescription" xml:space="preserve"><value>Show blurred game artwork behind the library list and detail panels. Turn off for solid theme colors everywhere except Settings and Statistics.</value></data>
   <data name="Overview" xml:space="preserve"><value>Overview</value></data>
   <data name="Images" xml:space="preserve"><value>Images</value></data>
+  <data name="Achievements" xml:space="preserve"><value>Achievements</value></data>
   <data name="SettingsDetailSectionPositionTitle" xml:space="preserve"><value>Details section position</value></data>
   <data name="SettingsDetailSectionPositionDescription" xml:space="preserve"><value>Place the metadata Details column on the left or right of the Overview and Images tabs in the game details panel.</value></data>
   <data name="SettingsDetailPanelPositionTitle" xml:space="preserve"><value>Details panel position</value></data>

@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
+using Bridge.Metadata;
+using Bridge.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bridge.ViewModels;
@@ -16,6 +18,9 @@ public partial class GameEditViewModel : ObservableObject
     private readonly IRepository<Genre> _genreRepository;
     private readonly IRepository<Company> _companyRepository;
     private readonly IRepository<Platform> _platformRepository;
+    private readonly IRepository<GameSource> _sourceRepository;
+    private readonly SteamGridDbSettings _steamGridDbSettings;
+    private bool _suppressHeroBackgroundSync;
 
     /// <summary>True when the window opened for a brand-new manual game (so Save
     /// inserts instead of updating and the caller adds it to the library).</summary>
@@ -57,6 +62,11 @@ public partial class GameEditViewModel : ObservableObject
     [ObservableProperty]
     private string _backgroundImage;
 
+    [ObservableProperty]
+    private HeroBackground.Kind _heroBackgroundKind;
+
+    public bool IsSteamGridDbConfigured => _steamGridDbSettings.IsConfigured;
+
     public ObservableCollection<SelectableItem> Genres { get; }
     public ObservableCollection<SelectableItem> Developers { get; }
     public ObservableCollection<SelectableItem> Publishers { get; }
@@ -68,6 +78,8 @@ public partial class GameEditViewModel : ObservableObject
         IRepository<Genre> genreRepository,
         IRepository<Company> companyRepository,
         IRepository<Platform> platformRepository,
+        IRepository<GameSource> sourceRepository,
+        SteamGridDbSettings steamGridDbSettings,
         bool isNew = false)
     {
         _game = game;
@@ -75,6 +87,8 @@ public partial class GameEditViewModel : ObservableObject
         _genreRepository = genreRepository;
         _companyRepository = companyRepository;
         _platformRepository = platformRepository;
+        _sourceRepository = sourceRepository;
+        _steamGridDbSettings = steamGridDbSettings;
         IsNewGame = isNew;
 
         Name = game.Name;
@@ -89,6 +103,7 @@ public partial class GameEditViewModel : ObservableObject
         Icon = game.Icon;
         CoverImage = game.CoverImage;
         BackgroundImage = game.BackgroundImage;
+        HeroBackgroundKind = HeroBackground.KindFromValue(game.BackgroundImage);
 
         Genres = ToSelectable(genreRepository.GetAll(), game.GenreIds);
         Developers = ToSelectable(companyRepository.GetAll(), game.DeveloperIds);
@@ -101,10 +116,54 @@ public partial class GameEditViewModel : ObservableObject
     // the editor. Only the artwork the user can customize is left editable
     // (icon/cover/background) — those aren't re-fetched if already present.
     public bool IsSteamManaged =>
-        // A Steam game: has an appid as ExternalId and isn't a manual entry.
-        uint.TryParse(_game?.ExternalId, out _) && _game?.SourceId != GameSource.ManualId;
+        uint.TryParse(_game?.ExternalId, out _) &&
+        _game is not null &&
+        !GameSource.IsUserManaged(_game.SourceId);
 
     public bool CanEditMetadata => !IsSteamManaged;
+
+    partial void OnHeroBackgroundKindChanged(HeroBackground.Kind value)
+    {
+        if (_suppressHeroBackgroundSync)
+            return;
+
+        _suppressHeroBackgroundSync = true;
+        BackgroundImage = value switch
+        {
+            HeroBackground.Kind.Black => HeroBackground.BlackSentinel,
+            HeroBackground.Kind.Custom => HeroBackground.IsCustom(BackgroundImage) ? BackgroundImage : string.Empty,
+            _ => string.Empty
+        };
+        _suppressHeroBackgroundSync = false;
+        OnPropertyChanged(nameof(IsHeroCustomBackground));
+    }
+
+    partial void OnBackgroundImageChanged(string value)
+    {
+        if (_suppressHeroBackgroundSync)
+            return;
+
+        var kind = HeroBackground.KindFromValue(value);
+        if (HeroBackgroundKind != kind)
+        {
+            _suppressHeroBackgroundSync = true;
+            HeroBackgroundKind = kind;
+            _suppressHeroBackgroundSync = false;
+        }
+
+        OnPropertyChanged(nameof(IsHeroCustomBackground));
+    }
+
+    public bool IsHeroCustomBackground => HeroBackgroundKind == HeroBackground.Kind.Custom;
+
+    public void ClearIcon() => Icon = string.Empty;
+
+    public void ClearCover() => CoverImage = string.Empty;
+
+    public void NotifySteamGridDbConfigurationChanged() => OnPropertyChanged(nameof(IsSteamGridDbConfigured));
+
+    private string ResolveBackgroundImageForSave() =>
+        HeroBackground.ValueFromKind(HeroBackgroundKind, BackgroundImage);
 
     private static ObservableCollection<SelectableItem> ToSelectable(IEnumerable<DatabaseObject> all, IReadOnlyCollection<Guid> selected)
         => new(all.Select(x => new SelectableItem(x.Id, x.Name, selected.Contains(x.Id))).OrderBy(x => x.Name));
@@ -157,11 +216,12 @@ public partial class GameEditViewModel : ObservableObject
         {
             _game.Icon = Icon;
             _game.CoverImage = CoverImage;
-            _game.BackgroundImage = BackgroundImage;
+            _game.BackgroundImage = ResolveBackgroundImageForSave();
             _game.Modified = DateTime.Now;
 
             if (IsNewGame)
             {
+                EnsureBridgeSourceForNewGame();
                 _game.Added = DateTime.Now;
                 _gameRepository.Add(_game);
             }
@@ -184,7 +244,7 @@ public partial class GameEditViewModel : ObservableObject
         _game.InstallDirectory = InstallDirectory;
         _game.Icon = Icon;
         _game.CoverImage = CoverImage;
-        _game.BackgroundImage = BackgroundImage;
+        _game.BackgroundImage = ResolveBackgroundImageForSave();
         _game.GenreIds = Genres.Where(x => x.IsSelected).Select(x => x.Id).ToList();
         _game.DeveloperIds = Developers.Where(x => x.IsSelected).Select(x => x.Id).ToList();
         _game.PublisherIds = Publishers.Where(x => x.IsSelected).Select(x => x.Id).ToList();
@@ -193,6 +253,7 @@ public partial class GameEditViewModel : ObservableObject
 
         if (IsNewGame)
         {
+            EnsureBridgeSourceForNewGame();
             _game.Added = DateTime.Now;
             _gameRepository.Add(_game);
         }
@@ -202,6 +263,14 @@ public partial class GameEditViewModel : ObservableObject
         }
 
         return true;
+    }
+
+    private void EnsureBridgeSourceForNewGame()
+    {
+        if (!IsNewGame || _game.SourceId != GameSource.ManualId)
+            return;
+
+        _game.SourceId = InstalledGameImportService.EnsureBridgeSource(_sourceRepository);
     }
 
     private static string FormatReleaseDate(ReleaseDate? date)

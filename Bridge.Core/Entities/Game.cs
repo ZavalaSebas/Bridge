@@ -8,7 +8,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
 {
     public string ExternalId { get; set; } = string.Empty;
     public Guid SourceId { get; set; } = GameSource.ManualId;
-    public bool IsCustomGame => SourceId == GameSource.ManualId;
+    public bool IsCustomGame => GameSource.IsUserManaged(SourceId);
 
     public string SortingName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

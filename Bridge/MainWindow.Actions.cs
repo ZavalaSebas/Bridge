@@ -23,21 +23,22 @@ public partial class MainWindow
     // Edit game in the dedicated editor window; details panel stays read-only.
     internal void HandleEditGameClick(object sender, RoutedEventArgs e) => EditGame_Click(sender, e);
 
+    internal void HandleEditGameMediaClick(object sender, RoutedEventArgs e) => EditGame_Click(sender, e, selectMediaTab: true);
+
     internal void HandleScanInstalledClick(object sender, RoutedEventArgs e) => ScanInstalled_Click(sender, e);
 
     internal void HandleScanRomClick(object sender, RoutedEventArgs e) => ScanRom_Click(sender, e);
 
-    private void EditGame_Click(object sender, RoutedEventArgs e)
+    private void EditGame_Click(object sender, RoutedEventArgs e) => EditGame_Click(sender, e, selectMediaTab: false);
+
+    private void EditGame_Click(object sender, RoutedEventArgs e, bool selectMediaTab)
     {
         if (DataContext is not MainViewModel mainVm || mainVm.SelectedGame is not { } game)
         {
             return;
         }
 
-        var editViewModel = App.Services.GetRequiredService<GameEditViewModelFactory>().Create(game);
-
-        var window = new GameEditWindow(editViewModel, game.BackgroundImage) { Owner = this };
-        if (window.ShowDialog() == true)
+        if (App.Services.GetRequiredService<GameEditWindowOpener>().Show(game, selectMediaTab, this))
         {
             mainVm.RefreshGameDisplay(game);
         }

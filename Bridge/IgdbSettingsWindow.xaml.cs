@@ -1,4 +1,5 @@
 using System.Windows;
+using Bridge.Services;
 using Bridge.ViewModels;
 using Wpf.Ui.Controls;
 
@@ -22,4 +23,7 @@ public partial class IgdbSettingsWindow : FluentWindow
         _viewModel.ClientSecret = SecretBox.Password;
         _viewModel.SaveCommand.Execute(null);
     }
+
+    private void OpenTwitchDeveloper_Click(object sender, RoutedEventArgs e) =>
+        SafeLauncher.TryOpenUrl("https://dev.twitch.tv/console/apps");
 }

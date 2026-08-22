@@ -26,6 +26,7 @@ internal static class AppDataMigrations
         ViewModeSettingsStore.MigrateLegacyPersistedNames(ctx);
         ScrollPositionSettingsStore.MigrateLegacyViewKeys(ctx);
         IgdbSettingsStore.MigratePlainTextToProtectedFormat(ctx);
+        SteamGridDbSettingsStore.MigratePlainTextToProtectedFormat(ctx);
 
         // Obsolete paths from pre-layout era; safe no-ops when absent.
         ctx.DeleteFileIfExists("settings.json");

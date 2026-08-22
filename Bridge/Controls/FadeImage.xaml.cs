@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using Bridge.Assets;
 using Bridge.Converters;
 
 namespace Bridge.Controls;
@@ -34,6 +35,12 @@ public partial class FadeImage : UserControl
         typeof(FadeImage),
         new PropertyMetadata(false, OnCoverByWidthChanged));
 
+    public static readonly DependencyProperty FallbackArtworkProperty = DependencyProperty.Register(
+        nameof(FallbackArtwork),
+        typeof(GameArtworkFallback),
+        typeof(FadeImage),
+        new PropertyMetadata(GameArtworkFallback.None, OnFallbackArtworkChanged));
+
     public string? SourceUrl
     {
         get => (string?)GetValue(SourceUrlProperty);
@@ -53,6 +60,21 @@ public partial class FadeImage : UserControl
     {
         get => (bool)GetValue(CoverByWidthProperty);
         set => SetValue(CoverByWidthProperty, value);
+    }
+
+    public GameArtworkFallback FallbackArtwork
+    {
+        get => (GameArtworkFallback)GetValue(FallbackArtworkProperty);
+        set => SetValue(FallbackArtworkProperty, value);
+    }
+
+    private static void OnFallbackArtworkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (FadeImage)d;
+        if (!control.IsLoaded)
+            return;
+
+        control.OnSourceChanged(control.SourceUrl);
     }
 
     private static void OnCoverByWidthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -119,8 +141,12 @@ public partial class FadeImage : UserControl
 
         if (string.IsNullOrWhiteSpace(url))
         {
+            // Null means the binding is not applied yet — not an explicit default hero.
+            if (url is null)
+                return;
+
             currentUrl = null;
-            FadeOutActive();
+            ShowFallbackOrFadeOut();
             return;
         }
 
@@ -139,19 +165,30 @@ public partial class FadeImage : UserControl
 
         Action callback = () =>
         {
-            if (currentUrl == url && RemoteImageCache.Get(url) is { } image)
-            {
+            if (currentUrl != url)
+                return;
+
+            if (RemoteImageCache.Get(url) is { } image)
                 ShowImage(image);
-            }
+            else
+                FadeOutActive();
         };
         _loadCallback = callback;
         RemoteImageCache.Subscribe(url, callback);
     }
 
-    // Crossfade between two Image frames; each keeps its own aspect and bottom fade.
-    private void ShowImage(BitmapSource image)
+    private void ShowFallbackOrFadeOut()
     {
-        var aspect = image.PixelWidth / (double)image.PixelHeight;
+        if (DefaultGameArtwork.Get(FallbackArtwork) is { } fallback)
+            ShowImage(fallback);
+        else
+            FadeOutActive();
+    }
+
+    // Crossfade between two Image frames; each keeps its own aspect and bottom fade.
+    private void ShowImage(ImageSource image)
+    {
+        var aspect = GetAspect(image);
         ImageAspect = aspect;
 
         var next = activeImage is null || ReferenceEquals(activeImage, Image2) ? Image1 : Image2;
@@ -246,6 +283,17 @@ public partial class FadeImage : UserControl
         };
 
         target.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    private static double GetAspect(ImageSource image)
+    {
+        if (image is BitmapSource bitmap && bitmap.PixelHeight > 0)
+            return bitmap.PixelWidth / (double)bitmap.PixelHeight;
+
+        if (image is DrawingImage { Drawing: { Bounds: { Width: > 0, Height: > 0 } bounds } })
+            return bounds.Width / bounds.Height;
+
+        return 16.0 / 9.0;
     }
 
     private void ApplyCoverByWidthSizing()

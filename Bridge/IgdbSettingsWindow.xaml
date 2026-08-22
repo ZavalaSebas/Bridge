@@ -4,7 +4,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         x:Name="Root"
         Title="{x:Static res:Strings.IgdbSettingsTitle}"
-        Width="460" Height="340"
+        Width="460" Height="400"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
@@ -41,22 +41,36 @@
             </ui:TitleBar.Header>
         </ui:TitleBar>
 
-        <StackPanel Grid.Row="1" Margin="24,16,24,12">
-            <TextBlock Text="{x:Static res:Strings.IgdbSettingsHelp}"
-                       TextWrapping="Wrap"
-                       Foreground="{StaticResource TextFillColorSecondaryBrush}"
-                       Margin="0,0,0,12"/>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,16,24,12">
+                <TextBlock Text="{x:Static res:Strings.IgdbSettingsHelp}"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                           Margin="0,0,0,10"/>
+                <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,0,0,12">
+                    <Run Text="1. "/><Run Text="{x:Static res:Strings.IgdbTutorialStep1}"/>
+                    <LineBreak/>
+                    <Run Text="2. "/><Run Text="{x:Static res:Strings.IgdbTutorialStep2}"/>
+                    <LineBreak/>
+                    <Run Text="3. "/><Run Text="{x:Static res:Strings.IgdbTutorialStep3}"/>
+                    <LineBreak/>
+                    <Run Text="4. "/><Run Text="{x:Static res:Strings.IgdbTutorialStep4}"/>
+                </TextBlock>
+                <Button HorizontalAlignment="Left" Padding="0,4" Margin="0,0,0,14" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="OpenTwitchDeveloper_Click">
+                    <TextBlock Text="{x:Static res:Strings.IgdbOpenDeveloperConsole}" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" TextDecorations="Underline"/>
+                </Button>
 
-            <TextBlock Text="{x:Static res:Strings.ClientId}" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding ClientId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" Padding="6,4"/>
+                <TextBlock Text="{x:Static res:Strings.ClientId}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding ClientId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" Padding="6,4"/>
 
-            <TextBlock Text="{x:Static res:Strings.ClientSecret}" Margin="0,0,0,4"/>
-            <PasswordBox x:Name="SecretBox" Margin="0,0,0,8" Padding="6,4"/>
+                <TextBlock Text="{x:Static res:Strings.ClientSecret}" Margin="0,0,0,4"/>
+                <PasswordBox x:Name="SecretBox" Margin="0,0,0,8" Padding="6,4"/>
 
-            <TextBlock Text="{Binding StatusMessage}"
-                       Foreground="{StaticResource TextFillColorSecondaryBrush}"
-                       TextWrapping="Wrap"/>
-        </StackPanel>
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </ScrollViewer>
 
         <Border Grid.Row="2"
                 Padding="20,12,20,16"

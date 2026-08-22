@@ -78,6 +78,13 @@ public class GameRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void IsCustomGame_IsTrue_WhenSourceIdIsBridge()
+    {
+        var game = new Game { Name = "External", SourceId = GameSource.BridgeId };
+        Assert.True(game.IsCustomGame);
+    }
+
+    [Fact]
     public void FindByExternalId_ResolvesTheDedupKey()
     {
         var sourceId = Guid.NewGuid();

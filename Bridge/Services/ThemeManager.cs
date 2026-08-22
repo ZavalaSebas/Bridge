@@ -15,8 +15,19 @@ namespace Bridge.Services;
 public static class ThemeManager
 {
     private static readonly string SettingsFile = Path.Combine(Config.AppDataPath, "theme.json");
+    private static readonly SolidColorBrush TranslucentSidebarHostBrush = CreateTranslucentSidebarHostBrush();
 
-    public static Color CurrentAccent { get; private set; } = Color.FromRgb(0x00, 0x7A, 0xCC);
+    public const double SidebarTranslucentOpacity = 0.75;
+    public const double PanelTranslucentOpacity = 0.8;
+    public const double SurfaceTranslucentOpacity = 0.2;
+    public const double MutedSurfaceTranslucentOpacity = 0.3;
+    public const double BackgroundOverlayTranslucentOpacity = 178.0 / 255.0;
+    public const double OverlayTranslucentOpacity = 102.0 / 255.0;
+    public const double HoverOverlayTranslucentOpacity = 140.0 / 255.0;
+
+    public static readonly Color DefaultAccentColor = Color.FromRgb(0xF5, 0x9E, 0x0B);
+
+    public static Color CurrentAccent { get; private set; } = DefaultAccentColor;
 
     public static IReadOnlyList<(string Name, Color Color)> Presets { get; } = new (string, Color)[]
     {
@@ -75,6 +86,7 @@ public static class ThemeManager
         Replace(resources, "SystemAccentColorTertiaryBrush", accentTertiary);
         Replace(resources, "Bridge.SystemAccentBrush", accent);
         Replace(resources, "Bridge.Accent.Hover", accentHover);
+        ReplacePlayButtonBackground(resources, accent);
 
         // Wpf.Ui accent brushes (Slider/CheckBox/Button/selection)
         Replace(resources, "AccentFillColorDefaultBrush", accent);
@@ -105,7 +117,7 @@ public static class ThemeManager
         Replace(resources, "ControlAltFillColorTertiaryBrush", bg3);
 
         // Bridge surfaces
-        Replace(resources, "Bridge.Sidebar.Background", bg2, opacity: 0.75);
+        ApplySidebarBackground(bg2);
         Replace(resources, "Bridge.Card.Background", bg2);
         Replace(resources, "Bridge.Card.Hover", bg4);
         Replace(resources, "Bridge.SeparatorBrush", sep);
@@ -118,11 +130,129 @@ public static class ThemeManager
 
         Save();
 
+        ApplyTranslucentBackground(bg1, bg2, bg3);
+        ApplySidebarHostAppearance();
+
         // DynamicResource in Style triggers (hover/selected/sidebar border) isn't
         // re-evaluated on resource change; restyle the open window so the new
         // accent is visible everywhere immediately. No-op during startup Load.
         RefreshWindow();
     }
+
+    /// <summary>
+    /// Applies sidebar/title-bar and content translucency according to settings.
+    /// </summary>
+    public static void ApplyAppearanceSettings()
+    {
+        ApplyTranslucentBackground();
+        ApplySidebarAppearance();
+    }
+
+    /// <summary>
+    /// Applies the sidebar/title-bar background opacity and the nav sidebar host
+    /// fill according to <see cref="SidebarTranslucentSettingsStore"/>.
+    /// </summary>
+    public static void ApplySidebarAppearance()
+    {
+        var resources = Application.Current.Resources;
+        Color bg2;
+        if (resources["SolidBackgroundFillColorSecondaryBrush"] is SolidColorBrush secondary)
+        {
+            bg2 = secondary.Color;
+        }
+        else if (resources["Bridge.Sidebar.Background"] is SolidColorBrush sidebar)
+        {
+            bg2 = sidebar.Color;
+        }
+        else
+        {
+            bg2 = Color.FromRgb(0x1B, 0x21, 0x32);
+        }
+
+        ApplySidebarBackground(bg2);
+        ApplySidebarHostAppearance();
+    }
+
+    internal static void ApplySidebarHostAppearance(MainWindow mainWindow)
+    {
+        if (SidebarTranslucentSettingsStore.Load())
+        {
+            mainWindow.SidebarHost.Background = TranslucentSidebarHostBrush;
+            return;
+        }
+
+        mainWindow.SidebarHost.SetResourceReference(
+            System.Windows.Controls.Border.BackgroundProperty,
+            "Bridge.Sidebar.Background");
+    }
+
+    private static void ApplySidebarBackground(Color bg2)
+    {
+        var opacity = SidebarTranslucentSettingsStore.Load()
+            ? SidebarTranslucentOpacity
+            : 1.0;
+        Replace(Application.Current.Resources, "Bridge.Sidebar.Background", bg2, opacity: opacity);
+    }
+
+    private static void ApplySidebarHostAppearance()
+    {
+        if (Application.Current.MainWindow is MainWindow mainWindow)
+        {
+            ApplySidebarHostAppearance(mainWindow);
+        }
+    }
+
+    /// <summary>
+    /// Applies blurred game-art visibility and content-panel brushes according
+    /// to <see cref="TranslucentBackgroundSettingsStore"/>.
+    /// </summary>
+    public static void ApplyTranslucentBackground()
+    {
+        var resources = Application.Current.Resources;
+        var bg1 = GetBrushColor(resources, "ApplicationBackgroundBrush", Color.FromRgb(0x15, 0x1A, 0x28));
+        var bg2 = GetBrushColor(resources, "SolidBackgroundFillColorSecondaryBrush", Color.FromRgb(0x1B, 0x21, 0x32));
+        var bg3 = GetBrushColor(resources, "SolidBackgroundFillColorTertiaryBrush", Color.FromRgb(0x23, 0x2B, 0x40));
+        ApplyTranslucentBackground(bg1, bg2, bg3);
+    }
+
+    private static void ApplyTranslucentBackground(Color bg1, Color bg2, Color bg3)
+    {
+        var resources = Application.Current.Resources;
+        var translucent = TranslucentBackgroundSettingsStore.Load();
+
+        var bg4 = GetBrushColor(resources, "SolidBackgroundFillColorQuarternaryBrush", Color.FromRgb(0x2C, 0x35, 0x50));
+
+        if (translucent)
+        {
+            Replace(resources, "Bridge.Content.Background", Colors.Transparent);
+            Replace(resources, "Bridge.Panel.Background", bg2, PanelTranslucentOpacity);
+            Replace(resources, "Bridge.Surface.Background", bg2, SurfaceTranslucentOpacity);
+            Replace(resources, "Bridge.MutedSurface.Background", bg2, MutedSurfaceTranslucentOpacity);
+            Replace(resources, "Bridge.Overlay.Background", Colors.Black, OverlayTranslucentOpacity);
+            Replace(resources, "Bridge.HoverOverlay.Background", Colors.Black, HoverOverlayTranslucentOpacity);
+            Replace(resources, "Bridge.SecondaryButton.Background", bg2, PanelTranslucentOpacity);
+            Replace(resources, "Bridge.Background.DarkOverlay", Colors.Black, BackgroundOverlayTranslucentOpacity);
+        }
+        else
+        {
+            Replace(resources, "Bridge.Content.Background", bg1);
+            Replace(resources, "Bridge.Panel.Background", bg2);
+            Replace(resources, "Bridge.Surface.Background", bg3);
+            Replace(resources, "Bridge.MutedSurface.Background", bg2);
+            Replace(resources, "Bridge.Overlay.Background", bg3);
+            Replace(resources, "Bridge.HoverOverlay.Background", bg1);
+            Replace(resources, "Bridge.SecondaryButton.Background", bg4);
+            Replace(resources, "Bridge.Background.DarkOverlay", bg1);
+        }
+
+        if (Application.Current.MainWindow is MainWindow mainWindow)
+        {
+            mainWindow.ApplyTranslucentBackgroundSettings(translucent);
+        }
+    }
+
+    private static Color GetBrushColor(ResourceDictionary resources, string key, Color fallback)
+        => resources[key] is SolidColorBrush brush ? brush.Color : fallback;
 
     /// <summary>Restores the saved accent (or the default) at startup.</summary>
     public static void Load()
@@ -141,7 +271,7 @@ public static class ThemeManager
             // Corrupt/missing settings — fall back to the default.
         }
 
-        Apply(CurrentAccent);
+        Apply(DefaultAccentColor);
     }
 
     public static string ToHex(Color c)
@@ -195,6 +325,35 @@ public static class ThemeManager
 
             ForceRestyle(child);
         }
+    }
+
+    private static SolidColorBrush CreateTranslucentSidebarHostBrush()
+    {
+        var brush = new SolidColorBrush(Color.FromArgb(0x44, 0, 0, 0));
+        brush.Freeze();
+        return brush;
+    }
+
+    private static void ReplacePlayButtonBackground(ResourceDictionary resources, Color accent)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0, 1),
+        };
+        brush.GradientStops.Add(new GradientStop(BlendWithWhite(accent, 0.18f), 0));
+        brush.GradientStops.Add(new GradientStop(BlendWithWhite(accent, 0.06f), 0.42));
+        brush.GradientStops.Add(new GradientStop(accent, 1));
+        resources["Bridge.PlayButton.Background"] = brush;
+    }
+
+    private static Color BlendWithWhite(Color color, float amount)
+    {
+        amount = Math.Clamp(amount, 0f, 1f);
+        return Color.FromRgb(
+            (byte)(color.R + (255 - color.R) * amount),
+            (byte)(color.G + (255 - color.G) * amount),
+            (byte)(color.B + (255 - color.B) * amount));
     }
 
     private static void Replace(ResourceDictionary resources, string key, Color color, double opacity = 1.0)

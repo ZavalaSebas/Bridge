@@ -22,6 +22,61 @@ public static class TimeToBeatHelper
         return index is >= 0 and <= 2 ? widths[index] : 0;
     }
 
+    public static double ComputeProgressWidth(
+        ulong playtimeSeconds,
+        ulong mainSeconds,
+        ulong extraSeconds,
+        ulong completeSeconds,
+        double trackWidth)
+    {
+        if (playtimeSeconds == 0 || trackWidth <= 0)
+            return 0;
+
+        var segmentSeconds = new[] { mainSeconds, extraSeconds, completeSeconds };
+        var segmentWidths = ComputeSegmentWidths(mainSeconds, extraSeconds, completeSeconds, trackWidth);
+
+        var totalSeconds = segmentSeconds.Aggregate(0UL, static (sum, value) => sum + value);
+        if (totalSeconds == 0)
+            return 0;
+
+        if (playtimeSeconds >= totalSeconds)
+            return trackWidth;
+
+        var filledWidth = 0.0;
+        var remaining = playtimeSeconds;
+        for (var i = 0; i < 3; i++)
+        {
+            if (segmentSeconds[i] == 0)
+                continue;
+
+            if (remaining >= segmentSeconds[i])
+            {
+                filledWidth += segmentWidths[i];
+                remaining -= segmentSeconds[i];
+                continue;
+            }
+
+            filledWidth += remaining / (double)segmentSeconds[i] * segmentWidths[i];
+            break;
+        }
+
+        return Math.Min(trackWidth, filledWidth);
+    }
+
+    public static double ComputeUnfilledWidth(
+        ulong playtimeSeconds,
+        ulong mainSeconds,
+        ulong extraSeconds,
+        ulong completeSeconds,
+        double trackWidth)
+    {
+        if (trackWidth <= 0)
+            return 0;
+
+        var filled = ComputeProgressWidth(playtimeSeconds, mainSeconds, extraSeconds, completeSeconds, trackWidth);
+        return Math.Max(0, trackWidth - filled);
+    }
+
     public static double[] ComputeSegmentWidths(ulong mainSeconds, ulong extraSeconds, ulong completeSeconds, double trackWidth)
     {
         var seconds = new[] { mainSeconds, extraSeconds, completeSeconds };

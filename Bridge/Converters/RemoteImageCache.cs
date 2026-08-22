@@ -55,6 +55,9 @@ public static class RemoteImageCache
         return null;
     }
 
+    /// <summary>Returns true when a decoded image for <paramref name="url"/> is in memory.</summary>
+    public static bool IsCached(string url) => Cache.ContainsKey(url);
+
     /// <summary>Warms the cache for a set of URLs (e.g. every game's icon at startup).</summary>
     public static void Preload(IEnumerable<string> urls)
     {
@@ -288,7 +291,10 @@ public static class RemoteImageCache
 
         try
         {
-            var bytes = DownloadClient.GetByteArrayAsync(uri).GetAwaiter().GetResult();
+            var bytes = DownloadImageBytes(uri);
+            if (bytes is null)
+                return null;
+
             try
             {
                 Directory.CreateDirectory(cacheDir);
@@ -298,12 +304,28 @@ public static class RemoteImageCache
             {
                 // Persisting must never break the load.
             }
+
             return bytes;
         }
         catch
         {
             return null;
         }
+    }
+
+    private static byte[]? DownloadImageBytes(Uri uri)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+        request.Headers.Accept.ParseAdd("image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
+        request.Headers.Referrer = new Uri($"{uri.Scheme}://{uri.Host}/");
+
+        using var response = DownloadClient.SendAsync(request).GetAwaiter().GetResult();
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
     }
 
     private static void TrimCache()

@@ -85,6 +85,14 @@ public static class Config
     public static string DetailSectionPositionFilePath =>
         Path.Combine(AppDataPath, "detail-section-position.txt");
 
+    // Semi-transparent sidebar (frosted look over the game background).
+    public static string SidebarTranslucentFilePath =>
+        Path.Combine(AppDataPath, "sidebar-translucent.txt");
+
+    // Blurred game art and semi-transparent library/detail panels.
+    public static string TranslucentBackgroundFilePath =>
+        Path.Combine(AppDataPath, "translucent-background.txt");
+
     // Last app version for which the What's New dialog was shown.
     public static string WhatsNewSeenFilePath =>
         Path.Combine(AppDataPath, "whats-new-seen.txt");
@@ -104,6 +112,9 @@ public static class Config
     // User profile (display name + avatar).
     public static string UserProfileFilePath =>
         Path.Combine(AppDataPath, "user-profile.json");
+
+    public static string GameDisplayPreferencesFilePath =>
+        Path.Combine(AppDataPath, "game-display-preferences.json");
 
     public static string UserProfileDirectoryPath =>
         Path.Combine(AppDataPath, "profile");

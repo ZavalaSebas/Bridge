@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Bridge.Assets;
 using Bridge.Services;
 
 namespace Bridge.Converters;
@@ -19,6 +20,13 @@ public static class CachedImage
             typeof(CachedImage),
             new PropertyMetadata(null, OnSourceUrlChanged));
 
+    public static readonly DependencyProperty FallbackArtworkProperty =
+        DependencyProperty.RegisterAttached(
+            "FallbackArtwork",
+            typeof(GameArtworkFallback),
+            typeof(CachedImage),
+            new PropertyMetadata(GameArtworkFallback.None, OnDisplayOptionsChanged));
+
     private static readonly DependencyProperty LoadCallbackProperty =
         DependencyProperty.RegisterAttached(
             "LoadCallback",
@@ -29,6 +37,12 @@ public static class CachedImage
     public static string? GetSourceUrl(DependencyObject d) => (string?)d.GetValue(SourceUrlProperty);
 
     public static void SetSourceUrl(DependencyObject d, string? value) => d.SetValue(SourceUrlProperty, value);
+
+    public static GameArtworkFallback GetFallbackArtwork(DependencyObject d) =>
+        (GameArtworkFallback)d.GetValue(FallbackArtworkProperty);
+
+    public static void SetFallbackArtwork(DependencyObject d, GameArtworkFallback value) =>
+        d.SetValue(FallbackArtworkProperty, value);
 
     private static Action? GetLoadCallback(DependencyObject d) => (Action?)d.GetValue(LoadCallbackProperty);
 
@@ -42,36 +56,44 @@ public static class CachedImage
             SetLoadCallback(d, null);
         }
 
-        var url = e.NewValue as string;
+        ApplySourceUrl(d);
+    }
+
+    private static void OnDisplayOptionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+        ApplySourceUrl(d);
+
+    private static void ApplySourceUrl(DependencyObject d)
+    {
+        var url = GetSourceUrl(d);
+        var fallback = GetFallbackArtwork(d);
+
         switch (d)
         {
             case Image image:
-                SetImageSource(image, url);
+                SetImageSource(image, url, fallback);
                 break;
 
             case Border border:
-                ApplyCoverBackground(border, url);
+                ApplyArtworkBackground(border, url, fallback);
                 break;
 
             case Grid grid:
-                ApplyCoverBackground(grid, url);
+                ApplyArtworkBackground(grid, url, fallback);
                 break;
         }
     }
 
-    private static void SetImageSource(Image image, string? url)
+    private static void SetImageSource(Image image, string? url, GameArtworkFallback fallback)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
-            image.Source = null;
+            image.Source = DefaultGameArtwork.Get(fallback);
             return;
         }
 
-        // Local disk paths (Steam's cached art, an Epic game's .exe) don't go
-        // through the remote cache.
         if (Path.IsPathRooted(url))
         {
-            image.Source = LoadLocalPath(url);
+            image.Source = LoadLocalPath(url) ?? DefaultGameArtwork.Get(fallback);
             return;
         }
 
@@ -81,37 +103,29 @@ public static class CachedImage
             return;
         }
 
-        // Not decoded yet — keep blank and refresh as soon as it lands.
-        image.Source = null;
+        image.Source = DefaultGameArtwork.Get(fallback);
         Action callback = () =>
         {
-            // The container may have been recycled to a different item while the
-            // download was in flight — only apply if still bound to this URL.
-            if (GetSourceUrl(image) == url)
-            {
-                image.Source = RemoteImageCache.Get(url);
-            }
+            if (GetSourceUrl(image) != url)
+                return;
+
+            image.Source = RemoteImageCache.Get(url) ?? DefaultGameArtwork.Get(GetFallbackArtwork(image));
         };
         SetLoadCallback(image, callback);
         RemoteImageCache.Subscribe(url, callback);
     }
 
-    // Grid/Border variant used by the covers cards: paints the artwork as the
-    // element's Background with an ImageBrush(UniformToFill). Unlike an Image
-    // element with the same Stretch — which anchors the crop to the top-left,
-    // leaving non-2:3 covers visibly off-center in the card — a TileBrush
-    // centers its content in its viewport by default, so the crop is centered.
-    private static void ApplyCoverBackground(DependencyObject target, string? url)
+    private static void ApplyArtworkBackground(DependencyObject target, string? url, GameArtworkFallback fallback)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
-            SetBackground(target, null);
+            SetBackground(target, MakeFillBrush(DefaultGameArtwork.Get(fallback)));
             return;
         }
 
         if (Path.IsPathRooted(url))
         {
-            SetBackground(target, MakeFillBrush(LoadLocalPath(url)));
+            SetBackground(target, MakeFillBrush(LoadLocalPath(url) ?? DefaultGameArtwork.Get(fallback)));
             return;
         }
 
@@ -121,14 +135,13 @@ public static class CachedImage
             return;
         }
 
-        // Not decoded yet — paint nothing and refresh as soon as it lands.
-        SetBackground(target, null);
+        SetBackground(target, MakeFillBrush(DefaultGameArtwork.Get(fallback)));
         Action callback = () =>
         {
-            if (GetSourceUrl(target) == url)
-            {
-                SetBackground(target, MakeFillBrush(RemoteImageCache.Get(url)));
-            }
+            if (GetSourceUrl(target) != url)
+                return;
+
+            SetBackground(target, MakeFillBrush(RemoteImageCache.Get(url) ?? DefaultGameArtwork.Get(GetFallbackArtwork(target))));
         };
         SetLoadCallback(target, callback);
         RemoteImageCache.Subscribe(url, callback);
@@ -150,9 +163,7 @@ public static class CachedImage
     private static ImageBrush? MakeFillBrush(ImageSource? source)
     {
         if (source is null)
-        {
             return null;
-        }
 
         var brush = new ImageBrush(source)
         {
@@ -162,28 +173,24 @@ public static class CachedImage
         return brush;
     }
 
-    // Loads a local disk path: an executable's embedded icon (Epic games store
-    // the .exe path as the icon) or a local image file (Steam's cached art).
-    private static System.Windows.Media.ImageSource? LoadLocalPath(string path)
+    private static ImageSource? LoadLocalPath(string path)
     {
         try
         {
-            var ext = System.IO.Path.GetExtension(path);
-            if (ext.Equals(".exe", System.StringComparison.OrdinalIgnoreCase) ||
-                ext.Equals(".lnk", System.StringComparison.OrdinalIgnoreCase))
+            var ext = Path.GetExtension(path);
+            if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase))
             {
                 return ExeIconLoader.GetIcon(path);
             }
 
-            if (!System.IO.File.Exists(path))
-            {
+            if (!File.Exists(path))
                 return null;
-            }
 
             var bitmap = new System.Windows.Media.Imaging.BitmapImage();
             bitmap.BeginInit();
             bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-            bitmap.UriSource = new System.Uri(path);
+            bitmap.UriSource = new Uri(path);
             bitmap.EndInit();
             bitmap.Freeze();
             return bitmap;

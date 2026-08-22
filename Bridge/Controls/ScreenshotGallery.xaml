@@ -32,7 +32,7 @@
             <Grid>
                 <Image x:Name="BackdropImage" Stretch="UniformToFill" Margin="-60" Opacity="0.45"
                        RenderOptions.BitmapScalingMode="Fant" IsHitTestVisible="False"/>
-                <Border Background="#66000000" IsHitTestVisible="False"/>
+                <Border Background="{DynamicResource Bridge.Overlay.Background}" IsHitTestVisible="False"/>
 
                 <Button x:Name="MainImageHost" Click="MainImage_Click" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         ToolTip="{x:Static res:Strings.ClickToExpand}">
@@ -51,11 +51,11 @@
                 </Button>
 
                 <!-- Flechas -->
-                <Button x:Name="PrevButton" Click="Prev_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="14,0" ToolTip="{x:Static res:Strings.PreviousScreenshotTooltip}" Padding="0">
+                <Button x:Name="PrevButton" Click="Prev_Click" Width="44" Height="44" Background="{DynamicResource Bridge.Overlay.Background}" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="14,0" ToolTip="{x:Static res:Strings.PreviousScreenshotTooltip}" Padding="0">
                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}" Padding="0"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#B3000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                     <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Button>
-                <Button x:Name="NextButton" Click="Next_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="14,0" ToolTip="{x:Static res:Strings.NextScreenshotTooltip}" Padding="0">
+                <Button x:Name="NextButton" Click="Next_Click" Width="44" Height="44" Background="{DynamicResource Bridge.Overlay.Background}" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="14,0" ToolTip="{x:Static res:Strings.NextScreenshotTooltip}" Padding="0">
                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}" Padding="0"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#B3000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                     <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Button>
@@ -119,15 +119,15 @@
                                 <TextBlock x:Name="FullscreenCounter" Text="{Binding CounterText, ElementName=Root, Mode=OneWay}"
                                            FontSize="14" Foreground="{StaticResource TextFillColorSecondaryBrush}"
                                            VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,18,0,0"/>
-                                <Button x:Name="FullscreenClose" Click="CloseFullscreen_Click" Width="44" Height="44" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16,16" ToolTip="{x:Static res:Strings.CloseEscTooltip}" Padding="0">
+                                <Button x:Name="FullscreenClose" Click="CloseFullscreen_Click" Width="44" Height="44" Background="{DynamicResource Bridge.Overlay.Background}" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16,16" ToolTip="{x:Static res:Strings.CloseEscTooltip}" Padding="0">
                                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                                     <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
                                 </Button>
-                                <Button x:Name="FullscreenPrev" Click="Prev_Click" Width="48" Height="48" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="18,0,0,0" ToolTip="{x:Static res:Strings.PreviousScreenshotTooltip}" Padding="0">
+                                <Button x:Name="FullscreenPrev" Click="Prev_Click" Width="48" Height="48" Background="{DynamicResource Bridge.Overlay.Background}" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="18,0,0,0" ToolTip="{x:Static res:Strings.PreviousScreenshotTooltip}" Padding="0">
                                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="24" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                                     <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="22"/>
                                 </Button>
-                                <Button x:Name="FullscreenNext" Click="Next_Click" Width="48" Height="48" Background="#66000000" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,18,0" ToolTip="{x:Static res:Strings.NextScreenshotTooltip}" Padding="0">
+                                <Button x:Name="FullscreenNext" Click="Next_Click" Width="48" Height="48" Background="{DynamicResource Bridge.Overlay.Background}" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,18,0" ToolTip="{x:Static res:Strings.NextScreenshotTooltip}" Padding="0">
                                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="24" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                                     <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="22"/>
                                 </Button>

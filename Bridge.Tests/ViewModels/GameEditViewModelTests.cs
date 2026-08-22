@@ -1,4 +1,5 @@
 using Bridge.Core.Entities;
+using Bridge.Metadata;
 using Bridge.Storage;
 using Bridge.Storage.Repositories;
 using Bridge.Tests.Storage;
@@ -15,6 +16,7 @@ public class GameEditViewModelTests : IDisposable
     private readonly Repository<Genre> _genreRepository;
     private readonly Repository<Company> _companyRepository;
     private readonly Repository<Platform> _platformRepository;
+    private readonly Repository<GameSource> _sourceRepository;
 
     public GameEditViewModelTests()
     {
@@ -29,10 +31,11 @@ public class GameEditViewModelTests : IDisposable
         _genreRepository = new Repository<Genre>(factory);
         _companyRepository = new Repository<Company>(factory);
         _platformRepository = new Repository<Platform>(factory);
+        _sourceRepository = new Repository<GameSource>(factory);
     }
 
     private GameEditViewModel Build(Game game, bool isNew = false)
-        => new(game, _gameRepository, _genreRepository, _companyRepository, _platformRepository, isNew);
+        => new(game, _gameRepository, _genreRepository, _companyRepository, _platformRepository, _sourceRepository, new SteamGridDbSettings(), isNew);
 
     [Fact]
     public void Save_ReturnsFalseForEmptyName()
@@ -69,6 +72,7 @@ public class GameEditViewModelTests : IDisposable
         var reloaded = _gameRepository.Get(game.Id);
         Assert.NotNull(reloaded);
         Assert.NotNull(reloaded.Added);
+        Assert.Equal(GameSource.BridgeId, reloaded.SourceId);
     }
 
     [Fact]

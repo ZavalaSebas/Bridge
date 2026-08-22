@@ -33,4 +33,51 @@ public class TimeToBeatSegmentWidthTests
         Assert.True(widths[0] > pureMain);
         Assert.True(widths[2] < 260 * 0.8);
     }
+
+    [Fact]
+    public void ComputeProgressWidth_FillsFirstSegmentProportionally()
+    {
+        const double trackWidth = 260;
+        var segmentWidths = TimeToBeatHelper.ComputeSegmentWidths(Hours(10), Hours(15), Hours(25), trackWidth);
+
+        var progress = TimeToBeatHelper.ComputeProgressWidth(
+            Hours(5),
+            Hours(10),
+            Hours(15),
+            Hours(25),
+            trackWidth);
+
+        Assert.Equal(segmentWidths[0] * 0.5, progress, 1);
+    }
+
+    [Fact]
+    public void ComputeProgressWidth_SpansCompletedSegments()
+    {
+        const double trackWidth = 260;
+        var segmentWidths = TimeToBeatHelper.ComputeSegmentWidths(Hours(10), Hours(15), Hours(25), trackWidth);
+
+        var progress = TimeToBeatHelper.ComputeProgressWidth(
+            Hours(12),
+            Hours(10),
+            Hours(15),
+            Hours(25),
+            trackWidth);
+
+        Assert.Equal(segmentWidths[0] + segmentWidths[1] * (2.0 / 15.0), progress, 1);
+    }
+
+    [Fact]
+    public void ComputeProgressWidth_CapsAtTrackWidthWhenPlaytimeExceedsTotal()
+    {
+        const double trackWidth = 260;
+
+        var progress = TimeToBeatHelper.ComputeProgressWidth(
+            Hours(100),
+            Hours(10),
+            Hours(15),
+            Hours(25),
+            trackWidth);
+
+        Assert.Equal(trackWidth, progress, 1);
+    }
 }

@@ -14,11 +14,32 @@ public sealed class InstalledGameImportService
 {
     private readonly InstalledGameDetector _detector;
     private readonly IGameRepository _gameRepository;
+    private readonly Guid _bridgeSourceId;
 
-    public InstalledGameImportService(InstalledGameDetector detector, IGameRepository gameRepository)
+    public InstalledGameImportService(
+        InstalledGameDetector detector,
+        IGameRepository gameRepository,
+        IRepository<GameSource> sourceRepository)
     {
         _detector = detector;
         _gameRepository = gameRepository;
+        _bridgeSourceId = EnsureBridgeSource(sourceRepository);
+    }
+
+    internal static Guid EnsureBridgeSource(IRepository<GameSource> sourceRepository)
+    {
+        var existing = sourceRepository.Get(GameSource.BridgeId);
+        if (existing is not null)
+            return existing.Id;
+
+        var byName = sourceRepository.GetAll()
+            .FirstOrDefault(s => string.Equals(s.Name, "Bridge", StringComparison.OrdinalIgnoreCase));
+        if (byName is not null)
+            return byName.Id;
+
+        var bridge = new GameSource { Id = GameSource.BridgeId, Name = "Bridge" };
+        sourceRepository.Add(bridge);
+        return bridge.Id;
     }
 
     public IReadOnlyList<InstalledGameCandidate> ScanFolder(string folder) =>
@@ -106,11 +127,12 @@ public sealed class InstalledGameImportService
         return ImportCandidates(toImport);
     }
 
-    private static Game CreateGame(InstalledGameCandidate candidate)
+    private Game CreateGame(InstalledGameCandidate candidate)
     {
         var game = new Game
         {
             Name = candidate.Name,
+            SourceId = _bridgeSourceId,
             IsInstalled = true,
             InstallDirectory = candidate.WorkingDirectory ?? string.Empty,
             Icon = candidate.ExecutablePath

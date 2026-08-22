@@ -127,6 +127,12 @@
   <data name="SearchFailed" xml:space="preserve">
     <value>Error en la búsqueda.</value>
   </data>
+  <data name="ImageSelectLoadFailed" xml:space="preserve">
+    <value>No se pudo cargar la imagen seleccionada. Prueba con otra.</value>
+  </data>
+  <data name="LoadingImage" xml:space="preserve">
+    <value>Cargando imagen…</value>
+  </data>
   <data name="ResultsCountFormat" xml:space="preserve">
     <value>{0} resultados</value>
   </data>
@@ -169,6 +175,21 @@
   <data name="SearchImagesQueryTooltip" xml:space="preserve">
     <value>Término de búsqueda (nombre del juego)</value>
   </data>
+  <data name="SearchImagesSelectHint" xml:space="preserve">
+    <value>Doble clic en un resultado o pulsa Seleccionar. La vista previa aparece a la derecha.</value>
+  </data>
+  <data name="SearchImagesEmptyState" xml:space="preserve">
+    <value>No se encontraron imágenes. Prueba con otro término de búsqueda.</value>
+  </data>
+  <data name="SearchImagesPreviewCaption" xml:space="preserve">
+    <value>Vista previa</value>
+  </data>
+  <data name="SearchImagesPreviewPlaceholder" xml:space="preserve">
+    <value>Selecciona una imagen para verla aquí.</value>
+  </data>
+  <data name="ImageDimensionsFormat" xml:space="preserve">
+    <value>{0} × {1}</value>
+  </data>
   <data name="CustomThemeColorTitle" xml:space="preserve">
     <value>Color de tema personalizado</value>
   </data>
@@ -195,6 +216,9 @@
   </data>
   <data name="FilterPresets" xml:space="preserve">
     <value>Preajustes de filtro</value>
+  </data>
+  <data name="RemoveFilter" xml:space="preserve">
+    <value>Quitar filtro</value>
   </data>
   <data name="SortSettings" xml:space="preserve">
     <value>Configuración de orden</value>
@@ -748,6 +772,12 @@
   <data name="LabelCommunityScore" xml:space="preserve">
     <value>Puntuación de la comunidad:</value>
   </data>
+  <data name="HeroCriticScoreShort" xml:space="preserve">
+    <value>Críticos</value>
+  </data>
+  <data name="HeroCommunityScoreShort" xml:space="preserve">
+    <value>Comunidad</value>
+  </data>
   <data name="LabelLinks" xml:space="preserve">
     <value>Enlaces:</value>
   </data>
@@ -768,6 +798,144 @@
   </data>
   <data name="Media" xml:space="preserve">
     <value>Multimedia</value>
+  </data>
+  <data name="AddBanner" xml:space="preserve">
+    <value>Añadir banner</value>
+  </data>
+  <data name="ChangeArt" xml:space="preserve">
+    <value>Cambiar arte</value>
+  </data>
+  <data name="BigCovers" xml:space="preserve">
+    <value>Covers grandes</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Quitar</value>
+  </data>
+  <data name="SteamGridDb" xml:space="preserve">
+    <value>SteamGridDB</value>
+  </data>
+  <data name="SetupSteamGridDb" xml:space="preserve">
+    <value>Configurar SteamGridDB</value>
+  </data>
+  <data name="SteamGridDbSetupPrompt" xml:space="preserve">
+    <value>Conecta SteamGridDB para iconos, covers y banners de la comunidad.</value>
+  </data>
+  <data name="SteamGridDbSetupHint" xml:space="preserve">
+    <value>API key gratuita. La configuración abre steamgriddb.com en tu navegador — la forma recomendada y segura.</value>
+  </data>
+  <data name="SteamGridDbSetupSecureNote" xml:space="preserve">
+    <value>Bridge nunca ve tu contraseña de Steam; solo la API key que pegues.</value>
+  </data>
+  <data name="SteamGridDbSettingsTitle" xml:space="preserve">
+    <value>SteamGridDB</value>
+  </data>
+  <data name="SteamGridDbSettingsHelp" xml:space="preserve">
+    <value>SteamGridDB ofrece iconos, covers y banners hechos por la comunidad.</value>
+  </data>
+  <data name="SteamGridDbSettingsIntro" xml:space="preserve">
+    <value>SteamGridDB es un sitio muy conocido de la comunidad para artwork personalizado de juegos: iconos, covers, banners hero y más.</value>
+  </data>
+  <data name="SteamGridDbApiKeyNeeded" xml:space="preserve">
+    <value>Para buscar ese artwork desde Bridge, necesitas una API key gratuita en tu perfil de SteamGridDB.</value>
+  </data>
+  <data name="SteamGridDbObtainKeyHeading" xml:space="preserve">
+    <value>Para obtenerla:</value>
+  </data>
+  <data name="SteamGridDbTutorialStep1" xml:space="preserve">
+    <value>Pulsa Abrir SteamGridDB abajo.</value>
+  </data>
+  <data name="SteamGridDbTutorialStep2" xml:space="preserve">
+    <value>Inicia sesión con Steam en steamgriddb.com (login oficial de Steam).</value>
+  </data>
+  <data name="SteamGridDbTutorialStep3" xml:space="preserve">
+    <value>Genera una API key en la pestaña API.</value>
+  </data>
+  <data name="SteamGridDbTutorialStep4" xml:space="preserve">
+    <value>Pega la key abajo y guarda.</value>
+  </data>
+  <data name="SteamGridDbRecommended" xml:space="preserve">
+    <value>Recomendado</value>
+  </data>
+  <data name="SteamGridDbOpenPreferences" xml:space="preserve">
+    <value>Abrir SteamGridDB</value>
+  </data>
+  <data name="SteamGridDbRefreshCallout" xml:space="preserve">
+    <value>Tras el login de Steam, pulsa F5 si la página queda en negro.</value>
+  </data>
+  <data name="SteamGridDbInAppTitle" xml:space="preserve">
+    <value>Solo si tu navegador da problemas</value>
+  </data>
+  <data name="SteamGridDbOpenInApp" xml:space="preserve">
+    <value>Abrir en Bridge</value>
+  </data>
+  <data name="SteamGridDbInAppHint" xml:space="preserve">
+    <value>Navegador embebido (WebView2) — mismos sitios steamgriddb.com y Steam, con recarga automática tras el login. Bridge nunca ve ni guarda tu contraseña de Steam; úsalo solo para simplificar el proceso.</value>
+  </data>
+  <data name="SteamGridDbBrowserTitle" xml:space="preserve">
+    <value>SteamGridDB — API key</value>
+  </data>
+  <data name="SteamGridDbBrowserTrustNote" xml:space="preserve">
+    <value>Mismo inicio de sesión en steamgriddb.com y Steam que en tu navegador. Bridge nunca ve tu contraseña de Steam.</value>
+  </data>
+  <data name="SteamGridDbBrowserOpenExternal" xml:space="preserve">
+    <value>Abrir en el navegador</value>
+  </data>
+  <data name="SteamGridDbBrowserRefresh" xml:space="preserve">
+    <value>Actualizar página</value>
+  </data>
+  <data name="SteamGridDbApiKeyLabel" xml:space="preserve">
+    <value>API key</value>
+  </data>
+  <data name="OpenSteamGridDbSettings" xml:space="preserve">
+    <value>Abrir ajustes</value>
+  </data>
+  <data name="SettingsSteamGridDbCardDescription" xml:space="preserve">
+    <value>API key para artwork comunitario en el editor de media.</value>
+  </data>
+  <data name="SteamGridDbPickerTitle" xml:space="preserve">
+    <value>Artwork SteamGridDB</value>
+  </data>
+  <data name="SteamGridDbSelectGame" xml:space="preserve">
+    <value>Seleccionar juego</value>
+  </data>
+  <data name="SteamGridDbPickGameHint" xml:space="preserve">
+    <value>Varios resultados — elige el juego correcto en la lista de la izquierda.</value>
+  </data>
+  <data name="SteamGridDbMatchesTitle" xml:space="preserve">
+    <value>Juegos coincidentes</value>
+  </data>
+  <data name="SteamGridDbArtworkForFormat" xml:space="preserve">
+    <value>Artwork de {0}</value>
+  </data>
+  <data name="SteamGridDbSearchHint" xml:space="preserve">
+    <value>Busca por nombre del juego. Si hay varios resultados, elige uno de la lista.</value>
+  </data>
+  <data name="HeroBackgroundStyleLabel" xml:space="preserve">
+    <value>Estilo del banner</value>
+  </data>
+  <data name="HeroBackgroundDefault" xml:space="preserve">
+    <value>Predeterminado</value>
+  </data>
+  <data name="HeroBackgroundBlack" xml:space="preserve">
+    <value>Negro</value>
+  </data>
+  <data name="HeroBackgroundCustom" xml:space="preserve">
+    <value>Personalizado</value>
+  </data>
+  <data name="IgdbTutorialStep1" xml:space="preserve">
+    <value>Inicia sesión en dev.twitch.tv y abre la consola de desarrollador.</value>
+  </data>
+  <data name="IgdbTutorialStep2" xml:space="preserve">
+    <value>Registra una aplicación nueva (cualquier nombre; el tipo de cliente no importa).</value>
+  </data>
+  <data name="IgdbTutorialStep3" xml:space="preserve">
+    <value>Copia el Client ID de la página de la app.</value>
+  </data>
+  <data name="IgdbTutorialStep4" xml:space="preserve">
+    <value>Genera un Client Secret y pega ambos valores abajo.</value>
+  </data>
+  <data name="IgdbOpenDeveloperConsole" xml:space="preserve">
+    <value>Abrir consola de desarrollador de Twitch</value>
   </data>
   <data name="SortingName" xml:space="preserve">
     <value>Nombre para ordenar</value>
@@ -940,11 +1108,26 @@
   <data name="SettingsKeepSelectionDescription" xml:space="preserve">
     <value>Si está desactivado, al cambiar entre Lista, Portadas y Tabla se borra el juego seleccionado.</value>
   </data>
+  <data name="SettingsTranslucentSidebarTitle" xml:space="preserve">
+    <value>Barra lateral translúcida</value>
+  </data>
+  <data name="SettingsTranslucentSidebarDescription" xml:space="preserve">
+    <value>Usa una barra lateral semitransparente para que se vea el fondo del juego seleccionado. La barra de título y la barra de estado comparten el mismo efecto.</value>
+  </data>
+  <data name="SettingsTranslucentBackgroundTitle" xml:space="preserve">
+    <value>Fondo translúcido</value>
+  </data>
+  <data name="SettingsTranslucentBackgroundDescription" xml:space="preserve">
+    <value>Muestra el arte borroso del juego detrás de la lista y los paneles de detalle. Desactívalo para usar colores sólidos del theme (Ajustes y Estadísticas siguen con fondo sólido).</value>
+  </data>
   <data name="Overview" xml:space="preserve">
     <value>Resumen</value>
   </data>
   <data name="Images" xml:space="preserve">
     <value>Imágenes</value>
+  </data>
+  <data name="Achievements" xml:space="preserve">
+    <value>Logros</value>
   </data>
   <data name="SettingsDetailSectionPositionTitle" xml:space="preserve">
     <value>Posición de la sección Detalles</value>

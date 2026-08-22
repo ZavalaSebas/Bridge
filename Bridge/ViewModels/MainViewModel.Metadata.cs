@@ -32,7 +32,7 @@ public partial class MainViewModel
             var result = await _metadataSync.SearchForManualDownloadAsync(
                 gameName,
                 romImport,
-                game.SourceId != GameSource.ManualId ? game.ExternalId : null);
+                !romImport && uint.TryParse(game.ExternalId, out _) ? game.ExternalId : null);
 
             var metadataApplied = false;
             string? providerName = null;
@@ -46,7 +46,7 @@ public partial class MainViewModel
 
                 ApplyMetadata(game, metadata);
                 ApplyMetadataReferences(game, metadata);
-                ApplySteamLocalArtwork(game);
+                ApplySteamLocalArtwork(game, overwrite: true);
                 metadataApplied = true;
             }
 
@@ -211,7 +211,7 @@ public partial class MainViewModel
         }
 
         if (!string.IsNullOrWhiteSpace(metadata.BackgroundImage) &&
-            (overwrite || string.IsNullOrWhiteSpace(game.BackgroundImage)))
+            (overwrite || HeroBackground.IsDefault(game.BackgroundImage)))
         {
             var background = UrlValidator.SanitizePersistedUrl(metadata.BackgroundImage);
             if (!string.IsNullOrWhiteSpace(background))
@@ -233,6 +233,13 @@ public partial class MainViewModel
 
         if (metadata.CommunityScore.HasValue)
             game.CommunityScore = metadata.CommunityScore;
+
+        if (GameSource.IsUserManaged(game.SourceId) &&
+            string.IsNullOrWhiteSpace(game.ExternalId) &&
+            uint.TryParse(metadata.ExternalId, out _))
+        {
+            game.ExternalId = metadata.ExternalId.Trim();
+        }
 
         if (metadata.UserScore.HasValue)
             game.UserScore = metadata.UserScore;
@@ -649,6 +656,89 @@ public partial class MainViewModel
                 : !IsNetworkAvailable()
                     ? Strings.MetadataSyncNoInternet
                     : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), candidates.Count);
+        }
+        finally
+        {
+            EndStatusProgress();
+        }
+    }
+
+    // Downloads metadata for Bridge-managed external installs (Steam-first by
+    // name, same as the post-scan import path).
+    private async Task DownloadMissingBridgeMetadataAsync(Guid bridgeSourceId)
+    {
+        var candidates = Games
+            .Where(g => g.SourceId == bridgeSourceId && string.IsNullOrWhiteSpace(g.Description))
+            .ToList();
+
+        if (candidates.Count == 0)
+            return;
+
+        if (!IsNetworkAvailable())
+        {
+            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
+            return;
+        }
+
+        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
+
+        var completed = 0;
+        var total = candidates.Count;
+        BeginStatusProgress(indeterminate: total <= 1);
+        ReportBatchProgress(0, total);
+        try
+        {
+            using var throttle = new SemaphoreSlim(4);
+            var results = await Task.WhenAll(candidates.Select(game =>
+                Task.Run(async () =>
+                {
+                    await throttle.WaitAsync();
+                    try
+                    {
+                        var found = await _metadataSync.SearchForAddedGameAsync(game.Name, romImport: false);
+                        return found is null
+                            ? (game, metadata: (GameMetadata?)null, provider: (string?)null)
+                            : (game, metadata: found.Value.Metadata, provider: found.Value.ProviderName);
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                        var done = Interlocked.Increment(ref completed);
+                        RunOnUiThread(() => ReportBatchProgress(done, total));
+                    }
+                })));
+
+            int applied = 0;
+            foreach (var (game, metadata, providerName) in results)
+            {
+                if (metadata is null || providerName is null)
+                    continue;
+
+                try
+                {
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
+                        continue;
+
+                    if (providerName == _steamMetadataProvider.Name)
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+                    ApplySteamLocalArtwork(live);
+
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                }
+            }
+
+            if (applied > 0)
+                StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
         }
         finally
         {

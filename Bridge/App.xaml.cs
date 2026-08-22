@@ -146,6 +146,8 @@ namespace Bridge
                     DataContext = viewModel
                 };
                 MainWindow = mainWindow;
+                // Start warming images while the splash is still up (non-blocking).
+                _ = viewModel.WaitForStartupArtworkAsync();
                 splash.Close();
                 mainWindow.Show();
                 TrayIcon.Attach(mainWindow);
@@ -158,10 +160,6 @@ namespace Bridge
                         Config.AppName,
                         SymbolRegular.Info24);
                 }
-
-                // Warm selected-game and first-grid artwork without blocking the UI
-                // thread — covers may pop in briefly, but startup stays responsive.
-                _ = viewModel.WaitForStartupArtworkAsync();
 
                 // The new exe has now proven it starts (the window is up), so a
                 // pending update's rollback copy (.old) and handshake marker can
@@ -188,18 +186,14 @@ namespace Bridge
             // backdrop. Mica on Win11 (WindowBackdropType.Mica); on Win10 the
             // library's ApplyBackdrop compatibility check falls back to the
             // solid window background (set on FluentWindow). updateAccent:false
-            // keeps our own SystemAccentColor* (#007ACC) instead of letting the
+            // keeps our own SystemAccentColor* (default amber) instead of letting the
             // OS accent overwrite it. Must run after MainWindow is set so
             // UiApplication.Current.MainWindow resolves for the backdrop.
-            //
-            // Fase 2 perf experiment (reverted): deferring this to
-            // mainWindow.Loaded did NOT improve cold start (2590-2836ms vs
-            // 2467-2510ms measured synchronously, same method) — reverted to
-            // the synchronous call. Baseline delta vs pre-UI-overhaul (~2s /
-            // ~140MB) is documented for Fase 6.
             Wpf.Ui.Appearance.ApplicationThemeManager.Apply(
                 Wpf.Ui.Appearance.ApplicationTheme.Dark,
-                Wpf.Ui.Controls.WindowBackdropType.Mica,
+                TranslucentBackgroundSettingsStore.Load()
+                    ? Wpf.Ui.Controls.WindowBackdropType.Mica
+                    : Wpf.Ui.Controls.WindowBackdropType.None,
                 updateAccent: false);
 
             Exit += (_, _) =>
@@ -248,6 +242,7 @@ namespace Bridge
             // HttpClients are separate so long RetroArch downloads never share
             // timeout state with quick metadata/API calls.
             services.AddSingleton(IgdbSettingsStore.Load());
+            services.AddSingleton(SteamGridDbSettingsStore.Load());
             services.AddSingleton<MetadataHttpClient>();
             services.AddSingleton<DownloadHttpClient>();
 
@@ -270,6 +265,9 @@ namespace Bridge
             services.AddSingleton<IGameMetadataProvider>(sp => sp.GetRequiredService<SteamMetadataProvider>());
 
             services.AddSingleton(sp => new WebImageSearchService(sp.GetRequiredService<MetadataHttpClient>().Client));
+            services.AddSingleton(sp => new SteamGridDbClient(
+                sp.GetRequiredService<MetadataHttpClient>().Client,
+                sp.GetRequiredService<SteamGridDbSettings>()));
             services.AddSingleton(sp => new AppUpdateService(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton(new EmulationPaths(
                 Config.EmulatorInstallPath,
@@ -284,6 +282,7 @@ namespace Bridge
                 sp.GetRequiredService<DownloadHttpClient>().Client,
                 Config.CheatsPath));
             services.AddSingleton<CheatsWindowOpener>();
+            services.AddSingleton<GameEditWindowOpener>();
 
             // Transient, per the same Lifetime Guidelines ("Transient — ViewModels").
             services.AddTransient<MainViewModel>();
@@ -292,6 +291,7 @@ namespace Bridge
             services.AddTransient<EmulationSettingsViewModel>();
             services.AddTransient<CheatsViewModel>();
             services.AddTransient<IgdbSettingsViewModel>();
+            services.AddTransient<SteamGridDbSettingsViewModel>();
         }
 
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

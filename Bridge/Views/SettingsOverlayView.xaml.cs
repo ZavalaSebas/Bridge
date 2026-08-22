@@ -19,6 +19,8 @@ public partial class SettingsOverlayView : UserControl
     private bool _loadingKeepSelection;
     private bool _loadingDetailPanelPosition;
     private bool _loadingDetailSectionPosition;
+    private bool _loadingTranslucentSidebar;
+    private bool _loadingTranslucentBackground;
     private ProfileEditorHelper.AvatarEditorState _profileState = new();
 
     private static readonly string[] DetailPanelPositionValues =
@@ -71,6 +73,14 @@ public partial class SettingsOverlayView : UserControl
             DetailSectionPositionCombo.SelectedIndex = IndexForDetailSectionPosition(
                 DetailSectionPositionSettingsStore.Load());
             _loadingDetailSectionPosition = false;
+
+            _loadingTranslucentSidebar = true;
+            TranslucentSidebarToggle.IsChecked = SidebarTranslucentSettingsStore.Load();
+            _loadingTranslucentSidebar = false;
+
+            _loadingTranslucentBackground = true;
+            TranslucentBackgroundToggle.IsChecked = TranslucentBackgroundSettingsStore.Load();
+            _loadingTranslucentBackground = false;
 
             LoadProfileEditor();
         };
@@ -192,6 +202,13 @@ public partial class SettingsOverlayView : UserControl
         var owner = Window.GetWindow(this);
         var viewModel = App.Services.GetRequiredService<IgdbSettingsViewModel>();
         new IgdbSettingsWindow(viewModel) { Owner = owner }.ShowDialog();
+    }
+
+    private void SteamGridDbSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        var viewModel = App.Services.GetRequiredService<SteamGridDbSettingsViewModel>();
+        new SteamGridDbSettingsWindow(viewModel) { Owner = owner }.ShowDialog();
     }
 
     private void CustomThemeColor_Click(object sender, RoutedEventArgs e)
@@ -397,5 +414,31 @@ public partial class SettingsOverlayView : UserControl
 
         if (Window.GetWindow(this) is MainWindow mainWindow)
             mainWindow.LibraryDetail.ApplyDetailSectionPosition(selected);
+    }
+
+    private void TranslucentSidebarToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingTranslucentSidebar)
+            return;
+
+        var enabled = TranslucentSidebarToggle.IsChecked == true;
+        if (enabled == SidebarTranslucentSettingsStore.Load())
+            return;
+
+        SidebarTranslucentSettingsStore.Save(enabled);
+        ThemeManager.ApplySidebarAppearance();
+    }
+
+    private void TranslucentBackgroundToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingTranslucentBackground)
+            return;
+
+        var enabled = TranslucentBackgroundToggle.IsChecked == true;
+        if (enabled == TranslucentBackgroundSettingsStore.Load())
+            return;
+
+        TranslucentBackgroundSettingsStore.Save(enabled);
+        ThemeManager.ApplyTranslucentBackground();
     }
 }

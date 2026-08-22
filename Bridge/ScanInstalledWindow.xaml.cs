@@ -2,7 +2,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
+using System.Windows.Media;
+using Bridge.Assets;
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Resources;
@@ -20,7 +21,7 @@ public class InstalledGameEntry
     public required string Path { get; init; }
     public string? Arguments { get; init; }
     public string? WorkingDirectory { get; init; }
-    public BitmapSource? Icon { get; init; }
+    public ImageSource? Icon { get; init; }
     public bool Import { get; set; } = true;
 }
 
@@ -141,7 +142,7 @@ public partial class ScanInstalledWindow : Wpf.Ui.Controls.FluentWindow
                 Path = candidate.ExecutablePath,
                 Arguments = candidate.Arguments,
                 WorkingDirectory = candidate.WorkingDirectory,
-                Icon = ExeIconLoader.GetIcon(candidate.IconPath ?? candidate.ExecutablePath),
+                Icon = ExeIconLoader.GetIcon(candidate.IconPath ?? candidate.ExecutablePath) ?? DefaultGameIcon.Source,
                 Import = !alreadyImported
             });
         }

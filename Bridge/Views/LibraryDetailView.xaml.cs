@@ -17,6 +17,14 @@ namespace Bridge.Views;
 
 public partial class LibraryDetailView : UserControl
 {
+    private const double DefaultListColumnWidth = LayoutMetrics.ListColumnWidth;
+    private const double CoverCompletionBadgeGap = 6;
+    private const double CoverCompletionBadgeCoverGap = 8;
+    private const double HeroCoverHeightDefault = 170;
+    // private const double HeroCoverLargeScale = 1.25;
+    private const double HeroCoverDockMargin = 40;
+    private const double HeroCoverTitleReserve = 168;
+    private const double HeroCoverStarReserve = 52;
     private static readonly TimeSpan FavoriteStarMotion = TimeSpan.FromMilliseconds(180);
 
     private readonly DispatcherTimer _favoriteHideTimer;
@@ -41,6 +49,11 @@ public partial class LibraryDetailView : UserControl
         Unloaded += OnUnloaded;
         CoversViewsHost.SizeChanged += OnCoversViewsHostSizeChanged;
         CompactInfoPanel.IsVisibleChanged += OnCompactInfoPanelIsVisibleChanged;
+        CoverContentRow.SizeChanged += OnCoverCompletionLayoutChanged;
+        CoverFavoriteButton.SizeChanged += OnCoverCompletionLayoutChanged;
+        CoverCompletionBadge.SizeChanged += OnCoverCompletionLayoutChanged;
+        HeroHeader.SizeChanged += OnHeroHeaderSizeChanged;
+        DetailsCoverImage.ImageChanged += OnDetailsCoverImageChanged;
     }
 
     private void OnCompactInfoPanelIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -81,12 +94,23 @@ public partial class LibraryDetailView : UserControl
 
         ApplyDetailPanelPosition();
         ApplyDetailSectionPosition();
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            ApplyHeroCoverHeight();
+            UpdateHeroCoverScale();
+            PositionCoverCompletionBadge();
+        });
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         CoversViewsHost.SizeChanged -= OnCoversViewsHostSizeChanged;
         CompactInfoPanel.IsVisibleChanged -= OnCompactInfoPanelIsVisibleChanged;
+        CoverContentRow.SizeChanged -= OnCoverCompletionLayoutChanged;
+        CoverFavoriteButton.SizeChanged -= OnCoverCompletionLayoutChanged;
+        CoverCompletionBadge.SizeChanged -= OnCoverCompletionLayoutChanged;
+        HeroHeader.SizeChanged -= OnHeroHeaderSizeChanged;
+        DetailsCoverImage.ImageChanged -= OnDetailsCoverImageChanged;
         UnsubscribeFromViewModel();
     }
 
@@ -116,6 +140,15 @@ public partial class LibraryDetailView : UserControl
     {
         if (e.PropertyName is nameof(MainViewModel.SelectedGame) or nameof(MainViewModel.ViewMode))
             SyncTableSelection();
+
+        if (e.PropertyName is nameof(MainViewModel.SelectedGame))
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            {
+                ApplyHeroCoverHeight();
+                PositionCoverCompletionBadge();
+            });
+        }
     }
 
     private void OnDetailedRowsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
@@ -166,6 +199,88 @@ public partial class LibraryDetailView : UserControl
         if (Window.GetWindow(this) is MainWindow mainWindow)
             mainWindow.HandleEditGameClick(sender, e);
     }
+
+    private void AddBanner_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.HandleEditGameMediaClick(sender, e);
+    }
+
+    private void HeroChangeArt_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.HandleEditGameMediaClick(sender, e);
+    }
+
+    private void CoverChangeArt_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.HandleEditGameMediaClick(sender, e);
+    }
+
+    private void HeroContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu)
+            return;
+
+        var hasBanner = ViewModel?.SelectedGame is { BackgroundImage: var background }
+                        && !HeroBackground.IsDefault(background);
+
+        if (menu.Items.Count >= 2)
+        {
+            if (menu.Items[0] is MenuItem changeArt)
+                changeArt.Visibility = hasBanner ? Visibility.Visible : Visibility.Collapsed;
+
+            if (menu.Items[1] is Separator separator)
+                separator.Visibility = hasBanner ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        UpdatePositionMenuChecks(menu, DetailPanelPositionSettingsStore.Load());
+    }
+
+    /*
+    private void HeroCoverContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu || ViewModel?.SelectedGame is not { } game)
+            return;
+
+        if (menu.Items.Count >= 2 && menu.Items[1] is MenuItem bigCovers)
+            bigCovers.IsChecked = GameDisplayPreferencesStore.GetHeroCoverLarge(game.Id);
+    }
+
+    private void BigCovers_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { IsChecked: var isChecked } || ViewModel?.SelectedGame is not { } game)
+            return;
+
+        GameDisplayPreferencesStore.SetHeroCoverLarge(game.Id, isChecked);
+        ApplyHeroCoverHeight();
+    }
+    */
+
+    private void ApplyHeroCoverHeight()
+    {
+        if (DetailsCoverImage is null || CoverScaleHost is null || CoverLayoutScale is null)
+            return;
+
+        CoverLayoutScale.ScaleX = 1;
+        CoverLayoutScale.ScaleY = 1;
+        DetailsCoverImage.Height = HeroCoverHeightDefault;
+        CoverScaleHost.MaxHeight = HeroCoverHeightDefault;
+        UpdateHeroCoverScale();
+        PositionCoverCompletionBadge();
+    }
+
+    private static double GetHeroCoverScale() => 1.0;
+    /*
+    private double GetHeroCoverScale()
+    {
+        var gameId = ViewModel?.SelectedGame?.Id ?? Guid.Empty;
+        return gameId != Guid.Empty && GameDisplayPreferencesStore.GetHeroCoverLarge(gameId)
+            ? HeroCoverLargeScale
+            : 1.0;
+    }
+    */
 
     private void EmptyScanInstalled_Click(object sender, RoutedEventArgs e)
     {
@@ -397,6 +512,59 @@ public partial class LibraryDetailView : UserControl
         CompactFavoriteScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
     }
 
+    private void OnCoverCompletionLayoutChanged(object sender, SizeChangedEventArgs e)
+        => PositionCoverCompletionBadge();
+
+    private void OnHeroHeaderSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.WidthChanged)
+            UpdateHeroCoverScale();
+    }
+
+    private void OnDetailsCoverImageChanged(object? sender, EventArgs e)
+        => UpdateHeroCoverScale();
+
+    private void UpdateHeroCoverScale()
+    {
+        if (CoverScaleHost is null || HeroHeader is null)
+            return;
+
+        var available = HeroHeader.ActualWidth
+            - HeroCoverDockMargin
+            - HeroCoverTitleReserve
+            - HeroCoverStarReserve;
+
+        var scale = GetHeroCoverScale();
+        CoverScaleHost.MaxWidth = Math.Max(72, available / scale);
+    }
+
+    private void PositionCoverCompletionBadge()
+    {
+        if (CoverCompletionBadge is null || CoverFavoriteButton is null || CoverContentRow is null)
+            return;
+
+        if (CoverCompletionBadge.Visibility != Visibility.Visible)
+            return;
+
+        var rowHeight = CoverContentRow.ActualHeight;
+        var starHeight = CoverFavoriteButton.ActualHeight;
+        var starWidth = CoverFavoriteButton.ActualWidth;
+        var badgeWidth = CoverCompletionBadge.ActualWidth;
+        if (rowHeight <= 0 || starHeight <= 0 || badgeWidth <= 0)
+            return;
+
+        // Layout slot of the star (VerticalAlignment=Center). Ignore RenderTransform
+        // so the slide/pop animation does not move the badge.
+        var starTop = (rowHeight - starHeight) / 2;
+        Canvas.SetTop(CoverCompletionBadge, starTop + starHeight + CoverCompletionBadgeGap);
+
+        // Prefer centered under the star, but shift left so the pill never covers the artwork.
+        var preferredLeft = (starWidth - badgeWidth) / 2;
+        var coverLeft = starWidth + CoverFavoriteButton.Margin.Right;
+        var maxLeft = coverLeft - badgeWidth - CoverCompletionBadgeCoverGap;
+        Canvas.SetLeft(CoverCompletionBadge, Math.Min(preferredLeft, maxLeft));
+    }
+
     private void AnimateFavoriteStar(bool inView)
     {
         if (CoverFavoriteButton is null)
@@ -456,6 +624,22 @@ public partial class LibraryDetailView : UserControl
                 CoversList.InvalidateArrange();
             }, DispatcherPriority.Loaded);
         }
+    }
+
+    /// <summary>
+    /// Forces the detail overview tab through layout while the window is still
+    /// hidden so text and description images are ready on the first visible frame.
+    /// </summary>
+    public void WarmupDetailContent()
+    {
+        if (ViewModel?.SelectedGame is null)
+            return;
+
+        ApplyDetailSectionPosition();
+        UpdateLayout();
+        DetailScrollViewer.UpdateLayout();
+        DetailOverviewTabs.UpdateLayout();
+        OverviewScrollViewer.UpdateLayout();
     }
 
     public void ApplyDetailSectionPosition(string? position = null)
@@ -564,7 +748,7 @@ public partial class LibraryDetailView : UserControl
             return;
         }
 
-        ViewsColumn.Width = new GridLength(360);
+        ViewsColumn.Width = new GridLength(DefaultListColumnWidth);
         ViewsColumn.MinWidth = 200;
         DetailColumn.Width = new GridLength(1, GridUnitType.Star);
         DetailColumn.MinWidth = 320;
@@ -616,7 +800,7 @@ public partial class LibraryDetailView : UserControl
 
     private void ResetListDetailGrid()
     {
-        ViewsColumn.Width = new GridLength(360);
+        ViewsColumn.Width = new GridLength(DefaultListColumnWidth);
         ViewsColumn.MinWidth = 200;
         DetailColumn.Width = new GridLength(1, GridUnitType.Star);
         DetailColumn.MinWidth = 320;

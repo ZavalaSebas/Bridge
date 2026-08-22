@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
@@ -93,6 +94,66 @@ public class EmptyToVisibilityConverter : IValueConverter
 
         return System.Windows.Visibility.Visible;
     }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+/// <summary>Shows content when the bound string/value is empty; hides otherwise.</summary>
+public class InverseEmptyToVisibilityConverter : IValueConverter
+{
+    private static readonly EmptyToVisibilityConverter Empty = new();
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Empty.Convert(value, targetType, parameter, culture) is Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+[ValueConversion(typeof(string), typeof(Visibility))]
+public class HeroBlackToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Bridge.Core.Entities.HeroBackground.IsBlack(value as string)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+[ValueConversion(typeof(string), typeof(Visibility))]
+public class HeroDefaultToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Bridge.Core.Entities.HeroBackground.IsDefault(value as string)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+[ValueConversion(typeof(string), typeof(string))]
+public class HeroArtSourceConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Bridge.Core.Entities.HeroBackground.IsCustom(value as string) ? value : string.Empty;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+[ValueConversion(typeof(string), typeof(Visibility))]
+public class HeroNonDefaultToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Bridge.Core.Entities.HeroBackground.IsDefault(value as string)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();

@@ -7,7 +7,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10-512bd4?style=flat-square&logo=dotnet&logoColor=white&labelColor=1a1a2e)](https://dotnet.microsoft.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows-00a4ef?style=flat-square&logo=windows&logoColor=white&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge)
-[![Version](https://img.shields.io/badge/Version-0.7.0-57F287?style=flat-square&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge/releases)
+[![Version](https://img.shields.io/badge/Version-0.8.0-57F287?style=flat-square&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge/releases)
 
 Bridge brings your games — from external libraries, manual entries, and emulated ROMs — into one fast, local catalog. No plugin runtime, no bloat.
 
@@ -81,6 +81,12 @@ dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSing
 - **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Installed / Not Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
 - **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + icon-only Play/Info overlay; compact side panel with screenshot strip, Details, and Overview), **Table** (themed grid with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
 - **How Long to Beat** — completion-time estimates (main / extras / completionist) from howlongtobeat.com, fetched with metadata sync and shown in the Details hero as a segmented progress bar filled by your real playtime
+- **SteamGridDB artwork** — optional community icons, covers, and hero banners from [SteamGridDB](https://www.steamgriddb.com/) in the game editor (free API key). Setup wizard, settings card, in-app browser fallback, and a picker with live preview
+- **Change art** — context menu **Change art** on any game opens the editor directly on the Media tab
+- **Hero banner modes** — Default (Steam/metadata), solid Black, or Custom URL/image; custom choices are preserved across Steam imports and metadata refresh
+- **Detail metadata filters** — click genre, platform, developer, publisher, library, or feature values in the game details panel to filter the library; chips in the header clear filters
+- **Translucent UI** — optional blurred game artwork behind the library and detail panels, plus a semi-transparent sidebar (Settings → Appearance)
+- **Redesigned artwork pickers** — web image search and SteamGridDB pickers use responsive tiles (full-width banners, two-column covers/icons), side preview, and theme-colored action buttons
 - **Cinematic screenshot gallery** — in the Table view and as a compact strip in Covers, games with screenshots show them as a carousel: a large image floating over a frosted backdrop, a drag-to-scroll thumbnail strip, counter, arrow buttons, keyboard navigation, click-to-expand into a full-window dark overlay, and auto-advance
 - **Sidebar navigation** — Icon rail (52px) with Library, ROMs, Favorites, Sources, Show hidden, Statistics, and Settings shortcuts, collapsible and re-positionable
 - **Dark theme + Mica + runtime theming** — custom indigo dark palette with Inter variable font, Mica backdrop on Windows 11, and a runtime accent switcher (9 color presets + custom picker) that recolors the whole UI

@@ -19,7 +19,13 @@ namespace Bridge
             // panel, Grid/Table collapse it.
             Loaded += (_, _) =>
             {
+                Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+                {
+                    ThemeManager.ApplyAppearanceSettings();
+                });
+
                 ApplyViewModeLayout();
+                LibraryDetail.WarmupDetailContent();
 
                 // Restore this view's saved scroll position on open, so Bridge
                 // comes back to where you were instead of the top. Also scrolls
@@ -74,6 +80,15 @@ namespace Bridge
             _forceExit = true;
             App.TrayIcon.Dispose();
             Close();
+        }
+
+        private void MainTitleBar_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // TitleBar.Header does not stretch, so the center column only exists
+            // if the header grid has an explicit width that leaves the caption
+            // buttons free (minimize / maximize / close).
+            const double captionButtonsWidth = 138;
+            TitleBarHeaderGrid.Width = Math.Max(0, MainTitleBar.ActualWidth - captionButtonsWidth);
         }
 
         private async Task RunFirstLaunchDialogsAsync(MainViewModel viewModel)

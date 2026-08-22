@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
+using Bridge.Core.Entities;
+using Bridge.Metadata;
 using Bridge.Resources;
 using Bridge.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,13 +18,15 @@ namespace Bridge
             InitializeComponent();
             _viewModel = viewModel;
             DataContext = viewModel;
-            BackgroundArt.SourceUrl = backgroundImage;
+            BackgroundArt.SourceUrl = HeroBackground.IsCustom(backgroundImage) ? backgroundImage : null;
             Title = viewModel.IsNewGame ? Strings.NewGame : Strings.EditGame;
             WindowTitleText.Text = Title;
             WindowIcon.Symbol = viewModel.IsNewGame
                 ? Wpf.Ui.Controls.SymbolRegular.Add24
                 : Wpf.Ui.Controls.SymbolRegular.Edit24;
         }
+
+        public void SelectMediaTab() => MediaTab.IsSelected = true;
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
@@ -108,22 +112,10 @@ namespace Bridge
             if (sender is FrameworkElement { Tag: string field })
             {
                 var searchService = App.Services.GetRequiredService<Services.WebImageSearchService>();
-                var window = new ImageSearchWindow(searchService, _viewModel.Name) { Owner = this };
+                var query = Services.WebImageSearchService.BuildMediaSearchQuery(_viewModel.Name, field);
+                var window = new ImageSearchWindow(searchService, query, field) { Owner = this };
                 if (window.ShowDialog() == true && window.SelectedImageUrl is { } url)
-                {
-                    switch (field)
-                    {
-                        case "Icon":
-                            _viewModel.Icon = url;
-                            break;
-                        case "CoverImage":
-                            _viewModel.CoverImage = url;
-                            break;
-                        case "BackgroundImage":
-                            _viewModel.BackgroundImage = url;
-                            break;
-                    }
-                }
+                    ApplyMediaUrl(field, url);
             }
         }
 
@@ -139,20 +131,79 @@ namespace Bridge
                 };
 
                 if (dialog.ShowDialog(this) == true)
-                {
-                    switch (field)
-                    {
-                        case "Icon":
-                            _viewModel.Icon = dialog.FileName;
-                            break;
-                        case "CoverImage":
-                            _viewModel.CoverImage = dialog.FileName;
-                            break;
-                        case "BackgroundImage":
-                            _viewModel.BackgroundImage = dialog.FileName;
-                            break;
-                    }
-                }
+                    ApplyMediaUrl(field, dialog.FileName);
+            }
+        }
+
+        private void SteamGridDb_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string field })
+                return;
+
+            if (!_viewModel.IsSteamGridDbConfigured)
+            {
+                OpenSteamGridDbSettings();
+                return;
+            }
+
+            var client = App.Services.GetRequiredService<SteamGridDbClient>();
+            var query = string.IsNullOrWhiteSpace(_viewModel.Name) ? field : _viewModel.Name;
+            var window = new SteamGridDbPickerWindow(client, query, field) { Owner = this };
+            if (window.ShowDialog() == true && window.SelectedImageUrl is { } url)
+                ApplyMediaUrl(field, url);
+        }
+
+        private void SetupSteamGridDb_Click(object sender, RoutedEventArgs e) => OpenSteamGridDbSettings();
+
+        private void OpenSteamGridDbSettings()
+        {
+            var viewModel = App.Services.GetRequiredService<SteamGridDbSettingsViewModel>();
+            if (new SteamGridDbSettingsWindow(viewModel) { Owner = this }.ShowDialog() == true)
+                _viewModel.NotifySteamGridDbConfigurationChanged();
+        }
+
+        private void ClearMedia_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string field })
+                return;
+
+            switch (field)
+            {
+                case "Icon":
+                    _viewModel.ClearIcon();
+                    break;
+                case "CoverImage":
+                    _viewModel.ClearCover();
+                    break;
+                case "BackgroundImage":
+                    _viewModel.HeroBackgroundKind = HeroBackground.Kind.Default;
+                    break;
+            }
+        }
+
+        private void HeroBackgroundKind_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not RadioButton { Tag: string tag })
+                return;
+
+            if (Enum.TryParse<HeroBackground.Kind>(tag, ignoreCase: true, out var kind))
+                _viewModel.HeroBackgroundKind = kind;
+        }
+
+        private void ApplyMediaUrl(string field, string url)
+        {
+            switch (field)
+            {
+                case "Icon":
+                    _viewModel.Icon = url;
+                    break;
+                case "CoverImage":
+                    _viewModel.CoverImage = url;
+                    break;
+                case "BackgroundImage":
+                    _viewModel.HeroBackgroundKind = HeroBackground.Kind.Custom;
+                    _viewModel.BackgroundImage = url;
+                    break;
             }
         }
     }

@@ -185,6 +185,16 @@ public partial class MainViewModel
         RefreshStatistics();
     }
 
+    [RelayCommand]
+    private void ChangeArt()
+    {
+        if (SelectedGame is not { } game)
+            return;
+
+        if (_gameEditWindowOpener.Show(game, selectMediaTab: true))
+            RefreshGameDisplay(game);
+    }
+
     // Opens the selected game's install folder in Explorer.
     [RelayCommand]
     private void OpenCheats()

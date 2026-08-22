@@ -357,7 +357,7 @@ Metadata source selection needed an explicit choice. SteamGridDB (images-only) w
 
 **Alternatives considered:**
 
-- **Alternative 1: SteamGridDB** — images only, no text metadata; already tried once and explicitly rejected by the user as insufficient for Bridge's needs.
+- **Alternative 1: SteamGridDB** — images only, no text metadata; rejected as the *automatic metadata* source because Bridge needs descriptions, scores, and genres from IGDB/Steam. **Update (2026-08-21, v0.8.0):** SteamGridDB is now supported as an *optional, manual* artwork source in the game editor (`SteamGridDbClient` + picker) — user-initiated, API-key-gated, and separate from the metadata sync pipeline.
 - **Alternative 2: ScreenScraper** — stronger fit for pure-ROM/emulation metadata specifically, but the user asked for IGDB directly, not a retro-specific source.
 
 **Update (2026-08-06):** IGDB is no longer the *sole* metadata source. `SteamMetadataProvider` (ADR-12) was added as a second source that serves both as a fallback in the multi-provider chain and as the primary source for Steam-imported games (appid-direct lookup, no search needed). The interface `IGameMetadataProvider` was extracted to support this cleanly.

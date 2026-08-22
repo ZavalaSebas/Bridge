@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>0.7.0</Version>
+    <Version>0.8.0</Version>
     <AssemblyVersion>$(Version).0</AssemblyVersion>
     <ApplicationIcon>Assets\Bridge.ico</ApplicationIcon>
 
@@ -45,6 +45,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
     <PackageReference Include="WPF-UI" />
   </ItemGroup>
 

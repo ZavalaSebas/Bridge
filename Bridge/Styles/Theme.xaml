@@ -13,16 +13,16 @@
 
     <BitmapImage x:Key="Bridge.LogoImage" UriSource="pack://application:,,,/Assets/BridgeLogo.png" />
 
-    <!-- Acentos: el primario (#007ACC) es navegación/UI general y además es
+    <!-- Acentos: el primario (#F59E0B) es navegación/UI general y además es
          el SystemAccent que Wpf.Ui inyecta en AccentButton*; el secundario
          (#10B981) es EXCLUSIVO del botón Play / CTAs de lanzamiento, no se
          usa en navegación ni focus. -->
-    <Color x:Key="Bridge.Accent.Primary.Color">#007ACC</Color>
+    <Color x:Key="Bridge.Accent.Primary.Color">#F59E0B</Color>
     <Color x:Key="Bridge.Accent.Secondary.Color">#10B981</Color>
 
-    <Color x:Key="SystemAccentColorPrimary">#007ACC</Color>
-    <Color x:Key="SystemAccentColorSecondary">#2B9ADE</Color>
-    <Color x:Key="SystemAccentColorTertiary">#0063A8</Color>
+    <Color x:Key="SystemAccentColorPrimary">#F59E0B</Color>
+    <Color x:Key="SystemAccentColorSecondary">#F7C04E</Color>
+    <Color x:Key="SystemAccentColorTertiary">#C47E09</Color>
 
     <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
@@ -168,8 +168,16 @@
     <Thickness x:Key="Bridge.Spacing.XL">24</Thickness>
 
     <CornerRadius x:Key="Bridge.CornerRadius.Control">4</CornerRadius>
+    <CornerRadius x:Key="Bridge.CornerRadius.ActionButton">5</CornerRadius>
+    <CornerRadius x:Key="Bridge.CornerRadius.PlayIconButton">10</CornerRadius>
     <CornerRadius x:Key="Bridge.CornerRadius.Card">8</CornerRadius>
     <CornerRadius x:Key="Bridge.CornerRadius.Overlay">12</CornerRadius>
+
+    <LinearGradientBrush x:Key="Bridge.PlayButton.Background" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFF7B037" Offset="0" />
+        <GradientStop Color="#FFF6A41A" Offset="0.45" />
+        <GradientStop Color="#FFF59E0B" Offset="1" />
+    </LinearGradientBrush>
 
     <!-- =================================================================== -->
     <!-- MOTION — duraciones y easings                                       -->
@@ -189,11 +197,19 @@
     <!-- Acento secundario (Play/CTA). No tocar el SystemAccent: es azul. -->
     <SolidColorBrush x:Key="Bridge.Accent.SecondaryBrush" Color="{StaticResource Bridge.Accent.Secondary.Color}" />
 
-    <!-- Sidebar: semitransparente para dejar pasar el Mica/Acrylic de la
-         ventana (efecto vidrio). Sobre el fallback sólido de Win10 se ve
-         simplemente como un panel oscuro — aceptable. Con el fondo borroso del
-         juego seleccionado detrás, la translucidez da el efecto de cristal empañado. -->
-    <SolidColorBrush x:Key="Bridge.Sidebar.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" Opacity="0.75" />
+    <!-- Sidebar: sólido por defecto; la opción "Barra lateral translúcida" en
+         Ajustes restaura la opacidad 0.75 y el overlay #44000000 del host. -->
+    <SolidColorBrush x:Key="Bridge.Sidebar.Background" Color="{StaticResource Bridge.Background.Secondary.Color}" />
+
+    <!-- Fondos de contenido de biblioteca/detalle: transparente por defecto (look
+         original). "Fondo translúcido" desactivado en Ajustes los vuelve sólidos. -->
+    <SolidColorBrush x:Key="Bridge.Content.Background" Color="Transparent" />
+    <SolidColorBrush x:Key="Bridge.Panel.Background" Color="#CC1B2132" />
+    <SolidColorBrush x:Key="Bridge.Surface.Background" Color="#331B2132" />
+    <SolidColorBrush x:Key="Bridge.MutedSurface.Background" Color="#4D1B2132" />
+    <SolidColorBrush x:Key="Bridge.Overlay.Background" Color="#66000000" />
+    <SolidColorBrush x:Key="Bridge.HoverOverlay.Background" Color="#8C000000" />
+    <SolidColorBrush x:Key="Bridge.SecondaryButton.Background" Color="#CC1B2132" />
 
     <!-- Fondo borroso del juego seleccionado detrás de todo el contenido. -->
     <sys:Double x:Key="Bridge.Background.BlurRadius">40</sys:Double>
@@ -346,6 +362,41 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Separator">
                     <Border Height="1" Background="{DynamicResource Bridge.SeparatorBrush}" Margin="8,4" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Bridge.AccentButton" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextOnAccentFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.9" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

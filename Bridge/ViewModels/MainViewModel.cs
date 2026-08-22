@@ -39,6 +39,7 @@ public partial class MainViewModel : ObservableObject
     private readonly RetroArchService _retroArch;
     private readonly RetroArchCheatService _cheatService;
     private readonly CheatsWindowOpener _cheatsWindowOpener;
+    private readonly GameEditWindowOpener _gameEditWindowOpener;
     private readonly MetadataSyncService _metadataSync;
     private readonly HowLongToBeatService _howLongToBeat;
     private readonly SteamMetadataProvider _steamMetadataProvider;
@@ -147,6 +148,38 @@ public partial class MainViewModel : ObservableObject
     {
         GamesView.Refresh();
     }
+
+    public ObservableCollection<string> ActiveGenreFilters { get; } = [];
+
+    public ObservableCollection<string> ActivePlatformFilters { get; } = [];
+
+    public ObservableCollection<string> ActiveLibraryFilters { get; } = [];
+
+    public ObservableCollection<string> ActiveDeveloperFilters { get; } = [];
+
+    public ObservableCollection<string> ActivePublisherFilters { get; } = [];
+
+    public ObservableCollection<string> ActiveFeatureFilters { get; } = [];
+
+    public ObservableCollection<DetailFilterChip> ActiveDetailFilterChips { get; } = [];
+
+    public bool HasActiveDetailFilter =>
+        ActiveGenreFilters.Count > 0 ||
+        ActivePlatformFilters.Count > 0 ||
+        ActiveLibraryFilters.Count > 0 ||
+        ActiveDeveloperFilters.Count > 0 ||
+        ActivePublisherFilters.Count > 0 ||
+        ActiveFeatureFilters.Count > 0;
+
+    public ObservableCollection<string> SelectedGameGenres { get; } = [];
+
+    public ObservableCollection<string> SelectedGamePlatforms { get; } = [];
+
+    public ObservableCollection<string> SelectedGameDevelopers { get; } = [];
+
+    public ObservableCollection<string> SelectedGamePublishers { get; } = [];
+
+    public ObservableCollection<string> SelectedGameFeatures { get; } = [];
 
     [ObservableProperty]
     private LibraryFilterPreset _filterPreset;
@@ -416,7 +449,7 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(link.Url))
             return;
 
-        SafeLauncher.TryOpenUrl(link.Url);
+        SafeLauncher.TryOpenUrl(GameDetailLinkResolver.ResolveLinkUrl(link, SelectedGame));
     }
 
     public bool SelectedGameIsManagedRom =>
@@ -481,6 +514,11 @@ public partial class MainViewModel : ObservableObject
             InstallSizeText = string.Empty;
             AddedText = string.Empty;
             LastPlayedText = string.Empty;
+            SelectedGameGenres.Clear();
+            SelectedGamePlatforms.Clear();
+            SelectedGameDevelopers.Clear();
+            SelectedGamePublishers.Clear();
+            SelectedGameFeatures.Clear();
             return;
         }
 
@@ -505,6 +543,25 @@ public partial class MainViewModel : ObservableObject
         InstallSizeText = game.InstallSizeBytes is { } bytes ? PlaytimeFormatter.FormatBytes(bytes) : string.Empty;
         AddedText = game.Added is { } added ? added.ToString("d") : string.Empty;
         LastPlayedText = game.LastActivity is { } last ? last.ToString("d") : string.Empty;
+
+        PopulateNameList(game.GenreIds, _genreNames!, SelectedGameGenres);
+        PopulateNameList(game.PlatformIds, _platformNames!, SelectedGamePlatforms);
+        PopulateNameList(game.DeveloperIds, _companyNames!, SelectedGameDevelopers);
+        PopulateNameList(game.PublisherIds, _companyNames!, SelectedGamePublishers);
+        PopulateNameList(game.FeatureIds, _featureNames!, SelectedGameFeatures);
+    }
+
+    private static void PopulateNameList(
+        IEnumerable<Guid> ids,
+        IReadOnlyDictionary<Guid, string> names,
+        ObservableCollection<string> target)
+    {
+        target.Clear();
+        foreach (var id in ids)
+        {
+            if (names.TryGetValue(id, out var name) && !string.IsNullOrWhiteSpace(name))
+                target.Add(name);
+        }
     }
 
     private string ResolveCompletionStatusName(Game game)
@@ -605,6 +662,7 @@ public partial class MainViewModel : ObservableObject
         RetroArchService retroArch,
         RetroArchCheatService cheatService,
         CheatsWindowOpener cheatsWindowOpener,
+        GameEditWindowOpener gameEditWindowOpener,
         SteamMetadataProvider steamMetadataProvider,
         SteamLibraryImporter steamImporter,
         EpicLibraryImporter epicImporter,
@@ -632,6 +690,7 @@ public partial class MainViewModel : ObservableObject
         _retroArch = retroArch;
         _cheatService = cheatService;
         _cheatsWindowOpener = cheatsWindowOpener;
+        _gameEditWindowOpener = gameEditWindowOpener;
         _metadataSync = metadataSyncService;
         _howLongToBeat = howLongToBeatService;
         _steamMetadataProvider = steamMetadataProvider;
@@ -655,7 +714,57 @@ public partial class MainViewModel : ObservableObject
             }
         };
         RebuildDetailedRows();
+        ActiveGenreFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
+        ActivePlatformFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
+        ActiveLibraryFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
+        ActiveDeveloperFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
+        ActivePublisherFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
+        ActiveFeatureFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         InitializeAsync().FireAndForget("MainViewModel.Initialize");
+    }
+
+    private void OnDetailFiltersChanged()
+    {
+        RebuildDetailFilterChips();
+        GamesView.Refresh();
+        OnPropertyChanged(nameof(HasActiveDetailFilter));
+    }
+
+    private void RebuildDetailFilterChips()
+    {
+        ActiveDetailFilterChips.Clear();
+        foreach (var genre in ActiveGenreFilters.OrderBy(static g => g, StringComparer.OrdinalIgnoreCase))
+            ActiveDetailFilterChips.Add(new DetailFilterChip("genre", genre, $"{Strings.Genre}: {genre}"));
+        foreach (var platform in ActivePlatformFilters.OrderBy(static p => p, StringComparer.OrdinalIgnoreCase))
+            ActiveDetailFilterChips.Add(new DetailFilterChip("platform", platform, $"{Strings.Platform}: {platform}"));
+        foreach (var library in ActiveLibraryFilters.OrderBy(static l => l, StringComparer.OrdinalIgnoreCase))
+            ActiveDetailFilterChips.Add(new DetailFilterChip("library", library, $"{Strings.Library}: {library}"));
+        foreach (var developer in ActiveDeveloperFilters.OrderBy(static d => d, StringComparer.OrdinalIgnoreCase))
+            ActiveDetailFilterChips.Add(new DetailFilterChip("developer", developer, $"{Strings.Developers}: {developer}"));
+        foreach (var publisher in ActivePublisherFilters.OrderBy(static p => p, StringComparer.OrdinalIgnoreCase))
+            ActiveDetailFilterChips.Add(new DetailFilterChip("publisher", publisher, $"{Strings.Publishers}: {publisher}"));
+        foreach (var feature in ActiveFeatureFilters.OrderBy(static f => f, StringComparer.OrdinalIgnoreCase))
+            ActiveDetailFilterChips.Add(new DetailFilterChip("feature", feature, $"{Strings.Features}: {feature}"));
+    }
+
+    internal static void ToggleFilterValue(ObservableCollection<string> filters, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+
+        var trimmed = value.Trim();
+        var existing = filters.FirstOrDefault(f => string.Equals(f, trimmed, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+            filters.Remove(existing);
+        else
+            filters.Add(trimmed);
+    }
+
+    internal static void RemoveFilterValue(ObservableCollection<string> filters, string value)
+    {
+        var existing = filters.FirstOrDefault(f => string.Equals(f, value, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+            filters.Remove(existing);
     }
 
     // Startup work that used to run synchronously in the constructor (Steam
@@ -750,6 +859,7 @@ public partial class MainViewModel : ObservableObject
                 urls.Add(selected.CoverImage);
             if (!string.IsNullOrWhiteSpace(selected.BackgroundImage))
                 urls.Add(selected.BackgroundImage);
+            AddDescriptionImageUrls(selected, urls);
         }
 
         foreach (var game in Games.Take(gridWarmCount))
@@ -763,9 +873,24 @@ public partial class MainViewModel : ObservableObject
         return urls;
     }
 
+    private static void AddDescriptionImageUrls(Game game, ICollection<string> urls)
+    {
+        foreach (var url in game.DescriptionImages)
+        {
+            if (!string.IsNullOrWhiteSpace(url))
+                urls.Add(url);
+        }
+
+        foreach (var block in game.DescriptionBlocks)
+        {
+            if (block.IsImage && !string.IsNullOrWhiteSpace(block.Url))
+                urls.Add(block.Url);
+        }
+    }
+
     // Awaited asynchronously after the window is shown: decode from disk when
-    // cached so the hero and first covers appear quickly without blocking the
-    // UI thread. A short timeout keeps startup snappy if a download stalls.
+    // cached so the hero, covers, and overview images appear quickly without
+    // blocking the UI thread. A short timeout keeps startup snappy if a download stalls.
     public async Task WaitForStartupArtworkAsync()
     {
         var preload = PreloadArtworkAsync();
@@ -774,6 +899,8 @@ public partial class MainViewModel : ObservableObject
 
     private void LoadGames()
     {
+        MigrateUserManagedGames();
+
         foreach (var game in _gameRepository.GetAll())
         {
             ApplySteamLocalArtwork(game);
@@ -791,6 +918,32 @@ public partial class MainViewModel : ObservableObject
 
         RefreshStatistics();
         RefreshAllEmulatorDownloadStates();
+    }
+
+    private void MigrateUserManagedGames()
+    {
+        var bridgeSourceId = InstalledGameImportService.EnsureBridgeSource(_sourceRepository);
+        foreach (var game in _gameRepository.GetAll())
+        {
+            var changed = false;
+
+            if (game.SourceId == GameSource.ManualId)
+            {
+                game.SourceId = bridgeSourceId;
+                changed = true;
+            }
+
+            if (GameSource.IsUserManaged(game.SourceId) &&
+                !uint.TryParse(game.ExternalId, out _) &&
+                GameDetailLinkResolver.TryResolveSteamAppId(game, out var appId))
+            {
+                game.ExternalId = appId.ToString();
+                changed = true;
+            }
+
+            if (changed)
+                _gameRepository.Update(game);
+        }
     }
 
     // Startup selection: resume where the user left off. On a fresh app start the
@@ -841,6 +994,14 @@ public partial class MainViewModel : ObservableObject
             && !game.Name.Contains(SearchText.Trim(), StringComparison.OrdinalIgnoreCase))
             return false;
 
+        if (!MatchesGenreFilter(game) ||
+            !MatchesPlatformFilter(game) ||
+            !MatchesLibraryFilter(game) ||
+            !MatchesDeveloperFilter(game) ||
+            !MatchesPublisherFilter(game) ||
+            !MatchesFeatureFilter(game))
+            return false;
+
         return FilterPreset switch
         {
             LibraryFilterPreset.Favorite => game.Favorite,
@@ -852,22 +1013,79 @@ public partial class MainViewModel : ObservableObject
         };
     }
 
-    // Prefer Steam's local librarycache art (icon, cover, hero) over web URLs.
-    private void ApplySteamLocalArtwork(Game game)
+    private bool MatchesGenreFilter(Game game) =>
+        MatchesNameFilter(game.GenreIds, _genreNames!, ActiveGenreFilters);
+
+    private bool MatchesPlatformFilter(Game game) =>
+        MatchesNameFilter(game.PlatformIds, _platformNames!, ActivePlatformFilters);
+
+    private bool MatchesDeveloperFilter(Game game) =>
+        MatchesNameFilter(game.DeveloperIds, _companyNames!, ActiveDeveloperFilters);
+
+    private bool MatchesPublisherFilter(Game game) =>
+        MatchesNameFilter(game.PublisherIds, _companyNames!, ActivePublisherFilters);
+
+    private bool MatchesFeatureFilter(Game game) =>
+        MatchesNameFilter(game.FeatureIds, _featureNames!, ActiveFeatureFilters);
+
+    private bool MatchesNameFilter(
+        IEnumerable<Guid> ids,
+        IReadOnlyDictionary<Guid, string>? names,
+        ObservableCollection<string> filters)
     {
-        if (game.SourceId == GameSource.ManualId || !uint.TryParse(game.ExternalId, out _))
+        if (filters.Count == 0)
+            return true;
+
+        EnsureReferenceCaches();
+        names ??= new Dictionary<Guid, string>();
+        foreach (var id in ids)
+        {
+            if (names.TryGetValue(id, out var name) &&
+                filters.Any(f => string.Equals(f, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool MatchesLibraryFilter(Game game)
+    {
+        if (ActiveLibraryFilters.Count == 0)
+            return true;
+
+        EnsureReferenceCaches();
+        var sourceName = _sourceNames!.TryGetValue(game.SourceId, out var name) && name.Length > 0
+            ? name
+            : Strings.Manual;
+        var libraryName = GameDetailLinkResolver.ResolveLibraryFilterName(game, sourceName);
+
+        return ActiveLibraryFilters.Any(f =>
+            string.Equals(f, libraryName, StringComparison.OrdinalIgnoreCase) ||
+            (string.Equals(f, Strings.Manual, StringComparison.OrdinalIgnoreCase) &&
+             string.Equals(libraryName, Strings.Manual, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    // Prefer Steam's local librarycache art (icon, cover, hero) over web URLs.
+    // On load and automatic sync, only fills artwork the user has not set; a
+    // manual "Download Metadata" pass may overwrite (local cache still wins).
+    private void ApplySteamLocalArtwork(Game game, bool overwrite = false)
+    {
+        if (!uint.TryParse(game.ExternalId, out _))
             return;
 
         var icon = SteamLocalIconResolver.TryGetLocalIconPath(game.ExternalId);
-        if (!string.IsNullOrWhiteSpace(icon))
+        if (!string.IsNullOrWhiteSpace(icon) && HeroBackground.ShouldFillArtwork(game.Icon, overwrite))
             game.Icon = icon;
 
         var cover = SteamLocalIconResolver.TryGetLocalCoverPath(game.ExternalId);
-        if (!string.IsNullOrWhiteSpace(cover))
+        if (!string.IsNullOrWhiteSpace(cover) && HeroBackground.ShouldFillArtwork(game.CoverImage, overwrite))
             game.CoverImage = cover;
 
         var background = SteamLocalIconResolver.TryGetLocalBackgroundPath(game.ExternalId);
-        if (!string.IsNullOrWhiteSpace(background))
+        if (!string.IsNullOrWhiteSpace(background) &&
+            HeroBackground.ShouldFillHeroFromSteamLocal(game.BackgroundImage, overwrite))
             game.BackgroundImage = background;
 
         // Deterministic store/community links fill in immediately for games

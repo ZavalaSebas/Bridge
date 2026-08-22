@@ -21,12 +21,14 @@ public class InstalledGameImportServiceTests : IDisposable
         File.WriteAllBytes(gameExe, [0x4D, 0x5A]);
 
         var repo = new InMemoryGameRepository();
-        var service = new InstalledGameImportService(new InstalledGameDetector(), repo);
+        var sources = new InMemorySourceRepository();
+        var service = new InstalledGameImportService(new InstalledGameDetector(), repo, sources);
         var result = service.ImportNewFromFolder(_tempDir);
 
         Assert.Single(result.Added);
         Assert.Equal("Cool Game", result.Added[0].Name);
         Assert.Equal(GameActionType.File, result.Added[0].GameActions[0].Type);
+        Assert.Equal(GameSource.BridgeId, result.Added[0].SourceId);
         Assert.Single(repo.Games);
     }
 
@@ -37,6 +39,7 @@ public class InstalledGameImportServiceTests : IDisposable
         File.WriteAllBytes(gameExe, [0x4D, 0x5A]);
 
         var repo = new InMemoryGameRepository();
+        var sources = new InMemorySourceRepository();
         repo.Games.Add(new Game
         {
             Name = "Existing Game",
@@ -50,7 +53,7 @@ public class InstalledGameImportServiceTests : IDisposable
             }
         });
 
-        var service = new InstalledGameImportService(new InstalledGameDetector(), repo);
+        var service = new InstalledGameImportService(new InstalledGameDetector(), repo, sources);
         var result = service.ImportNewFromFolder(_tempDir);
 
         Assert.Empty(result.Added);
@@ -80,5 +83,22 @@ public class InstalledGameImportServiceTests : IDisposable
         public Game GetOrCreateByName(string name) => throw new NotSupportedException();
 
         public Game? FindByExternalId(string externalId, Guid sourceId) => null;
+    }
+
+    private sealed class InMemorySourceRepository : IRepository<GameSource>
+    {
+        public List<GameSource> Sources { get; } = [];
+
+        public GameSource? Get(Guid id) => Sources.FirstOrDefault(s => s.Id == id);
+
+        public IReadOnlyList<GameSource> GetAll() => Sources;
+
+        public void Add(GameSource item) => Sources.Add(item);
+
+        public void Update(GameSource item) { }
+
+        public bool Remove(Guid id) => Sources.RemoveAll(s => s.Id == id) > 0;
+
+        public GameSource GetOrCreateByName(string name) => throw new NotSupportedException();
     }
 }
