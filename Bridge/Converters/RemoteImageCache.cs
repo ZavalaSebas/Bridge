@@ -17,14 +17,18 @@ public static class RemoteImageCache
 {
     private const int MaxCachedImages = 512;
 
-    private static readonly ConcurrentDictionary<string, BitmapImage> Cache = new();
-    private static readonly ConcurrentQueue<string> CacheOrder = new();
-    // In-flight loads keyed by URL, storing the decode task so a preload can
+    // Keyed by URL *and* decode size: the same artwork can live at a thumbnail
+    // size and a hero size without one serving the other blurry/oversized.
+    private readonly record struct CacheKey(string Url, ArtworkDecodeSize Size);
+
+    private static readonly ConcurrentDictionary<CacheKey, BitmapImage> Cache = new();
+    private static readonly ConcurrentQueue<CacheKey> CacheOrder = new();
+    // In-flight loads keyed by URL+size, storing the decode task so a preload can
     // await it (the window waits for artwork before its first paint).
-    private static readonly ConcurrentDictionary<string, Task> InFlight = new();
+    private static readonly ConcurrentDictionary<CacheKey, Task> InFlight = new();
 
     private static readonly object CallbacksLock = new();
-    private static readonly Dictionary<string, List<Action>> PendingCallbacks = new();
+    private static readonly Dictionary<CacheKey, List<Action>> PendingCallbacks = new();
 
     // Captured once on the UI thread at startup and used for every decode
     // continuation, so callbacks always marshal back to the UI thread regardless
@@ -44,22 +48,24 @@ public static class RemoteImageCache
     /// Returns the cached frozen image for <paramref name="url"/>, or null and
     /// starts a background decode when it isn't cached yet.
     /// </summary>
-    public static BitmapImage? Get(string url)
+    public static BitmapImage? Get(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
-        if (Cache.TryGetValue(url, out var cached))
+        var key = new CacheKey(url, size);
+        if (Cache.TryGetValue(key, out var cached))
         {
             return cached;
         }
 
-        BeginLoad(url);
+        BeginLoad(key);
         return null;
     }
 
     /// <summary>Returns true when a decoded image for <paramref name="url"/> is in memory.</summary>
-    public static bool IsCached(string url) => Cache.ContainsKey(url);
+    public static bool IsCached(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native) =>
+        Cache.ContainsKey(new CacheKey(url, size));
 
     /// <summary>Warms the cache for a set of URLs (e.g. every game's icon at startup).</summary>
-    public static void Preload(IEnumerable<string> urls)
+    public static void Preload(IEnumerable<string> urls, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
         foreach (var url in urls)
         {
@@ -68,7 +74,7 @@ public static class RemoteImageCache
                 continue;
             }
 
-            BeginLoad(url);
+            BeginLoad(new CacheKey(url, size));
         }
     }
 
@@ -79,7 +85,8 @@ public static class RemoteImageCache
     /// </summary>
     public static async Task PreloadAndWaitAsync(
         IEnumerable<string> urls,
-        IProgress<(int Completed, int Total)>? progress = null)
+        IProgress<(int Completed, int Total)>? progress = null,
+        ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
         var distinct = urls
             .Where(url => !string.IsNullOrWhiteSpace(url))
@@ -96,7 +103,7 @@ public static class RemoteImageCache
         {
             try
             {
-                await BeginLoad(url).ConfigureAwait(false);
+                await BeginLoad(new CacheKey(url, size)).ConfigureAwait(false);
             }
             finally
             {
@@ -114,18 +121,19 @@ public static class RemoteImageCache
     /// otherwise as soon as the background decode finishes. Used by CachedImage
     /// so a control re-renders the moment its image is ready.
     /// </summary>
-    public static void Subscribe(string url, Action callback)
+    public static void Subscribe(string url, Action callback, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
+        var key = new CacheKey(url, size);
         bool loaded;
         lock (CallbacksLock)
         {
-            loaded = Cache.ContainsKey(url);
+            loaded = Cache.ContainsKey(key);
             if (!loaded)
             {
-                if (!PendingCallbacks.TryGetValue(url, out var callbacks))
+                if (!PendingCallbacks.TryGetValue(key, out var callbacks))
                 {
                     callbacks = [];
-                    PendingCallbacks[url] = callbacks;
+                    PendingCallbacks[key] = callbacks;
                 }
 
                 callbacks.Add(callback);
@@ -138,36 +146,37 @@ public static class RemoteImageCache
             return;
         }
 
-        BeginLoad(url);
+        BeginLoad(key);
     }
 
     /// <summary>Removes a callback registered by <see cref="Subscribe"/>.</summary>
-    public static void Unsubscribe(string url, Action callback)
+    public static void Unsubscribe(string url, Action callback, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
+        var key = new CacheKey(url, size);
         lock (CallbacksLock)
         {
-            if (PendingCallbacks.TryGetValue(url, out var callbacks))
+            if (PendingCallbacks.TryGetValue(key, out var callbacks))
             {
                 callbacks.Remove(callback);
                 if (callbacks.Count == 0)
                 {
-                    PendingCallbacks.Remove(url);
+                    PendingCallbacks.Remove(key);
                 }
             }
         }
     }
 
-    private static Task BeginLoad(string url)
+    private static Task BeginLoad(CacheKey key)
     {
-        if (InFlight.TryGetValue(url, out var existing))
+        if (InFlight.TryGetValue(key, out var existing))
         {
             return existing;
         }
 
-        var loadTask = Task.Run(() => LoadSynchronously(url));
-        if (!InFlight.TryAdd(url, loadTask))
+        var loadTask = Task.Run(() => LoadSynchronously(key));
+        if (!InFlight.TryAdd(key, loadTask))
         {
-            return InFlight[url];
+            return InFlight[key];
         }
 
         // Populate the cache and fire callbacks on the continuation. This runs
@@ -179,13 +188,13 @@ public static class RemoteImageCache
         _ = loadTask.ContinueWith(
             completed =>
             {
-                InFlight.TryRemove(url, out _);
+                InFlight.TryRemove(key, out _);
 
                 var image = completed.IsCompletedSuccessfully ? completed.Result : null;
                 if (image is not null)
                 {
-                    Cache[url] = image;
-                    CacheOrder.Enqueue(url);
+                    Cache[key] = image;
+                    CacheOrder.Enqueue(key);
                     TrimCache();
                 }
 
@@ -193,9 +202,9 @@ public static class RemoteImageCache
                 List<Action>? callbacks = null;
                 lock (CallbacksLock)
                 {
-                    if (PendingCallbacks.TryGetValue(url, out callbacks))
+                    if (PendingCallbacks.TryGetValue(key, out callbacks))
                     {
-                        PendingCallbacks.Remove(url);
+                        PendingCallbacks.Remove(key);
                     }
                 }
 
@@ -224,8 +233,9 @@ public static class RemoteImageCache
         return loadTask;
     }
 
-    private static BitmapImage? LoadSynchronously(string url)
+    private static BitmapImage? LoadSynchronously(CacheKey key)
     {
+        var url = key.Url;
         try
         {
             if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
@@ -241,10 +251,14 @@ public static class RemoteImageCache
                 if (bytes is null)
                     return null;
 
+                var decodeWidth = DecodeWidthFor(key.Size, () => new MemoryStream(bytes));
+
                 using var stream = new MemoryStream(bytes);
                 var remote = new BitmapImage();
                 remote.BeginInit();
                 remote.CacheOption = BitmapCacheOption.OnLoad;
+                if (decodeWidth > 0)
+                    remote.DecodePixelWidth = decodeWidth;
                 remote.StreamSource = stream;
                 remote.EndInit();
                 remote.Freeze();
@@ -252,9 +266,12 @@ public static class RemoteImageCache
             }
 
             // Local file path — BitmapImage reads it directly, no download.
+            var localWidth = DecodeWidthFor(key.Size, () => File.OpenRead(new Uri(url).LocalPath));
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
+            if (localWidth > 0)
+                image.DecodePixelWidth = localWidth;
             image.UriSource = new Uri(url);
             image.EndInit();
             image.Freeze();
@@ -264,6 +281,26 @@ public static class RemoteImageCache
         {
             // Unreachable/broken URL, unsupported format, relative URI — skip.
             return null;
+        }
+    }
+
+    // Reads only the header to find the source width, so a bucket never upscales
+    // a smaller original. Returns 0 (native decode) for Native or when the header
+    // can't be read.
+    private static int DecodeWidthFor(ArtworkDecodeSize size, Func<Stream> openSource)
+    {
+        if (size == ArtworkDecodeSize.Native)
+            return 0;
+
+        try
+        {
+            using var stream = openSource();
+            var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None).Frames[0];
+            return Math.Min((int)size, frame.PixelWidth);
+        }
+        catch
+        {
+            return 0;
         }
     }
 

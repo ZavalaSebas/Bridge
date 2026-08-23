@@ -74,7 +74,7 @@
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="ThumbBorder" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Background="#151A28" Width="150" Height="84">
-                                        <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" RenderOptions.BitmapScalingMode="Fant"/>
+                                        <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" converters:CachedImage.DecodeSize="Thumb" RenderOptions.BitmapScalingMode="Fant"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -145,7 +145,7 @@
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border x:Name="ThumbBorder" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Background="#151A28" Width="130" Height="73">
-                                                        <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" RenderOptions.BitmapScalingMode="Fant"/>
+                                                        <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" converters:CachedImage.DecodeSize="Thumb" RenderOptions.BitmapScalingMode="Fant"/>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">

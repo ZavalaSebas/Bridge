@@ -183,22 +183,23 @@ public partial class ScreenshotGallery : UserControl
 
         if (_backdropCallback is { } oldCallback && _backdropUrl is { } oldUrl)
         {
-            RemoteImageCache.Unsubscribe(oldUrl, oldCallback);
+            RemoteImageCache.Unsubscribe(oldUrl, oldCallback, ArtworkDecodeSize.Thumb);
             _backdropCallback = null;
             _backdropUrl = null;
         }
 
-        BackdropImage.Source = RemoteImageCache.Get(url);
+        // The backdrop is blurred and dimmed, so a thumbnail-sized decode is plenty.
+        BackdropImage.Source = RemoteImageCache.Get(url, ArtworkDecodeSize.Thumb);
         Action callback = () =>
         {
             if (_urls.Count > 0 && _urls[_index] == url)
             {
-                BackdropImage.Source = RemoteImageCache.Get(url);
+                BackdropImage.Source = RemoteImageCache.Get(url, ArtworkDecodeSize.Thumb);
             }
         };
         _backdropUrl = url;
         _backdropCallback = callback;
-        RemoteImageCache.Subscribe(url, callback);
+        RemoteImageCache.Subscribe(url, callback, ArtworkDecodeSize.Thumb);
 
         CounterText = $"{_index + 1} / {_urls.Count}";
         PrevButton.IsEnabled = _urls.Count > 1;

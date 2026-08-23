@@ -41,6 +41,12 @@ public partial class FadeImage : UserControl
         typeof(FadeImage),
         new PropertyMetadata(GameArtworkFallback.None, OnFallbackArtworkChanged));
 
+    public static readonly DependencyProperty DecodeSizeProperty = DependencyProperty.Register(
+        nameof(DecodeSize),
+        typeof(ArtworkDecodeSize),
+        typeof(FadeImage),
+        new PropertyMetadata(ArtworkDecodeSize.Native));
+
     public string? SourceUrl
     {
         get => (string?)GetValue(SourceUrlProperty);
@@ -66,6 +72,13 @@ public partial class FadeImage : UserControl
     {
         get => (GameArtworkFallback)GetValue(FallbackArtworkProperty);
         set => SetValue(FallbackArtworkProperty, value);
+    }
+
+    /// <summary>Decode bucket for the loaded artwork; Native keeps full resolution.</summary>
+    public ArtworkDecodeSize DecodeSize
+    {
+        get => (ArtworkDecodeSize)GetValue(DecodeSizeProperty);
+        set => SetValue(DecodeSizeProperty, value);
     }
 
     private static void OnFallbackArtworkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -123,7 +136,7 @@ public partial class FadeImage : UserControl
     {
         if (_loadCallback is { } callback && currentUrl is { } url)
         {
-            RemoteImageCache.Unsubscribe(url, callback);
+            RemoteImageCache.Unsubscribe(url, callback, DecodeSize);
             _loadCallback = null;
         }
     }
@@ -135,7 +148,7 @@ public partial class FadeImage : UserControl
     {
         if (_loadCallback is { } oldCallback && currentUrl is { } oldUrl)
         {
-            RemoteImageCache.Unsubscribe(oldUrl, oldCallback);
+            RemoteImageCache.Unsubscribe(oldUrl, oldCallback, DecodeSize);
             _loadCallback = null;
         }
 
@@ -157,7 +170,7 @@ public partial class FadeImage : UserControl
 
         currentUrl = url;
 
-        if (RemoteImageCache.Get(url) is { } cached)
+        if (RemoteImageCache.Get(url, DecodeSize) is { } cached)
         {
             ShowImage(cached);
             return;
@@ -168,13 +181,13 @@ public partial class FadeImage : UserControl
             if (currentUrl != url)
                 return;
 
-            if (RemoteImageCache.Get(url) is { } image)
+            if (RemoteImageCache.Get(url, DecodeSize) is { } image)
                 ShowImage(image);
             else
                 FadeOutActive();
         };
         _loadCallback = callback;
-        RemoteImageCache.Subscribe(url, callback);
+        RemoteImageCache.Subscribe(url, callback, DecodeSize);
     }
 
     private void ShowFallbackOrFadeOut()

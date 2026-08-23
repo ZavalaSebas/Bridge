@@ -38,7 +38,7 @@
 
         <Grid Grid.RowSpan="3" x:Name="GameBackgroundHost" IsHitTestVisible="False">
             <Grid.CacheMode><BitmapCache /></Grid.CacheMode>
-            <controls:FadeImage SourceUrl="{Binding SelectedGame.BackgroundImage, Converter={StaticResource HeroArtSource}}" FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" Stretch="UniformToFill" Width="{Binding ActualWidth, ElementName=Root}" Height="{Binding ActualHeight, ElementName=Root}"><controls:FadeImage.Effect><BlurEffect Radius="{StaticResource Bridge.Background.BlurRadius}" KernelType="Gaussian" RenderingBias="Performance" /></controls:FadeImage.Effect></controls:FadeImage>
+            <controls:FadeImage SourceUrl="{Binding SelectedGame.BackgroundImage, Converter={StaticResource HeroArtSource}}" FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" DecodeSize="Hero" Stretch="UniformToFill" Width="{Binding ActualWidth, ElementName=Root}" Height="{Binding ActualHeight, ElementName=Root}"><controls:FadeImage.Effect><BlurEffect Radius="{StaticResource Bridge.Background.BlurRadius}" KernelType="Gaussian" RenderingBias="Performance" /></controls:FadeImage.Effect></controls:FadeImage>
             <Border Background="{DynamicResource Bridge.Background.DarkOverlay}" />
         </Grid>
         <ui:TitleBar x:Name="MainTitleBar" Grid.Row="0" Background="{DynamicResource Bridge.Sidebar.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="0,0,0,1" Height="56" ShowMinimize="True" ShowMaximize="True" ShowClose="True" SizeChanged="MainTitleBar_SizeChanged">

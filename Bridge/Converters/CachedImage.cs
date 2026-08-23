@@ -27,6 +27,13 @@ public static class CachedImage
             typeof(CachedImage),
             new PropertyMetadata(GameArtworkFallback.None, OnDisplayOptionsChanged));
 
+    public static readonly DependencyProperty DecodeSizeProperty =
+        DependencyProperty.RegisterAttached(
+            "DecodeSize",
+            typeof(ArtworkDecodeSize),
+            typeof(CachedImage),
+            new PropertyMetadata(ArtworkDecodeSize.Native, OnDisplayOptionsChanged));
+
     private static readonly DependencyProperty LoadCallbackProperty =
         DependencyProperty.RegisterAttached(
             "LoadCallback",
@@ -44,6 +51,12 @@ public static class CachedImage
     public static void SetFallbackArtwork(DependencyObject d, GameArtworkFallback value) =>
         d.SetValue(FallbackArtworkProperty, value);
 
+    public static ArtworkDecodeSize GetDecodeSize(DependencyObject d) =>
+        (ArtworkDecodeSize)d.GetValue(DecodeSizeProperty);
+
+    public static void SetDecodeSize(DependencyObject d, ArtworkDecodeSize value) =>
+        d.SetValue(DecodeSizeProperty, value);
+
     private static Action? GetLoadCallback(DependencyObject d) => (Action?)d.GetValue(LoadCallbackProperty);
 
     private static void SetLoadCallback(DependencyObject d, Action? value) => d.SetValue(LoadCallbackProperty, value);
@@ -52,7 +65,7 @@ public static class CachedImage
     {
         if (e.OldValue is string oldUrl && GetLoadCallback(d) is { } oldCallback)
         {
-            RemoteImageCache.Unsubscribe(oldUrl, oldCallback);
+            RemoteImageCache.Unsubscribe(oldUrl, oldCallback, GetDecodeSize(d));
             SetLoadCallback(d, null);
         }
 
@@ -97,7 +110,8 @@ public static class CachedImage
             return;
         }
 
-        if (RemoteImageCache.Get(url) is { } cached)
+        var size = GetDecodeSize(image);
+        if (RemoteImageCache.Get(url, size) is { } cached)
         {
             image.Source = cached;
             return;
@@ -109,10 +123,10 @@ public static class CachedImage
             if (GetSourceUrl(image) != url)
                 return;
 
-            image.Source = RemoteImageCache.Get(url) ?? DefaultGameArtwork.Get(GetFallbackArtwork(image));
+            image.Source = RemoteImageCache.Get(url, size) ?? DefaultGameArtwork.Get(GetFallbackArtwork(image));
         };
         SetLoadCallback(image, callback);
-        RemoteImageCache.Subscribe(url, callback);
+        RemoteImageCache.Subscribe(url, callback, size);
     }
 
     private static void ApplyArtworkBackground(DependencyObject target, string? url, GameArtworkFallback fallback)
@@ -129,7 +143,8 @@ public static class CachedImage
             return;
         }
 
-        if (RemoteImageCache.Get(url) is { } cached)
+        var size = GetDecodeSize(target);
+        if (RemoteImageCache.Get(url, size) is { } cached)
         {
             SetBackground(target, MakeFillBrush(cached));
             return;
@@ -141,10 +156,10 @@ public static class CachedImage
             if (GetSourceUrl(target) != url)
                 return;
 
-            SetBackground(target, MakeFillBrush(RemoteImageCache.Get(url) ?? DefaultGameArtwork.Get(GetFallbackArtwork(target))));
+            SetBackground(target, MakeFillBrush(RemoteImageCache.Get(url, size) ?? DefaultGameArtwork.Get(GetFallbackArtwork(target))));
         };
         SetLoadCallback(target, callback);
-        RemoteImageCache.Subscribe(url, callback);
+        RemoteImageCache.Subscribe(url, callback, size);
     }
 
     private static void SetBackground(DependencyObject target, Brush? brush)
