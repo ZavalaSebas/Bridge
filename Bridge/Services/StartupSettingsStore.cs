@@ -9,13 +9,14 @@ namespace Bridge.Services;
 public static class StartupSettingsStore
 {
     private static string SettingsFile => Config.StartupFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "startup.txt");
 
     public static bool Load()
     {
         try
         {
-            if (File.Exists(SettingsFile) &&
-                bool.TryParse(File.ReadAllText(SettingsFile).Trim(), out var saved))
+            if (TryLoadFromFile(SettingsFile, out var saved) ||
+                TryLoadFromFile(LegacySettingsFile, out saved))
             {
                 return saved;
             }
@@ -32,12 +33,19 @@ public static class StartupSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, launchAtStartup.ToString());
         }
         catch
         {
             // Persisting must never crash the app.
+        }
+
+        private static bool TryLoadFromFile(string path, out bool enabled)
+        {
+            enabled = false;
+            return File.Exists(path) &&
+                bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
         }
     }
 }

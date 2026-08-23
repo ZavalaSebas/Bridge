@@ -9,17 +9,17 @@ namespace Bridge.Services;
 public static class WhatsNewSettingsStore
 {
     private static string SettingsFile => Config.WhatsNewSeenFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "whats-new-seen.txt");
 
     public static Version? Load()
     {
         try
         {
-            if (!File.Exists(SettingsFile))
-                return null;
+            if (TryLoadFromFile(SettingsFile) is { } current)
+                return current;
 
-            var text = File.ReadAllText(SettingsFile).Trim();
-            if (Version.TryParse(text, out var version))
-                return Normalize(version);
+            if (TryLoadFromFile(LegacySettingsFile) is { } legacy)
+                return legacy;
         }
         catch
         {
@@ -33,13 +33,25 @@ public static class WhatsNewSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, Normalize(version).ToString(3));
         }
         catch
         {
             // Persisting must never crash the app.
         }
+    }
+
+    private static Version? TryLoadFromFile(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        var text = File.ReadAllText(path).Trim();
+        if (Version.TryParse(text, out var version))
+                return Normalize(version);
+
+        return null;
     }
 
     internal static Version Normalize(Version version) =>

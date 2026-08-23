@@ -9,6 +9,7 @@ public static class GameDisplayPreferencesStore
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     private static string SettingsFile => Config.GameDisplayPreferencesFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "game-display-preferences.json");
 
     public static bool GetHeroCoverLarge(Guid gameId)
     {
@@ -32,10 +33,10 @@ public static class GameDisplayPreferencesStore
     {
         try
         {
-            if (!File.Exists(SettingsFile))
-                return new StoreModel();
+            if (TryLoadFromFile(SettingsFile) is { } current)
+                return current;
 
-            return JsonSerializer.Deserialize<StoreModel>(File.ReadAllText(SettingsFile)) ?? new StoreModel();
+            return TryLoadFromFile(LegacySettingsFile) ?? new StoreModel();
         }
         catch
         {
@@ -47,13 +48,21 @@ public static class GameDisplayPreferencesStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, JsonSerializer.Serialize(model, JsonOptions));
         }
         catch
         {
             // Persisting must never crash the app.
         }
+    }
+
+    private static StoreModel? TryLoadFromFile(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        return JsonSerializer.Deserialize<StoreModel>(File.ReadAllText(path));
     }
 
     private sealed class StoreModel

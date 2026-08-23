@@ -17,13 +17,14 @@ public enum UpdateChannel
 public static class UpdateChannelSettingsStore
 {
     private static string SettingsFile => Config.UpdateChannelFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "update-channel.txt");
 
     public static UpdateChannel Load()
     {
         try
         {
-            if (File.Exists(SettingsFile) &&
-                Enum.TryParse<UpdateChannel>(File.ReadAllText(SettingsFile).Trim(), out var saved))
+            if (TryLoadFromFile(SettingsFile, out var saved) ||
+                TryLoadFromFile(LegacySettingsFile, out saved))
             {
                 return saved;
             }
@@ -40,12 +41,19 @@ public static class UpdateChannelSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, channel.ToString());
         }
         catch
         {
             // Persisting must never crash the app.
+        }
+
+        private static bool TryLoadFromFile(string path, out UpdateChannel channel)
+        {
+            channel = UpdateChannel.Stable;
+            return File.Exists(path) &&
+                Enum.TryParse<UpdateChannel>(File.ReadAllText(path).Trim(), out channel);
         }
     }
 }

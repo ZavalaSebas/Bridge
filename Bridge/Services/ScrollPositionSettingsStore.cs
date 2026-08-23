@@ -12,7 +12,8 @@ namespace Bridge.Services;
 /// </summary>
 public static class ScrollPositionSettingsStore
 {
-    private static string SettingsFile => Path.Combine(Config.AppDataPath, "scrollpositions.txt");
+    private static string SettingsFile => Config.ScrollPositionsFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "scrollpositions.txt");
 
     // The Table view's auto-fill Name column width is persisted too, so opening
     // Bridge straight into Table already has the correct column size from the
@@ -57,20 +58,13 @@ public static class ScrollPositionSettingsStore
     {
         try
         {
-            if (!File.Exists(SettingsFile))
-                return 0;
+            var value = TryLoadValueFromFile(SettingsFile, key);
+            if (value.HasValue)
+                return value.Value;
 
-            foreach (var line in File.ReadAllLines(SettingsFile))
-            {
-                var idx = line.IndexOf('=');
-                if (idx > 0
-                    && line[..idx].Equals(key, StringComparison.OrdinalIgnoreCase)
-                    && double.TryParse(line[(idx + 1)..], System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture, out var value))
-                {
-                    return value;
-                }
-            }
+            value = TryLoadValueFromFile(LegacySettingsFile, key);
+            if (value.HasValue)
+                return value.Value;
         }
         catch
         {
@@ -87,7 +81,7 @@ public static class ScrollPositionSettingsStore
             if (value < 0)
                 return;
 
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             var lines = File.Exists(SettingsFile)
                 ? File.ReadAllLines(SettingsFile).Where(l => !l.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase)).ToList()
                 : [];
@@ -141,5 +135,25 @@ public static class ScrollPositionSettingsStore
 
             return updated;
         });
+    }
+
+    private static double? TryLoadValueFromFile(string path, string key)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        foreach (var line in File.ReadAllLines(path))
+        {
+            var idx = line.IndexOf('=');
+            if (idx > 0
+                && line[..idx].Equals(key, StringComparison.OrdinalIgnoreCase)
+                && double.TryParse(line[(idx + 1)..], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 }

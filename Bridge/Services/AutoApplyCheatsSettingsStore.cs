@@ -9,13 +9,14 @@ namespace Bridge.Services;
 public static class AutoApplyCheatsSettingsStore
 {
     private static string SettingsFile => Config.AutoApplyCheatsOnLaunchFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "auto-apply-cheats-on-launch.txt");
 
     public static bool Load()
     {
         try
         {
-            if (File.Exists(SettingsFile) &&
-                bool.TryParse(File.ReadAllText(SettingsFile).Trim(), out var saved))
+            if (TryLoadFromFile(SettingsFile, out var saved) ||
+                TryLoadFromFile(LegacySettingsFile, out saved))
             {
                 return saved;
             }
@@ -32,12 +33,19 @@ public static class AutoApplyCheatsSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, autoApplyCheatsOnLaunch.ToString());
         }
         catch
         {
             // Persisting must never crash the app.
+        }
+
+        private static bool TryLoadFromFile(string path, out bool enabled)
+        {
+            enabled = true;
+            return File.Exists(path) &&
+                bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
         }
     }
 }

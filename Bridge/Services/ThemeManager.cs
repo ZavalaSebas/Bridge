@@ -14,7 +14,8 @@ namespace Bridge.Services;
 /// </summary>
 public static class ThemeManager
 {
-    private static readonly string SettingsFile = Path.Combine(Config.AppDataPath, "theme.json");
+    private static readonly string SettingsFile = Config.ThemeFilePath;
+    private static readonly string LegacySettingsFile = Path.Combine(Config.AppDataPath, "theme.json");
     private static readonly SolidColorBrush TranslucentSidebarHostBrush = CreateTranslucentSidebarHostBrush();
 
     public const double SidebarTranslucentOpacity = 0.75;
@@ -259,8 +260,9 @@ public static class ThemeManager
     {
         try
         {
-            if (File.Exists(SettingsFile) &&
-                TryParseHex(File.ReadAllText(SettingsFile).Trim(), out var saved))
+            var text = TryReadTheme(SettingsFile) ?? TryReadTheme(LegacySettingsFile);
+            if (text is not null &&
+                TryParseHex(text, out var saved))
             {
                 Apply(saved);
                 return;
@@ -371,7 +373,7 @@ public static class ThemeManager
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, ToHex(CurrentAccent));
         }
         catch
@@ -379,6 +381,9 @@ public static class ThemeManager
             // Persisting must never crash the app.
         }
     }
+
+    private static string? TryReadTheme(string path) =>
+        File.Exists(path) ? File.ReadAllText(path).Trim() : null;
 
     private static bool TryParseHexCore(string hex, out Color color)
     {

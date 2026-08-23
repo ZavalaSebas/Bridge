@@ -8,18 +8,13 @@ namespace Bridge.Services;
 public static class InstalledScanFolderSettingsStore
 {
     private static string SettingsFile => Config.InstalledScanFolderFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "installed-scan-folder.txt");
 
     public static string? Load()
     {
         try
         {
-            if (!File.Exists(SettingsFile))
-            {
-                return null;
-            }
-
-            var path = File.ReadAllText(SettingsFile).Trim();
-            return string.IsNullOrWhiteSpace(path) ? null : path;
+            return TryLoadFromFile(SettingsFile) ?? TryLoadFromFile(LegacySettingsFile);
         }
         catch
         {
@@ -31,7 +26,7 @@ public static class InstalledScanFolderSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             if (string.IsNullOrWhiteSpace(folderPath))
             {
                 if (File.Exists(SettingsFile))
@@ -48,5 +43,14 @@ public static class InstalledScanFolderSettingsStore
         {
             // Persisting must never crash the app.
         }
+    }
+
+    private static string? TryLoadFromFile(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        var value = File.ReadAllText(path).Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 }

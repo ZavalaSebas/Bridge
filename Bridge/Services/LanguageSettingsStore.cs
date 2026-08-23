@@ -17,13 +17,14 @@ public enum AppLanguage
 public static class LanguageSettingsStore
 {
     private static string SettingsFile => Config.LanguageFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "language.txt");
 
     public static AppLanguage Load()
     {
         try
         {
-            if (File.Exists(SettingsFile) &&
-                Enum.TryParse<AppLanguage>(File.ReadAllText(SettingsFile).Trim(), out var saved))
+            if (TryLoadFromFile(SettingsFile, out var saved) ||
+                TryLoadFromFile(LegacySettingsFile, out saved))
             {
                 return saved;
             }
@@ -40,12 +41,19 @@ public static class LanguageSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, language.ToString());
         }
         catch
         {
             // Persisting must never crash the app.
+        }
+
+        private static bool TryLoadFromFile(string path, out AppLanguage language)
+        {
+            language = AppLanguage.English;
+            return File.Exists(path) &&
+                Enum.TryParse<AppLanguage>(File.ReadAllText(path).Trim(), out language);
         }
     }
 

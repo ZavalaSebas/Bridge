@@ -13,26 +13,16 @@ public static class IgdbSettingsStore
     private static readonly byte[] ProtectionEntropy = "Bridge.IgdbSettings.v1"u8.ToArray();
     private const byte ProtectedFormatVersion = 1;
 
-    private static string FilePath => Path.Combine(Config.AppDataPath, "igdb-settings.json");
+    private static string FilePath => Path.Combine(Config.SecretsDirectoryPath, "igdb-settings.json");
+    private static string LegacyFilePath => Path.Combine(Config.AppDataPath, "igdb-settings.json");
 
     public static IgdbSettings Load()
     {
-        if (!File.Exists(FilePath))
-            return new IgdbSettings();
-
         try
         {
-            var bytes = File.ReadAllBytes(FilePath);
-            if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
-            {
-                var protectedPayload = bytes[1..];
-                var json = Encoding.UTF8.GetString(
-                    ProtectedData.Unprotect(protectedPayload, ProtectionEntropy, DataProtectionScope.CurrentUser));
-                return JsonSerializer.Deserialize<IgdbSettings>(json) ?? new IgdbSettings();
-            }
-
-            var legacyJson = Encoding.UTF8.GetString(bytes);
-            return JsonSerializer.Deserialize<IgdbSettings>(legacyJson) ?? new IgdbSettings();
+            return TryLoadFromPath(FilePath)
+                ?? TryLoadFromPath(LegacyFilePath)
+                ?? new IgdbSettings();
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or CryptographicException)
         {
@@ -42,7 +32,7 @@ public static class IgdbSettingsStore
 
     public static void Save(IgdbSettings settings)
     {
-        Directory.CreateDirectory(Config.AppDataPath);
+        Directory.CreateDirectory(Config.SecretsDirectoryPath);
         WriteProtected(FilePath, settings);
     }
 
@@ -52,23 +42,25 @@ public static class IgdbSettingsStore
     /// </summary>
     internal static void MigratePlainTextToProtectedFormat(AppDataMigrationContext ctx)
     {
-        var path = ctx.Combine("igdb-settings.json");
-        if (!File.Exists(path))
-            return;
-
-        try
+        foreach (var path in new[] { ctx.Combine("igdb-settings.json"), ctx.Combine("config", "secrets", "igdb-settings.json") })
         {
-            var bytes = File.ReadAllBytes(path);
-            if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
-                return;
+            if (!File.Exists(path))
+                continue;
 
-            var legacyJson = Encoding.UTF8.GetString(bytes);
-            var settings = JsonSerializer.Deserialize<IgdbSettings>(legacyJson) ?? new IgdbSettings();
-            WriteProtected(path, settings);
-        }
-        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or CryptographicException)
-        {
-            // Leave the file untouched; Load() will fall back to empty settings.
+            try
+            {
+                var bytes = File.ReadAllBytes(path);
+                if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
+                    continue;
+
+                var legacyJson = Encoding.UTF8.GetString(bytes);
+                var settings = JsonSerializer.Deserialize<IgdbSettings>(legacyJson) ?? new IgdbSettings();
+                WriteProtected(path, settings);
+            }
+            catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or CryptographicException)
+            {
+                // Leave the file untouched; Load() will fall back to empty settings.
+            }
         }
     }
 
@@ -83,5 +75,23 @@ public static class IgdbSettingsStore
         fileBytes[0] = ProtectedFormatVersion;
         Buffer.BlockCopy(protectedPayload, 0, fileBytes, 1, protectedPayload.Length);
         File.WriteAllBytes(path, fileBytes);
+    }
+
+    private static IgdbSettings? TryLoadFromPath(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        var bytes = File.ReadAllBytes(path);
+        if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
+        {
+            var protectedPayload = bytes[1..];
+            var json = Encoding.UTF8.GetString(
+                ProtectedData.Unprotect(protectedPayload, ProtectionEntropy, DataProtectionScope.CurrentUser));
+            return JsonSerializer.Deserialize<IgdbSettings>(json);
+        }
+
+        var legacyJson = Encoding.UTF8.GetString(bytes);
+        return JsonSerializer.Deserialize<IgdbSettings>(legacyJson);
     }
 }

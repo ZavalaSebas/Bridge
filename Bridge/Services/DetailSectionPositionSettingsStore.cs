@@ -12,14 +12,15 @@ public static class DetailSectionPositionSettingsStore
     public const string Right = "Right";
 
     private static string SettingsFile => Config.DetailSectionPositionFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "detail-section-position.txt");
 
     public static string Load()
     {
         try
         {
-            if (File.Exists(SettingsFile))
+            if (TryLoadFromFile(SettingsFile, out var saved) ||
+                TryLoadFromFile(LegacySettingsFile, out saved))
             {
-                var saved = Normalize(File.ReadAllText(SettingsFile));
                 if (IsValid(saved))
                     return saved;
             }
@@ -45,7 +46,7 @@ public static class DetailSectionPositionSettingsStore
 
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, normalized);
         }
         catch
@@ -67,4 +68,14 @@ public static class DetailSectionPositionSettingsStore
 
     internal static bool IsValid(string position) =>
         position is Left or Right;
+
+    private static bool TryLoadFromFile(string path, out string value)
+    {
+        value = string.Empty;
+        if (!File.Exists(path))
+            return false;
+
+        value = Normalize(File.ReadAllText(path));
+        return true;
+    }
 }

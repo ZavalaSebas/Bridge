@@ -34,6 +34,10 @@ public static class Config
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         AppName);
 
+    public static string ConfigDirectoryPath => Path.Combine(AppDataPath, "config");
+
+    public static string SecretsDirectoryPath => Path.Combine(ConfigDirectoryPath, "secrets");
+
     public static string DatabasePath => Path.Combine(AppDataPath, "bridge.db");
 
     // On-disk cache for artwork RemoteImageCache downloads (covers, backgrounds,
@@ -58,63 +62,69 @@ public static class Config
 
     // Apply enabled cheats automatically when launching a ROM through Bridge RetroArch.
     public static string AutoApplyCheatsOnLaunchFilePath =>
-        Path.Combine(AppDataPath, "auto-apply-cheats-on-launch.txt");
+        Path.Combine(ConfigDirectoryPath, "auto-apply-cheats-on-launch.txt");
+
+    public static string ThemeFilePath => Path.Combine(ConfigDirectoryPath, "theme.json");
+
+    public static string ViewModeFilePath => Path.Combine(ConfigDirectoryPath, "viewmode.txt");
+
+    public static string ScrollPositionsFilePath => Path.Combine(ConfigDirectoryPath, "scrollpositions.txt");
 
     // The update channel (Stable/Beta) Bridge offers releases from. Kept in a
     // plain file like viewmode.txt: an app-instance preference, not library data.
-    public static string UpdateChannelFilePath => Path.Combine(AppDataPath, "update-channel.txt");
+    public static string UpdateChannelFilePath => Path.Combine(ConfigDirectoryPath, "update-channel.txt");
 
     // UI language (English/Spanish). Plain file like update-channel.txt.
-    public static string LanguageFilePath => Path.Combine(AppDataPath, "language.txt");
+    public static string LanguageFilePath => Path.Combine(ConfigDirectoryPath, "language.txt");
 
     // Launch Bridge at Windows sign-in. Plain file like update-channel.txt.
-    public static string StartupFilePath => Path.Combine(AppDataPath, "startup.txt");
+    public static string StartupFilePath => Path.Combine(ConfigDirectoryPath, "startup.txt");
 
     // Minimize to the notification area when the main window is closed.
-    public static string TrayIconFilePath => Path.Combine(AppDataPath, "tray-icon.txt");
+    public static string TrayIconFilePath => Path.Combine(ConfigDirectoryPath, "tray-icon.txt");
 
     // Keep the same selected game when switching List/Covers/Table views.
     public static string KeepSelectionAcrossViewsFilePath =>
-        Path.Combine(AppDataPath, "keep-selection-across-views.txt");
+        Path.Combine(ConfigDirectoryPath, "keep-selection-across-views.txt");
 
     // Dock edge for the List details panel and Covers compact info panel.
     public static string DetailPanelPositionFilePath =>
-        Path.Combine(AppDataPath, "detail-panel-position.txt");
+        Path.Combine(ConfigDirectoryPath, "detail-panel-position.txt");
 
     // Details column vs Overview/Images tabs within the game details content area.
     public static string DetailSectionPositionFilePath =>
-        Path.Combine(AppDataPath, "detail-section-position.txt");
+        Path.Combine(ConfigDirectoryPath, "detail-section-position.txt");
 
     // Semi-transparent sidebar (frosted look over the game background).
     public static string SidebarTranslucentFilePath =>
-        Path.Combine(AppDataPath, "sidebar-translucent.txt");
+        Path.Combine(ConfigDirectoryPath, "sidebar-translucent.txt");
 
     // Blurred game art and semi-transparent library/detail panels.
     public static string TranslucentBackgroundFilePath =>
-        Path.Combine(AppDataPath, "translucent-background.txt");
+        Path.Combine(ConfigDirectoryPath, "translucent-background.txt");
 
     // Last app version for which the What's New dialog was shown.
     public static string WhatsNewSeenFilePath =>
-        Path.Combine(AppDataPath, "whats-new-seen.txt");
+        Path.Combine(ConfigDirectoryPath, "whats-new-seen.txt");
 
     // Watched ROM folder for Scan ROMs and automatic import.
     public static string RomScanFolderFilePath =>
-        Path.Combine(AppDataPath, "rom-scan-folder.txt");
+        Path.Combine(ConfigDirectoryPath, "rom-scan-folder.txt");
 
     // Watched folder for Scan Automatically (Scan Folder).
     public static string InstalledScanFolderFilePath =>
-        Path.Combine(AppDataPath, "installed-scan-folder.txt");
+        Path.Combine(ConfigDirectoryPath, "installed-scan-folder.txt");
 
     // First-run setup completion flag.
     public static string SetupCompleteFilePath =>
-        Path.Combine(AppDataPath, "setup-complete.txt");
+        Path.Combine(ConfigDirectoryPath, "setup-complete.txt");
 
     // User profile (display name + avatar).
     public static string UserProfileFilePath =>
-        Path.Combine(AppDataPath, "user-profile.json");
+        Path.Combine(ConfigDirectoryPath, "user-profile.json");
 
     public static string GameDisplayPreferencesFilePath =>
-        Path.Combine(AppDataPath, "game-display-preferences.json");
+        Path.Combine(ConfigDirectoryPath, "game-display-preferences.json");
 
     public static string UserProfileDirectoryPath =>
         Path.Combine(AppDataPath, "profile");

@@ -13,26 +13,16 @@ public static class SteamGridDbSettingsStore
     private static readonly byte[] ProtectionEntropy = "Bridge.SteamGridDbSettings.v1"u8.ToArray();
     private const byte ProtectedFormatVersion = 1;
 
-    private static string FilePath => Path.Combine(Config.AppDataPath, "steamgriddb-settings.json");
+    private static string FilePath => Path.Combine(Config.SecretsDirectoryPath, "steamgriddb-settings.json");
+    private static string LegacyFilePath => Path.Combine(Config.AppDataPath, "steamgriddb-settings.json");
 
     public static SteamGridDbSettings Load()
     {
-        if (!File.Exists(FilePath))
-            return new SteamGridDbSettings();
-
         try
         {
-            var bytes = File.ReadAllBytes(FilePath);
-            if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
-            {
-                var protectedPayload = bytes[1..];
-                var json = Encoding.UTF8.GetString(
-                    ProtectedData.Unprotect(protectedPayload, ProtectionEntropy, DataProtectionScope.CurrentUser));
-                return JsonSerializer.Deserialize<SteamGridDbSettings>(json) ?? new SteamGridDbSettings();
-            }
-
-            var legacyJson = Encoding.UTF8.GetString(bytes);
-            return JsonSerializer.Deserialize<SteamGridDbSettings>(legacyJson) ?? new SteamGridDbSettings();
+            return TryLoadFromPath(FilePath)
+                ?? TryLoadFromPath(LegacyFilePath)
+                ?? new SteamGridDbSettings();
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or CryptographicException)
         {
@@ -42,28 +32,30 @@ public static class SteamGridDbSettingsStore
 
     public static void Save(SteamGridDbSettings settings)
     {
-        Directory.CreateDirectory(Config.AppDataPath);
+        Directory.CreateDirectory(Config.SecretsDirectoryPath);
         WriteProtected(FilePath, settings);
     }
 
     internal static void MigratePlainTextToProtectedFormat(AppDataMigrationContext ctx)
     {
-        var path = ctx.Combine("steamgriddb-settings.json");
-        if (!File.Exists(path))
-            return;
-
-        try
+        foreach (var path in new[] { ctx.Combine("steamgriddb-settings.json"), ctx.Combine("config", "secrets", "steamgriddb-settings.json") })
         {
-            var bytes = File.ReadAllBytes(path);
-            if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
-                return;
+            if (!File.Exists(path))
+                continue;
 
-            var legacyJson = Encoding.UTF8.GetString(bytes);
-            var settings = JsonSerializer.Deserialize<SteamGridDbSettings>(legacyJson) ?? new SteamGridDbSettings();
-            WriteProtected(path, settings);
-        }
-        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or CryptographicException)
-        {
+            try
+            {
+                var bytes = File.ReadAllBytes(path);
+                if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
+                    continue;
+
+                var legacyJson = Encoding.UTF8.GetString(bytes);
+                var settings = JsonSerializer.Deserialize<SteamGridDbSettings>(legacyJson) ?? new SteamGridDbSettings();
+                WriteProtected(path, settings);
+            }
+            catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or CryptographicException)
+            {
+            }
         }
     }
 
@@ -78,5 +70,23 @@ public static class SteamGridDbSettingsStore
         fileBytes[0] = ProtectedFormatVersion;
         Buffer.BlockCopy(protectedPayload, 0, fileBytes, 1, protectedPayload.Length);
         File.WriteAllBytes(path, fileBytes);
+    }
+
+    private static SteamGridDbSettings? TryLoadFromPath(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        var bytes = File.ReadAllBytes(path);
+        if (bytes.Length > 0 && bytes[0] == ProtectedFormatVersion)
+        {
+            var protectedPayload = bytes[1..];
+            var json = Encoding.UTF8.GetString(
+                ProtectedData.Unprotect(protectedPayload, ProtectionEntropy, DataProtectionScope.CurrentUser));
+            return JsonSerializer.Deserialize<SteamGridDbSettings>(json);
+        }
+
+        var legacyJson = Encoding.UTF8.GetString(bytes);
+        return JsonSerializer.Deserialize<SteamGridDbSettings>(legacyJson);
     }
 }

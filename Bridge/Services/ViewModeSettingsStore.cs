@@ -11,7 +11,8 @@ namespace Bridge.Services;
 /// </summary>
 public static class ViewModeSettingsStore
 {
-    private static string SettingsFile => Path.Combine(Config.AppDataPath, "viewmode.txt");
+    private static string SettingsFile => Config.ViewModeFilePath;
+    private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "viewmode.txt");
 
     /// <summary>
     /// Maps legacy persisted enum names to the current <see cref="ViewMode"/> values.
@@ -32,12 +33,9 @@ public static class ViewModeSettingsStore
     {
         try
         {
-            if (File.Exists(SettingsFile))
-            {
-                var normalized = NormalizeLegacyName(File.ReadAllText(SettingsFile));
-                if (Enum.TryParse<ViewMode>(normalized, out var saved))
-                    return saved;
-            }
+            if (TryLoadFromFile(SettingsFile, out var saved) ||
+                TryLoadFromFile(LegacySettingsFile, out saved))
+                return saved;
         }
         catch
         {
@@ -51,7 +49,7 @@ public static class ViewModeSettingsStore
     {
         try
         {
-            Directory.CreateDirectory(Config.AppDataPath);
+            Directory.CreateDirectory(Config.ConfigDirectoryPath);
             File.WriteAllText(SettingsFile, mode.ToString());
         }
         catch
@@ -72,5 +70,15 @@ public static class ViewModeSettingsStore
             var normalized = NormalizeLegacyName(text);
             return Enum.TryParse<ViewMode>(normalized, out var mode) ? mode.ToString() : normalized;
         });
+    }
+
+    private static bool TryLoadFromFile(string path, out ViewMode mode)
+    {
+        mode = ViewMode.List;
+        if (!File.Exists(path))
+            return false;
+
+        var normalized = NormalizeLegacyName(File.ReadAllText(path));
+        return Enum.TryParse(normalized, out mode);
     }
 }
