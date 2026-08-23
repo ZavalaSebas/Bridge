@@ -11,6 +11,9 @@ namespace Bridge.ViewModels;
 
 public partial class MainViewModel
 {
+    /// <summary>Elapsed time before retrying metadata sync for a game that was last attempted (success or fail).</summary>
+    private static readonly TimeSpan METADATA_SYNC_TTL = TimeSpan.FromDays(30);
+
     [RelayCommand]
     private async Task DownloadMetadataAsync()
     {
@@ -62,6 +65,15 @@ public partial class MainViewModel
                 RefreshListDisplay(game);
             }
 
+            // Seal sync markers to respect TTL: prevents perpetual re-download on every startup
+            // (seals both on success and failure — if no metadata found, still mark as "attempted")
+            _gameRepository.UpdateManyMetadataSyncMarkers(
+                new[] { game }.ToList(),
+                MetadataSyncMarker.Metadata);
+            _gameRepository.UpdateManyMetadataSyncMarkers(
+                new[] { game }.ToList(),
+                MetadataSyncMarker.Links);
+
             if (!metadataApplied && !hltbApplied)
             {
                 StatusMessage = IsNetworkAvailable()
@@ -96,7 +108,11 @@ public partial class MainViewModel
     // Emerald Version" instead of missing them.
     public async Task DownloadMetadataForAddedGamesAsync(IReadOnlyList<Game> games, bool romImport = false)
     {
-        var candidates = games.Where(g => string.IsNullOrWhiteSpace(g.Description)).ToList();
+        var now = DateTime.Now;
+        var candidates = games
+            .Where(g => string.IsNullOrWhiteSpace(g.Description) &&
+                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
+            .ToList();
         if (candidates.Count == 0)
         {
             return;
@@ -168,6 +184,9 @@ public partial class MainViewModel
                     App.LogException(ex);
                 }
             }
+
+            // Batch seal metadata markers
+            _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
             if (applied > 0 && !previousSuspend)
                 RebuildDetailedRows();
@@ -461,8 +480,10 @@ public partial class MainViewModel
         //  - Missing a description → fetch the full Steam metadata (+ IGDB links).
         //  - Has a description but no IGDB social links → only call our IGDB
         //    Worker for the links; no Steam re-download.
+        var now = DateTime.Now;
         var needMetadata = allSteam
-            .Where(g => string.IsNullOrWhiteSpace(g.Description))
+            .Where(g => string.IsNullOrWhiteSpace(g.Description) &&
+                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
             .ToList();
         var needLinksOnly = allSteam
             .Where(g => !string.IsNullOrWhiteSpace(g.Description) &&
@@ -583,6 +604,12 @@ public partial class MainViewModel
                 }
             }
 
+            // Batch seal markers for all attempted syncs (success or fail)
+            // Respects TTL to prevent perpetual re-downloads on every startup
+            _gameRepository.UpdateManyMetadataSyncMarkers(needMetadata, MetadataSyncMarker.Metadata);
+            if (needLinksOnly.Count > 0)
+                _gameRepository.UpdateManyMetadataSyncMarkers(needLinksOnly, MetadataSyncMarker.Links);
+
             if (applied > 0 && !previousSuspend)
                 RebuildDetailedRows();
         }
@@ -607,8 +634,11 @@ public partial class MainViewModel
     // which resolves Epic-only games correctly (unlike Steam-by-name).
     private async Task DownloadMissingMetadataByNameAsync(IReadOnlyList<Guid> sourceIds)
     {
+        var now = DateTime.Now;
         var candidates = Games
-            .Where(g => sourceIds.Contains(g.SourceId) && string.IsNullOrWhiteSpace(g.Description))
+            .Where(g => sourceIds.Contains(g.SourceId) && 
+                        string.IsNullOrWhiteSpace(g.Description) &&
+                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
             .ToList();
 
         if (candidates.Count == 0)
@@ -677,6 +707,9 @@ public partial class MainViewModel
                 }
             }
 
+            // Batch seal metadata markers
+            _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
+
             if (applied > 0 && !previousSuspend)
                 RebuildDetailedRows();
 
@@ -697,8 +730,11 @@ public partial class MainViewModel
     // startup/refresh by searching IGDB with normalized Spanish/English titles.
     private async Task DownloadMissingRomMetadataAsync()
     {
+        var now = DateTime.Now;
         var candidates = Games
-            .Where(g => g.Roms.Count > 0 && string.IsNullOrWhiteSpace(g.Description))
+            .Where(g => g.Roms.Count > 0 && 
+                        string.IsNullOrWhiteSpace(g.Description) &&
+                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
             .ToList();
 
         if (candidates.Count == 0)
@@ -769,6 +805,9 @@ public partial class MainViewModel
                 }
             }
 
+            // Batch seal metadata markers
+            _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
+
             if (applied > 0 && !previousSuspend)
                 RebuildDetailedRows();
 
@@ -786,8 +825,11 @@ public partial class MainViewModel
     // name, same as the post-scan import path).
     private async Task DownloadMissingBridgeMetadataAsync(Guid bridgeSourceId)
     {
+        var now = DateTime.Now;
         var candidates = Games
-            .Where(g => g.SourceId == bridgeSourceId && string.IsNullOrWhiteSpace(g.Description))
+            .Where(g => g.SourceId == bridgeSourceId && 
+                        string.IsNullOrWhiteSpace(g.Description) &&
+                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
             .ToList();
 
         if (candidates.Count == 0)
@@ -858,6 +900,9 @@ public partial class MainViewModel
                 }
             }
 
+            // Batch seal metadata markers
+            _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
+
             if (applied > 0 && !previousSuspend)
                 RebuildDetailedRows();
 
@@ -873,8 +918,10 @@ public partial class MainViewModel
 
     private async Task DownloadMissingHowLongToBeatAsync()
     {
+        var now = DateTime.Now;
         var candidates = Games
-            .Where(g => TimeToBeatHelper.GetProgressTarget(g) == 0)
+            .Where(g => TimeToBeatHelper.GetProgressTarget(g) == 0 &&
+                        (g.TimeToBeatSyncedAt == null || now - g.TimeToBeatSyncedAt > METADATA_SYNC_TTL))
             .ToList();
 
         if (candidates.Count == 0 || !IsNetworkAvailable())
@@ -916,6 +963,9 @@ public partial class MainViewModel
                     }
                 })));
             }
+
+            // Batch seal TimeToBeat markers
+            _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.TimeToBeat);
 
             if (!previousSuspend)
                 RebuildDetailedRows();
