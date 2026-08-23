@@ -27,6 +27,8 @@ public class AppDataMigratorTests : IDisposable
         Assert.True(Directory.Exists(Path.Combine(_appDataPath, "emulators")));
         Assert.True(Directory.Exists(Path.Combine(_appDataPath, "emulator-downloads")));
         Assert.True(Directory.Exists(Path.Combine(_appDataPath, "logs")));
+        Assert.True(Directory.Exists(Path.Combine(_appDataPath, "config")));
+        Assert.True(Directory.Exists(Path.Combine(_appDataPath, "config", "secrets")));
         Assert.True(File.Exists(Path.Combine(_appDataPath, Config.AppDataVersionFileName)));
     }
 
@@ -62,7 +64,8 @@ public class AppDataMigratorTests : IDisposable
 
         AppDataMigrator.MigrateToLatest(_appDataPath);
 
-        Assert.Equal("Covers", File.ReadAllText(Path.Combine(_appDataPath, "viewmode.txt")).Trim());
+        Assert.False(File.Exists(Path.Combine(_appDataPath, "viewmode.txt")));
+        Assert.Equal("Covers", File.ReadAllText(Path.Combine(_appDataPath, "config", "viewmode.txt")).Trim());
     }
 
     [Fact]
@@ -74,7 +77,8 @@ public class AppDataMigratorTests : IDisposable
 
         AppDataMigrator.MigrateToLatest(_appDataPath);
 
-        var lines = File.ReadAllLines(Path.Combine(_appDataPath, "scrollpositions.txt"));
+        Assert.False(File.Exists(Path.Combine(_appDataPath, "scrollpositions.txt")));
+        var lines = File.ReadAllLines(Path.Combine(_appDataPath, "config", "scrollpositions.txt"));
         Assert.Contains("Covers=120.5", lines);
         Assert.Contains("List=40", lines);
         Assert.DoesNotContain(lines, l => l.StartsWith("Grid=", StringComparison.OrdinalIgnoreCase));
@@ -90,7 +94,8 @@ public class AppDataMigratorTests : IDisposable
 
         AppDataMigrator.MigrateToLatest(_appDataPath);
 
-        var bytes = File.ReadAllBytes(Path.Combine(_appDataPath, "igdb-settings.json"));
+        Assert.False(File.Exists(Path.Combine(_appDataPath, "igdb-settings.json")));
+        var bytes = File.ReadAllBytes(Path.Combine(_appDataPath, "config", "secrets", "igdb-settings.json"));
         Assert.Equal((byte)1, bytes[0]);
 
         var json = Encoding.UTF8.GetString(
@@ -109,8 +114,27 @@ public class AppDataMigratorTests : IDisposable
         AppDataMigrator.MigrateToLatest(_appDataPath);
 
         Assert.Equal(AppDataMigrator.LatestVersion, AppDataMigrator.ReadVersion(_appDataPath));
-        Assert.Equal("Covers", File.ReadAllText(Path.Combine(_appDataPath, "viewmode.txt")).Trim());
+        Assert.Equal("Covers", File.ReadAllText(Path.Combine(_appDataPath, "config", "viewmode.txt")).Trim());
         Assert.True(File.Exists(Path.Combine(_appDataPath, "bridge.db")));
+    }
+
+    [Fact]
+    public void MigrateToLatest_WhenDestinationExistsWithDifferentContent_KeepsDestinationAndMovesLegacyToConflictFolder()
+    {
+        Directory.CreateDirectory(Path.Combine(_appDataPath, "config"));
+        File.WriteAllText(Path.Combine(_appDataPath, "language.txt"), "Spanish");
+        File.WriteAllText(Path.Combine(_appDataPath, "config", "language.txt"), "English");
+
+        AppDataMigrator.MigrateToLatest(_appDataPath);
+
+        Assert.Equal("English", File.ReadAllText(Path.Combine(_appDataPath, "config", "language.txt")).Trim());
+        Assert.False(File.Exists(Path.Combine(_appDataPath, "language.txt")));
+
+        var conflictsDirectory = Path.Combine(_appDataPath, "config", "migration-conflicts");
+        Assert.True(Directory.Exists(conflictsDirectory));
+        Assert.Contains(
+            Directory.GetFiles(conflictsDirectory),
+            file => Path.GetFileName(file).StartsWith("language.txt.legacy-", StringComparison.OrdinalIgnoreCase));
     }
 
     public void Dispose()
