@@ -10,7 +10,8 @@ namespace Bridge.Services;
 internal static class AppDataMigrations
 {
     private static readonly (string LegacyFileName, string[] DestinationSegments)[] V2Moves =
-    [
+    new (string LegacyFileName, string[] DestinationSegments)[]
+    {
         ("theme.json", new[] { "config", "theme.json" }),
         ("viewmode.txt", new[] { "config", "viewmode.txt" }),
         ("scrollpositions.txt", new[] { "config", "scrollpositions.txt" }),
@@ -33,7 +34,7 @@ internal static class AppDataMigrations
         ("igdb-settings.json", new[] { "config", "secrets", "igdb-settings.json" }),
         ("steamgriddb-settings.json", new[] { "config", "secrets", "steamgriddb-settings.json" }),
         ("retroachievements-settings.json", new[] { "config", "secrets", "retroachievements-settings.json" }),
-    ];
+    };
 
     /// <summary>
     /// v0 → v1: ensure the standard folder layout, consolidate legacy paths, and

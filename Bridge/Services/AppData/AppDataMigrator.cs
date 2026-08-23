@@ -14,10 +14,11 @@ public static class AppDataMigrator
     public const int LatestVersion = 2;
 
     private static readonly Action<AppDataMigrationContext>[] Steps =
-    [
+    new Action<AppDataMigrationContext>[]
+    {
         AppDataMigrations.V1_InitializeLayoutAndLegacyCleanup,
         AppDataMigrations.V2_MoveLooseConfigFilesToConfigDirectory,
-    ];
+    };
 
     /// <param name="appDataPath">
     /// Override for unit tests; production passes null and uses
