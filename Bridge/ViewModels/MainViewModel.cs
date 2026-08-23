@@ -886,17 +886,43 @@ public partial class MainViewModel : ObservableObject
 
     private async Task PreloadArtworkCoreAsync()
     {
-        var urls = CollectStartupPreloadUrls().ToList();
-        if (urls.Count == 0)
+        var plan = CollectStartupPreloadPlan();
+        var total = plan.IconUrls.Count + plan.CoverUrls.Count + plan.HeroUrls.Count;
+        if (total == 0)
             return;
 
-        BeginStatusProgress(indeterminate: urls.Count <= 1);
-        ReportBatchProgress(0, urls.Count);
+        BeginStatusProgress(indeterminate: total <= 1);
+        ReportBatchProgress(0, total);
         try
         {
-            await RemoteImageCache.PreloadAndWaitAsync(
-                urls,
-                new Progress<(int Completed, int Total)>(p => ReportBatchProgress(p.Completed, p.Total)));
+            var completed = 0;
+
+            async Task PreloadBucketAsync(IReadOnlyList<string> urls, ArtworkDecodeSize size)
+            {
+                if (urls.Count == 0)
+                    return;
+
+                await RemoteImageCache.PreloadAndWaitAsync(
+                    urls,
+                    new Progress<(int Completed, int Total)>(p => ReportBatchProgress(completed + p.Completed, total)),
+                    size);
+                completed += urls.Count;
+                ReportBatchProgress(completed, total);
+            }
+
+            // Keep first-visible UX smooth: in Covers mode warm covers first; in
+            // List/Table mode warm icons first. Selected hero always warms early.
+            await PreloadBucketAsync(plan.HeroUrls, ArtworkDecodeSize.Hero);
+            if (ViewMode == ViewMode.Covers)
+            {
+                await PreloadBucketAsync(plan.CoverUrls, ArtworkDecodeSize.Cover);
+                await PreloadBucketAsync(plan.IconUrls, ArtworkDecodeSize.Icon);
+            }
+            else
+            {
+                await PreloadBucketAsync(plan.IconUrls, ArtworkDecodeSize.Icon);
+                await PreloadBucketAsync(plan.CoverUrls, ArtworkDecodeSize.Cover);
+            }
         }
         finally
         {
@@ -904,48 +930,58 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    // Startup preload: selected game hero art + the first grid page, not the
-    // entire library — keeps cold start snappy on large collections.
-    private IEnumerable<string> CollectStartupPreloadUrls()
+    // Startup preload by decode bucket. Keeping preload buckets aligned with UI
+    // consumers avoids duplicate (url, size) entries in RemoteImageCache.
+    private StartupArtworkPreloadPlan CollectStartupPreloadPlan()
     {
-        const int gridWarmCount = 32;
-        var urls = new List<string>();
+        const int coversWarmCount = 16;
+        const int iconsWarmCount = 24;
+        var plan = new StartupArtworkPreloadPlan();
 
         if (SelectedGame is { } selected)
         {
-            if (!string.IsNullOrWhiteSpace(selected.Icon))
-                urls.Add(selected.Icon);
-            if (!string.IsNullOrWhiteSpace(selected.CoverImage))
-                urls.Add(selected.CoverImage);
-            // The hero/background is warmed at the Hero bucket separately
-            // (WarmSelectedHeroFromDisk + the FadeImage), so it isn't preloaded at
-            // Native here — that decoded the same image twice.
-            AddDescriptionImageUrls(selected, urls);
+            plan.AddIcon(selected.Icon);
+            plan.AddCover(selected.CoverImage);
+            if (HeroBackground.IsCustom(selected.BackgroundImage))
+                plan.AddHero(selected.BackgroundImage);
         }
 
-        foreach (var game in Games.Take(gridWarmCount))
+        if (ViewMode == ViewMode.Covers)
         {
-            if (!string.IsNullOrWhiteSpace(game.Icon))
-                urls.Add(game.Icon);
-            if (!string.IsNullOrWhiteSpace(game.CoverImage))
-                urls.Add(game.CoverImage);
+            foreach (var game in Games.Take(coversWarmCount))
+                plan.AddCover(game.CoverImage);
+        }
+        else
+        {
+            foreach (var game in Games.Take(iconsWarmCount))
+                plan.AddIcon(game.Icon);
         }
 
-        return urls;
+        return plan;
     }
 
-    private static void AddDescriptionImageUrls(Game game, ICollection<string> urls)
+    private sealed class StartupArtworkPreloadPlan
     {
-        foreach (var url in game.DescriptionImages)
-        {
-            if (!string.IsNullOrWhiteSpace(url))
-                urls.Add(url);
-        }
+        private readonly HashSet<string> _iconSet = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _coverSet = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _heroSet = new(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var block in game.DescriptionBlocks)
+        public List<string> IconUrls { get; } = [];
+        public List<string> CoverUrls { get; } = [];
+        public List<string> HeroUrls { get; } = [];
+
+        public void AddIcon(string? url) => Add(url, _iconSet, IconUrls);
+
+        public void AddCover(string? url) => Add(url, _coverSet, CoverUrls);
+
+        public void AddHero(string? url) => Add(url, _heroSet, HeroUrls);
+
+        private static void Add(string? url, ISet<string> dedupe, ICollection<string> target)
         {
-            if (block.IsImage && !string.IsNullOrWhiteSpace(block.Url))
-                urls.Add(block.Url);
+            if (string.IsNullOrWhiteSpace(url) || !dedupe.Add(url))
+                return;
+
+            target.Add(url);
         }
     }
 

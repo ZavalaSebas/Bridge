@@ -17,7 +17,7 @@ public static class RemoteImageCache
 {
     // Cap the in-memory decoded cache by BYTES (not count): a wall of full-size
     // covers would otherwise balloon RAM. Entries are evicted least-recently-used.
-    private const long MaxCacheBytes = 128L * 1024 * 1024; // ~128 MB of decoded artwork
+    private const long MaxCacheBytes = 80L * 1024 * 1024; // ~80 MB of decoded artwork
 
     // Max images decoded concurrently during a bulk preload (see PreloadAndWaitAsync).
     private const int MaxPreloadConcurrency = 8;

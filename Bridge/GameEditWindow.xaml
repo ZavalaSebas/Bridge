@@ -232,7 +232,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Border Grid.Column="0" Width="48" Height="48" Background="#1B2132" CornerRadius="4" ClipToBounds="True" Margin="0,0,10,0">
-                                            <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}" RenderOptions.BitmapScalingMode="Fant"/>
+                                            <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" converters:CachedImage.DecodeSize="Icon" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}" RenderOptions.BitmapScalingMode="Fant"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBox MinWidth="120" Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
@@ -256,7 +256,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Border Grid.Column="0" Width="48" Height="68" Background="#1B2132" CornerRadius="4" ClipToBounds="True" Margin="0,0,10,0">
-                                            <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding CoverImage}" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Cover}" RenderOptions.BitmapScalingMode="Fant"/>
+                                            <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding CoverImage}" converters:CachedImage.DecodeSize="Cover" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Cover}" RenderOptions.BitmapScalingMode="Fant"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBox MinWidth="120" Text="{Binding CoverImage, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
@@ -282,7 +282,7 @@
                                         <Border Grid.Column="0" Width="96" Height="54" Background="#1B2132" CornerRadius="4" ClipToBounds="True" Margin="0,0,10,0">
                                             <Grid>
                                                 <Rectangle Fill="Black" Visibility="{Binding BackgroundImage, Converter={StaticResource HeroBlackVis}}"/>
-                                                <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding BackgroundImage, Converter={StaticResource HeroArtSource}}" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" RenderOptions.BitmapScalingMode="Fant"/>
+                                                <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding BackgroundImage, Converter={StaticResource HeroArtSource}}" converters:CachedImage.DecodeSize="Hero" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" RenderOptions.BitmapScalingMode="Fant"/>
                                             </Grid>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">

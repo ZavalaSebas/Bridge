@@ -73,7 +73,8 @@
                                VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="Fant"
                                Opacity="{Binding Converter={StaticResource AchievementLockedOpacityConverter}}"
-                               converters:CachedImage.SourceUrl="{Binding Converter={StaticResource AchievementIconConverter}}"/>
+                               converters:CachedImage.SourceUrl="{Binding Converter={StaticResource AchievementIconConverter}}"
+                               converters:CachedImage.DecodeSize="Icon"/>
                     </Border>
 
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">

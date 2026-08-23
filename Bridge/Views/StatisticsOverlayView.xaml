@@ -150,7 +150,7 @@
                     <DataTemplate>
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" Height="24" Width="24" Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}" RenderOptions.BitmapScalingMode="Fant"/>
+                            <Image Grid.Column="0" Height="24" Width="24" Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" converters:CachedImage.DecodeSize="Icon" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}" RenderOptions.BitmapScalingMode="Fant"/>
                             <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis"/>
                             <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="{StaticResource Bridge.FontSize.BodySmall}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Text="{Binding PlaytimeSeconds, Converter={StaticResource PlaytimeConverter}}"/>
                         </Grid>

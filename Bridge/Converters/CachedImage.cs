@@ -104,7 +104,7 @@ public static class CachedImage
             return;
         }
 
-        var size = GetDecodeSize(image);
+        var size = ResolveDecodeSize(image, fallback);
         if (Path.IsPathRooted(url))
         {
             image.Source = LoadLocalPath(url, size) ?? DefaultGameArtwork.Get(fallback);
@@ -137,7 +137,7 @@ public static class CachedImage
             return;
         }
 
-        var size = GetDecodeSize(target);
+        var size = ResolveDecodeSize(target, fallback);
         if (Path.IsPathRooted(url))
         {
             SetBackground(target, MakeFillBrush(LoadLocalPath(url, size) ?? DefaultGameArtwork.Get(fallback)));
@@ -160,6 +160,16 @@ public static class CachedImage
         };
         SetLoadCallback(target, callback);
         RemoteImageCache.Subscribe(url, callback, size);
+    }
+
+    private static ArtworkDecodeSize ResolveDecodeSize(DependencyObject target, GameArtworkFallback fallback)
+    {
+        var size = GetDecodeSize(target);
+        // Most icon consumers only set FallbackArtwork=Icon (without DecodeSize),
+        // which previously decoded at Native and duplicated preload entries.
+        if (size == ArtworkDecodeSize.Native && fallback == GameArtworkFallback.Icon)
+            return ArtworkDecodeSize.Icon;
+        return size;
     }
 
     private static void SetBackground(DependencyObject target, Brush? brush)
