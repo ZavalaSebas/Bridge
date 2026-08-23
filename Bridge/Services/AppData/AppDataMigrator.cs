@@ -11,11 +11,12 @@ namespace Bridge.Services;
 /// </summary>
 public static class AppDataMigrator
 {
-    public const int LatestVersion = 1;
+    public const int LatestVersion = 2;
 
     private static readonly Action<AppDataMigrationContext>[] Steps =
     [
         AppDataMigrations.V1_InitializeLayoutAndLegacyCleanup,
+        AppDataMigrations.V2_MoveLooseConfigFilesToConfigDirectory,
     ];
 
     /// <param name="appDataPath">

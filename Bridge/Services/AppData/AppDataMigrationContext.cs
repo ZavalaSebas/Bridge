@@ -76,6 +76,47 @@ public sealed class AppDataMigrationContext
         File.WriteAllLines(path, updated);
     }
 
+    /// <summary>
+    /// Moves one file when present. If destination already exists with different
+    /// content, keeps destination and moves source into a conflict folder.
+    /// </summary>
+    public void MoveFileToIfExists(
+        string[] sourceSegments,
+        string[] destinationSegments,
+        string[] conflictDirectorySegments)
+    {
+        var source = Combine(sourceSegments);
+        if (!File.Exists(source))
+            return;
+
+        var destination = Combine(destinationSegments);
+        var destinationDirectory = Path.GetDirectoryName(destination);
+        if (!string.IsNullOrWhiteSpace(destinationDirectory))
+            Directory.CreateDirectory(destinationDirectory);
+
+        if (!File.Exists(destination))
+        {
+            File.Move(source, destination);
+            return;
+        }
+
+        if (FilesEqual(source, destination))
+        {
+            File.Delete(source);
+            return;
+        }
+
+        var conflictDirectory = Combine(conflictDirectorySegments);
+        Directory.CreateDirectory(conflictDirectory);
+
+        var conflictName = $"{Path.GetFileName(source)}.legacy-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        var conflictPath = Path.Combine(conflictDirectory, conflictName);
+        if (File.Exists(conflictPath))
+            conflictPath += "-" + Guid.NewGuid().ToString("N");
+
+        File.Move(source, conflictPath);
+    }
+
     public void DeleteFileIfExists(params string[] segments)
     {
         var path = Combine(segments);
@@ -88,5 +129,36 @@ public sealed class AppDataMigrationContext
         var path = Combine(segments);
         if (Directory.Exists(path))
             Directory.Delete(path, recursive: true);
+    }
+
+    private static bool FilesEqual(string leftPath, string rightPath)
+    {
+        var leftInfo = new FileInfo(leftPath);
+        var rightInfo = new FileInfo(rightPath);
+        if (leftInfo.Length != rightInfo.Length)
+            return false;
+
+        using var left = File.OpenRead(leftPath);
+        using var right = File.OpenRead(rightPath);
+
+        const int bufferSize = 81920;
+        var leftBuffer = new byte[bufferSize];
+        var rightBuffer = new byte[bufferSize];
+        while (true)
+        {
+            var leftRead = left.Read(leftBuffer, 0, leftBuffer.Length);
+            var rightRead = right.Read(rightBuffer, 0, rightBuffer.Length);
+            if (leftRead != rightRead)
+                return false;
+
+            if (leftRead == 0)
+                return true;
+
+            for (var i = 0; i < leftRead; i++)
+            {
+                if (leftBuffer[i] != rightBuffer[i])
+                    return false;
+            }
+        }
     }
 }
