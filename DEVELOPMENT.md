@@ -156,7 +156,7 @@ Uses `Microsoft.EntityFrameworkCore.Sqlite` (see [ADR-4](ARCHITECTURE.md#adr-4-l
 
 Verified at runtime (not just compiled) against a real SQLite database file: create → save a `Game` with populated `GameActions`/`Roms`/`Links`/`GenreIds`/`ReleaseDate` → close the context → reopen a fresh context pointing at the same file → every field reads back correctly, including the dedup lookup by `(ExternalId, SourceId)`.
 
-**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` and every repository are registered `Singleton`, matching this doc's own Lifetime Guidelines for WPF), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `BridgeDbMigrator.MigrateToLatest()` (migrates to the latest schema, baselining pre-migrations DBs — see the Updater/Migrations section below). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\errors.log` via `App.LogException` — minimal, deliberately not a full `ILogger` setup (see Logging).
+**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` is registered via `AddDbContextFactory`, and every repository is a `Singleton` that creates a short-lived context per operation through `IDbContextFactory<BridgeDbContext>`, so concurrent background work such as metadata sync or imports never shares one non-thread-safe context), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `BridgeDbMigrator.MigrateToLatest()` (migrates to the latest schema, baselining pre-migrations DBs — see the Updater/Migrations section below). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\errors.log` via `App.LogException` — minimal, deliberately not a full `ILogger` setup (see Logging).
 
 ### `Bridge.Metadata` — what's in it
 
@@ -181,9 +181,9 @@ Bridge.Metadata/
 
 `HowLongToBeatService` (`Bridge/Services/HowLongToBeatService.cs`) sits in the app layer: it calls the client, writes the three `Game.TimeToBeat*Seconds` columns, and can add an HLTB profile link. Startup/refresh runs `DownloadMissingHowLongToBeatAsync` for games with no estimates; **Download Metadata** also calls it after the IGDB/Steam chain. UI helpers live in `Bridge/Statistics/TimeToBeatHelper.cs` and `Bridge/Converters/TimeToBeatConverters.cs` (hero stats bar in `LibraryDetailView.xaml`).
 
-**Achievements:** `GameAchievementsService` (`Bridge/Services/GameAchievementsService.cs`) is the facade used by `AchievementsPanel`. Steam games use `SteamAchievementsService` (local VDF progress via `Bridge.Import/Steam/SteamLocalAchievementsResolver`, with `SteamCommunityAchievementsClient` as a definitions-only fallback for linked manual games). Epic games use `EpicAchievementsService` (requires an Epic launcher session from `EpicLauncherSessionReader`). ROM games use `RetroAchievementsAchievementsService`: MD5 from `RomMd5`, hash index cached under `AppData\Bridge\ra-hash-index\`, Web API progress via `RetroAchievementsClient`. Credentials live in `RetroAchievementsSettingsStore` (`retroachievements-settings.json`, DPAPI). See **Achievements (detail panel)** and **Managed Emulation** below.
+**Achievements:** `GameAchievementsService` (`Bridge/Services/GameAchievementsService.cs`) is the facade used by `AchievementsPanel`. Steam games use `SteamAchievementsService` (local VDF progress via `Bridge.Import/Steam/SteamLocalAchievementsResolver`, with `SteamCommunityAchievementsClient` as a definitions-only fallback for linked manual games). Epic games use `EpicAchievementsService` (requires an Epic launcher session from `EpicLauncherSessionReader`). ROM games use `RetroAchievementsAchievementsService`: MD5 from `RomMd5`, hash index cached under `AppData\Bridge\ra-hash-index\`, Web API progress via `RetroAchievementsClient`. Credentials live in `RetroAchievementsSettingsStore` (`config/secrets/retroachievements-settings.json`, DPAPI). See **Achievements (detail panel)** and **Managed Emulation** below.
 
-See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible and calls **`RefreshLibraryCoreAsync()`** (`MainViewModel.Refresh.cs`) — Steam/Epic import, configured folder rescans, then missing-metadata sync — so metadata can continue downloading in the background while the UI stays responsive. The same core method powers the logo-menu **Refresh Library** command for on-demand resync (without re-checking for Bridge app updates). Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU (512 entries) plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
+See [ARCHITECTURE.md ADR-10](ARCHITECTURE.md#adr-10-igdb-as-a-text-metadata-source-primary-not-sole--see-adr-12) for why IGDB, and [ADR-12](ARCHITECTURE.md#adr-12-steam-store-metadata-as-a-secondary-http-anonymous-metadata-source) for the Steam Store metadata provider. `IGameMetadataProvider` (`Bridge.Core.Contracts`) enables the multi-provider fallback chain: Steam-imported games use appid-direct lookup (guaranteed), non-Steam games try IGDB first then Steam search. **`MetadataSyncService`** (`Bridge/Services/MetadataSyncService.cs`) centralizes that chain so `MainViewModel` does not duplicate provider ordering in four places. On startup, `InitializeAsync()` fire-and-forgets after the window is visible and calls **`RefreshLibraryCoreAsync()`** (`MainViewModel.Refresh.cs`) — Steam/Epic import, configured folder rescans, then missing-metadata sync — so metadata can continue downloading in the background while the UI stays responsive. The same core method powers the logo-menu **Refresh Library** command for on-demand resync (without re-checking for Bridge app updates). Missing-metadata sync is **marker-gated** so it does not re-download everything on every launch: each game carries `MetadataSyncedAt` / `LinksSyncedAt` / `TimeToBeatSyncedAt` timestamps (sealed via `IGameRepository.UpdateManyMetadataSyncMarkers`, per aspect in the `MetadataSyncMarker` enum), and a per-aspect TTL (`METADATA_SYNC_TTL`, 30 days) skips a game that already has metadata or was attempted within the window — the fix for the earlier metadata-sync rebuild storm (migration `AddMetadataSyncMarkers`). Cover/background URLs are stored as-is on the Game, and rendered through **`RemoteImageCache`** — an in-memory LRU capped by decoded bytes (~80 MB), keyed by URL **and** decode-size bucket (icon / cover / hero) so the same art can live at thumbnail and hero sizes without one serving the other blurry, plus an on-disk byte cache under `Config.ImageCachePath`, with SSRF checks on download URLs, exposing `Preload`/`Get`/`Subscribe` — plus `Bridge/Converters/CachedImage.cs`, an attached property that subscribes so an `Image` re-renders the moment its artwork lands (the virtualized-list blank-icon fix). `SteamMetadataProvider` also fills `GameMetadata.Screenshots` (the `data.screenshots[].path_full` URLs, query string stripped) — persisted to `Game.Screenshots` as a JSON list column and rendered by the screenshot gallery in the Details view (see below). Since 2026-08-14 the own IGDB Worker does the same for non-Steam games: `BridgeIgdbProvider` maps IGDB's `screenshots` field (upgraded to `t_1080p`, the same 1920×1080 as Steam's `path_full`) into `GameMetadata.Screenshots`, so Epic/manual games get the same gallery from the same JSON column.
 
 ### `Bridge.Import` — what's in it
 
@@ -405,10 +405,19 @@ copied). Prefer additive changes (new columns/tables) where possible; a column
 - **Numbered steps** run in order; after each step succeeds, the version file is
   bumped. If a step throws, the version stays put and the step retries on the
   next launch (steps must be **idempotent**).
-- **Current steps (v1):** ensure standard folders (`image-cache/`, `emulators/`,
+- **v1:** ensure standard folders (`image-cache/`, `emulators/`,
   `emulator-downloads/`, `logs/`), merge legacy `ImageCache/` into
   `image-cache/`, rewrite legacy `Grid` view keys to `Covers`, protect plain
   `igdb-settings.json` with DPAPI, remove obsolete `settings.json` when present.
+- **v2:** move the loose settings files into `config/` and the DPAPI secrets into
+  `config/secrets/` (see the preferences table below). Each file moves only when
+  the destination does not already exist; a real conflict is preserved under
+  `config/migration-conflicts/` instead of being overwritten. Every settings
+  store also keeps a legacy read-fallback to its old root path, so nothing is
+  lost if a move is interrupted — the `language.txt` / `startup.txt` fallback
+  matters specifically because those two are read at startup **before** the
+  migrator runs.
+
   Load-time tolerance in the individual stores remains as a safety net.
 
 **To change AppData layout** (rename a folder, reformat a settings file, delete
@@ -421,13 +430,14 @@ an obsolete path):
 
 ```csharp
 // AppDataMigrations.cs — example future step
-public static void V2_MoveThemeFile(AppDataMigrationContext ctx)
+public static void V3_RenameFoo(AppDataMigrationContext ctx)
 {
-    var oldPath = ctx.Combine("theme.json");
-    var newPath = ctx.Combine("settings", "theme.json");
+    // Idempotent: guard on the source existing and the destination not existing.
+    var oldPath = ctx.Combine("foo.txt");
+    var newPath = ctx.Combine("config", "foo.txt");
     if (File.Exists(oldPath) && !File.Exists(newPath))
     {
-        ctx.EnsureDirectory("settings");
+        ctx.EnsureDirectory("config");
         File.Move(oldPath, newPath);
     }
 }
@@ -437,29 +447,41 @@ Covered by `Bridge.Tests/Services/AppDataMigratorTests.cs`.
 
 ### User preferences (AppData text files)
 
-Plain files under `%LOCALAPPDATA%\Bridge\`, same tolerant read/write pattern
-as `ViewModeSettingsStore` — corrupt/missing files fall back to safe defaults;
-saving never crashes the app.
+Files under `%LOCALAPPDATA%\Bridge\config\` (DPAPI secrets under `config\secrets\`),
+same tolerant read/write pattern as `ViewModeSettingsStore` — corrupt/missing files
+fall back to safe defaults; saving never crashes the app. Each store also falls back
+to the pre-`config/` root path on read (see [AppData Migrations](#appdata-migrations)
+v2), so an interrupted migration never loses a preference.
 
-| File | Store | Default | Purpose |
+| File (under `config/`) | Store | Default | Purpose |
 |------|-------|---------|---------|
-| `theme.json` | `ThemeManager` | Blue accent | Runtime accent color |
+| `theme.json` | `ThemeManager` | Amber accent (`#F59E0B`) | Runtime accent color |
 | `viewmode.txt` | `ViewModeSettingsStore` | List | Last library view (List/Covers/Table) |
 | `scrollpositions.txt` | `ScrollPositionSettingsStore` | — | Per-view scroll offsets + table Name column width |
-| `igdb-settings.json` | `IgdbSettingsStore` | empty | Optional IGDB credentials (DPAPI-protected secret) |
 | `update-channel.txt` | `UpdateChannelSettingsStore` | Stable | Stable vs Beta GitHub releases |
 | `language.txt` | `LanguageSettingsStore` | English | UI culture (`English` / `Spanish`) |
 | `startup.txt` | `StartupSettingsStore` | false | Launch at Windows sign-in (Run key) |
 | `tray-icon.txt` | `TrayIconSettingsStore` | **true** | Close window → notification area instead of exit |
 | `keep-selection-across-views.txt` | `KeepSelectionAcrossViewsSettingsStore` | true | Keep selected game when switching List/Covers/Table |
 | `detail-panel-position.txt` | `DetailPanelPositionSettingsStore` | Right | Details panel dock (List + Covers compact panel) |
+| `detail-section-position.txt` | `DetailSectionPositionSettingsStore` | Right | Details column left/right of Overview/Images |
+| `sidebar-translucent.txt` | `SidebarTranslucentSettingsStore` | false | Semi-transparent sidebar |
+| `translucent-background.txt` | `TranslucentBackgroundSettingsStore` | true | Blurred game art behind list/detail content |
+| `auto-apply-cheats-on-launch.txt` | `AutoApplyCheatsSettingsStore` | true | Auto-apply enabled RetroArch cheats on launch |
 | `whats-new-seen.txt` | `WhatsNewSettingsStore` | — | Last app version for which the What's New dialog was shown |
 | `rom-scan-folder.txt` | `RomScanFolderSettingsStore` | — | Watched ROM folder for Scan ROMs + auto-import |
 | `installed-scan-folder.txt` | `InstalledScanFolderSettingsStore` | — | Watched folder for Scan Automatically (Scan Folder) + auto-import |
 | `setup-complete.txt` | `SetupCompleteSettingsStore` | false | First-run setup wizard completed |
 | `user-profile.json` | `UserProfileSettingsStore` | — | Display name + avatar preferences |
-| `profile/` | `UserProfileAvatarHelper` | — | Custom avatar image(s) |
-| `appdata-version.txt` | `AppDataMigrator` | 0 | Last applied numbered AppData migration |
+| `game-display-preferences.json` | `GameDisplayPreferencesStore` | — | Per-game UI prefs (e.g. large hero cover) |
+| `secrets/igdb-settings.json` | `IgdbSettingsStore` | empty | Optional IGDB credentials (DPAPI) |
+| `secrets/steamgriddb-settings.json` | `SteamGridDbSettingsStore` | empty | SteamGridDB API key (DPAPI) |
+| `secrets/retroachievements-settings.json` | `RetroAchievementsSettingsStore` | empty | RetroAchievements credentials (DPAPI) |
+
+Still at the AppData **root** (not under `config/`): `appdata-version.txt`
+(`AppDataMigrator`, last applied migration step) and `profile/` (`UserProfileAvatarHelper`,
+custom avatar images), alongside the operational folders `image-cache/`, `emulators/`,
+`emulator-downloads/`, `cheats/`, `ra-hash-index/`, `rom-dat/`, and `logs/`.
 
 Language, tray, and startup preferences are toggled in **Settings** (sidebar
 gear). Language changes restart Bridge; tray and startup apply immediately.
@@ -468,8 +490,10 @@ gear). Language changes restart Bridge; tray and startup apply immediately.
 
 `Bridge/Services/AppDataBackupService.cs` packages a portable `.zip`:
 
-- **Included:** `bridge.db` (SQLite online backup while the app runs),
-  preference files above (except logs), `image-cache/`, `profile/` (custom avatars)
+- **Included:** `bridge.db` (SQLite online backup while the app runs), the whole
+  `config/` directory (settings + `config/secrets/`), `appdata-version.txt`,
+  `image-cache/`, `profile/` (custom avatars). Restoring a legacy backup (loose
+  settings files at the AppData root) is still supported.
 - **Excluded:** RetroArch under `emulators/`, `emulator-downloads/`, logs
 
 **Create backup** — Settings → Library & data → saves a user-chosen `.zip`.
@@ -1011,6 +1035,7 @@ public static class Config
 | `Bridge/Config.cs` | App constants (AppName, paths) |
 | `Bridge/Services/SafeLauncher.cs` | Validated external URLs and uninstall commands — see External launch and path safety |
 | `Bridge/Services/MetadataSyncService.cs` | Centralized metadata provider fallback chains |
+| `Bridge.Core/Utilities/MetadataSyncMarker.cs` | Per-aspect sync marker enum (Metadata/Links/TimeToBeat); TTL-gates missing-metadata sync via `MetadataSyncedAt`/`LinksSyncedAt`/`TimeToBeatSyncedAt` |
 | `Bridge.Core/Utilities/PathContainment.cs` | Path-under-root checks for importers and process killing |
 | `Bridge.Core/Utilities/UrlValidator.cs` | HTTPS/steam/epic allowlist + SSRF guard for user-facing URLs |
 | `Bridge.Storage/BridgeDbContext.cs` | EF Core + SQLite context (schema via EF migrations — `Bridge.Storage/Migrations/`, applied by `BridgeDbMigrator.MigrateToLatest`) |

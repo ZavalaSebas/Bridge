@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **RetroAchievements API parsing** — `Achievements` objects from `API_GetGameInfoAndUserProgress.php` are parsed correctly (not only JSON arrays).
 - **GBC hash lookup** — ROMs on Game Boy Color also search the Game Boy hash index (e.g. Pokémon Yellow indexed under GB on RA).
+- **Metadata sync no longer re-downloads every startup** — per-game sync markers (`MetadataSyncedAt` / `LinksSyncedAt` / `TimeToBeatSyncedAt`) with a 30-day TTL skip games that already have metadata or were attempted recently (`MetadataSyncMarker`, `UpdateManyMetadataSyncMarkers`, migration `AddMetadataSyncMarkers`).
+- **AppData config layout** — loose settings files moved under `config/` and DPAPI secrets under `config/secrets/`, via an automatic, idempotent v2 AppData migration (legacy read-fallback preserved; real conflicts kept under `config/migration-conflicts/` instead of being overwritten).
 
 ### Fixed
 - **RetroAchievements empty lists** — games with a valid RA hash match no longer show zero achievements due to response-shape parsing.

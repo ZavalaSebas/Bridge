@@ -60,3 +60,6 @@ TestResults/
 # Temporary files
 *.tmp
 *.temp
+
+# Session work docs (temporary planning/audit notes — not part of the project docs)
+PLAN_A*.md
