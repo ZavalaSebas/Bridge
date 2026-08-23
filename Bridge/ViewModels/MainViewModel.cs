@@ -650,6 +650,7 @@ public partial class MainViewModel : ObservableObject
     private void RebuildDetailedRows()
     {
         EnsureReferenceCaches();
+        Bridge.StartupTiming.Mark("VM.EnsureReferenceCaches"); // TEMP
         DetailedRows.Clear();
         foreach (var item in GamesView)
         {
@@ -737,6 +738,7 @@ public partial class MainViewModel : ObservableObject
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
+        Bridge.StartupTiming.Mark("VM.LoadGames (total)"); // TEMP
         SelectedGame = SelectInitialGame(Games);
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
@@ -748,6 +750,7 @@ public partial class MainViewModel : ObservableObject
             }
         };
         RebuildDetailedRows();
+        Bridge.StartupTiming.Mark("VM.RebuildDetailedRows (ctor)"); // TEMP
         ActiveGenreFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         ActivePlatformFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         ActiveLibraryFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
@@ -863,6 +866,7 @@ public partial class MainViewModel : ObservableObject
         if (urls.Count == 0)
             return;
 
+        Bridge.StartupTiming.Mark($"preload start ({urls.Count} urls)"); // TEMP
         BeginStatusProgress(indeterminate: urls.Count <= 1);
         ReportBatchProgress(0, urls.Count);
         try
@@ -870,6 +874,12 @@ public partial class MainViewModel : ObservableObject
             await RemoteImageCache.PreloadAndWaitAsync(
                 urls,
                 new Progress<(int Completed, int Total)>(p => ReportBatchProgress(p.Completed, p.Total)));
+            // TEMP: hero cache diagnostic + fin de la medición de arranque
+            var heroBg = SelectedGame?.BackgroundImage;
+            Bridge.StartupTiming.Note(string.IsNullOrWhiteSpace(heroBg)
+                ? "hero background: Default/empty -> se muestra fallback"
+                : $"hero background cached: Native={RemoteImageCache.IsCached(heroBg, ArtworkDecodeSize.Native)} Hero={RemoteImageCache.IsCached(heroBg, ArtworkDecodeSize.Hero)}");
+            Bridge.StartupTiming.Stop("preload done (hero listo)"); // TEMP
         }
         finally
         {
@@ -940,6 +950,7 @@ public partial class MainViewModel : ObservableObject
             ApplySteamLocalArtwork(game);
             AddGameSorted(game);
         }
+        Bridge.StartupTiming.Mark("VM.LoadGames GetAll+addSorted"); // TEMP
 
         // IsRunning is in-memory only (not persisted). Reset on startup so a
         // stale in-process flag can't survive a hot reload during development.
@@ -951,6 +962,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         RefreshStatistics();
+        Bridge.StartupTiming.Mark("VM.RefreshStatistics (LibraryStatistics.Compute)"); // TEMP
         RefreshAllEmulatorDownloadStates();
     }
 
