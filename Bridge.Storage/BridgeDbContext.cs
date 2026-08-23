@@ -83,6 +83,7 @@ public class BridgeDbContext(DbContextOptions<BridgeDbContext> options) : DbCont
             e.Property(g => g.Roms).HasConversion(new JsonValueConverter<List<GameRom>>());
             e.Property(g => g.Links).HasConversion(new JsonValueConverter<List<Link>>());
             e.Property(g => g.ReleaseDate).HasConversion(new JsonValueConverter<ReleaseDate?>());
+            e.Property(g => g.PlaySessions).HasConversion(new JsonValueConverter<List<GamePlaySession>>());
 
                 e.Property(g => g.GenreIds).HasConversion(new JsonValueConverter<List<Guid>>());
                 e.Property(g => g.DescriptionImages).HasConversion(new JsonValueConverter<List<string>>());

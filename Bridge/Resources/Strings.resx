@@ -664,6 +664,54 @@
   <data name="Completion" xml:space="preserve">
     <value>Completion</value>
   </data>
+  <data name="CompletionBoard" xml:space="preserve">
+    <value>Completion board</value>
+  </data>
+  <data name="CompletionBoardHint" xml:space="preserve">
+    <value>A Jira-style view of what is pending, active, and finished.</value>
+  </data>
+  <data name="BacklogBoard" xml:space="preserve">
+    <value>Backlog</value>
+  </data>
+  <data name="BacklogBoardHint" xml:space="preserve">
+    <value>Pending games waiting for a first run.</value>
+  </data>
+  <data name="InProgressBoard" xml:space="preserve">
+    <value>In Progress</value>
+  </data>
+  <data name="InProgressBoardHint" xml:space="preserve">
+    <value>Games that are being played or paused.</value>
+  </data>
+  <data name="CompletedBoard" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="CompletedBoardHint" xml:space="preserve">
+    <value>Finished games and recent completion dates.</value>
+  </data>
+  <data name="AbandonedBoard" xml:space="preserve">
+    <value>Abandoned</value>
+  </data>
+  <data name="AbandonedBoardHint" xml:space="preserve">
+    <value>Games you stepped away from.</value>
+  </data>
+  <data name="OtherStatusBoard" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="OtherStatusBoardHint" xml:space="preserve">
+    <value>Custom completion states that do not map to a board lane.</value>
+  </data>
+  <data name="StatisticsSessionTimelineFormat" xml:space="preserve">
+    <value>Started {0} · {1}</value>
+  </data>
+  <data name="StatisticsCompletedTimelineFormat" xml:space="preserve">
+    <value>Completed on {0}</value>
+  </data>
+  <data name="StatisticsTimeline" xml:space="preserve">
+    <value>Timeline</value>
+  </data>
+  <data name="StatisticsTimelineHint" xml:space="preserve">
+    <value>Recent play sessions and completion moments.</value>
+  </data>
   <data name="InstallDirectoryLabel" xml:space="preserve">
     <value>Install Directory</value>
   </data>

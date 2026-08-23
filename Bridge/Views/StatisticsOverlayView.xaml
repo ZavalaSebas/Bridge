@@ -10,154 +10,359 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Bridge;component/Styles/MainWindowResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="StatisticsGameChipTemplate">
+                <Border Margin="0,4,0,0"
+                        Padding="8"
+                        CornerRadius="10"
+                        Background="{DynamicResource Bridge.Card.Background}"
+                        BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                        BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="42"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="32"
+                                Height="44"
+                                CornerRadius="6"
+                                ClipToBounds="True">
+                            <Image Stretch="UniformToFill"
+                                   converters:CachedImage.SourceUrl="{Binding CoverImage}"
+                                   converters:CachedImage.DecodeSize="Cover"
+                                   converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Cover}"
+                                   RenderOptions.BitmapScalingMode="Fant"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}"
+                                       FontWeight="SemiBold"
+                                       FontSize="12"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <TextBlock Text="{Binding PlaytimeSeconds, Converter={StaticResource PlaytimeConverter}}"
+                                           FontSize="11"
+                                           Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
+                                <TextBlock Text=" · "
+                                           FontSize="11"
+                                           Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                           Visibility="{Binding CompletedAt, Converter={StaticResource EmptyToVis}}"/>
+                                <TextBlock Text="{Binding CompletedAt, Converter={StaticResource ShortDateConverter}}"
+                                           FontSize="11"
+                                           Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                           Visibility="{Binding CompletedAt, Converter={StaticResource EmptyToVis}}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+
+            <DataTemplate x:Key="StatisticsTimelineTemplate">
+                <Border Margin="0,0,0,12"
+                        Padding="14"
+                        CornerRadius="14"
+                        Background="{DynamicResource Bridge.Card.Background}"
+                        BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                        BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="64"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="52"
+                                Height="72"
+                                CornerRadius="12"
+                                ClipToBounds="True">
+                            <Image Stretch="UniformToFill"
+                                   converters:CachedImage.SourceUrl="{Binding Game.CoverImage}"
+                                   converters:CachedImage.DecodeSize="Cover"
+                                   converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Cover}"
+                                   RenderOptions.BitmapScalingMode="Fant"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                            <Border Padding="8,4"
+                                    CornerRadius="999"
+                                    HorizontalAlignment="Left"
+                                    Background="{Binding BadgeText, Converter={StaticResource CompletionStatusToColor}}">
+                                <TextBlock Text="{Binding BadgeText}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/>
+                            </Border>
+                            <TextBlock Text="{Binding Title}"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,8,0,0"/>
+                            <TextBlock Text="{Binding Detail}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding TimestampText}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                   VerticalAlignment="Top"
+                                   Margin="12,4,0,0"/>
+                    </Grid>
+                </Border>
+            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,28">
-            <Border CornerRadius="10"
+            <Border CornerRadius="20"
                     Background="{DynamicResource Bridge.Card.Background}"
                     BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
                     BorderThickness="1"
-                    Padding="16"
-                    Margin="0,0,0,20">
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="56" Height="56" CornerRadius="28" ClipToBounds="True"
-                            BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+                    Padding="20"
+                    Margin="0,0,0,18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="72"
+                            Height="72"
+                            CornerRadius="36"
+                            ClipToBounds="True"
+                            BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                            BorderThickness="1">
                         <Image Stretch="UniformToFill"
                                Source="{Binding UserProfile, Converter={StaticResource UserProfileAvatarConverter}, ConverterParameter=112}"/>
                     </Border>
-                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding UserProfile.DisplayName}"
-                                   FontSize="18"
+                                   FontSize="20"
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="{x:Static res:Strings.Statistics}"
-                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
-                                   Margin="0,2,0,0"/>
+                                   Margin="0,2,0,0"
+                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding StatisticsSummary}"
+                                   FontSize="12"
+                                   Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
                     </StackPanel>
-                </StackPanel>
+                </Grid>
             </Border>
 
-            <StackPanel DataContext="{Binding Statistics}">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <ui:SymbolIcon Symbol="ChartMultiple24" FontSize="22" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                <TextBlock Text="{x:Static res:Strings.Statistics}" FontSize="{StaticResource Bridge.FontSize.Title}" FontWeight="SemiBold" Margin="10,0,0,0"/>
-            </StackPanel>
-            <WrapPanel Margin="0,0,0,16">
-                <Border Width="210" Padding="14" Margin="0,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
+            <TextBlock Text="{x:Static res:Strings.Statistics}"
+                       FontSize="{StaticResource Bridge.FontSize.Title}"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,12"/>
+
+            <UniformGrid Columns="5" Margin="0,0,0,18">
+                <Border Padding="14" Margin="0,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.BacklogBoard}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.BacklogCount}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Padding="14" Margin="8,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.InProgressBoard}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.InProgressCount}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Padding="14" Margin="8,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.CompletedBoard}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.CompletedCount}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Padding="14" Margin="8,4,0,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.AbandonedBoard}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.AbandonedCount}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Padding="14" Margin="8,4,0,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.OtherStatusBoard}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.OtherCompletionCount}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <WrapPanel Margin="0,0,0,18">
+                <Border Width="210" Padding="14" Margin="0,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
                     <StackPanel>
                         <TextBlock Text="{x:Static res:Strings.All}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding TotalCount, Converter={StaticResource GamesCount}}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding Statistics.TotalCount, Converter={StaticResource GamesCount}}" FontWeight="SemiBold" FontSize="15" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
-                <Border Width="210" Padding="14" Margin="4,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
+                <Border Width="210" Padding="14" Margin="8,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
                     <StackPanel>
                         <TextBlock Text="{x:Static res:Strings.Installed}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <Grid Margin="0,2,0,0">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding InstalledCount}" FontWeight="SemiBold" FontSize="15"/>
-                            <TextBlock Grid.Column="1" Text="{Binding InstalledPercent, StringFormat='{}{0:0}%'}" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" VerticalAlignment="Bottom" Margin="8,0,0,0"/>
-                        </Grid>
+                        <TextBlock Text="{Binding Statistics.InstalledCount}" FontWeight="SemiBold" FontSize="15" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
-                <Border Width="210" Padding="14" Margin="0,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.NotInstalled}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding NotInstalledCount}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Width="210" Padding="14" Margin="4,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.Hidden}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding HiddenCount}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Width="210" Padding="14" Margin="0,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
+                <Border Width="210" Padding="14" Margin="8,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
                     <StackPanel>
                         <TextBlock Text="{x:Static res:Strings.Favorites}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding FavoriteCount}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding Statistics.FavoriteCount}" FontWeight="SemiBold" FontSize="15" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Width="210" Padding="14" Margin="8,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.Hidden}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.HiddenCount}" FontWeight="SemiBold" FontSize="15" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Width="210" Padding="14" Margin="8,4,8,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.Total}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.TotalPlaytimeDisplay}" FontWeight="SemiBold" FontSize="15" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Width="210" Padding="14" Margin="8,4,0,0" CornerRadius="14" Background="{DynamicResource Bridge.Card.Background}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.Average}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Statistics.AveragePlaytimeDisplay}" FontWeight="SemiBold" FontSize="15" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </WrapPanel>
-            <TextBlock Text="{x:Static res:Strings.Playtime}" FontWeight="SemiBold" FontSize="{StaticResource Bridge.FontSize.Heading}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
-            <UniformGrid Columns="2" Margin="0,0,0,16">
-                <Border Padding="14" Margin="0,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.Total}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding TotalPlaytimeDisplay}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
+
+            <Border CornerRadius="18"
+                    Background="{DynamicResource Bridge.Card.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    Padding="18"
+                    Margin="0,0,0,18">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Board24" FontSize="20" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static res:Strings.CompletionBoard}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Margin="10,0,0,0"/>
                     </StackPanel>
-                </Border>
-                <Border Padding="14" Margin="4,4,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.Average}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock Text="{Binding AveragePlaytimeDisplay}" FontWeight="SemiBold" FontSize="15" Margin="0,2,0,0"/>
+                    <TextBlock Text="{x:Static res:Strings.CompletionBoardHint}"
+                               FontSize="12"
+                               Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                               Margin="0,0,0,14"/>
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Statistics.CompletionBoardColumns}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="5"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,12,0"
+                                            Padding="14"
+                                            MinWidth="240"
+                                            CornerRadius="14"
+                                            Background="{DynamicResource ApplicationBackgroundBrush}"
+                                            BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding CountText}"
+                                                       FontSize="11"
+                                                       Margin="0,2,0,0"
+                                                       Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{Binding Subtitle}"
+                                                       FontSize="11"
+                                                       Margin="0,8,0,10"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
+                                            <ItemsControl ItemsSource="{Binding Games}" ItemTemplate="{StaticResource StatisticsGameChipTemplate}">
+                                                <ItemsControl.Resources>
+                                                    <Style TargetType="ItemsControl">
+                                                        <Setter Property="Margin" Value="0"/>
+                                                    </Style>
+                                                </ItemsControl.Resources>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+
+            <Border CornerRadius="18"
+                    Background="{DynamicResource Bridge.Card.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    Padding="18"
+                    Margin="0,0,0,18">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="History24" FontSize="20" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static res:Strings.StatisticsTimeline}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Margin="10,0,0,0"/>
                     </StackPanel>
-                </Border>
-            </UniformGrid>
-            <TextBlock Text="{x:Static res:Strings.Completion}" FontWeight="SemiBold" FontSize="{StaticResource Bridge.FontSize.Heading}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
-            <UniformGrid Columns="2" Margin="0,0,0,16">
-                <Border Padding="14" Margin="0,4,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.NotPlayedFilter}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <Grid Margin="0,2,0,0">
-                            <TextBlock FontWeight="SemiBold" FontSize="15">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0} ({1:0}%)">
-                                        <Binding Path="NotPlayedCount"/>
-                                        <Binding Path="NotPlayedPercent"/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </Grid>
+                    <TextBlock Text="{x:Static res:Strings.StatisticsTimelineHint}"
+                               FontSize="12"
+                               Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                               Margin="0,0,0,14"/>
+                    <ItemsControl ItemsSource="{Binding Statistics.TimelineEntries}" ItemTemplate="{StaticResource StatisticsTimelineTemplate}"/>
+                </StackPanel>
+            </Border>
+
+            <Border CornerRadius="18"
+                    Background="{DynamicResource Bridge.Card.Background}"
+                    BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                    BorderThickness="1"
+                    Padding="18">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <ui:SymbolIcon Symbol="ChartMultiple24" FontSize="20" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static res:Strings.TopPlayTime}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Margin="10,0,0,0"/>
                     </StackPanel>
-                </Border>
-                <Border Padding="14" Margin="4,4,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.Played}" FontSize="12" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <Grid Margin="0,2,0,0">
-                            <TextBlock FontWeight="SemiBold" FontSize="15">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0} ({1:0}%)">
-                                        <Binding Path="PlayedCount"/>
-                                        <Binding Path="PlayedPercent"/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
-            <TextBlock Text="{x:Static res:Strings.TopPlayTime}" FontWeight="SemiBold" FontSize="{StaticResource Bridge.FontSize.Heading}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
-            <ListBox ItemsSource="{Binding TopPlayed}" Background="Transparent" BorderThickness="0" Padding="0">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Padding" Value="10,8"/>
-                        <Setter Property="Margin" Value="0,1"/>
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource Bridge.Accent.Hover}"/></Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextFillColorPrimaryBrush}"/>
-                                <Setter Property="BorderThickness" Value="3,0,0,0"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource Bridge.SystemAccentBrush}"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" Height="24" Width="24" Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding Icon}" converters:CachedImage.DecodeSize="Icon" converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}" RenderOptions.BitmapScalingMode="Fant"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="{StaticResource Bridge.FontSize.BodySmall}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Text="{Binding PlaytimeSeconds, Converter={StaticResource PlaytimeConverter}}"/>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Statistics.TopPlayed}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,8"
+                                        Padding="10"
+                                        CornerRadius="12"
+                                        Background="{DynamicResource ApplicationBackgroundBrush}"
+                                        BorderBrush="{DynamicResource Bridge.SeparatorBrush}"
+                                        BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Image Height="24"
+                                               Width="24"
+                                               Stretch="Uniform"
+                                               converters:CachedImage.SourceUrl="{Binding Icon}"
+                                               converters:CachedImage.DecodeSize="Icon"
+                                               converters:CachedImage.FallbackArtwork="{x:Static art:GameArtworkFallback.Icon}"
+                                               RenderOptions.BitmapScalingMode="Fant"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="10,0,0,0"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding PlaytimeSeconds, Converter={StaticResource PlaytimeConverter}}"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                                                   FontSize="{StaticResource Bridge.FontSize.BodySmall}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

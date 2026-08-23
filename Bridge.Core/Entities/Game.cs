@@ -76,6 +76,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public ulong? TimeToBeatCompleteSeconds { get; set; }
     public ulong PlayCount { get; set; }
     public DateTime? LastActivity { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public DateTime? Added { get; set; }
     public DateTime? Modified { get; set; }
 
@@ -85,6 +86,9 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public DateTime? LinksSyncedAt { get; set; }
     /// <summary>Last time HowLongToBeat data was synced, successful or not.</summary>
     public DateTime? TimeToBeatSyncedAt { get; set; }
+
+    /// <summary>Recorded play sessions used by the Statistics timeline.</summary>
+    public List<GamePlaySession> PlaySessions { get; set; } = [];
 
     // Global scripts run before/after launch; per-game scripts can opt out of globals.
     public string PreScript { get; set; } = string.Empty;

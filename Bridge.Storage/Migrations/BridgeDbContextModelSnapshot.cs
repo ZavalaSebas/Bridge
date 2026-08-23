@@ -208,6 +208,9 @@ namespace Bridge.Storage.Migrations
                     b.Property<DateTime?>("LastActivity")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Links")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -219,6 +222,10 @@ namespace Bridge.Storage.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("MetadataSyncedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlaySessions")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("TimeToBeatSyncedAt")

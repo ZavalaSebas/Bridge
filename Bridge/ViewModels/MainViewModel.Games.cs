@@ -1,4 +1,5 @@
 using Bridge;
+using Bridge.Core.Enums;
 using System.IO;
 using Bridge.Core.Utilities;
 using Bridge.Import.Steam;
@@ -180,6 +181,8 @@ public partial class MainViewModel
 
         var status = _completionStatusRepository.GetOrCreateByName(statusName);
         SelectedGame.CompletionStatusId = status.Id;
+        if (IsCompletedStatus(status))
+            SelectedGame.CompletedAt = DateTime.Now;
         _gameRepository.Update(SelectedGame);
         InvalidateReferenceCaches();
         CompletionStatusText = status.Name;
@@ -206,6 +209,14 @@ public partial class MainViewModel
         }
 
         _cheatsWindowOpener.Show(SelectedGame);
+    }
+
+    private static bool IsCompletedStatus(CompletionStatus status)
+    {
+        return status.Kind == CompletionStatusKind.Played
+            || string.Equals(status.Name, Strings.CompletionStatusCompleted, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status.Name, Strings.CompletionStatusBeaten, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status.Name, Strings.Played, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Opens the selected game's install folder in Explorer.</summary>

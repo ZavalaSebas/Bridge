@@ -251,6 +251,22 @@ public static class Strings
     public static string Played => Get(nameof(Played));
     public static string Hidden => Get(nameof(Hidden));
     public static string TopPlayTime => Get(nameof(TopPlayTime));
+    public static string CompletionBoard => Get(nameof(CompletionBoard));
+    public static string CompletionBoardHint => Get(nameof(CompletionBoardHint));
+    public static string BacklogBoard => Get(nameof(BacklogBoard));
+    public static string BacklogBoardHint => Get(nameof(BacklogBoardHint));
+    public static string InProgressBoard => Get(nameof(InProgressBoard));
+    public static string InProgressBoardHint => Get(nameof(InProgressBoardHint));
+    public static string CompletedBoard => Get(nameof(CompletedBoard));
+    public static string CompletedBoardHint => Get(nameof(CompletedBoardHint));
+    public static string AbandonedBoard => Get(nameof(AbandonedBoard));
+    public static string AbandonedBoardHint => Get(nameof(AbandonedBoardHint));
+    public static string OtherStatusBoard => Get(nameof(OtherStatusBoard));
+    public static string OtherStatusBoardHint => Get(nameof(OtherStatusBoardHint));
+    public static string StatisticsSessionTimelineFormat => Get(nameof(StatisticsSessionTimelineFormat));
+    public static string StatisticsCompletedTimelineFormat => Get(nameof(StatisticsCompletedTimelineFormat));
+    public static string StatisticsTimeline => Get(nameof(StatisticsTimeline));
+    public static string StatisticsTimelineHint => Get(nameof(StatisticsTimelineHint));
     public static string GamesCountFormat => Get(nameof(GamesCountFormat));
     public static string CompletionCountFormat => Get(nameof(CompletionCountFormat));
     public static string Release => Get(nameof(Release));
@@ -664,4 +680,3 @@ public static class Strings
     private static string Get(string key) =>
         StringsResourceManager.GetString(key) ?? key;
 }
-

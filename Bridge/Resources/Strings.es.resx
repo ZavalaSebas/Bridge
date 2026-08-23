@@ -664,6 +664,54 @@
   <data name="Completion" xml:space="preserve">
     <value>Finalización</value>
   </data>
+  <data name="CompletionBoard" xml:space="preserve">
+    <value>Tablero de finalización</value>
+  </data>
+  <data name="CompletionBoardHint" xml:space="preserve">
+    <value>Una vista tipo Jira de lo pendiente, activo y terminado.</value>
+  </data>
+  <data name="BacklogBoard" xml:space="preserve">
+    <value>Backlog</value>
+  </data>
+  <data name="BacklogBoardHint" xml:space="preserve">
+    <value>Juegos pendientes de iniciar.</value>
+  </data>
+  <data name="InProgressBoard" xml:space="preserve">
+    <value>En progreso</value>
+  </data>
+  <data name="InProgressBoardHint" xml:space="preserve">
+    <value>Juegos que se están jugando o pausando.</value>
+  </data>
+  <data name="CompletedBoard" xml:space="preserve">
+    <value>Completados</value>
+  </data>
+  <data name="CompletedBoardHint" xml:space="preserve">
+    <value>Juegos terminados y fechas recientes de finalización.</value>
+  </data>
+  <data name="AbandonedBoard" xml:space="preserve">
+    <value>Abandonados</value>
+  </data>
+  <data name="AbandonedBoardHint" xml:space="preserve">
+    <value>Juegos que dejaste a medias.</value>
+  </data>
+  <data name="OtherStatusBoard" xml:space="preserve">
+    <value>Otros</value>
+  </data>
+  <data name="OtherStatusBoardHint" xml:space="preserve">
+    <value>Estados personalizados que no encajan en una columna.</value>
+  </data>
+  <data name="StatisticsSessionTimelineFormat" xml:space="preserve">
+    <value>Inició {0} · {1}</value>
+  </data>
+  <data name="StatisticsCompletedTimelineFormat" xml:space="preserve">
+    <value>Completado el {0}</value>
+  </data>
+  <data name="StatisticsTimeline" xml:space="preserve">
+    <value>Línea de tiempo</value>
+  </data>
+  <data name="StatisticsTimelineHint" xml:space="preserve">
+    <value>Sesiones recientes y momentos de finalización.</value>
+  </data>
   <data name="InstallDirectoryLabel" xml:space="preserve">
     <value>Directorio de instalación</value>
   </data>

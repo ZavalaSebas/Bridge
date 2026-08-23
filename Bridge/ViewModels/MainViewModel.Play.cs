@@ -92,6 +92,15 @@ public partial class MainViewModel
 
     private void OnGameStopped(Game game, ulong sessionSeconds)
     {
+        var startedAt = game.LastActivity ?? DateTime.Now.AddSeconds(-Math.Max(1, (double)sessionSeconds));
+        var endedAt = DateTime.Now;
+        game.PlaySessions ??= new List<GamePlaySession>();
+        game.PlaySessions.Add(new GamePlaySession
+        {
+            StartedAt = startedAt,
+            EndedAt = endedAt,
+            DurationSeconds = sessionSeconds
+        });
         _gameRepository.Update(game);
 
         // Re-applies the active CustomSort comparer so the game re-positions

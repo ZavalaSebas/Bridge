@@ -1266,7 +1266,8 @@ public partial class MainViewModel : ObservableObject
 
     private void RefreshStatistics()
     {
-        var stats = LibraryStatistics.Compute(Games);
+        EnsureReferenceCaches();
+        var stats = LibraryStatistics.Compute(Games, _completionStatusNames);
         Statistics = stats;
         StatisticsSummary = Strings.Format(
             nameof(Strings.StatisticsSummaryFormat),
