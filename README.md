@@ -96,7 +96,7 @@ Search, favorites, install status, sorting, grouping, and detail filters stay co
 - Runtime accent colors and a custom color picker.
 - Optional translucent sidebar and blurred game artwork.
 - Sidebar position and visibility controls.
-- Reorderable detail sections and persistent view preferences.
+- Reorderable detail sections, Covers compact vs full-details layout, and persistent view preferences.
 - English and Spanish interface.
 
 <details>
@@ -133,6 +133,7 @@ Search, favorites, install status, sorting, grouping, and detail filters stay co
 - First-run profile and source setup.
 - Self-updater with database backup, safe executable swap, and automatic schema migrations.
 - Unified Settings hub, beta update channel, system tray, and optional Windows startup.
+- Covers compact info panel or full details at half width.
 - Library backup and restore for the database, preferences, and artwork cache.
 - Localized English and Spanish UI.
 - What's New notes after an update.

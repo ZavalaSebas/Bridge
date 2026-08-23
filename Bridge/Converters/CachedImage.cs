@@ -72,8 +72,19 @@ public static class CachedImage
         ApplySourceUrl(d);
     }
 
-    private static void OnDisplayOptionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+    private static void OnDisplayOptionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (GetLoadCallback(d) is { } callback && GetSourceUrl(d) is string url)
+        {
+            var oldSize = e.Property == DecodeSizeProperty
+                ? (ArtworkDecodeSize)e.OldValue
+                : GetDecodeSize(d);
+            RemoteImageCache.Unsubscribe(url, callback, oldSize);
+            SetLoadCallback(d, null);
+        }
+
         ApplySourceUrl(d);
+    }
 
     private static void ApplySourceUrl(DependencyObject d)
     {

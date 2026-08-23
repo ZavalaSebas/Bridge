@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-23
+
 ### Added
+- **Covers detail layout** — Settings option to use the compact info panel or the full details panel at half the window width in Covers view (`covers-detail-layout.txt`, default Compact).
 - **Achievements tab** — library detail panel shows progress for Steam, Epic, and supported ROMs (`AchievementsPanel`, `AchievementHeroSummary`, rarity/global-percent labels).
 - **Steam achievements** — local progress from Steam userdata VDF when available; catalog-only fallback via Steam Community API for linked/manual games (`SteamAchievementsService`, `SteamLocalAchievementsResolver`, `SteamCommunityAchievementsClient`).
 - **Epic achievements** — progress via Epic web API when the launcher session is available (`EpicAchievementsService`, `EpicLauncherSessionReader`, `EpicManifestLookup`).
@@ -20,9 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GBC hash lookup** — ROMs on Game Boy Color also search the Game Boy hash index (e.g. Pokémon Yellow indexed under GB on RA).
 - **Metadata sync no longer re-downloads every startup** — per-game sync markers (`MetadataSyncedAt` / `LinksSyncedAt` / `TimeToBeatSyncedAt`) with a 30-day TTL skip games that already have metadata or were attempted recently (`MetadataSyncMarker`, `UpdateManyMetadataSyncMarkers`, migration `AddMetadataSyncMarkers`).
 - **AppData config layout** — loose settings files moved under `config/` and DPAPI secrets under `config/secrets/`, via an automatic, idempotent v2 AppData migration (legacy read-fallback preserved; real conflicts kept under `config/migration-conflicts/` instead of being overwritten).
+- **Detail tabs** — Overview / Images / Achievements stretch to the details scroll viewport so the tab strip no longer jumps width when switching.
+- **Settings integration cards** — long titles (SteamGridDB, RetroAchievements) wrap instead of clipping.
 
 ### Fixed
 - **RetroAchievements empty lists** — games with a valid RA hash match no longer show zero achievements due to response-shape parsing.
+- **Compact Covers heroes** — banners load in the 320px panel without opening full Details first (`FadeImage` reloads on decode size and when the panel becomes visible).
+- **Compact hero crop** — compact heroes stay `UniformToFill` inside the 170px frame (full Details still uses `CoverByWidth`); images no longer paint outside the recuadro.
+- **Compact screenshot strip** — `CompactMode` applies before URLs load, empty galleries collapse, and the large main image is not measured in the compact panel.
 
 ## [0.8.0] - 2026-08-21
 

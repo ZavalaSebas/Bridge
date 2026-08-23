@@ -6,6 +6,9 @@
              xmlns:controls="clr-namespace:Bridge.Controls"
              xmlns:res="clr-namespace:Bridge.Resources" xmlns:converters="clr-namespace:Bridge.Converters"
              x:Name="Root"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             ClipToBounds="True"
              mc:Ignorable="d"
              d:DesignHeight="420" d:DesignWidth="900">
     <UserControl.Resources>
@@ -16,7 +19,7 @@
         <KeyBinding Key="Right" Command="{x:Static controls:ScreenshotGalleryCommands.NextCommand}" />
     </UserControl.InputBindings>
 
-    <Grid x:Name="GalleryContent">
+    <Grid x:Name="GalleryContent" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="320"/>

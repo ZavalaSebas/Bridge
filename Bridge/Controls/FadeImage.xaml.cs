@@ -45,7 +45,7 @@ public partial class FadeImage : UserControl
         nameof(DecodeSize),
         typeof(ArtworkDecodeSize),
         typeof(FadeImage),
-        new PropertyMetadata(ArtworkDecodeSize.Native));
+        new PropertyMetadata(ArtworkDecodeSize.Native, OnDecodeSizeChanged));
 
     public string? SourceUrl
     {
@@ -129,7 +129,17 @@ public partial class FadeImage : UserControl
                 ApplyShortFrameFade();
             }
         };
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        IsVisibleChanged += OnIsVisibleChanged;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e) => RefreshSourceIfEmpty();
+
+    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if ((bool)e.NewValue)
+            RefreshSourceIfEmpty();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -139,6 +149,46 @@ public partial class FadeImage : UserControl
             RemoteImageCache.Unsubscribe(url, callback, DecodeSize);
             _loadCallback = null;
         }
+    }
+
+    private static void OnDecodeSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (FadeImage)d;
+        if (control._loadCallback is { } callback && control.currentUrl is { } url)
+        {
+            RemoteImageCache.Unsubscribe(url, callback, (ArtworkDecodeSize)e.OldValue);
+            control._loadCallback = null;
+        }
+
+        control.currentUrl = null;
+        control.OnSourceChanged(control.SourceUrl);
+    }
+
+    /// <summary>
+    /// Reloads when the current frame is missing (collapsed compact panel, wrong
+    /// decode size, or unsubscribe on Unloaded). No-op if an image is already shown.
+    /// </summary>
+    public void EnsureLoaded() => RefreshSourceIfEmpty();
+
+    /// <summary>
+    /// Re-subscribes when the control was unloaded or decoded at the wrong size
+    /// while collapsed (compact info panel).
+    /// </summary>
+    public void RefreshSource()
+    {
+        currentUrl = null;
+        OnSourceChanged(SourceUrl);
+    }
+
+    private void RefreshSourceIfEmpty()
+    {
+        if (string.IsNullOrWhiteSpace(SourceUrl))
+            return;
+
+        if ((Image1.Source ?? Image2.Source) is not null && currentUrl == SourceUrl)
+            return;
+
+        RefreshSource();
     }
 
     private static void OnSourceUrlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

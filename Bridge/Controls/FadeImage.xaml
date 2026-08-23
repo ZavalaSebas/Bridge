@@ -1,8 +1,9 @@
 <UserControl x:Class="Bridge.Controls.FadeImage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Name="ControlRoot">
-    <Grid x:Name="ImageHolder">
+             x:Name="ControlRoot"
+             ClipToBounds="True">
+    <Grid x:Name="ImageHolder" ClipToBounds="True">
         <Image x:Name="Image1"
                Stretch="{Binding Stretch, ElementName=ControlRoot}"
                VerticalAlignment="{Binding VerticalAlignment, ElementName=ControlRoot}"

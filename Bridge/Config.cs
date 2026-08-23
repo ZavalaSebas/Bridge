@@ -91,6 +91,10 @@ public static class Config
     public static string DetailPanelPositionFilePath =>
         Path.Combine(ConfigDirectoryPath, "detail-panel-position.txt");
 
+    // Compact info panel vs full details (half-window) in Covers view.
+    public static string CoversDetailLayoutFilePath =>
+        Path.Combine(ConfigDirectoryPath, "covers-detail-layout.txt");
+
     // Details column vs Overview/Images tabs within the game details content area.
     public static string DetailSectionPositionFilePath =>
         Path.Combine(ConfigDirectoryPath, "detail-section-position.txt");

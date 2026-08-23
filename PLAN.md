@@ -2,7 +2,7 @@
 
 > **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
 >
-> **Last updated:** 2026-08-22 (achievements + RetroAchievements on main)
+> **Last updated:** 2026-08-23 (v0.9.0 — achievements, covers layout, compact art)
 
 ## Project Overview
 
@@ -48,10 +48,13 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Unreleased (main)
+### Current Version (0.9.0)
 - **Achievements** — Steam, Epic, and RetroAchievements ROM progress in the detail panel; RetroArch rcheevos unlock-on-play; No-Intro DAT ROM naming on scan
+- **Covers detail layout** — compact 320px info panel (default) or full details at half the window width
+- **AppData `config/` layout** — settings and DPAPI secrets migrated under `config/` (v2 AppData migration)
+- **Metadata sync markers** — skip re-download for 30 days when a game already has metadata
 
-### Current Version (0.8.0)
+### Previous (0.8.0)
 - **SteamGridDB artwork** — optional community icons, covers, and hero banners in the game editor (API key setup, picker with preview)
 - **Change art** — context menu shortcut to the Media tab
 - **Hero banner modes** — Default / Black / Custom with preservation across Steam sync

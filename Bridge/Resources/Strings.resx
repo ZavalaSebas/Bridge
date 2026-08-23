@@ -419,6 +419,10 @@
   <data name="SettingsTrayIconDescription" xml:space="preserve"><value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value></data>
   <data name="SettingsKeepSelectionTitle" xml:space="preserve"><value>Keep selection across views</value></data>
   <data name="SettingsKeepSelectionDescription" xml:space="preserve"><value>When off, switching between List, Covers, and Table clears the selected game.</value></data>
+  <data name="SettingsCoversDetailLayoutTitle" xml:space="preserve"><value>Covers detail layout</value></data>
+  <data name="SettingsCoversDetailLayoutDescription" xml:space="preserve"><value>In Covers view, use the compact info panel or the full details panel at half the window width. List view still opens details larger.</value></data>
+  <data name="SettingsCoversDetailLayoutCompact" xml:space="preserve"><value>Compact</value></data>
+  <data name="SettingsCoversDetailLayoutStandard" xml:space="preserve"><value>Full details</value></data>
   <data name="SettingsTranslucentSidebarTitle" xml:space="preserve"><value>Translucent sidebar</value></data>
   <data name="SettingsTranslucentSidebarDescription" xml:space="preserve"><value>Use a semi-transparent sidebar so the selected game's background shows through. The title bar and status bar share the same frosted look.</value></data>
   <data name="SettingsTranslucentBackgroundTitle" xml:space="preserve"><value>Translucent background</value></data>

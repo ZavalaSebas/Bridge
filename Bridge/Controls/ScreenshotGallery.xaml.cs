@@ -62,6 +62,7 @@ public partial class ScreenshotGallery : UserControl
         // on reload when there's still more than one screenshot to cycle.
         Loaded += (_, _) =>
         {
+            ApplyCompactMode(CompactMode);
             if (!CompactMode && _urls.Count > 1)
                 _autoTimer.Start();
         };
@@ -125,17 +126,22 @@ public partial class ScreenshotGallery : UserControl
         GalleryHeader.Visibility = collapsed;
         MainViewBorder.Visibility = collapsed;
         GalleryContent.RowDefinitions[1].Height = compact ? new GridLength(0) : new GridLength(320);
+        ThumbScroll.ClipToBounds = true;
         if (compact)
         {
             _autoTimer.Stop();
             ThumbScroll.Margin = new Thickness(0);
             ThumbScroll.Padding = new Thickness(0);
+            MainImage.SourceUrl = null;
+            BackdropImage.Source = null;
         }
         else
         {
             ThumbScroll.Margin = new Thickness(0, 12, 0, 0);
             ThumbScroll.Padding = new Thickness(0, 0, 0, 16);
         }
+
+        GalleryContent.Visibility = _urls.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -187,28 +193,37 @@ public partial class ScreenshotGallery : UserControl
         _index = ((index % _urls.Count) + _urls.Count) % _urls.Count;
 
         var url = _urls[_index];
-        MainImage.SourceUrl = url;
         FullscreenImage.SourceUrl = url;
 
-        if (_backdropCallback is { } oldCallback && _backdropUrl is { } oldUrl)
+        if (CompactMode)
         {
-            RemoteImageCache.Unsubscribe(oldUrl, oldCallback, ArtworkDecodeSize.Thumb);
-            _backdropCallback = null;
-            _backdropUrl = null;
+            MainImage.SourceUrl = null;
+            BackdropImage.Source = null;
         }
-
-        // The backdrop is blurred and dimmed, so a thumbnail-sized decode is plenty.
-        BackdropImage.Source = RemoteImageCache.Get(url, ArtworkDecodeSize.Thumb);
-        Action callback = () =>
+        else
         {
-            if (_urls.Count > 0 && _urls[_index] == url)
+            MainImage.SourceUrl = url;
+
+            if (_backdropCallback is { } oldCallback && _backdropUrl is { } oldUrl)
             {
-                BackdropImage.Source = RemoteImageCache.Get(url, ArtworkDecodeSize.Thumb);
+                RemoteImageCache.Unsubscribe(oldUrl, oldCallback, ArtworkDecodeSize.Thumb);
+                _backdropCallback = null;
+                _backdropUrl = null;
             }
-        };
-        _backdropUrl = url;
-        _backdropCallback = callback;
-        RemoteImageCache.Subscribe(url, callback, ArtworkDecodeSize.Thumb);
+
+            // The backdrop is blurred and dimmed, so a thumbnail-sized decode is plenty.
+            BackdropImage.Source = RemoteImageCache.Get(url, ArtworkDecodeSize.Thumb);
+            Action callback = () =>
+            {
+                if (_urls.Count > 0 && _urls[_index] == url)
+                {
+                    BackdropImage.Source = RemoteImageCache.Get(url, ArtworkDecodeSize.Thumb);
+                }
+            };
+            _backdropUrl = url;
+            _backdropCallback = callback;
+            RemoteImageCache.Subscribe(url, callback, ArtworkDecodeSize.Thumb);
+        }
 
         CounterText = $"{_index + 1} / {_urls.Count}";
         PrevButton.IsEnabled = _urls.Count > 1;

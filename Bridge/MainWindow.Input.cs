@@ -1,4 +1,5 @@
 using System.Windows;
+using Bridge.Services;
 using Bridge.ViewModels;
 
 namespace Bridge;
@@ -22,7 +23,8 @@ public partial class MainWindow
             System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None &&
             SearchBox.IsKeyboardFocusWithin is false &&
             vm.ViewMode == Bridge.Core.Enums.ViewMode.Covers &&
-            vm.SelectedGame is { } infoGame)
+            vm.SelectedGame is { } infoGame &&
+            CoversDetailLayoutSettingsStore.UsesCompact())
         {
             LibraryDetail.CompactInfoPanel.Visibility = System.Windows.Visibility.Visible;
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,

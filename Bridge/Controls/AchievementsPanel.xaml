@@ -158,7 +158,7 @@
             Padding="12"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch">
-        <Grid>
+        <Grid HorizontalAlignment="Stretch">
             <StackPanel VerticalAlignment="Center"
                         HorizontalAlignment="Center"
                         MaxWidth="420">
@@ -216,6 +216,9 @@
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Visibility" Value="Collapsed"/>
+                            <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextOnAccentFillColorPrimaryBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
                             <Style.Triggers>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
@@ -225,10 +228,15 @@
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Visibility" Value="Visible"/>
                                 </MultiDataTrigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorSecondaryBrush}"/>
+                                </Trigger>
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
-                    <TextBlock Text="{x:Static res:Strings.OpenRetroAchievementsSettings}"/>
+                    <TextBlock Text="{x:Static res:Strings.OpenRetroAchievementsSettings}"
+                               Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/>
                 </Button>
             </StackPanel>
 
@@ -285,6 +293,7 @@
                               Grid.Row="1"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
+                              HorizontalAlignment="Stretch"
                               controls:ScrollViewerChaining.IsEnabled="True">
                     <ItemsControl ItemsSource="{Binding Achievements, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                   HorizontalAlignment="Stretch"

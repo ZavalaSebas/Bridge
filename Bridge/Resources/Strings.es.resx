@@ -1141,6 +1141,18 @@
   <data name="SettingsKeepSelectionDescription" xml:space="preserve">
     <value>Si está desactivado, al cambiar entre Lista, Portadas y Tabla se borra el juego seleccionado.</value>
   </data>
+  <data name="SettingsCoversDetailLayoutTitle" xml:space="preserve">
+    <value>Detalle en vista Portadas</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutDescription" xml:space="preserve">
+    <value>En Portadas, usa el panel compacto o el detalle completo a la mitad de la ventana. En Lista el panel de detalles sigue abriéndose más grande.</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutCompact" xml:space="preserve">
+    <value>Compacto</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutStandard" xml:space="preserve">
+    <value>Detalle completo</value>
+  </data>
   <data name="SettingsTranslucentSidebarTitle" xml:space="preserve">
     <value>Barra lateral translúcida</value>
   </data>

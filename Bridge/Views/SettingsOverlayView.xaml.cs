@@ -18,6 +18,7 @@ public partial class SettingsOverlayView : UserControl
     private bool _loadingTrayIcon;
     private bool _loadingKeepSelection;
     private bool _loadingDetailPanelPosition;
+    private bool _loadingCoversDetailLayout;
     private bool _loadingDetailSectionPosition;
     private bool _loadingTranslucentSidebar;
     private bool _loadingTranslucentBackground;
@@ -27,6 +28,12 @@ public partial class SettingsOverlayView : UserControl
     [
         DetailPanelPositionSettingsStore.Left,
         DetailPanelPositionSettingsStore.Right
+    ];
+
+    private static readonly string[] CoversDetailLayoutValues =
+    [
+        CoversDetailLayoutSettingsStore.Compact,
+        CoversDetailLayoutSettingsStore.Standard
     ];
 
     private static readonly string[] DetailSectionPositionValues =
@@ -68,6 +75,11 @@ public partial class SettingsOverlayView : UserControl
             DetailPanelPositionCombo.SelectedIndex = IndexForDetailPanelPosition(
                 DetailPanelPositionSettingsStore.Load());
             _loadingDetailPanelPosition = false;
+
+            _loadingCoversDetailLayout = true;
+            CoversDetailLayoutCombo.SelectedIndex = IndexForCoversDetailLayout(
+                CoversDetailLayoutSettingsStore.Load());
+            _loadingCoversDetailLayout = false;
 
             _loadingDetailSectionPosition = true;
             DetailSectionPositionCombo.SelectedIndex = IndexForDetailSectionPosition(
@@ -406,6 +418,32 @@ public partial class SettingsOverlayView : UserControl
 
         if (Window.GetWindow(this) is MainWindow mainWindow)
             mainWindow.LibraryDetail.ApplyDetailPanelPosition(selected);
+    }
+
+    private void CoversDetailLayoutCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingCoversDetailLayout || CoversDetailLayoutCombo.SelectedIndex < 0)
+            return;
+
+        var selected = CoversDetailLayoutValues[CoversDetailLayoutCombo.SelectedIndex];
+        if (selected.Equals(CoversDetailLayoutSettingsStore.Load(), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        CoversDetailLayoutSettingsStore.Save(selected);
+
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.LibraryDetail.ApplyDetailPanelPosition();
+    }
+
+    private static int IndexForCoversDetailLayout(string layout)
+    {
+        for (var i = 0; i < CoversDetailLayoutValues.Length; i++)
+        {
+            if (CoversDetailLayoutValues[i].Equals(layout, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return 0;
     }
 
     private void DetailSectionPositionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

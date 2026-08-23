@@ -366,6 +366,10 @@ public static class Strings
     public static string SettingsTrayIconDescription => Get(nameof(SettingsTrayIconDescription));
     public static string SettingsKeepSelectionTitle => Get(nameof(SettingsKeepSelectionTitle));
     public static string SettingsKeepSelectionDescription => Get(nameof(SettingsKeepSelectionDescription));
+    public static string SettingsCoversDetailLayoutTitle => Get(nameof(SettingsCoversDetailLayoutTitle));
+    public static string SettingsCoversDetailLayoutDescription => Get(nameof(SettingsCoversDetailLayoutDescription));
+    public static string SettingsCoversDetailLayoutCompact => Get(nameof(SettingsCoversDetailLayoutCompact));
+    public static string SettingsCoversDetailLayoutStandard => Get(nameof(SettingsCoversDetailLayoutStandard));
     public static string SettingsTranslucentSidebarTitle => Get(nameof(SettingsTranslucentSidebarTitle));
     public static string SettingsTranslucentSidebarDescription => Get(nameof(SettingsTranslucentSidebarDescription));
     public static string SettingsTranslucentBackgroundTitle => Get(nameof(SettingsTranslucentBackgroundTitle));

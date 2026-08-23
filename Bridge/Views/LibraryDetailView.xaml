@@ -126,7 +126,19 @@
                         <Grid ClipToBounds="False">
                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                             <Grid Grid.Row="0" ClipToBounds="False">
-                                <Border Height="170" ClipToBounds="True" Background="#151A28" HorizontalAlignment="Stretch"><controls:FadeImage SourceUrl="{Binding SelectedGame.BackgroundImage, Converter={StaticResource HeroArtSource}}" FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" DecodeSize="Hero" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="Fant"/></Border>
+                                <Border Height="170" ClipToBounds="True" Background="#151A28" HorizontalAlignment="Stretch">
+                                    <controls:FadeImage x:Name="CompactHeroImage"
+                                                        DecodeSize="Hero"
+                                                        SourceUrl="{Binding SelectedGame.BackgroundImage, Converter={StaticResource HeroArtSource}}"
+                                                        FallbackArtwork="{x:Static art:GameArtworkFallback.Background}"
+                                                        Stretch="UniformToFill"
+                                                        Height="170"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Stretch"
+                                                        ClipToBounds="True"
+                                                        CoverByWidth="False"
+                                                        RenderOptions.BitmapScalingMode="Fant"/>
+                                </Border>
                                 <Border Height="170" HorizontalAlignment="Stretch" IsHitTestVisible="False"><Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#55000000" Offset="0"/><GradientStop Color="#11000000" Offset="0.15"/><GradientStop Color="#88000000" Offset="0.45"/><GradientStop Color="#F21B2132" Offset="1"/></LinearGradientBrush></Border.Background></Border>
                                 <ui:Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0" Width="44" Height="44" Appearance="Transparent" Padding="0" Background="{DynamicResource Bridge.Overlay.Background}" CornerRadius="4" ToolTip="{x:Static res:Strings.Close}" AutomationProperties.Name="{x:Static res:Strings.Close}" Click="CloseCompactInfo_Click"><ui:SymbolIcon Symbol="Dismiss24" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/></ui:Button>
                                 <StackPanel Margin="12,12,12,36"
@@ -163,9 +175,11 @@
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="14,40,14,14" ContextMenu="{StaticResource Bridge.DetailSectionPositionMenu}">
                                 <StackPanel x:Name="CompactContentStack">
                                     <controls:ScreenshotGallery x:Name="CompactScreenshotsSection"
-                                                                ItemsSource="{Binding SelectedGame.Screenshots}"
                                                                 CompactMode="True"
-                                                                Margin="0,10,0,8"/>
+                                                                ItemsSource="{Binding SelectedGame.Screenshots}"
+                                                                Margin="0,10,0,8"
+                                                                VerticalAlignment="Top"
+                                                                ClipToBounds="True"/>
                                     <StackPanel x:Name="CompactDetailsSection">
                                     <TextBlock Text="{x:Static res:Strings.Details}" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,10"/>
                                     <views:GameDetailsFieldsPanel DataContext="{Binding SelectedGame}"/>
@@ -204,7 +218,7 @@
             <Border x:Name="DetailPanelHost" Grid.Column="2" Grid.Row="0" Background="{DynamicResource Bridge.Content.Background}" ClipToBounds="True" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1,0,0,0" ContextMenu="{StaticResource Bridge.DetailPanelPositionMenu}"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding NavigationSection}" Value="{x:Static enums:NavigationSection.Statistics}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger><DataTrigger Binding="{Binding NavigationSection}" Value="{x:Static enums:NavigationSection.Settings}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
                 <Grid><Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                     <Grid Grid.Row="0"><StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding SelectedGame}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><ui:SymbolIcon Symbol="Games32" FontSize="44" Foreground="{StaticResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" /><TextBlock Text="{x:Static res:Strings.SelectAGame}" Foreground="{StaticResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" Margin="0,12,0,0" FontSize="{StaticResource Bridge.FontSize.Body}" TextAlignment="Center" /><ui:Button Margin="0,20,0,0" Padding="16,10" Click="EmptyScanInstalled_Click" AutomationProperties.Name="{x:Static res:Strings.ScanAutomatically}" ToolTip="{x:Static res:Strings.ScanAutomatically}"><ui:Button.Style><Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}"><Setter Property="Visibility" Value="Visible"/><Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/><Setter Property="Foreground" Value="{StaticResource TextOnAccentFillColorPrimaryBrush}"/><Style.Triggers><DataTrigger Binding="{Binding NavigationSection}" Value="{x:Static enums:NavigationSection.Roms}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="Opacity" Value="0.9"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.75"/></Trigger></Style.Triggers></Style></ui:Button.Style><StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="Search24" FontSize="18" Margin="0,0,8,0" Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/><TextBlock Text="{x:Static res:Strings.ScanAutomatically}" VerticalAlignment="Center" Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/></StackPanel></ui:Button><ui:Button Margin="0,20,0,0" Padding="16,10" Click="EmptyScanRom_Click" AutomationProperties.Name="{x:Static res:Strings.ScanRoms}" ToolTip="{x:Static res:Strings.ScanRoms}"><ui:Button.Style><Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}"><Setter Property="Visibility" Value="Collapsed"/><Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/><Setter Property="Foreground" Value="{StaticResource TextOnAccentFillColorPrimaryBrush}"/><Style.Triggers><DataTrigger Binding="{Binding NavigationSection}" Value="{x:Static enums:NavigationSection.Roms}"><Setter Property="Visibility" Value="Visible"/></DataTrigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="Opacity" Value="0.9"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.75"/></Trigger></Style.Triggers></Style></ui:Button.Style><StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="Games24" FontSize="18" Margin="0,0,8,0" Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/><TextBlock Text="{x:Static res:Strings.ScanRoms}" VerticalAlignment="Center" Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/></StackPanel></ui:Button></StackPanel>
-                        <Grid DataContext="{Binding SelectedGame}"><Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.SelectedGame, ElementName=LibraryRoot}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Grid.Style><ScrollViewer x:Name="DetailScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+                        <Grid DataContext="{Binding SelectedGame}"><Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.SelectedGame, ElementName=LibraryRoot}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Grid.Style><ScrollViewer x:Name="DetailScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Width="{Binding ViewportWidth, ElementName=DetailScrollViewer}">
                             <Grid>
                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                                 <Grid x:Name="HeroHeader" Grid.Row="0" Height="510" ClipToBounds="True">
@@ -605,31 +619,44 @@
                                 </Grid>
                                 <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Background="{DynamicResource Bridge.SeparatorBrush}"/>
                                 <StackPanel Grid.Row="1">
-                                    <Grid x:Name="DetailContentDock" MaxWidth="1120" HorizontalAlignment="Center" Margin="20,18,20,16" ContextMenu="{StaticResource Bridge.DetailSectionPositionMenu}">
+                                    <Grid x:Name="DetailContentDock" MaxWidth="1120" HorizontalAlignment="Stretch" Margin="20,18,20,16" ContextMenu="{StaticResource Bridge.DetailSectionPositionMenu}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition x:Name="OverviewTabsColumn" Width="*" MinWidth="300"/>
                                             <ColumnDefinition x:Name="DetailsMetadataColumn" Width="220"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border x:Name="OverviewTabsSection" Grid.Column="0" Margin="0,0,20,0" ClipToBounds="True">
+                                        <Border x:Name="OverviewTabsSection" Grid.Column="0" Margin="0,0,20,0" ClipToBounds="True" MinWidth="0" HorizontalAlignment="Stretch">
                                             <TabControl x:Name="DetailOverviewTabs"
                                                         Style="{StaticResource Bridge.DetailTabControl}"
-                                                        ItemContainerStyle="{StaticResource Bridge.DetailTabItem}">
+                                                        ItemContainerStyle="{StaticResource Bridge.DetailTabItem}"
+                                                        HorizontalAlignment="Stretch"
+                                                        MinWidth="0">
                                                 <TabItem Header="{x:Static res:Strings.Overview}">
                                                     <ScrollViewer x:Name="OverviewScrollViewer"
                                                                   VerticalScrollBarVisibility="Auto"
                                                                   HorizontalScrollBarVisibility="Disabled"
                                                                   VerticalAlignment="Stretch"
+                                                                  HorizontalAlignment="Stretch"
                                                                   controls:ScrollViewerChaining.IsEnabled="True">
-                                                        <Border Background="{DynamicResource Bridge.MutedSurface.Background}" CornerRadius="8" Padding="12" VerticalAlignment="Top" HorizontalAlignment="Stretch">
-                                                            <ItemsControl ItemsSource="{Binding Converter={StaticResource DescriptionBlocks}}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplateSelector><controls:DescriptionBlockTemplateSelector TextTemplate="{StaticResource DescTextTemplate}" HeadingTemplate="{StaticResource DescHeadingTemplate}" SubheadingTemplate="{StaticResource DescSubheadingTemplate}" ListTemplate="{StaticResource DescListTemplate}" ImageTemplate="{StaticResource DescImageTemplate}"/></ItemsControl.ItemTemplateSelector></ItemsControl>
+                                                        <Border Background="{DynamicResource Bridge.MutedSurface.Background}"
+                                                                CornerRadius="8"
+                                                                Padding="12"
+                                                                VerticalAlignment="Top"
+                                                                HorizontalAlignment="Stretch"
+                                                                MinWidth="{Binding ViewportWidth, ElementName=OverviewScrollViewer}">
+                                                            <ItemsControl HorizontalAlignment="Stretch"
+                                                                          ItemsSource="{Binding Converter={StaticResource DescriptionBlocks}}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplateSelector><controls:DescriptionBlockTemplateSelector TextTemplate="{StaticResource DescTextTemplate}" HeadingTemplate="{StaticResource DescHeadingTemplate}" SubheadingTemplate="{StaticResource DescSubheadingTemplate}" ListTemplate="{StaticResource DescListTemplate}" ImageTemplate="{StaticResource DescImageTemplate}"/></ItemsControl.ItemTemplateSelector></ItemsControl>
                                                         </Border>
                                                     </ScrollViewer>
                                                 </TabItem>
                                                 <TabItem Header="{x:Static res:Strings.Images}">
-                                                    <controls:ScreenshotGallery ItemsSource="{Binding Screenshots}" VerticalAlignment="Stretch"/>
+                                                    <controls:ScreenshotGallery ItemsSource="{Binding Screenshots}"
+                                                                                VerticalAlignment="Stretch"
+                                                                                HorizontalAlignment="Stretch"/>
                                                 </TabItem>
                                                 <TabItem Header="{x:Static res:Strings.Achievements}">
-                                                    <controls:AchievementsPanel DataContext="{Binding}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+                                                    <controls:AchievementsPanel DataContext="{Binding}"
+                                                                                VerticalAlignment="Stretch"
+                                                                                HorizontalAlignment="Stretch"/>
                                                 </TabItem>
                                             </TabControl>
                                         </Border>

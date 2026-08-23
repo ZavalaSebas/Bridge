@@ -59,6 +59,8 @@ public partial class LibraryDetailView : UserControl
     private void OnCompactInfoPanelIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         RefreshCoversLayout();
+        if (CompactInfoPanel.IsVisible)
+            CompactHeroImage.EnsureLoaded();
     }
 
     private void OnCoversViewsHostSizeChanged(object sender, SizeChangedEventArgs e)
@@ -444,7 +446,8 @@ public partial class LibraryDetailView : UserControl
             && ViewModel is { } viewModel)
         {
             viewModel.SelectedGame = game;
-            CompactInfoPanel.Visibility = Visibility.Visible;
+            if (CoversDetailLayoutSettingsStore.UsesCompact())
+                CompactInfoPanel.Visibility = Visibility.Visible;
 
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded,
                 new Action(() => CoversList.ScrollIntoView(game)));
@@ -703,12 +706,18 @@ public partial class LibraryDetailView : UserControl
     public void ApplyDetailPanelPosition(string? position = null)
     {
         position = DetailPanelPositionSettingsStore.Normalize(position ?? DetailPanelPositionSettingsStore.Load());
-        var showListDetail = ViewModel?.ViewMode == ViewMode.List;
-        ApplyListDetailLayout(position, showListDetail);
+        var viewMode = ViewModel?.ViewMode;
+        var coversHalfWidth = viewMode == ViewMode.Covers && !CoversDetailLayoutSettingsStore.UsesCompact();
+        var showFullDetail = viewMode == ViewMode.List || coversHalfWidth;
+        ApplyListDetailLayout(position, showFullDetail, coversHalfWidth);
+
+        if (coversHalfWidth)
+            CompactInfoPanel.Visibility = Visibility.Collapsed;
+
         ApplyCompactDetailLayout(position);
     }
 
-    private void ApplyListDetailLayout(string position, bool visible)
+    private void ApplyListDetailLayout(string position, bool visible, bool halfWidth)
     {
         ResetListDetailGrid();
 
@@ -736,12 +745,12 @@ public partial class LibraryDetailView : UserControl
 
         if (position == DetailPanelPositionSettingsStore.Left)
         {
-            // Column 0 uses ViewsColumn, column 2 uses DetailColumn — swap widths
-            // so the details panel gets the flexible star column on the left.
             ViewsColumn.Width = new GridLength(1, GridUnitType.Star);
-            ViewsColumn.MinWidth = 320;
-            DetailColumn.Width = new GridLength(360);
-            DetailColumn.MinWidth = 200;
+            ViewsColumn.MinWidth = halfWidth ? 200 : 320;
+            DetailColumn.Width = halfWidth
+                ? new GridLength(1, GridUnitType.Star)
+                : new GridLength(360);
+            DetailColumn.MinWidth = halfWidth ? 240 : 200;
             PlaceDetailHost(column: 0, row: 0);
             PlaceListChrome(column: 1, row: 0);
             PlaceViewsHost(column: 2, row: 0);
@@ -749,10 +758,12 @@ public partial class LibraryDetailView : UserControl
             return;
         }
 
-        ViewsColumn.Width = new GridLength(DefaultListColumnWidth);
+        ViewsColumn.Width = halfWidth
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(DefaultListColumnWidth);
         ViewsColumn.MinWidth = 200;
         DetailColumn.Width = new GridLength(1, GridUnitType.Star);
-        DetailColumn.MinWidth = 320;
+        DetailColumn.MinWidth = halfWidth ? 240 : 320;
         PlaceViewsHost(column: 0, row: 0);
         PlaceListChrome(column: 1, row: 0);
         PlaceDetailHost(column: 2, row: 0);
