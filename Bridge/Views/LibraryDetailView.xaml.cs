@@ -104,6 +104,7 @@ public partial class LibraryDetailView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        _favoriteHideTimer.Stop();
         CoversViewsHost.SizeChanged -= OnCoversViewsHostSizeChanged;
         CompactInfoPanel.IsVisibleChanged -= OnCompactInfoPanelIsVisibleChanged;
         CoverContentRow.SizeChanged -= OnCoverCompletionLayoutChanged;

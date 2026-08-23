@@ -28,7 +28,15 @@ public sealed class RomDatMatcher
         return false;
     }
 
-    public bool TryMatch(string romPath, out RomDatMatch? match)
+    public bool TryMatch(string romPath, out RomDatMatch? match) =>
+        TryMatch(romPath, knownCrc: null, out match);
+
+    // Overload that reuses an already-computed CRC (e.g. the one stored on a ROM
+    // from the initial scan) instead of re-reading and re-hashing the file — the
+    // hot path when re-identifying an existing library. With a trusted CRC we also
+    // skip the extra archive open for the size check; a CRC collision across ROMs
+    // of different sizes is astronomically unlikely for curated sets.
+    public bool TryMatch(string romPath, string? knownCrc, out RomDatMatch? match)
     {
         match = null;
 
@@ -43,11 +51,12 @@ public sealed class RomDatMatcher
         if (platformName is null)
             return false;
 
-        var crcHex = RomCrc32.TryComputeFromRomPath(romPath);
-        if (crcHex is null)
+        var hasKnownCrc = !string.IsNullOrWhiteSpace(knownCrc);
+        var crcHex = hasKnownCrc ? knownCrc : RomCrc32.TryComputeFromRomPath(romPath);
+        if (string.IsNullOrWhiteSpace(crcHex))
             return false;
 
-        var romSize = RomCrc32.TryGetRomSize(romPath);
+        var romSize = hasKnownCrc ? null : RomCrc32.TryGetRomSize(romPath);
         var game = _store.Lookup(datFileName, crcHex, romSize);
         if (game is null && romSize is null or <= 0)
             game = _store.Lookup(datFileName, crcHex);

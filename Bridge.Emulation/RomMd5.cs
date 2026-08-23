@@ -29,13 +29,19 @@ public static class RomMd5
             if (!File.Exists(romPath))
                 return null;
 
-            return ComputeHex(File.ReadAllBytes(romPath));
+            using var stream = File.OpenRead(romPath);
+            return ComputeHex(stream);
         }
         catch
         {
             return null;
         }
     }
+
+    // Streaming hash — MD5 consumes the stream directly, so a large ROM never
+    // lands in memory whole.
+    private static string ComputeHex(Stream stream) =>
+        Convert.ToHexString(MD5.HashData(stream)).ToLowerInvariant();
 
     private static string? TryComputeFromArchiveEntry(string archivePath, string entryPath)
     {
@@ -52,8 +58,6 @@ public static class RomMd5
             return null;
 
         using var stream = entry.OpenEntryStream();
-        using var buffer = new MemoryStream();
-        stream.CopyTo(buffer);
-        return ComputeHex(buffer.ToArray());
+        return ComputeHex(stream);
     }
 }

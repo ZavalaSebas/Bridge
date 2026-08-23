@@ -1,4 +1,4 @@
-using System.Buffers.Binary;
+using System.Buffers;
 using SharpCompress.Archives;
 
 namespace Bridge.Emulation;
@@ -11,6 +11,14 @@ public static class RomCrc32
     public static string ComputeHex(ReadOnlySpan<byte> data)
     {
         var crc = Compute(data);
+        return crc.ToString("X8");
+    }
+
+    // Streaming overload: hashes the stream in chunks so a multi-GB ROM never has
+    // to be read into memory all at once.
+    public static string ComputeHex(Stream stream)
+    {
+        var crc = Compute(stream);
         return crc.ToString("X8");
     }
 
@@ -30,7 +38,8 @@ public static class RomCrc32
             if (!File.Exists(romPath))
                 return null;
 
-            return ComputeHex(File.ReadAllBytes(romPath));
+            using var stream = File.OpenRead(romPath);
+            return ComputeHex(stream);
         }
         catch
         {
@@ -79,9 +88,7 @@ public static class RomCrc32
             return null;
 
         using var stream = entry.OpenEntryStream();
-        using var buffer = new MemoryStream();
-        stream.CopyTo(buffer);
-        return ComputeHex(buffer.ToArray());
+        return ComputeHex(stream);
     }
 
     private static uint Compute(ReadOnlySpan<byte> data)
@@ -91,6 +98,32 @@ public static class RomCrc32
         {
             var index = (byte)(crc ^ value);
             crc = Table[index] ^ (crc >> 8);
+        }
+
+        return ~crc;
+    }
+
+    // Incremental CRC over a stream — reads into a pooled buffer so large ROMs
+    // don't allocate a whole-file byte array.
+    private static uint Compute(Stream stream)
+    {
+        var crc = 0xFFFFFFFFu;
+        var buffer = ArrayPool<byte>.Shared.Rent(81920);
+        try
+        {
+            int read;
+            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                for (var i = 0; i < read; i++)
+                {
+                    var index = (byte)(crc ^ buffer[i]);
+                    crc = Table[index] ^ (crc >> 8);
+                }
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
 
         return ~crc;

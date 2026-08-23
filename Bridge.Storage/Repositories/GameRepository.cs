@@ -17,6 +17,21 @@ public class GameRepository(IDbContextFactory<BridgeDbContext> factory)
     }
 
     /// <summary>
+    /// Inserts several games in a single transaction (one DbContext, one
+    /// SaveChanges) instead of one round-trip per game — used by the ROM scan and
+    /// library imports to avoid SQLite write contention on large batches.
+    /// </summary>
+    public void AddMany(IReadOnlyList<Game> games)
+    {
+        if (games.Count == 0)
+            return;
+
+        using var context = factory.CreateDbContext();
+        context.Games.AddRange(games);
+        context.SaveChanges();
+    }
+
+    /// <summary>
     /// Batch update of metadata sync markers (seal multiple games in one transaction).
     /// Used to mark games as "attempted" (success or fail) to respect TTL and avoid
     /// perpetual re-downloads. Operates in its own DbContext (isolated from UI).

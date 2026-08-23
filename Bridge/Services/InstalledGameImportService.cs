@@ -87,7 +87,9 @@ public sealed class InstalledGameImportService
 
     public InstalledGameImportResult ImportCandidates(IEnumerable<InstalledGameCandidate> candidates)
     {
-        var existing = _gameRepository.GetAll();
+        // Load the library once and keep the dedup set current in memory as we add,
+        // instead of re-querying the whole table after every insert (the old N+1).
+        var existing = _gameRepository.GetAll().ToList();
         var skipped = new List<string>();
         var added = new List<Game>();
 
@@ -111,7 +113,7 @@ public sealed class InstalledGameImportService
             var game = CreateGame(candidate);
             _gameRepository.Add(game);
             added.Add(game);
-            existing = _gameRepository.GetAll();
+            existing.Add(game);
         }
 
         return new InstalledGameImportResult(added, skipped);

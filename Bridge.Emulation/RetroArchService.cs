@@ -39,6 +39,15 @@ public sealed class RetroArchService
     };
     private static readonly HashSet<string> CoreHosts = new(StringComparer.OrdinalIgnoreCase) { "buildbot.libretro.com" };
 
+    // Shared across every emulator download so each install doesn't leak a client
+    // and its socket handler. Redirects are handled by hand (auto-redirect off) and
+    // the timeout is generous because a ~200 MB archive streams over a slow link —
+    // the per-chunk maximumBytes guard below is what actually bounds the work.
+    private static readonly HttpClient DownloadClient = new(new HttpClientHandler { AllowAutoRedirect = false })
+    {
+        Timeout = TimeSpan.FromMinutes(15)
+    };
+
     private readonly IRepository<Emulator> _emulatorRepository;
     private readonly IRepository<Platform> _platformRepository;
     private readonly HttpClient _httpClient;
@@ -381,15 +390,6 @@ public sealed class RetroArchService
 
     private async Task<string> DownloadAsync(string url, IReadOnlySet<string> allowedHosts, long maximumBytes, IProgress<EmulatorProgress>? progress, CancellationToken cancellationToken)
     {
-        // The default HttpClient timeout (100s) would abort a ~200 MB frontend
-        // download halfway on a slow connection. Streaming a large archive needs
-        // a generous ceiling; the per-chunk progress and maximumBytes guard below
-        // are what actually bound the work. Redirects are handled by hand, so
-        // auto-redirect must stay off.
-        using var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
-        {
-            Timeout = TimeSpan.FromMinutes(15)
-        };
         var current = new Uri(url);
         for (var redirects = 0; redirects <= 5; redirects++)
         {
@@ -398,7 +398,7 @@ public sealed class RetroArchService
                 throw new InvalidOperationException($"Bridge refused an untrusted emulator download host: {current.Host}.");
             }
 
-            using var response = await client.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await DownloadClient.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (response.StatusCode is HttpStatusCode.Moved or HttpStatusCode.Redirect or HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect)
             {
                 current = response.Headers.Location is { IsAbsoluteUri: true } absolute ? absolute : new Uri(current, response.Headers.Location!);

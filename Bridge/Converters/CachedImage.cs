@@ -104,13 +104,13 @@ public static class CachedImage
             return;
         }
 
+        var size = GetDecodeSize(image);
         if (Path.IsPathRooted(url))
         {
-            image.Source = LoadLocalPath(url) ?? DefaultGameArtwork.Get(fallback);
+            image.Source = LoadLocalPath(url, size) ?? DefaultGameArtwork.Get(fallback);
             return;
         }
 
-        var size = GetDecodeSize(image);
         if (RemoteImageCache.Get(url, size) is { } cached)
         {
             image.Source = cached;
@@ -137,13 +137,13 @@ public static class CachedImage
             return;
         }
 
+        var size = GetDecodeSize(target);
         if (Path.IsPathRooted(url))
         {
-            SetBackground(target, MakeFillBrush(LoadLocalPath(url) ?? DefaultGameArtwork.Get(fallback)));
+            SetBackground(target, MakeFillBrush(LoadLocalPath(url, size) ?? DefaultGameArtwork.Get(fallback)));
             return;
         }
 
-        var size = GetDecodeSize(target);
         if (RemoteImageCache.Get(url, size) is { } cached)
         {
             SetBackground(target, MakeFillBrush(cached));
@@ -188,7 +188,7 @@ public static class CachedImage
         return brush;
     }
 
-    private static ImageSource? LoadLocalPath(string path)
+    private static ImageSource? LoadLocalPath(string path, ArtworkDecodeSize size)
     {
         try
         {
@@ -205,6 +205,12 @@ public static class CachedImage
             var bitmap = new System.Windows.Media.Imaging.BitmapImage();
             bitmap.BeginInit();
             bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            // Decode local artwork (e.g. Steam's 600x900 covers) at the display
+            // bucket instead of full resolution, clamped so a smaller original is
+            // never upscaled.
+            var decodeWidth = LocalDecodeWidth(path, size);
+            if (decodeWidth > 0)
+                bitmap.DecodePixelWidth = decodeWidth;
             bitmap.UriSource = new Uri(path);
             bitmap.EndInit();
             bitmap.Freeze();
@@ -213,6 +219,29 @@ public static class CachedImage
         catch
         {
             return null;
+        }
+    }
+
+    // Reads just the header to clamp the bucket to the source width, so a bucket
+    // never upscales a smaller original. Returns 0 (native decode) for Native or
+    // when the header can't be read.
+    private static int LocalDecodeWidth(string path, ArtworkDecodeSize size)
+    {
+        if (size == ArtworkDecodeSize.Native)
+            return 0;
+
+        try
+        {
+            using var stream = File.OpenRead(path);
+            var frame = System.Windows.Media.Imaging.BitmapDecoder.Create(
+                stream,
+                System.Windows.Media.Imaging.BitmapCreateOptions.DelayCreation,
+                System.Windows.Media.Imaging.BitmapCacheOption.None).Frames[0];
+            return Math.Min((int)size, frame.PixelWidth);
+        }
+        catch
+        {
+            return 0;
         }
     }
 }

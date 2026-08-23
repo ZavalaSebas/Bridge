@@ -15,14 +15,27 @@ namespace Bridge.Converters;
 /// </summary>
 public static class RemoteImageCache
 {
-    private const int MaxCachedImages = 512;
+    // Cap the in-memory decoded cache by BYTES (not count): a wall of full-size
+    // covers would otherwise balloon RAM. Entries are evicted least-recently-used.
+    private const long MaxCacheBytes = 128L * 1024 * 1024; // ~128 MB of decoded artwork
+
+    // Max images decoded concurrently during a bulk preload (see PreloadAndWaitAsync).
+    private const int MaxPreloadConcurrency = 8;
 
     // Keyed by URL *and* decode size: the same artwork can live at a thumbnail
     // size and a hero size without one serving the other blurry/oversized.
     private readonly record struct CacheKey(string Url, ArtworkDecodeSize Size);
 
-    private static readonly ConcurrentDictionary<CacheKey, BitmapImage> Cache = new();
-    private static readonly ConcurrentQueue<CacheKey> CacheOrder = new();
+    // LRU cache guarded by CacheLock: the linked list orders entries from
+    // least-recently-used (First) to most-recently-used (Last); the index gives
+    // O(1) lookup. Get bumps an entry to the back; inserts evict from the front
+    // until the total decoded size is back under the cap.
+    private sealed record CacheEntry(CacheKey Key, BitmapImage Image, long Bytes);
+
+    private static readonly object CacheLock = new();
+    private static readonly Dictionary<CacheKey, LinkedListNode<CacheEntry>> CacheIndex = new();
+    private static readonly LinkedList<CacheEntry> CacheLru = new();
+    private static long _cacheBytes;
     // In-flight loads keyed by URL+size, storing the decode task so a preload can
     // await it (the window waits for artwork before its first paint).
     private static readonly ConcurrentDictionary<CacheKey, Task> InFlight = new();
@@ -51,7 +64,7 @@ public static class RemoteImageCache
     public static BitmapImage? Get(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
         var key = new CacheKey(url, size);
-        if (Cache.TryGetValue(key, out var cached))
+        if (CacheTryGet(key) is { } cached)
         {
             return cached;
         }
@@ -62,28 +75,16 @@ public static class RemoteImageCache
 
     /// <summary>Returns true when a decoded image for <paramref name="url"/> is in memory.</summary>
     public static bool IsCached(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native) =>
-        Cache.ContainsKey(new CacheKey(url, size));
+        CacheContains(new CacheKey(url, size));
 
-    // TEMP: memory diagnostics — count and rough decoded-byte estimate of the live
-    // image cache. Frozen BitmapImages are thread-safe to read. Reversible: delete
-    // this method and the MemoryDiagnostics caller.
+    // TEMP: memory diagnostics — count and decoded-byte total of the live image
+    // cache. Reversible: delete this method and the MemoryDiagnostics caller.
     internal static (int Count, long ApproxBytes) MemorySnapshot()
     {
-        long bytes = 0;
-        foreach (var image in Cache.Values)
+        lock (CacheLock)
         {
-            try
-            {
-                // Decoded BGRA32 footprint estimate: width * height * 4 bytes.
-                bytes += (long)image.PixelWidth * image.PixelHeight * 4;
-            }
-            catch
-            {
-                // Ignore any image that can't report its dimensions.
-            }
+            return (CacheIndex.Count, _cacheBytes);
         }
-
-        return (Cache.Count, bytes);
     }
 
     /// <summary>
@@ -98,7 +99,7 @@ public static class RemoteImageCache
     public static bool TryWarmFromDisk(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {
         var key = new CacheKey(url, size);
-        if (Cache.ContainsKey(key))
+        if (CacheContains(key))
             return true;
 
         try
@@ -142,9 +143,7 @@ public static class RemoteImageCache
                 image = local;
             }
 
-            Cache[key] = image;
-            CacheOrder.Enqueue(key);
-            TrimCache();
+            CacheInsert(key, image);
             return true;
         }
         catch
@@ -206,14 +205,20 @@ public static class RemoteImageCache
             return;
 
         var completed = 0;
+        // Bound how many images decode at once: without this, warming a large
+        // library would fan out one thread-pool decode per URL and hold every
+        // downloaded byte buffer in memory simultaneously.
+        using var throttle = new SemaphoreSlim(MaxPreloadConcurrency);
         var tasks = distinct.Select(async url =>
         {
+            await throttle.WaitAsync().ConfigureAwait(false);
             try
             {
                 await BeginLoad(new CacheKey(url, size)).ConfigureAwait(false);
             }
             finally
             {
+                throttle.Release();
                 var done = Interlocked.Increment(ref completed);
                 progress?.Report((done, total));
             }
@@ -234,7 +239,7 @@ public static class RemoteImageCache
         bool loaded;
         lock (CallbacksLock)
         {
-            loaded = Cache.ContainsKey(key);
+            loaded = CacheContains(key);
             if (!loaded)
             {
                 if (!PendingCallbacks.TryGetValue(key, out var callbacks))
@@ -300,9 +305,7 @@ public static class RemoteImageCache
                 var image = completed.IsCompletedSuccessfully ? completed.Result : null;
                 if (image is not null)
                 {
-                    Cache[key] = image;
-                    CacheOrder.Enqueue(key);
-                    TrimCache();
+                    CacheInsert(key, image);
                 }
 
                 // Collect the pending callbacks, then run them on the UI thread.
@@ -472,11 +475,67 @@ public static class RemoteImageCache
         return response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
     }
 
-    private static void TrimCache()
+    // Looks up an entry and, on a hit, moves it to the most-recently-used end so
+    // the LRU eviction keeps the artwork the user is actually looking at.
+    private static BitmapImage? CacheTryGet(CacheKey key)
     {
-        while (Cache.Count > MaxCachedImages && CacheOrder.TryDequeue(out var oldest))
+        lock (CacheLock)
         {
-            Cache.TryRemove(oldest, out _);
+            if (CacheIndex.TryGetValue(key, out var node))
+            {
+                CacheLru.Remove(node);
+                CacheLru.AddLast(node);
+                return node.Value.Image;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool CacheContains(CacheKey key)
+    {
+        lock (CacheLock)
+        {
+            return CacheIndex.ContainsKey(key);
+        }
+    }
+
+    // Inserts (or replaces) an entry, then evicts least-recently-used entries until
+    // the total decoded size is back under the cap (always keeping at least one).
+    private static void CacheInsert(CacheKey key, BitmapImage image)
+    {
+        var bytes = EstimateBytes(image);
+        lock (CacheLock)
+        {
+            if (CacheIndex.TryGetValue(key, out var existing))
+            {
+                _cacheBytes -= existing.Value.Bytes;
+                CacheLru.Remove(existing);
+            }
+
+            var node = CacheLru.AddLast(new CacheEntry(key, image, bytes));
+            CacheIndex[key] = node;
+            _cacheBytes += bytes;
+
+            while (_cacheBytes > MaxCacheBytes && CacheLru.Count > 1 && CacheLru.First is { } lru)
+            {
+                CacheLru.RemoveFirst();
+                CacheIndex.Remove(lru.Value.Key);
+                _cacheBytes -= lru.Value.Bytes;
+            }
+        }
+    }
+
+    // Decoded BGRA32 footprint estimate: width * height * 4 bytes.
+    private static long EstimateBytes(BitmapImage image)
+    {
+        try
+        {
+            return (long)image.PixelWidth * image.PixelHeight * 4;
+        }
+        catch
+        {
+            return 0;
         }
     }
 

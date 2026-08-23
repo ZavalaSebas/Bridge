@@ -12,17 +12,21 @@ namespace Bridge.Emulation;
 public partial class RomScanner(RomDatMatcher datMatcher)
 {
     private readonly RomDatMatcher _datMatcher = datMatcher;
-    public IReadOnlyList<Game> Scan(string directory, IEnumerable<Game> existingGames)
+    public IReadOnlyList<Game> Scan(string directory, IEnumerable<Game> existingGames) =>
+        Scan(directory, existingGames
+            .SelectMany(g => g.Roms)
+            .Select(r => RomArchivePath.Normalize(r.Path))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase));
+
+    // Overload taking a pre-built set of already-imported ROM paths so the caller
+    // can build it on the UI thread and run the heavy scan on a background thread
+    // without ever enumerating the live game collection off-thread.
+    public IReadOnlyList<Game> Scan(string directory, IReadOnlySet<string> alreadyImported)
     {
         if (!Directory.Exists(directory))
         {
             throw new DirectoryNotFoundException($"ROM folder not found: {directory}");
         }
-
-        var alreadyImported = existingGames
-            .SelectMany(g => g.Roms)
-            .Select(r => RomArchivePath.Normalize(r.Path))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var results = new List<Game>();
         foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
@@ -38,7 +42,7 @@ public partial class RomScanner(RomDatMatcher datMatcher)
                 foreach (var entry in RomArchiveCatalog.EnumerateRomEntries(file))
                 {
                     var romPath = RomArchivePath.Combine(file, entry.EntryPath);
-                    TryAddRom(alreadyImported, results, romPath, ResolveDisplayName(romPath));
+                    ProcessRom(alreadyImported, results, romPath);
                 }
 
                 continue;
@@ -49,28 +53,16 @@ public partial class RomScanner(RomDatMatcher datMatcher)
                 continue;
             }
 
-            TryAddRom(alreadyImported, results, file, ResolveDisplayName(file));
+            ProcessRom(alreadyImported, results, file);
         }
 
         return results;
     }
 
-    private string ResolveDisplayName(string romPath)
-    {
-        if (_datMatcher.TryMatch(romPath, out var match) &&
-            !string.IsNullOrWhiteSpace(match!.Name))
-        {
-            return match.Name.Trim();
-        }
-
-        return SanitizeName(Path.GetFileNameWithoutExtension(RomArchivePath.GetRomFileName(romPath)));
-    }
-
-    private void TryAddRom(
-        ISet<string> alreadyImported,
-        ICollection<Game> results,
-        string romPath,
-        string displayName)
+    // Imports one ROM: skips it if already in the library (no hashing needed),
+    // otherwise runs a SINGLE DAT match — which computes the CRC once and is reused
+    // for the display name and the stored ROM fields — before building the Game.
+    private void ProcessRom(IReadOnlySet<string> alreadyImported, ICollection<Game> results, string romPath)
     {
         var normalized = RomArchivePath.Normalize(romPath);
         if (alreadyImported.Contains(normalized))
@@ -78,14 +70,25 @@ public partial class RomScanner(RomDatMatcher datMatcher)
             return;
         }
 
-        var crcHex = RomCrc32.TryComputeFromRomPath(normalized);
+        string? crcHex;
         string? datRegion = null;
         var datPlatform = RomDatMatcher.ResolvePlatformName(normalized);
+        var fallbackName = SanitizeName(Path.GetFileNameWithoutExtension(RomArchivePath.GetRomFileName(normalized)));
+        string displayName;
+
         if (_datMatcher.TryMatch(normalized, out var match))
         {
             datRegion = match!.Region;
             datPlatform = match.PlatformName;
             crcHex = match.Crc;
+            displayName = string.IsNullOrWhiteSpace(match.Name) ? fallbackName : match.Name.Trim();
+        }
+        else
+        {
+            // No DAT entry — still record the CRC so a later rescan/re-identify can
+            // match it without re-reading the file.
+            crcHex = RomCrc32.TryComputeFromRomPath(normalized);
+            displayName = fallbackName;
         }
 
         var game = new Game { Name = displayName };

@@ -1,6 +1,7 @@
 using Bridge.Core.Contracts;
 using Bridge.Core.Entities;
 using Bridge.Core.Enums;
+using Bridge.Core.Utilities;
 using Bridge.Services;
 
 namespace Bridge.Tests.Services;
@@ -75,6 +76,10 @@ public class InstalledGameImportServiceTests : IDisposable
         public Game? Get(Guid id) => Games.FirstOrDefault(g => g.Id == id);
 
         public void Add(Game game) => Games.Add(game);
+
+        public void AddMany(IReadOnlyList<Game> games) => Games.AddRange(games);
+
+        public void UpdateManyMetadataSyncMarkers(IReadOnlyList<Game> games, MetadataSyncMarker marker) { }
 
         public void Update(Game game) { }
 

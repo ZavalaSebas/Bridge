@@ -57,6 +57,15 @@ public partial class ScreenshotGallery : UserControl
         // inspecting it), resume on leave. Drag also pauses via _autoPaused.
         MainImageHost.MouseEnter += (_, _) => _autoPaused = true;
         MainImageHost.MouseLeave += (_, _) => _autoPaused = false;
+        // Stop auto-advance when the gallery leaves the visual tree so a detached
+        // control doesn't keep ticking (which would also keep it alive); resume it
+        // on reload when there's still more than one screenshot to cycle.
+        Loaded += (_, _) =>
+        {
+            if (!CompactMode && _urls.Count > 1)
+                _autoTimer.Start();
+        };
+        Unloaded += (_, _) => _autoTimer.Stop();
         CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.PreviousCommand, (_, _) => { MarkManualChange(); ShowAt(_index - 1); }));
         CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.NextCommand, (_, _) => { MarkManualChange(); ShowAt(_index + 1); }));
         CommandBindings.Add(new CommandBinding(ScreenshotGalleryCommands.CloseFullscreenCommand, (_, _) => CloseFullscreen()));
