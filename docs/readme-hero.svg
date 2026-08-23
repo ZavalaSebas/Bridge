@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="640" viewBox="0 0 1440 640" role="img" aria-labelledby="title description">
+  <title id="title">Bridge - Every game, one home</title>
+  <desc id="description">A dark amber and emerald illustration of the Bridge game library for Windows.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0d12"/>
+      <stop offset=".58" stop-color="#11151e"/>
+      <stop offset="1" stop-color="#0d1417"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#f8c45c"/>
+      <stop offset=".5" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#ff7849"/>
+    </linearGradient>
+    <linearGradient id="heroArt" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#17213b"/>
+      <stop offset=".47" stop-color="#263c47"/>
+      <stop offset=".48" stop-color="#8e4b3f"/>
+      <stop offset=".63" stop-color="#d1784f"/>
+      <stop offset=".64" stop-color="#142330"/>
+      <stop offset="1" stop-color="#0d131d"/>
+    </linearGradient>
+    <linearGradient id="coverOne" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#dc7b4d"/>
+      <stop offset=".48" stop-color="#5a3038"/>
+      <stop offset=".49" stop-color="#131c2b"/>
+    </linearGradient>
+    <linearGradient id="coverTwo" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#294b70"/>
+      <stop offset=".5" stop-color="#17263e"/>
+      <stop offset="1" stop-color="#a99658"/>
+    </linearGradient>
+    <linearGradient id="coverThree" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2f1f44"/>
+      <stop offset=".48" stop-color="#a34e79"/>
+      <stop offset=".5" stop-color="#dda05e"/>
+      <stop offset="1" stop-color="#151825"/>
+    </linearGradient>
+    <linearGradient id="coverFour" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#173a31"/>
+      <stop offset=".55" stop-color="#10231e"/>
+      <stop offset="1" stop-color="#559279"/>
+    </linearGradient>
+    <radialGradient id="amberGlow">
+      <stop stop-color="#f59e0b" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="greenGlow">
+      <stop stop-color="#10b981" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0v56" fill="none" stroke="#fff" stroke-opacity=".025"/>
+    </pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#000" flood-opacity=".58"/>
+    </filter>
+    <filter id="smallShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".48"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="windowClip">
+      <rect x="0" y="0" width="650" height="412" rx="22"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1440" height="640" rx="36" fill="url(#background)"/>
+  <rect width="1440" height="640" rx="36" fill="url(#grid)"/>
+  <circle cx="216" cy="86" r="300" fill="url(#amberGlow)"/>
+  <circle cx="1260" cy="550" r="370" fill="url(#greenGlow)"/>
+
+  <g opacity=".42" fill="none" stroke-linecap="round">
+    <path d="M604 542C766 438 812 125 1147 84" stroke="#f59e0b" stroke-opacity=".2"/>
+    <path d="M570 577C798 492 915 165 1240 123" stroke="#10b981" stroke-opacity=".16"/>
+    <circle cx="1150" cy="84" r="5" fill="#f59e0b" stroke="none" filter="url(#glow)"/>
+    <circle cx="1240" cy="123" r="4" fill="#10b981" stroke="none" filter="url(#glow)"/>
+  </g>
+
+  <g transform="translate(82 78)">
+    <g transform="translate(0 2)">
+      <rect width="48" height="48" rx="14" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-opacity=".35"/>
+      <g transform="translate(8 8)" fill="none" stroke="#f59e0b" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5v23M21 5v23M4 25c4.3-2.2 7-8.3 7-16M28 25c-4.3-2.2-7-8.3-7-16M5 28c6.8-3.6 15.2-3.6 22 0"/>
+      </g>
+      <text x="64" y="32" fill="#f7f5ef" font-family="Inter, Segoe UI, sans-serif" font-size="23" font-weight="750" letter-spacing="-1">Bridge</text>
+    </g>
+
+    <text x="0" y="154" fill="#8e95a3" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" letter-spacing="2.5">YOUR WHOLE LIBRARY</text>
+    <text x="-4" y="235" fill="#f7f5ef" font-family="Inter, Segoe UI, sans-serif" font-size="76" font-weight="780" letter-spacing="-6">Every game.</text>
+    <text x="-4" y="310" fill="url(#amber)" font-family="Inter, Segoe UI, sans-serif" font-size="76" font-weight="780" letter-spacing="-6">One home.</text>
+    <text x="0" y="366" fill="#a8adba" font-family="Inter, Segoe UI, sans-serif" font-size="19">
+      Steam, Epic, manual games, and emulated ROMs.
+    </text>
+    <text x="0" y="394" fill="#a8adba" font-family="Inter, Segoe UI, sans-serif" font-size="19">
+      One beautiful, local collection for Windows.
+    </text>
+
+    <g transform="translate(0 448)">
+      <rect width="168" height="46" rx="13" fill="#f59e0b"/>
+      <path d="M22 15v12m0 0 5-5m-5 5-5-5M15 32h14" fill="none" stroke="#241804" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="43" y="29" fill="#241804" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="800">GET BRIDGE</text>
+
+      <g transform="translate(190)">
+        <rect width="184" height="46" rx="13" fill="#fff" fill-opacity=".035" stroke="#fff" stroke-opacity=".14"/>
+        <circle cx="23" cy="23" r="4" fill="#10b981"/>
+        <text x="39" y="28" fill="#d7dae1" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700">LOCAL-FIRST</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(710 112) rotate(-1.5 325 206)" filter="url(#shadow)">
+    <g clip-path="url(#windowClip)">
+      <rect width="650" height="412" rx="22" fill="#111722" stroke="#fff" stroke-opacity=".15"/>
+      <rect width="650" height="43" fill="#151b29"/>
+      <path d="M0 43h650" stroke="#fff" stroke-opacity=".07"/>
+
+      <g transform="translate(15 10)">
+        <rect width="24" height="24" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-opacity=".32"/>
+        <g transform="translate(5 5)" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round">
+          <path d="M4.5 2v11M9.5 2v11M1 12c2-1 3.5-4 3.5-8M13 12c-2-1-3.5-4-3.5-8M1.5 14c3.5-2 8-2 11.5 0"/>
+        </g>
+        <text x="33" y="16" fill="#e8e8ea" font-family="Inter, Segoe UI, sans-serif" font-size="9" font-weight="750">Bridge</text>
+      </g>
+
+      <g transform="translate(248 10)">
+        <rect width="158" height="23" rx="7" fill="#fff" fill-opacity=".035" stroke="#fff" stroke-opacity=".075"/>
+        <circle cx="13" cy="11.5" r="3.5" fill="none" stroke="#778094" stroke-width="1"/>
+        <path d="m15.5 14 3 3" stroke="#778094" stroke-width="1" stroke-linecap="round"/>
+        <text x="27" y="15" fill="#697184" font-family="Inter, Segoe UI, sans-serif" font-size="7">Search your library</text>
+      </g>
+
+      <rect y="43" width="48" height="369" fill="#0e121c" fill-opacity=".82"/>
+      <path d="M48 43v369" stroke="#fff" stroke-opacity=".07"/>
+      <g transform="translate(10 65)">
+        <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity=".12"/>
+        <g transform="translate(7 7)" fill="none" stroke="#f59e0b" stroke-width="1.2">
+          <path d="M2 2h4v11H2zM7 2h4v11H7zM12 2h3v11h-3z"/>
+        </g>
+        <g transform="translate(7 54)" fill="none" stroke="#677185" stroke-width="1.2">
+          <path d="M5 3h5a4 4 0 0 1 3.8 2.7l.8 2.4c.7 2-1.8 3.5-3.3 2L10 8.7H5L3.6 10c-1.4 1.5-3.9 0-3.2-2l.8-2.4A4 4 0 0 1 5 3z"/>
+        </g>
+        <path d="M5 112c6-7 14 0 14 0s8-7 14 0c0 9-14 16-14 16S5 121 5 112z" transform="scale(.55) translate(7 110)" fill="none" stroke="#677185" stroke-width="2"/>
+      </g>
+
+      <g transform="translate(70 66)">
+        <text x="0" y="15" fill="#f1f1f3" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="750">Good evening</text>
+        <text x="94" y="15" fill="#70798b" font-family="Inter, Segoe UI, sans-serif" font-size="8">124 games</text>
+
+        <g transform="translate(0 34)">
+          <rect width="556" height="195" rx="15" fill="url(#heroArt)" stroke="#fff" stroke-opacity=".09"/>
+          <path d="M0 0h556v195H0z" fill="url(#background)" opacity=".16"/>
+          <path d="M0 0h290v195H0z" fill="#070a10" opacity=".62"/>
+          <g transform="translate(20 25)">
+            <rect width="58" height="17" rx="8.5" fill="#080b10" fill-opacity=".48" stroke="#fff" stroke-opacity=".14"/>
+            <text x="11" y="11.5" fill="#c5c9d2" font-family="Inter, Segoe UI, sans-serif" font-size="6" font-weight="700">ADVENTURE</text>
+            <text x="0" y="60" fill="#fff" font-family="Inter, Segoe UI, sans-serif" font-size="27" font-weight="750" letter-spacing="-1.5">Echoes of Aster</text>
+            <text x="0" y="82" fill="#a8adba" font-family="Inter, Segoe UI, sans-serif" font-size="7.5">A distant signal. A forgotten city.</text>
+            <text x="0" y="94" fill="#a8adba" font-family="Inter, Segoe UI, sans-serif" font-size="7.5">One final crossing through the stars.</text>
+            <rect y="117" width="70" height="27" rx="8" fill="#10b981"/>
+            <path d="m13 125 9 5.5-9 5.5z" fill="#03140e"/>
+            <text x="29" y="134" fill="#03140e" font-family="Inter, Segoe UI, sans-serif" font-size="8" font-weight="850">PLAY</text>
+          </g>
+          <g transform="translate(388 137)">
+            <rect width="145" height="39" rx="9" fill="#080b10" fill-opacity=".64" stroke="#fff" stroke-opacity=".1"/>
+            <text x="11" y="15" fill="#f0f1f3" font-family="Inter, Segoe UI, sans-serif" font-size="7.5" font-weight="750">18.4 hours</text>
+            <text x="105" y="15" fill="#858d9c" font-family="Inter, Segoe UI, sans-serif" font-size="5.5">66%</text>
+            <rect x="11" y="24" width="123" height="3" rx="1.5" fill="#fff" fill-opacity=".11"/>
+            <rect x="11" y="24" width="82" height="3" rx="1.5" fill="#10b981"/>
+          </g>
+        </g>
+
+        <text x="0" y="253" fill="#dfe1e6" font-family="Inter, Segoe UI, sans-serif" font-size="9" font-weight="700">Recently added</text>
+        <g transform="translate(0 267)">
+          <rect width="83" height="108" rx="8" fill="url(#coverOne)" stroke="#fff" stroke-opacity=".1"/>
+          <rect x="94" width="83" height="108" rx="8" fill="url(#coverTwo)" stroke="#fff" stroke-opacity=".1"/>
+          <rect x="188" width="83" height="108" rx="8" fill="url(#coverThree)" stroke="#fff" stroke-opacity=".1"/>
+          <rect x="282" width="83" height="108" rx="8" fill="url(#coverFour)" stroke="#fff" stroke-opacity=".1"/>
+          <rect x="376" width="83" height="108" rx="8" fill="url(#coverTwo)" stroke="#fff" stroke-opacity=".1"/>
+          <rect x="470" width="83" height="108" rx="8" fill="url(#coverOne)" stroke="#fff" stroke-opacity=".1"/>
+        </g>
+      </g>
+    </g>
+    <rect width="650" height="412" rx="22" fill="none" stroke="#fff" stroke-opacity=".14"/>
+  </g>
+
+  <g transform="translate(1215 476)" filter="url(#smallShadow)">
+    <rect width="154" height="58" rx="15" fill="#151b28" fill-opacity=".94" stroke="#fff" stroke-opacity=".14"/>
+    <circle cx="27" cy="29" r="13" fill="#10b981" fill-opacity=".12"/>
+    <path d="m23 29 3 3 6-7" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="49" y="25" fill="#f1f2f4" font-family="Inter, Segoe UI, sans-serif" font-size="9" font-weight="750">LOCAL-FIRST</text>
+    <text x="49" y="39" fill="#747c8b" font-family="Inter, Segoe UI, sans-serif" font-size="7">Your library stays yours</text>
+  </g>
+
+  <path d="M36 603h1368" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(82 611)" fill="#6d7482" font-family="Inter, Segoe UI, sans-serif" font-size="9" font-weight="700" letter-spacing="1.3">
+    <text>WINDOWS 10 / 11</text>
+    <circle cx="126" cy="-3" r="2" fill="#f59e0b"/>
+    <text x="142">NO ACCOUNT</text>
+    <circle cx="255" cy="-3" r="2" fill="#f59e0b"/>
+    <text x="271">NO SUBSCRIPTION</text>
+    <circle cx="427" cy="-3" r="2" fill="#f59e0b"/>
+    <text x="443">OPEN SOURCE</text>
+  </g>
+</svg>
