@@ -851,11 +851,6 @@ public partial class MainViewModel : ObservableObject
 
             _ = PreloadArtworkAsync();
             await CheckForUpdatesCoreAsync(promptWhenUpToDate: false);
-
-            // TEMP: memory diagnostics — one settled snapshot once startup work is
-            // done ("at rest"), then a periodic idle tick to catch slow growth.
-            Bridge.MemoryDiagnostics.Snapshot("startup complete (at rest)", this, settle: true);
-            Bridge.MemoryDiagnostics.StartPeriodic(this);
         }
         catch (Exception ex)
         {

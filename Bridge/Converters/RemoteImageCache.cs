@@ -77,16 +77,6 @@ public static class RemoteImageCache
     public static bool IsCached(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native) =>
         CacheContains(new CacheKey(url, size));
 
-    // TEMP: memory diagnostics — count and decoded-byte total of the live image
-    // cache. Reversible: delete this method and the MemoryDiagnostics caller.
-    internal static (int Count, long ApproxBytes) MemorySnapshot()
-    {
-        lock (CacheLock)
-        {
-            return (CacheIndex.Count, _cacheBytes);
-        }
-    }
-
     /// <summary>
     /// Synchronously decodes <paramref name="url"/> into the (url, size) cache from
     /// LOCAL sources only — a local file path, or a remote image whose bytes are
