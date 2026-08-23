@@ -56,6 +56,8 @@ public class JsonValueConverter<T> : ValueConverter<T, string>
         }
     }
 
+    // Keep collection fields non-null (new List<>) while nullable/value fields
+    // fall back to default, so malformed JSON in one cell doesn't break load.
     private static T CreateEmptyValue() =>
         typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)
             ? (T)Activator.CreateInstance(typeof(T))!

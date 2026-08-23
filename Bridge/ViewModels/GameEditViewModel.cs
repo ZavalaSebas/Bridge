@@ -20,6 +20,7 @@ public partial class GameEditViewModel : ObservableObject
     private readonly IRepository<Platform> _platformRepository;
     private readonly IRepository<GameSource> _sourceRepository;
     private readonly SteamGridDbSettings _steamGridDbSettings;
+    // Breaks the OnHeroBackgroundKindChanged ↔ OnBackgroundImageChanged feedback loop during two-way sync.
     private bool _suppressHeroBackgroundSync;
 
     /// <summary>True when the window opened for a brand-new manual game (so Save

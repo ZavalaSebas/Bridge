@@ -91,14 +91,17 @@ public sealed class GameUninstaller
         }
         catch (JsonException)
         {
+            // Can't read Epic's installed list (missing/locked/garbled) — treat app as not present.
             return false;
         }
         catch (IOException)
         {
+            // Can't read Epic's installed list (missing/locked/garbled) — treat app as not present.
             return false;
         }
         catch (UnauthorizedAccessException)
         {
+            // Can't read Epic's installed list (missing/locked/garbled) — treat app as not present.
             return false;
         }
     }

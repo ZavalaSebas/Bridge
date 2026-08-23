@@ -228,6 +228,7 @@ public static class CachedImage
         }
         catch
         {
+            // Corrupt/missing/locked image file — fall back to default artwork.
             return null;
         }
     }
@@ -251,6 +252,7 @@ public static class CachedImage
         }
         catch
         {
+            // Header unreadable — decode at native size instead of a clamped bucket.
             return 0;
         }
     }

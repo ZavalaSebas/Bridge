@@ -275,8 +275,9 @@ public class GameLauncher(IRepository<Emulator> emulatorRepository)
     {
         // The launched PID may already be gone (a launcher that spawned the game
         // and exited), so expand the tree from the snapshot and kill every live
-        // member — the game itself is a descendant. Returns true if anything
-        // was actually killed.
+        // member — the game itself is a descendant. Multiple passes are needed
+        // because launcher chains can be multi-hop (launcher → updater → game).
+        // Returns true if anything was actually killed.
         var snapshot = ProcessTreeSnapshot.Collect();
         var tree = new HashSet<int> { pid };
         bool changed;
