@@ -2,6 +2,7 @@ using Bridge.Services;
 
 namespace Bridge.Tests.Services;
 
+[Collection(nameof(AppDataSettingsTestCollection))]
 public class WhatsNewSettingsStoreTests : IDisposable
 {
     private readonly string _path = Config.WhatsNewSeenFilePath;

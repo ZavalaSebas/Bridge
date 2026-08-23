@@ -2,6 +2,7 @@ using Bridge.Services;
 
 namespace Bridge.Tests.Services;
 
+[Collection(nameof(AppDataSettingsTestCollection))]
 public class SetupWizardServiceTests : IDisposable
 {
     private readonly TrackedFile _setup = Track(Config.SetupCompleteFilePath, Path.Combine(Config.AppDataPath, "setup-complete.txt"));
