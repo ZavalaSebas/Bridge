@@ -58,8 +58,7 @@ public partial class MainViewModel
             // between set and restore) so it nests cleanly even if a watched-folder
             // scan overlaps. Persist the batch BEFORE adding rows to the UI so a
             // failed insert can't leave games showing that aren't in the database.
-            var previousSuspend = _suspendDetailedRows;
-            _suspendDetailedRows = true;
+            _suspendDetailedRows++;
             try
             {
                 foreach (var game in found)
@@ -101,12 +100,7 @@ public partial class MainViewModel
             }
             finally
             {
-                _suspendDetailedRows = previousSuspend;
-            }
-
-            if (!previousSuspend)
-            {
-                RebuildDetailedRows();
+                EndDetailRowSuspension();
             }
 
             // DAT re-identification runs its own synchronous suspend region after.
@@ -245,7 +239,7 @@ public partial class MainViewModel
         Func<List<GameMetadata>> enumerate,
         Action<Game>? applyLocalArtwork)
     {
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             var found = await Task.Run(enumerate);
@@ -325,7 +319,6 @@ public partial class MainViewModel
                 }
             }
 
-            RebuildDetailedRows();
             RefreshStatistics();
             InvalidateReferenceCaches();
             RefreshAllEmulatorDownloadStates();
@@ -337,7 +330,7 @@ public partial class MainViewModel
         }
         finally
         {
-            _suspendDetailedRows = false;
+            EndDetailRowSuspension();
         }
     }
 
@@ -410,10 +403,9 @@ public partial class MainViewModel
             .ToList());
 
         // Apply the resolved changes on the UI thread, one repository update per game
-        // that actually changed, with the row rebuild suspended until the end.
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
-        var applied = 0;
+        // that actually changed. Each RefreshListDisplay marks the rows dirty, so the
+        // suspension's outermost scope rebuilds once when it unwinds.
+        _suspendDetailedRows++;
         try
         {
             foreach (var (game, platform, match, matched) in resolved)
@@ -466,17 +458,11 @@ public partial class MainViewModel
 
                 _gameRepository.Update(game);
                 RefreshListDisplay(game);
-                applied++;
             }
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
-        }
-
-        if (applied > 0 && !previousSuspend)
-        {
-            RebuildDetailedRows();
+            EndDetailRowSuspension();
         }
     }
 }

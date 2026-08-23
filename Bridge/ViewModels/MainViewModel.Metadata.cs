@@ -130,8 +130,7 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -188,16 +187,13 @@ public partial class MainViewModel
             // Batch seal metadata markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
-            if (applied > 0 && !previousSuspend)
-                RebuildDetailedRows();
-
             StatusMessage = applied > 0
                 ? Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count)
                 : Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count);
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
+            EndDetailRowSuspension();
             EndStatusProgress();
         }
     }
@@ -499,8 +495,7 @@ public partial class MainViewModel
             ReportBatchProgress(0, totalWork);
         }
 
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             if (needMetadata.Count > 0)
@@ -610,12 +605,10 @@ public partial class MainViewModel
             if (needLinksOnly.Count > 0)
                 _gameRepository.UpdateManyMetadataSyncMarkers(needLinksOnly, MetadataSyncMarker.Links);
 
-            if (applied > 0 && !previousSuspend)
-                RebuildDetailedRows();
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
+            EndDetailRowSuspension();
             if (totalWork > 0)
                 EndStatusProgress();
         }
@@ -658,8 +651,7 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -710,9 +702,6 @@ public partial class MainViewModel
             // Batch seal metadata markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
-            if (applied > 0 && !previousSuspend)
-                RebuildDetailedRows();
-
             StatusMessage = applied > 0
                 ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count)
                 : !IsNetworkAvailable()
@@ -721,7 +710,7 @@ public partial class MainViewModel
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
+            EndDetailRowSuspension();
             EndStatusProgress();
         }
     }
@@ -752,8 +741,7 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -808,15 +796,12 @@ public partial class MainViewModel
             // Batch seal metadata markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
-            if (applied > 0 && !previousSuspend)
-                RebuildDetailedRows();
-
             if (applied > 0)
                 StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
+            EndDetailRowSuspension();
             EndStatusProgress();
         }
     }
@@ -847,8 +832,7 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -903,15 +887,12 @@ public partial class MainViewModel
             // Batch seal metadata markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
-            if (applied > 0 && !previousSuspend)
-                RebuildDetailedRows();
-
             if (applied > 0)
                 StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
+            EndDetailRowSuspension();
             EndStatusProgress();
         }
     }
@@ -929,8 +910,7 @@ public partial class MainViewModel
 
         using var throttle = new SemaphoreSlim(2);
 
-        var previousSuspend = _suspendDetailedRows;
-        _suspendDetailedRows = true;
+        _suspendDetailedRows++;
         try
         {
             foreach (var batch in candidates.Chunk(8))
@@ -967,12 +947,10 @@ public partial class MainViewModel
             // Batch seal TimeToBeat markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.TimeToBeat);
 
-            if (!previousSuspend)
-                RebuildDetailedRows();
         }
         finally
         {
-            _suspendDetailedRows = previousSuspend;
+            EndDetailRowSuspension();
         }
     }
 

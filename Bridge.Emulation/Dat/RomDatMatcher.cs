@@ -52,6 +52,15 @@ public sealed class RomDatMatcher
             return false;
 
         var hasKnownCrc = !string.IsNullOrWhiteSpace(knownCrc);
+
+        // With a stored CRC we skip re-reading/re-hashing the file, but still confirm
+        // it's actually present — otherwise a deleted or unreadable ROM would keep
+        // matching on its old CRC and retain stale DAT identity. RomFileExists also
+        // validates the entry inside an archive. The fresh-hash path fails naturally
+        // when the file can't be read.
+        if (hasKnownCrc && !RomArchivePath.RomFileExists(romPath))
+            return false;
+
         var crcHex = hasKnownCrc ? knownCrc : RomCrc32.TryComputeFromRomPath(romPath);
         if (string.IsNullOrWhiteSpace(crcHex))
             return false;

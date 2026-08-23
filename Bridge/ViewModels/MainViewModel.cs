@@ -214,13 +214,26 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private UserProfile _userProfile = UserProfileSettingsStore.Load();
 
-    // True during bulk imports and metadata sync so the per-row collection
-    // changes don't each trigger a full RebuildDetailedRows (O(n²) on large
-    // libraries); those operations call RebuildDetailedRows once when they finish.
-    // TODO: this is a bool with per-method save/restore — safe for the sequential
-    // startup sync, but a depth counter would harden it against two overlapping
-    // suspend regions (deferred; would also touch the import + the CollectionChanged handler).
-    private bool _suspendDetailedRows;
+    // Detailed-row rebuilds are O(n); bulk imports and metadata sync suspend them
+    // and rebuild once at the end instead of per collection change (which was O(n²)
+    // on large libraries). This is a DEPTH COUNTER, not a bool: overlapping async
+    // operations (e.g. a watched-folder scan starting while a metadata sync is
+    // parked at an await) increment/decrement it, so it can never get stuck
+    // "suspended". _detailRowsDirty records that something changed while suspended
+    // so the OUTERMOST scope (the one that returns the depth to zero) always
+    // rebuilds — even if its own work applied nothing. Enter/leave a scope with
+    // _suspendDetailedRows++ and EndDetailRowSuspension().
+    private int _suspendDetailedRows;
+    private bool _detailRowsDirty;
+
+    private void EndDetailRowSuspension()
+    {
+        if (--_suspendDetailedRows == 0 && _detailRowsDirty)
+        {
+            _detailRowsDirty = false;
+            RebuildDetailedRows();
+        }
+    }
 
     [ObservableProperty]
     private GameSortField _sortField;
@@ -745,9 +758,15 @@ public partial class MainViewModel : ObservableObject
         GamesView.Filter = GameMatchesSearch;
         ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) =>
         {
-            if (!_suspendDetailedRows)
+            if (_suspendDetailedRows == 0)
             {
                 RebuildDetailedRows();
+            }
+            else
+            {
+                // Remember a change happened while suspended so the outermost
+                // scope rebuilds once when it unwinds.
+                _detailRowsDirty = true;
             }
         };
         RebuildDetailedRows();
