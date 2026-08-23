@@ -904,8 +904,9 @@ public partial class MainViewModel : ObservableObject
                 urls.Add(selected.Icon);
             if (!string.IsNullOrWhiteSpace(selected.CoverImage))
                 urls.Add(selected.CoverImage);
-            if (!string.IsNullOrWhiteSpace(selected.BackgroundImage))
-                urls.Add(selected.BackgroundImage);
+            // The hero/background is warmed at the Hero bucket separately
+            // (WarmSelectedHeroFromDisk + the FadeImage), so it isn't preloaded at
+            // Native here — that decoded the same image twice.
             AddDescriptionImageUrls(selected, urls);
         }
 
@@ -942,6 +943,18 @@ public partial class MainViewModel : ObservableObject
     {
         var preload = PreloadArtworkAsync();
         await Task.WhenAny(preload, Task.Delay(TimeSpan.FromSeconds(3))).ConfigureAwait(false);
+    }
+
+    // Decodes the selected game's hero from the on-disk cache (or a local file)
+    // into the Hero bucket synchronously, so App can paint it before the window
+    // shows and there's no black flash. Never downloads: a not-yet-cached remote
+    // hero falls back to the async preload + the FadeImage's on-demand decode.
+    // No-op for default/black heroes or when nothing is selected.
+    public void WarmSelectedHeroFromDisk()
+    {
+        var hero = SelectedGame?.BackgroundImage;
+        if (HeroBackground.IsCustom(hero))
+            RemoteImageCache.TryWarmFromDisk(hero!, ArtworkDecodeSize.Hero);
     }
 
     private void LoadGames()

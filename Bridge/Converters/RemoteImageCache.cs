@@ -64,6 +64,91 @@ public static class RemoteImageCache
     public static bool IsCached(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native) =>
         Cache.ContainsKey(new CacheKey(url, size));
 
+    /// <summary>
+    /// Synchronously decodes <paramref name="url"/> into the (url, size) cache from
+    /// LOCAL sources only — a local file path, or a remote image whose bytes are
+    /// already in the on-disk cache. Never downloads: returns false when a remote
+    /// image isn't on disk yet, so startup can warm the selected hero without ever
+    /// blocking on the network. Safe to call on the UI thread.
+    /// NOTE: the decode below is duplicated from LoadSynchronously on purpose —
+    /// LoadSynchronously (the live cache path) is left untouched to avoid any risk.
+    /// </summary>
+    public static bool TryWarmFromDisk(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
+    {
+        var key = new CacheKey(url, size);
+        if (Cache.ContainsKey(key))
+            return true;
+
+        try
+        {
+            BitmapImage image;
+
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                uri.Scheme is "http" or "https" &&
+                UrlValidator.IsSafeHttpUrl(uri.AbsoluteUri))
+            {
+                // Remote artwork: only the on-disk byte cache — never download here.
+                var bytes = TryReadDiskBytes(uri);
+                if (bytes is null)
+                    return false;
+
+                var decodeWidth = DecodeWidthFor(size, () => new MemoryStream(bytes));
+
+                using var stream = new MemoryStream(bytes);
+                var remote = new BitmapImage();
+                remote.BeginInit();
+                remote.CacheOption = BitmapCacheOption.OnLoad;
+                if (decodeWidth > 0)
+                    remote.DecodePixelWidth = decodeWidth;
+                remote.StreamSource = stream;
+                remote.EndInit();
+                remote.Freeze();
+                image = remote;
+            }
+            else
+            {
+                // Local file path — a direct disk read, no network.
+                var localWidth = DecodeWidthFor(size, () => File.OpenRead(new Uri(url).LocalPath));
+                var local = new BitmapImage();
+                local.BeginInit();
+                local.CacheOption = BitmapCacheOption.OnLoad;
+                if (localWidth > 0)
+                    local.DecodePixelWidth = localWidth;
+                local.UriSource = new Uri(url);
+                local.EndInit();
+                local.Freeze();
+                image = local;
+            }
+
+            Cache[key] = image;
+            CacheOrder.Enqueue(key);
+            TrimCache();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // The on-disk read half of GetBytes, without the download fallback — so this
+    // path never touches the network. Returns null when the image isn't cached yet.
+    private static byte[]? TryReadDiskBytes(Uri uri)
+    {
+        var file = Path.Combine(Config.ImageCachePath, CacheKeyFor(uri.AbsoluteUri));
+        if (!File.Exists(file))
+            return null;
+
+        try
+        {
+            return File.ReadAllBytes(file);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>Warms the cache for a set of URLs (e.g. every game's icon at startup).</summary>
     public static void Preload(IEnumerable<string> urls, ArtworkDecodeSize size = ArtworkDecodeSize.Native)
     {

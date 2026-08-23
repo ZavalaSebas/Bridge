@@ -156,6 +156,16 @@ namespace Bridge
                     DataContext = viewModel
                 };
                 MainWindow = mainWindow;
+                // Paint the selected game's hero from the disk cache before Show so the
+                // window opens with it already up (no black flash). Disk/local only —
+                // returns immediately if it would need a download.
+                viewModel.WarmSelectedHeroFromDisk();
+                // TEMP: confirm the hero is warmed at Hero (and not duplicated at Native) before Show
+                var heroBg = viewModel.SelectedGame?.BackgroundImage;
+                Bridge.StartupTiming.Note(HeroBackground.IsCustom(heroBg)
+                    ? $"pre-Show hero cached: Native={RemoteImageCache.IsCached(heroBg!, ArtworkDecodeSize.Native)} Hero={RemoteImageCache.IsCached(heroBg!, ArtworkDecodeSize.Hero)}"
+                    : "pre-Show hero: default/empty");
+                Bridge.StartupTiming.Mark("hero warmed (pre-Show)"); // TEMP
                 // Start warming images while the splash is still up (non-blocking).
                 _ = viewModel.WaitForStartupArtworkAsync();
                 splash.Close();
