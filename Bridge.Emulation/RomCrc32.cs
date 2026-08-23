@@ -1,4 +1,5 @@
 using System.Buffers;
+using SharpCompress.Archives;
 namespace Bridge.Emulation;
 
 /// CRC-32 (PKZIP / clrmame / No-Intro polynomial) for ROM identification.
