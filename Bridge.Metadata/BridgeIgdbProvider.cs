@@ -88,10 +88,10 @@ public sealed class BridgeIgdbProvider(HttpClient httpClient) : IGameMetadataPro
             metadata.BackgroundImage = IgdbMetadataProvider.UpgradeImageUrl(artworkUrl, "t_1080p");
         }
 
-        // Galería de screenshots: IGDB guarda las capturas reales de cada juego
-        // (16:9), igual que Steam. Igual que con Steam, se muestran como galería
-        // en el detalle — solo los juegos con al menos 2 screenshots muestran la
-        // galería (ScreenshotGallery se auto-colapsa si no hay).
+        // Screenshot gallery: IGDB keeps the game's real screenshots (16:9),
+        // same as Steam. They are shown in the details gallery; only games with
+        // at least 2 screenshots expose the gallery tab (ScreenshotGallery
+        // collapses itself when empty).
         if (game.Screenshots is { Count: > 0 } screenshots)
         {
             metadata.Screenshots = screenshots

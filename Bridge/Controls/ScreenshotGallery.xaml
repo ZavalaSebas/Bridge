@@ -27,7 +27,7 @@
             <TextBlock Text="{Binding CounterText, ElementName=Root, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
-        <!-- Vista principal: fondo frosted (la misma screenshot borrosa) + imagen grande con crossfade -->
+        <!-- Main view: frosted backdrop (same screenshot, blurred) + large cross-faded image -->
         <Border x:Name="MainViewBorder" Grid.Row="1" Height="320" CornerRadius="10" ClipToBounds="True" Background="#151A28" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
             <Grid>
                 <Image x:Name="BackdropImage" Stretch="UniformToFill" Margin="-60" Opacity="0.45"
@@ -50,7 +50,7 @@
                                         RenderOptions.BitmapScalingMode="Fant"/>
                 </Button>
 
-                <!-- Flechas -->
+                <!-- Arrows -->
                 <Button x:Name="PrevButton" Click="Prev_Click" Width="44" Height="44" Background="{DynamicResource Bridge.Overlay.Background}" BorderThickness="0" Foreground="{StaticResource TextFillColorPrimaryBrush}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="14,0" ToolTip="{x:Static res:Strings.PreviousScreenshotTooltip}" Padding="0">
                     <Button.Template><ControlTemplate TargetType="Button"><Border x:Name="Bd" CornerRadius="22" Background="{TemplateBinding Background}" Padding="0"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#99000000"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#B3000000"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>
                     <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center"/>
@@ -62,7 +62,7 @@
             </Grid>
         </Border>
 
-        <!-- Strip de miniaturas -->
+        <!-- Thumbnail strip -->
         <ScrollViewer x:Name="ThumbScroll" Grid.Row="2" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Margin="0,12,0,0" Padding="0,0,0,16" PreviewMouseMove="ThumbScroll_MouseMove" PreviewMouseLeftButtonDown="ThumbScroll_MouseLeftButtonDown" PreviewMouseLeftButtonUp="ThumbScroll_MouseLeftButtonUp" MouseLeave="ThumbScroll_MouseLeave" Cursor="Hand">
             <ItemsControl x:Name="ThumbnailStrip">
                 <ItemsControl.ItemsPanel>
@@ -93,8 +93,8 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <!-- Overlay dentro de la ventana: fondo oscuro translúcido que cubre toda
-             la ventana + panel de galería más pequeño centrado (borde visible) -->
+        <!-- In-window fullscreen overlay: translucent dark background covers the
+             whole window; gallery panel stays smaller and centered (frame visible) -->
         <Popup x:Name="FullscreenPopup" AllowsTransparency="True" Placement="Center" StaysOpen="True"
                IsHitTestVisible="True" Focusable="True" KeyDown="Fullscreen_KeyDown">
             <Popup.Child>

@@ -311,9 +311,9 @@ public partial class ScreenshotGallery : UserControl
         FullscreenCounter.Text = CounterText;
         _autoPaused = true;
 
-        // Overlay dentro de la propia ventana: el Popup cubre toda la ventana con
-        // un fondo oscuro translúcido, y el panel de la galería (con su Margin
-        // interno) queda más pequeño centrado con borde del fondo visible.
+        // Fullscreen overlay inside this window: the Popup covers the whole
+        // window with a translucent dark background, and the gallery panel stays
+        // centered with an inner margin so the dark frame remains visible.
         if (Window.GetWindow(this) is { } window)
         {
             FullscreenPopup.PlacementTarget = window;

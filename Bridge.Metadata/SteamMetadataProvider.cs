@@ -16,10 +16,10 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
     private const string SearchUrl = "https://store.steampowered.com/search/?term={0}&ignore_preferences=1&category1=998&ndl=1";
     private const string CoverVerticalUrl = "https://steamcdn-a.akamaihd.net/steam/apps/{0}/library_600x900_2x.jpg";
 
-    // Fondo estándar de Steam: el library_hero (1920x620, 3.1:1). Es la imagen
-    // oficial de la librería y en el hero de Bridge casi no se recorta nada — se
-    // ve completa y consistente entre juegos. Las screenshots (16:9) recortan
-    // ~25% de su alto en pantallas anchas, así que quedan para otra sección.
+    // Steam's library_hero (1920x620, 3.1:1) is the official library image and
+    // is barely cropped in Bridge's hero, so it stays consistent across games.
+    // 16:9 screenshots lose roughly 25% height on wide viewports, so they are
+    // kept for a separate gallery section.
     private const string HeroUrl = "https://steamcdn-a.akamaihd.net/steam/apps/{0}/library_hero.jpg";
 
     public string Name => "Steam Store";
@@ -222,12 +222,12 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (data.Categories is { Count: > 0 })
             metadata.Features = data.Categories.Select(c => c.Description).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
 
-        // Fondo estándar de Steam: el library_hero (1920x620).
+        // Steam's standard hero background: library_hero (1920x620).
         metadata.BackgroundImage = string.Format(HeroUrl, appId);
 
-        // Galería de screenshots: las path_full (1920x1080) sin el query string
-        // que Steam añade para redimensionar. Son el contenido real del juego —
-        // se muestran como galería en el detalle.
+        // Screenshot gallery: use full-resolution paths (1920x1080) without
+        // Steam's resize query string. These are the game's real screenshots and
+        // are shown in the details gallery.
         if (data.Screenshots is { Count: > 0 })
         {
             metadata.Screenshots = data.Screenshots
