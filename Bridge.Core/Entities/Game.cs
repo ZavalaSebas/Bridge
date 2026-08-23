@@ -79,6 +79,13 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public DateTime? Added { get; set; }
     public DateTime? Modified { get; set; }
 
+    /// <summary>Last time metadata (text, images, refs) was synced, successful or not.</summary>
+    public DateTime? MetadataSyncedAt { get; set; }
+    /// <summary>Last time social links were synced, successful or not.</summary>
+    public DateTime? LinksSyncedAt { get; set; }
+    /// <summary>Last time HowLongToBeat data was synced, successful or not.</summary>
+    public DateTime? TimeToBeatSyncedAt { get; set; }
+
     // Global scripts run before/after launch; per-game scripts can opt out of globals.
     public string PreScript { get; set; } = string.Empty;
     public string PostScript { get; set; } = string.Empty;
