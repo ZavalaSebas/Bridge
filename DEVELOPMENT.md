@@ -128,7 +128,7 @@ Bridge.Core/
 │   ├── LibraryFilterPreset.cs   # All/Favorite/Installed/NotPlayed/RecentlyPlayed filter predicates
 │   ├── GameSortField.cs         # 22 sortable fields, Description attribute = display label
 │   ├── GameGroupField.cs        # 21 groupable fields, Description attribute = display label
-│   ├── NavigationSection.cs     # sidebar sections: Library/Roms/Favorites/Sources/Statistics/Settings
+│   ├── NavigationSection.cs     # sidebar sections: Home/Library/Roms/Favorites/Sources/Statistics/Settings
 │   └── ViewMode.cs              # List / Covers / Table main-content views
 ├── Import/
 │   └── GameMetadata.cs        # importer-facing DTO — no MetadataProperty, see ADR-8
@@ -200,6 +200,7 @@ Bridge.Import/
 │   └── SteamPaths.cs               # reads HKCU\Software\Valve\Steam\SteamPath from Windows registry
 └── Epic/
     ├── EpicLibraryImporter.cs
+    ├── EpicCloudSaveLocator.cs     # Epic Cloud cache under Saved\Cloud\{account}\{appName}
     ├── EpicLauncherSessionReader.cs  # reads Epic launcher session for achievements API auth
     ├── EpicLauncherCrypt.cs
     ├── EpicManifestLookup.cs
@@ -227,9 +228,25 @@ The sort/group field enums live in `Bridge.Core.Enums`; the comparer/resolver li
 
 The window uses WPF-UI's `FluentWindow` with Mica backdrop (`WindowBackdropType="Mica"`), laid out as 3 rows:
 
-1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Epic / Scan ROMs... / Scan Automatically... / Add Manually..., **Refresh Library** (re-import Steam/Epic, rescan configured folders, sync missing metadata), **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **Check for updates…**, **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values are `ViewMode.List/Covers/Table`; legacy settings may still store `Grid`, mapped to Covers on load) + a Random-game placeholder button.
+1. **Top Panel** (`ui:TitleBar`, 56px): Logo button (opens the main menu: **Add Game** → Import from Steam / Epic / Scan ROMs... / Scan Automatically... / Add Manually..., **Refresh Library** (re-import Steam/Epic, rescan configured folders, sync missing metadata), **Support** → Ko-fi / GitHub Sponsors, **Sidebar** → Show Sidebar / Position (Left/Right/Top/Bottom), **Theme** → 9 accent presets + Custom..., **Settings** → IGDB... / Configure Emulator..., **Check for updates…**, **About Bridge...**, Exit — there's no Statistics item, that's the sidebar's job) + Search `TextBox` (460px, binds `SearchText`, **Ctrl+F** focuses it) + Filter/Sort/Group icon buttons (each opens a `ContextMenu` with options, see `MainWindow.xaml.cs` handlers) + 3 view mode toggle buttons (**List / Covers / Table**, segmented control — tooltips match those names; enum values are `ViewMode.List/Covers/Table`; legacy settings may still store `Grid`, mapped to Covers on load) + a Random-game placeholder button. Right side: **notifications bell** (`Alert24` + red unseen-count badge, opens the free-games popup; see Free game alerts below) + the user profile avatar (32px circle) + a pending-update download button (only when an update is awaiting confirmation). On `NavigationSection.Home` everything except the bell/avatar collapses so the hub owns the frame.
 
-2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail — **Library**, **ROMs**, **Favorites**, **Sources**, **Show hidden**, **Statistics**, **Settings** via `NavigationSection` in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Table views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics is active, the detail panel hides and the Statistics dashboard overlay spans all 3 columns. The detail panel can dock left or right (Settings → Appearance → Detail panel position).
+2. **Content Area** (`*`): a `DockPanel` with the **Sidebar** (52px icon rail — **Home**, **Library**, **ROMs**, **Favorites**, **Sources**, **Show hidden**, **Statistics**, **Settings** via `NavigationSection` in `Bridge.Core.Enums`, collapsible and re-positionable through its right-click menu) + 1px separator, then an inner `Grid` of 3 columns — `ViewsColumn` (360px, `MinWidth=200`, the List/Covers/Table views) + `Auto` (a 1px `DetailSeparator` + `GridSplitter`) + `DetailColumn` (`*`, `MinWidth=320`). When Statistics or Home is active, the library/detail layout hides and the matching overlay spans the area (Statistics dashboard, `HomeView` hub). The detail panel can dock left or right (Settings → Appearance → Detail panel position).
+
+### Home view (`NavigationSection.Home`, default startup section)
+
+`Bridge/Views/HomeView.xaml(.cs)` + `MainViewModel.Home.cs` — a streaming-service-style hub shown instead of the List/Covers/Table layout when the sidebar's **Home** entry is active (the saved startup view is `config/startup-section.txt` via `StartupSectionSettingsStore`, default **Library**; Settings → Appearance → Startup view switches it to Home/ROMs). Layout: a 420px **featured carousel** (`HomeFeaturedGames` — up to 7 games with artwork, favorites first; auto-advances every 5s, arrows + dot indicators, Play-now/More buttons whose label flips to Stop/Download via `IsRunning`/`NeedsEmulatorDownload` triggers) above horizontally-draggable rows (**What to play next**, **Continue playing**, **Recently added**, **Favorite picks**; each row hides its scrollbar, pans by mouse-drag with a click-suppression threshold, and has chevron arrows that page ±420px; the vertical wheel forwards to the main `ScrollViewer` so rows never block scrolling) plus a 260px right rail (**Continue** compact list + **Recent achievements** from the cached `GameAchievementsService` snapshots). Clicking a never-played game opens an in-Home **quick-view overlay** (`QuickViewGame` — hero, overview, screenshots, Play/More, prev/next arrows cycling the source row) instead of jumping away; clicking a played game selects it and navigates to Library. Right-rail entries launch the game and navigate to its detail. The whole view refreshes via `RefreshHome()` whenever `Games` changes.
+
+### Detail hero side buttons
+
+Optional floating tabs (`HeroSideButtonsHost`, `Panel.ZIndex=4`) protrude from the list edge over the Details hero — **Play/Stop** (theme-colored, always shows its label, widens 96→116/128 and slides outward when running/downloading), **More** (`Bridge.GameContextMenu`), **Edit** — in a stepped scale (104×56 > 44×44 > 38×38). They mirror the hero's `IsRunning`/`NeedsEmulatorDownload` state, flip sides/corner-radius with the detail-panel dock (`ApplySideButtonsPosition`), and are toggled by Settings → Appearance → **Detail hero buttons** (the normal hero row, `detail-hero-buttons.txt`, default on) and **Detail side buttons** (`detail-side-buttons.txt`, default off).
+
+### Free game alerts
+
+`FreeGamesService` polls GamerPower (`/api/giveaways?platform=epic-games-store|steam`, 1h in-memory cache, keeps only active `Game`-type giveaways with a real value) at startup and on demand (`RefreshFreeGamesCommand`). `MainViewModel.Notifications.cs` tracks unseen ids in `config/free-games-seen.json` (`FreeGamesSeenStore`) to drive the title-bar bell's badge; the popup lists thumbnail/platform/worth with a **Reclamar** button that opens the giveaway URL (Epic/Steam store pages open the claim flow in the launcher's browser session). `ToggleNotificationsPopupCommand` opens it; `MainWindow.PositionNotificationsPopup` pins it under the bell with `Placement=Relative` so it follows the window.
+
+### Window behavior
+
+**Minimize on game launch** (`MinimizeOnGameLaunchSettingsStore`, `minimize-on-game-launch.txt`, default on): `GameLauncher.GameStarted/Stopped` raise `MinimizeWindowRequested`/`RestoreWindowRequested` on the VM; `MainWindow` minimizes on launch and restores the previous `WindowState` when the session ends. **Danger zone** (Settings → bottom): *Delete all data* runs `AppDataPurgeService.PurgeAllData()` behind three confirmations — a confirm dialog, `DeleteConfirmWindow` (type `BORRAR` + check "I understand"), and a final confirm — then clears `%LOCALAPPDATA%\Bridge` (SQLite pools released first), recreates the skeleton dirs, and restarts.
 
 3. **Status strip** (`Auto`, 28px): `StatisticsSummary` on the left, `StatusMessage` next to it (tinted by `StatusMessageKind` — normal/warning/error), and an optional determinate/indeterminate `ProgressBar` (`ShowStatusProgress`, `StatusProgress`, `IsStatusProgressIndeterminate` on `MainViewModel`) for long operations — metadata sync/download, **Refresh Library**, artwork preload, RetroArch install, and app updates.
 
@@ -468,7 +485,16 @@ v2), so an interrupted migration never loses a preference.
 | `detail-section-position.txt` | `DetailSectionPositionSettingsStore` | Right | Details column left/right of Overview/Images |
 | `sidebar-translucent.txt` | `SidebarTranslucentSettingsStore` | false | Semi-transparent sidebar |
 | `translucent-background.txt` | `TranslucentBackgroundSettingsStore` | true | Blurred game art behind list/detail content |
+| `detail-hero-buttons.txt` | `DetailHeroButtonsSettingsStore` | true | Normal Play/More/Edit buttons on the Details hero |
+| `detail-side-buttons.txt` | `DetailSideButtonsSettingsStore` | false | Floating side tabs (Play/More/Edit) over the hero |
+| `startup-section.txt` | `StartupSectionSettingsStore` | Library | Startup view: Home / Library / ROMs |
+| `minimize-on-game-launch.txt` | `MinimizeOnGameLaunchSettingsStore` | true | Minimize on game start, restore on exit |
+| `free-games-seen.json` | `FreeGamesSeenStore` | — | Seen free-game promo ids for the bell badge |
 | `auto-apply-cheats-on-launch.txt` | `AutoApplyCheatsSettingsStore` | true | Auto-apply enabled RetroArch cheats on launch |
+| `rom-save-auto-backup.txt` | `RomSaveAutoBackupSettingsStore` | true | Copy ROM SRAM/savestates after each session |
+| `pc-save-auto-backup.txt` | `PcSaveAutoBackupSettingsStore` | true | Copy Steam/Epic/external save folders after each session |
+| `game-save-folders.json` | `GameSaveFolderStore` | — | Per-game save folders from More → Set Save Location |
+| `rom-organize-on-import.txt` | `RomOrganizeSettingsStore` | true | Move/rename ROMs into per-platform folders on import |
 | `whats-new-seen.txt` | `WhatsNewSettingsStore` | — | Last app version for which the What's New dialog was shown |
 | `rom-scan-folder.txt` | `RomScanFolderSettingsStore` | — | Watched ROM folder for Scan ROMs + auto-import |
 | `installed-scan-folder.txt` | `InstalledScanFolderSettingsStore` | — | Watched folder for Scan Automatically (Scan Folder) + auto-import |
@@ -482,7 +508,8 @@ v2), so an interrupted migration never loses a preference.
 Still at the AppData **root** (not under `config/`): `appdata-version.txt`
 (`AppDataMigrator`, last applied migration step) and `profile/` (`UserProfileAvatarHelper`,
 custom avatar images), alongside the operational folders `image-cache/`, `emulators/`,
-`emulator-downloads/`, `cheats/`, `ra-hash-index/`, `rom-dat/`, and `logs/`.
+`emulator-downloads/`, `cheats/`, `ra-hash-index/`, `rom-dat/`, `save-backups/`,
+`imported-roms/`, and `logs/`.
 
 Language, tray, and startup preferences are toggled in **Settings** (sidebar
 gear). Language changes restart Bridge; tray and startup apply immediately.
@@ -507,6 +534,31 @@ connections are open. The previous DB is quarantined as
 `bridge.db.corrupt-{timestamp}` when needed.
 
 Covered by `Bridge.Tests/Services/AppDataBackupServiceTests.cs`.
+
+### ROM save backups
+
+`Bridge/Services/RomSaveBackupService.cs` stores dated per-game copies under
+`%LOCALAPPDATA%\Bridge\save-backups\{gameId}\`. ROM games use RetroArch SRAM and
+savestates. Steam, Epic, and external games use the folder chosen in More → **Set Save
+Location** (`GameSaveFolderStore`, `config/game-save-folders.json`); Open /
+Backup / Restore stay hidden until that folder is set. Set Save Location can
+start the picker on a Steam Cloud, Epic Cloud, or common Windows folder when
+one exists — those are candidates, not a guaranteed live save path. Automatic snapshots run
+from `GameLauncher.GameStopped` (last 5 per game; identical copies are skipped;
+ROM vs PC toggles are separate). Manual **Backup Saves** / **Restore Saves**
+live on the game More menu. Restoring writes ROM files back into `saves/` /
+`states/` even if RetroArch was uninstalled, and PC files back into the mapped
+folder. Files larger than 64 MB in a mapped folder are skipped.
+
+`Bridge/Services/RomLibraryPackService.cs` is the portable zip from Settings:
+all ROM saves plus ROM files ≤ 500 MB, plus any mapped Steam/Epic/PC save folders.
+Import restores ROM saves, copies ROMs to the original folder when it still
+exists (otherwise the Scan ROMs folder / `imported-roms/`), and writes PC saves
+back to the stored folder (then re-applies that mapping).
+
+Covered by `Bridge.Tests/Services/RomSaveBackupServiceTests.cs`,
+`RomLibraryPackServiceTests.cs`, `GameSaveFolderStoreTests.cs`, and
+`PcSaveAutoBackupSettingsStoreTests.cs`.
 
 ### First-run setup wizard
 
@@ -754,7 +806,7 @@ Over time, documentation drifts from reality. Run this audit periodically (or wh
 
 ## Tests
 
-Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — 269 unit tests as of this writing (273 total including 4 integration tests). Live-network IGDB provider tests are tagged `Integration` and are **intentionally excluded from CI** (same `--filter "Category!=Integration"` in the workflow); run them locally with `dotnet test --filter Category=Integration` when you need to hit the real IGDB endpoints.
+Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integration"` — 472 unit tests as of this writing. Live-network IGDB provider tests are tagged `Integration` and are **intentionally excluded from CI** (same `--filter "Category!=Integration"` in the workflow); run them locally with `dotnet test --filter Category=Integration` when you need to hit the real IGDB endpoints.
 
 `Bridge.Tests` (`net10.0-windows` — not plain `net10.0`, because it references `Bridge`, a WPF project, and a plain-`net10.0` project can't reference a `net10.0-windows` one) covers:
 - `Storage/GameRepositoryTests.cs` — full field round-trip through real SQLite (not `:memory:` — the JSON-converter/EF mapping is exactly what needs verifying, and in-memory providers skip that code path), the `(ExternalId, SourceId)` dedup lookup, in-place `GameActions` mutation + `Update()`. Schema via `MigrateToLatest()`.
@@ -762,6 +814,13 @@ Run locally with: `dotnet test Bridge.slnx -c Release --filter "Category!=Integr
 - `Core/PathContainmentTests.cs` — `PathContainment.IsPathUnderDirectory`.
 - `Core/UrlValidatorTests.cs` — URL allowlist and SSRF host blocking.
 - `Services/SafeLauncherTests.cs` — uninstall-string parsing/rejection.
+- `Services/RomSaveBackupServiceTests.cs` — per-game SRAM and mapped PC folder snapshot create/restore/prune.
+- `Services/RomLibraryPackServiceTests.cs` — ROM pack zip includes small ROMs, skips large ones, import restores ROM and mapped PC saves.
+- `Services/GameSaveFolderStoreTests.cs` — per-game Set Save Location paths.
+- `Services/PcSaveAutoBackupSettingsStoreTests.cs` — Steam/Epic/PC post-session backup toggle.
+- `Services/GameSaveLocationResolverTests.cs` — ROM, Steam Cloud, Epic Cloud, and Windows-folder candidates.
+- `Import/EpicCloudSaveLocatorTests.cs` — Epic Cloud cache under Saved\\Cloud.
+- `Emulation/RomOrganizeServiceTests.cs` — per-platform folders, DAT filenames, sidecar SRAM, shared zip.
 - `Services/MetadataSyncServiceTests.cs` — metadata provider fallback chains.
 - `Metadata/BridgeIgdbProviderTests.cs`, `Metadata/PlayniteIgdbProviderTests.cs` — live-network integration tests (`Category=Integration`).
 - `Import/SteamLibraryImporterTests.cs` — library folder detection, StateFlags filtering, re-scan update behavior (fixtures shaped like real Steam `libraryfolders.vdf` / `appmanifest` files).
@@ -811,6 +870,7 @@ User-triggered URLs and uninstall commands must go through the shared helpers �
 |--------|----------|-----|
 | `UrlValidator.IsSafeToOpen` | `Bridge.Core/Utilities/UrlValidator.cs` | HTTPS + `steam://` + Epic launcher scheme allowlist; blocks `javascript:`, `file:`, private IPs (SSRF) |
 | `SafeLauncher.TryOpenUrl` | `Bridge/Services/SafeLauncher.cs` | Opens validated URLs (About, links panel, uninstall fallback browser) |
+| `SafeLauncher.TryOpenDirectory` | same | Opens an existing folder in Explorer (install dir, save location) |
 | `SafeLauncher.TryRunUninstallCommand` | same | Parses registry `UninstallString`, rejects `cmd`/PowerShell chains, requires executable on disk |
 | `PathContainment.IsPathUnderDirectory` | `Bridge.Core/Utilities/PathContainment.cs` | Library importers and `GameLauncher.KillProcessesInDirectory` — paths must stay under the library root |
 
@@ -1055,12 +1115,22 @@ public static class Config
 | `Bridge/Statistics/TimeToBeatHelper.cs` | HLTB progress target + segmented bar width math |
 | `Bridge/Services/DetailSectionPositionSettingsStore.cs` | Persists Details-left vs Details-right in the game details content area |
 | `Bridge/Services/CoversDetailLayoutSettingsStore.cs` | Covers: compact 320px info panel vs full details at half window |
+| `Bridge/Services/GameSaveLocationResolver.cs` | ROM RetroArch paths; Steam/Epic Cloud and Windows-folder candidates for Set Save Location |
+| `Bridge/Services/GameSaveFolderStore.cs` | Per-game save folders for Steam/Epic/external titles (More → Set Save Location) |
+| `Bridge/Services/RomSaveBackupService.cs` | Dated per-game snapshots (`save-backups/`) for ROM SRAM/states and mapped PC folders |
+| `Bridge/Services/RomLibraryPackService.cs` | Settings zip of ROM saves, ROM files ≤ 500 MB, and mapped PC save folders |
+| `Bridge/Services/RomSaveAutoBackupSettingsStore.cs` | Toggle for post-session ROM save backups |
+| `Bridge/Services/PcSaveAutoBackupSettingsStore.cs` | Toggle for post-session Steam/Epic/external save backups |
+| `Bridge.Import/Steam/SteamCloudSaveLocator.cs` | Steam Cloud `userdata\...\remote\{appid}` candidate |
+| `Bridge.Import/Epic/EpicCloudSaveLocator.cs` | Epic Cloud `%LOCALAPPDATA%\EpicGamesLauncher\Saved\Cloud\{account}\{appName}` candidate |
+| `Bridge.Emulation/RetroArchSaveLocator.cs` | Reads `savefile_directory` / `savestate_directory` from `retroarch.cfg` and finds `.srm` / `.state*` |
 | `Bridge/Views/LibraryDetailView.xaml` | Library views, compact Covers panel, Details hero + HLTB stats bar |
 | `Bridge.Import/Epic/` | Epic Games detection (`EpicLibraryImporter`, `EpicPaths`) — installed games from local launcher files, launch via `com.epicgames.launcher://` |
 | `Bridge.Infra/igdb-proxy-worker/` | The Cloudflare Worker backend that holds the IGDB key (see its README) |
 | `Bridge.Emulation/RetroArchService.cs` | Bridge-managed RetroArch: resolves the latest release from GitHub, downloads the `.7z` from Libretro's buildbot, extracts with SharpCompress (solid-7z via `WriteToDirectory`), swaps atomically, and installs cores on demand — see "Managed Emulation" below |
 | `Bridge.Emulation/RomPlatformCatalog.cs` | Curated platform→core table (15 systems → Libretro core DLL + ROM extensions + libretro-database cheat folder) that drives ROM recognition |
 | `Bridge.Emulation/RomScanner.cs` | Recursive ROM scan by extension (including `.zip`/`.7z` archive contents), companion-file filtering, managed "Bridge RetroArch" `GameAction`, `SanitizeName`/`ToSearchName` |
+| `Bridge.Emulation/RomOrganizeService.cs` | Moves ROMs into `{scanRoot}/{platform}/{DAT name}{ext}` and updates sidecar saves |
 | `Bridge.Emulation/RomArchivePath.cs` | RetroArch-style archive paths (`archive.zip#entry.sfc`), existence checks, cheat basename from internal entry |
 | `Bridge.Emulation/RetroArchCheatService.cs` | Fetches libretro-database `.cht` files, caches under AppData, writes per-game RetroArch override configs for enabled cheats |
 | `Bridge.Emulation/RetroArchCheevosService.cs` | Writes RetroAchievements credentials into `retroarch.cfg` before ROM launch; reads back Connect token after session |
@@ -1165,8 +1235,9 @@ immediately (replacing the older idle polling grace period).
 (`AppData\Bridge\emulators\retroarch`), `EmulatorDownloadPath`
 (`AppData\Bridge\emulator-downloads`), `RetroArchVersionPath`
 (`AppData\Bridge\emulators\retroarch.version`), `CheatsPath`
-(`AppData\Bridge\cheats`) — all separate from the game
-database so deleting an emulator install never risks library data.
+(`AppData\Bridge\cheats`), `SaveBackupsPath` (`AppData\Bridge\save-backups`) —
+all separate from the game database so deleting an emulator install never risks
+library data or ROM save snapshots.
 
 **ROM archives:** `RomScanner` walks `.zip` and `.7z` files with SharpCompress
 (`RomArchiveCatalog`) and stores each ROM as `archivePath#internalEntry`
@@ -1209,6 +1280,8 @@ credentials are configured. It merges `cheevos_enable`, username, password or
 token, and `saveconfig_on_exit` into `retroarch.cfg`. After the session,
 `GameLauncher.GameStopped` reads back `cheevos_token`, persists it, clears the
 achievements cache, and `AchievementsPanel` reloads if the same game is selected.
+When auto-backup is enabled, ROM SRAM and savestates are copied into
+`save-backups/` at the same time.
 Hardcore mode stays off so auto-applied cheats remain compatible.
 
 ---

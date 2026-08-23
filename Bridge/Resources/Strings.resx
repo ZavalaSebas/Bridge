@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -58,586 +58,1964 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="OK" xml:space="preserve"><value>OK</value></data>
-  <data name="Download" xml:space="preserve"><value>Download</value></data>
-  <data name="Downloading" xml:space="preserve"><value>Downloading...</value></data>
-  <data name="CompletionStatusAbandoned" xml:space="preserve"><value>Abandoned</value></data>
-  <data name="CompletionStatusBeaten" xml:space="preserve"><value>Beaten</value></data>
-  <data name="CompletionStatusCompleted" xml:space="preserve"><value>Completed</value></data>
-  <data name="CompletionStatusNotPlayed" xml:space="preserve"><value>Not Played</value></data>
-  <data name="CompletionStatusOnHold" xml:space="preserve"><value>On Hold</value></data>
-  <data name="CompletionStatusPlanToPlay" xml:space="preserve"><value>Plan to Play</value></data>
-  <data name="CompletionStatusPlaying" xml:space="preserve"><value>Playing</value></data>
-  <data name="Save" xml:space="preserve"><value>Save</value></data>
-  <data name="Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Select" xml:space="preserve"><value>Select</value></data>
-  <data name="Search" xml:space="preserve"><value>Search</value></data>
-  <data name="Name" xml:space="preserve"><value>Name</value></data>
-  <data name="ClientId" xml:space="preserve"><value>Client ID</value></data>
-  <data name="ClientSecret" xml:space="preserve"><value>Client Secret</value></data>
-  <data name="InstallDirectory" xml:space="preserve"><value>Install Directory</value></data>
-  <data name="CheckForUpdates" xml:space="preserve"><value>Check for updates</value></data>
-  <data name="Searching" xml:space="preserve"><value>Searching...</value></data>
-  <data name="NoResults" xml:space="preserve"><value>No results.</value></data>
-  <data name="SearchFailed" xml:space="preserve"><value>Search failed.</value></data>
-  <data name="ImageSelectLoadFailed" xml:space="preserve"><value>Could not load the selected image. Try another result.</value></data>
-  <data name="LoadingImage" xml:space="preserve"><value>Loading image…</value></data>
-  <data name="ResultsCountFormat" xml:space="preserve"><value>{0} results</value></data>
-  <data name="EmulationSettingsTitle" xml:space="preserve"><value>Emulation</value></data>
-  <data name="EmulationManagedRetroArchHeading" xml:space="preserve"><value>Bridge-managed RetroArch</value></data>
-  <data name="EmulationManagedRetroArchDescription" xml:space="preserve"><value>Bridge detects supported ROM platforms automatically and downloads RetroArch plus the required core when you first play. No external emulator setup is required.</value></data>
-  <data name="EmulationSupportedSystems" xml:space="preserve"><value>Supported systems include NES, SNES, Nintendo 64, Game Boy, Game Boy Advance, Nintendo DS, Sega 8/16-bit, Atari, PC Engine and WonderSwan.</value></data>
-  <data name="IgdbSettingsTitle" xml:space="preserve"><value>IGDB Settings</value></data>
-  <data name="IgdbSettingsHelp" xml:space="preserve"><value>Get a free Client ID and Secret from a Twitch Developer account: dev.twitch.tv/console/apps — register any app, "Client Type" doesn't matter for this.</value></data>
-  <data name="ConfigureEmulatorTitle" xml:space="preserve"><value>Configure Emulator</value></data>
-  <data name="ExecutableRelativeOrAbsolute" xml:space="preserve"><value>Executable (relative to Install Directory, or absolute)</value></data>
-  <data name="ArgumentsRomPathPlaceholder" xml:space="preserve"><value>Arguments (use {RomPath} where the ROM path goes)</value></data>
-  <data name="RomExtensionsCommaSeparated" xml:space="preserve"><value>ROM extensions (comma-separated, e.g. nes, zip)</value></data>
-  <data name="SearchImagesTitle" xml:space="preserve"><value>Search images</value></data>
-  <data name="SearchImagesQueryName" xml:space="preserve"><value>Image search query</value></data>
-  <data name="SearchImagesQueryTooltip" xml:space="preserve"><value>Search term (game name)</value></data>
-  <data name="SearchImagesSelectHint" xml:space="preserve"><value>Double-click a result or use Select. A preview appears on the right.</value></data>
-  <data name="SearchImagesEmptyState" xml:space="preserve"><value>No images found. Try a different search term.</value></data>
-  <data name="SearchImagesPreviewCaption" xml:space="preserve"><value>Preview</value></data>
-  <data name="SearchImagesPreviewPlaceholder" xml:space="preserve"><value>Select an image to preview it here.</value></data>
-  <data name="ImageDimensionsFormat" xml:space="preserve"><value>{0} × {1}</value></data>
-  <data name="CustomThemeColorTitle" xml:space="preserve"><value>Custom Theme Color</value></data>
-  <data name="CustomThemeColorDescription" xml:space="preserve"><value>Pick an accent color — the whole theme recomputes from it.</value></data>
-  <data name="ViewList" xml:space="preserve"><value>List view</value></data>
-  <data name="ViewCovers" xml:space="preserve"><value>Covers view</value></data>
-  <data name="ViewTable" xml:space="preserve"><value>Table view</value></data>
-  <data name="SearchGames" xml:space="preserve"><value>Search games</value></data>
-  <data name="SearchGamesTooltip" xml:space="preserve"><value>Search games (Ctrl+F)</value></data>
-  <data name="BridgeMenu" xml:space="preserve"><value>Bridge menu</value></data>
-  <data name="FilterPresets" xml:space="preserve"><value>Filter presets</value></data>
-  <data name="RemoveFilter" xml:space="preserve"><value>Remove filter</value></data>
-  <data name="SortSettings" xml:space="preserve"><value>Sort settings</value></data>
-  <data name="GroupSettings" xml:space="preserve"><value>Group settings</value></data>
-  <data name="SelectRandomGame" xml:space="preserve"><value>Select random game</value></data>
-  <data name="Favorites" xml:space="preserve"><value>Favorites</value></data>
-  <data name="Sources" xml:space="preserve"><value>Sources</value></data>
-  <data name="SupportProject" xml:space="preserve"><value>Support the project</value></data>
-  <data name="Library" xml:space="preserve"><value>Library</value></data>
-  <data name="SidebarRoms" xml:space="preserve"><value>ROMs</value></data>
-  <data name="Statistics" xml:space="preserve"><value>Statistics</value></data>
-  <data name="Play" xml:space="preserve"><value>Play</value></data>
-  <data name="RefreshLibrary" xml:space="preserve"><value>Refresh Library</value></data>
-  <data name="RefreshLibraryInProgress" xml:space="preserve"><value>Refreshing library...</value></data>
-  <data name="RefreshLibraryComplete" xml:space="preserve"><value>Library refreshed.</value></data>
-  <data name="RefreshLibraryFailedFormat" xml:space="preserve"><value>Couldn't refresh the library: {0}</value></data>
-  <data name="DownloadMetadata" xml:space="preserve"><value>Download Metadata</value></data>
-  <data name="Links" xml:space="preserve"><value>Links</value></data>
-  <data name="OpenGameLocation" xml:space="preserve"><value>Open Game Location</value></data>
-  <data name="SetCompletionStatus" xml:space="preserve"><value>Set Completion Status</value></data>
-  <data name="Remove" xml:space="preserve"><value>Remove</value></data>
-  <data name="Uninstall" xml:space="preserve"><value>Uninstall</value></data>
-  <data name="NameRequired" xml:space="preserve"><value>Name is required.</value></data>
-  <data name="SelectFolderToScan" xml:space="preserve"><value>Select a folder to scan.</value></data>
-  <data name="CouldNotCreateReferenceFormat" xml:space="preserve"><value>Could not create {0}.</value></data>
-  <data name="AddReferenceTitle" xml:space="preserve"><value>Add reference</value></data>
-  <data name="AddGame" xml:space="preserve"><value>Add Game</value></data>
-  <data name="Import" xml:space="preserve"><value>Import</value></data>
-  <data name="Steam" xml:space="preserve"><value>Steam</value></data>
-  <data name="Epic" xml:space="preserve"><value>Epic</value></data>
-  <data name="ScanAutomatically" xml:space="preserve"><value>Scan Automatically...</value></data>
-  <data name="ScanRoms" xml:space="preserve"><value>Scan ROMs...</value></data>
-  <data name="AddManually" xml:space="preserve"><value>Add Manually...</value></data>
-  <data name="Support" xml:space="preserve"><value>Support</value></data>
-  <data name="ThirdPartyClients" xml:space="preserve"><value>3rd party clients</value></data>
-  <data name="Sidebar" xml:space="preserve"><value>Sidebar</value></data>
-  <data name="ShowSidebar" xml:space="preserve"><value>Show Sidebar</value></data>
-  <data name="Position" xml:space="preserve"><value>Position</value></data>
-  <data name="Left" xml:space="preserve"><value>Left</value></data>
-  <data name="Right" xml:space="preserve"><value>Right</value></data>
-  <data name="Top" xml:space="preserve"><value>Top</value></data>
-  <data name="Bottom" xml:space="preserve"><value>Bottom</value></data>
-  <data name="SettingsDescription" xml:space="preserve"><value>Manage integrations, appearance, language, library backups, and updates.</value></data>
-  <data name="Theme" xml:space="preserve"><value>Theme</value></data>
-  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
-  <data name="AboutBridge" xml:space="preserve"><value>About Bridge...</value></data>
-  <data name="Exit" xml:space="preserve"><value>Exit</value></data>
-  <data name="GameRemovedFromLibrary" xml:space="preserve"><value>Game removed from library.</value></data>
-  <data name="NoInstallDirectoryFormat" xml:space="preserve"><value>'{0}' has no install directory.</value></data>
-  <data name="CouldNotOpenDirectoryFormat" xml:space="preserve"><value>Couldn't open '{0}'.</value></data>
-  <data name="ScanCompleteFormat" xml:space="preserve"><value>Scan complete: {0} new ROM(s) imported from '{1}'.</value></data>
-  <data name="InstalledScanCompleteFormat" xml:space="preserve"><value>Scan complete: {0} new game(s) imported from '{1}'.</value></data>
-  <data name="ScanFailedFormat" xml:space="preserve"><value>Scan failed: {0}</value></data>
-  <data name="SteamNotDetectedSkippedImport" xml:space="preserve"><value>Steam not detected — skipped import.</value></data>
-  <data name="EpicNotDetectedSkippedImport" xml:space="preserve"><value>Epic Games Launcher not detected — skipped import.</value></data>
-  <data name="ImportResultFormat" xml:space="preserve"><value>{0} import: {1} new, {2} updated.</value></data>
-  <data name="ImportFailedFormat" xml:space="preserve"><value>{0} import failed: {1}</value></data>
-  <data name="StartupImportFailedFormat" xml:space="preserve"><value>Startup import failed: {0}</value></data>
-  <data name="DownloadingMetadataForGameFormat" xml:space="preserve"><value>Downloading metadata for '{0}'...</value></data>
-  <data name="NoMetadataFoundFormat" xml:space="preserve"><value>No metadata found for '{0}'.</value></data>
-  <data name="NoInternetMetadataDeferred" xml:space="preserve"><value>No internet connection. Metadata will download the next time Bridge opens with a connection.</value></data>
-  <data name="NoInternetMetadataDeferredForGamesFormat" xml:space="preserve"><value>No internet connection. Metadata for {0} game(s) will download the next time Bridge opens with a connection.</value></data>
-  <data name="DownloadingMetadataForGamesFormat" xml:space="preserve"><value>Downloading metadata for {0} game(s)...</value></data>
-  <data name="MetadataAppliedToGameFormat" xml:space="preserve"><value>Metadata applied to '{0}' (source: {1}).</value></data>
-  <data name="MetadataAppliedBatchFormat" xml:space="preserve"><value>Metadata applied: {0}/{1} game(s) updated.</value></data>
-  <data name="NoMetadataFoundForAddedGamesFormat" xml:space="preserve"><value>No metadata found for the added game(s) ({0} checked).</value></data>
-  <data name="MetadataSyncCompleteFormat" xml:space="preserve"><value>Metadata sync complete: {0}/{1} game(s) updated.</value></data>
-  <data name="MetadataSyncNoUpdatesFormat" xml:space="preserve"><value>Metadata sync complete: no updates ({0} game(s) checked).</value></data>
-  <data name="MetadataSyncNoInternet" xml:space="preserve"><value>Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection.</value></data>
-  <data name="LaunchingUninstallerFormat" xml:space="preserve"><value>Launching uninstaller for '{0}'...</value></data>
-  <data name="GameUninstalledFormat" xml:space="preserve"><value>'{0}' uninstalled.</value></data>
-  <data name="UninstallerFinishedStillInstalledFormat" xml:space="preserve"><value>Uninstaller for '{0}' finished but the game is still detected as installed.</value></data>
-  <data name="GameRunningCloseBeforeDeleteFormat" xml:space="preserve"><value>'{0}' is running — close it before deleting.</value></data>
-  <data name="GameRunningCloseBeforeUninstallFormat" xml:space="preserve"><value>'{0}' is running — close it before uninstalling.</value></data>
-  <data name="NoUninstallerFoundFormat" xml:space="preserve"><value>No uninstaller found for '{0}'.</value></data>
-  <data name="DownloadingUpdate" xml:space="preserve"><value>Downloading update...</value></data>
-  <data name="UpdateFailedFormat" xml:space="preserve"><value>Update failed: {0}</value></data>
-  <data name="PreparingRetroArchFormat" xml:space="preserve"><value>Preparing RetroArch for '{0}'...</value></data>
-  <data name="CouldNotLaunchGameFormat" xml:space="preserve"><value>Couldn't launch '{0}': {1}</value></data>
-  <data name="StoppingGameFormat" xml:space="preserve"><value>Stopping '{0}'...</value></data>
-  <data name="PlayingGameFormat" xml:space="preserve"><value>Playing {0}...</value></data>
-  <data name="SessionSummaryFormat" xml:space="preserve"><value>{0} — session: {1}s, total: {2}s</value></data>
-  <data name="ShowHiddenGames" xml:space="preserve"><value>Show hidden games</value></data>
-  <data name="Favorite" xml:space="preserve"><value>Favorite</value></data>
-  <data name="Stop" xml:space="preserve"><value>Stop</value></data>
-  <data name="Edit" xml:space="preserve"><value>Edit</value></data>
-  <data name="More" xml:space="preserve"><value>More</value></data>
-  <data name="GameInfo" xml:space="preserve"><value>Game info</value></data>
-  <data name="CoverZoom" xml:space="preserve"><value>Cover zoom</value></data>
-  <data name="EmulationProgress" xml:space="preserve"><value>Emulation progress</value></data>
-  <data name="StatusProgress" xml:space="preserve"><value>Operation progress</value></data>
-  <data name="StatusMessage" xml:space="preserve"><value>Status message</value></data>
-  <data name="GamesList" xml:space="preserve"><value>Games list</value></data>
-  <data name="CoversGrid" xml:space="preserve"><value>Covers grid</value></data>
-  <data name="GamesTable" xml:space="preserve"><value>Games table</value></data>
-  <data name="ExpandGroup" xml:space="preserve"><value>Expand or collapse group</value></data>
-  <data name="All" xml:space="preserve"><value>All</value></data>
-  <data name="Installed" xml:space="preserve"><value>Installed</value></data>
-  <data name="NotPlayedFilter" xml:space="preserve"><value>Not Played</value></data>
-  <data name="RecentlyPlayed" xml:space="preserve"><value>Recently Played</value></data>
-  <data name="DontGroup" xml:space="preserve"><value>Don't group</value></data>
-  <data name="Developer" xml:space="preserve"><value>Developer</value></data>
-  <data name="Publisher" xml:space="preserve"><value>Publisher</value></data>
-  <data name="Platform" xml:space="preserve"><value>Platform</value></data>
-  <data name="Genre" xml:space="preserve"><value>Genre</value></data>
-  <data name="InstallationStatus" xml:space="preserve"><value>Installation Status</value></data>
-  <data name="CompletionStatus" xml:space="preserve"><value>Completion Status</value></data>
-  <data name="TimePlayed" xml:space="preserve"><value>Time Played</value></data>
-  <data name="PlayCount" xml:space="preserve"><value>Play Count</value></data>
-  <data name="ReleaseYear" xml:space="preserve"><value>Release Year</value></data>
-  <data name="LastPlayed" xml:space="preserve"><value>Last Played</value></data>
-  <data name="ReleaseDate" xml:space="preserve"><value>Release Date</value></data>
-  <data name="CriticScore" xml:space="preserve"><value>Critic Score</value></data>
-  <data name="Source" xml:space="preserve"><value>Source</value></data>
-  <data name="SortAscending" xml:space="preserve"><value>Ascending (A-Z)</value></data>
-  <data name="SortDescending" xml:space="preserve"><value>Descending (Z-A)</value></data>
-  <data name="KoFi" xml:space="preserve"><value>Ko-fi</value></data>
-  <data name="GitHubSponsors" xml:space="preserve"><value>GitHub Sponsors</value></data>
-  <data name="IgdbMenu" xml:space="preserve"><value>IGDB...</value></data>
-  <data name="CustomTheme" xml:space="preserve"><value>Custom...</value></data>
-  <data name="ThemeBlue" xml:space="preserve"><value>Blue</value></data>
-  <data name="ThemeCyan" xml:space="preserve"><value>Cyan</value></data>
-  <data name="ThemeTeal" xml:space="preserve"><value>Teal</value></data>
-  <data name="ThemeGreen" xml:space="preserve"><value>Green</value></data>
-  <data name="ThemePurple" xml:space="preserve"><value>Purple</value></data>
-  <data name="ThemePink" xml:space="preserve"><value>Pink</value></data>
-  <data name="ThemeRed" xml:space="preserve"><value>Red</value></data>
-  <data name="ThemeOrange" xml:space="preserve"><value>Orange</value></data>
-  <data name="ThemeAmber" xml:space="preserve"><value>Amber</value></data>
-  <data name="Details" xml:space="preserve"><value>Details</value></data>
-  <data name="Description" xml:space="preserve"><value>Description</value></data>
-  <data name="Added" xml:space="preserve"><value>Added</value></data>
-  <data name="Playtime" xml:space="preserve"><value>Playtime</value></data>
-  <data name="Completion" xml:space="preserve"><value>Completion</value></data>
-  <data name="InstallDirectoryLabel" xml:space="preserve"><value>Install Directory</value></data>
-  <data name="InstallSize" xml:space="preserve"><value>Install Size</value></data>
-  <data name="Genres" xml:space="preserve"><value>Genres</value></data>
-  <data name="Developers" xml:space="preserve"><value>Developers</value></data>
-  <data name="Publishers" xml:space="preserve"><value>Publishers</value></data>
-  <data name="Categories" xml:space="preserve"><value>Categories</value></data>
-  <data name="Features" xml:space="preserve"><value>Features</value></data>
-  <data name="Tags" xml:space="preserve"><value>Tags</value></data>
-  <data name="AgeRating" xml:space="preserve"><value>Age Rating</value></data>
-  <data name="Series" xml:space="preserve"><value>Series</value></data>
-  <data name="Region" xml:space="preserve"><value>Region</value></data>
-  <data name="RomDatRegion" xml:space="preserve"><value>ROM region</value></data>
-  <data name="RomDatPlatform" xml:space="preserve"><value>ROM platform</value></data>
-  <data name="Version" xml:space="preserve"><value>Version</value></data>
-  <data name="UserScore" xml:space="preserve"><value>User Score</value></data>
-  <data name="CommunityScore" xml:space="preserve"><value>Community Score</value></data>
-  <data name="NotInstalled" xml:space="preserve"><value>Not installed</value></data>
-  <data name="Info" xml:space="preserve"><value>Info</value></data>
-  <data name="SelectAGame" xml:space="preserve"><value>Select a game</value></data>
-  <data name="WhatsNewTitlePrefix" xml:space="preserve"><value>What's New</value></data>
-  <data name="WhatsNewTitleFormat" xml:space="preserve"><value>What's new in Bridge {0}</value></data>
-  <data name="WhatsNewGotIt" xml:space="preserve"><value>Got it</value></data>
-  <data name="WhatsNewSectionAdded" xml:space="preserve"><value>Added</value></data>
-  <data name="WhatsNewSectionChanged" xml:space="preserve"><value>Changed</value></data>
-  <data name="WhatsNewSectionFixed" xml:space="preserve"><value>Fixed</value></data>
-  <data name="Total" xml:space="preserve"><value>Total</value></data>
-  <data name="Average" xml:space="preserve"><value>Average</value></data>
-  <data name="Played" xml:space="preserve"><value>Played</value></data>
-  <data name="Hidden" xml:space="preserve"><value>Hidden</value></data>
-  <data name="TopPlayTime" xml:space="preserve"><value>Top Play Time</value></data>
-  <data name="GamesCountFormat" xml:space="preserve"><value>{0} games</value></data>
-  <data name="CompletionCountFormat" xml:space="preserve"><value>{0} ({1:0}%)</value></data>
-  <data name="Release" xml:space="preserve"><value>Release</value></data>
-  <data name="LabelAdded" xml:space="preserve"><value>Added:</value></data>
-  <data name="LabelPlaytime" xml:space="preserve"><value>Playtime:</value></data>
-  <data name="LabelLastPlayed" xml:space="preserve"><value>Last Played:</value></data>
-  <data name="LabelCompletion" xml:space="preserve"><value>Completion:</value></data>
-  <data name="LabelInstall" xml:space="preserve"><value>Install:</value></data>
-  <data name="LabelInstallSize" xml:space="preserve"><value>Install Size:</value></data>
-  <data name="LabelLibrary" xml:space="preserve"><value>Library:</value></data>
-  <data name="LabelPlatform" xml:space="preserve"><value>Platform:</value></data>
-  <data name="LabelGenre" xml:space="preserve"><value>Genre:</value></data>
-  <data name="LabelDeveloper" xml:space="preserve"><value>Dev:</value></data>
-  <data name="LabelPublisher" xml:space="preserve"><value>Publisher:</value></data>
-  <data name="LabelCategories" xml:space="preserve"><value>Categories:</value></data>
-  <data name="LabelFeatures" xml:space="preserve"><value>Features:</value></data>
-  <data name="LabelTags" xml:space="preserve"><value>Tags:</value></data>
-  <data name="LabelAgeRating" xml:space="preserve"><value>Age Rating:</value></data>
-  <data name="LabelSeries" xml:space="preserve"><value>Series:</value></data>
-  <data name="LabelRegion" xml:space="preserve"><value>Region:</value></data>
-  <data name="LabelVersion" xml:space="preserve"><value>Version:</value></data>
-  <data name="LabelUserScore" xml:space="preserve"><value>User Score:</value></data>
-  <data name="LabelCriticScore" xml:space="preserve"><value>Critic Score:</value></data>
-  <data name="LabelCommunityScore" xml:space="preserve"><value>Community Score:</value></data>
-  <data name="HeroCriticScoreShort" xml:space="preserve"><value>Critics</value></data>
-  <data name="HeroCommunityScoreShort" xml:space="preserve"><value>Community</value></data>
-  <data name="LabelLinks" xml:space="preserve"><value>Links:</value></data>
-  <data name="Platforms" xml:space="preserve"><value>Platforms</value></data>
-  <data name="EditGame" xml:space="preserve"><value>Edit Game</value></data>
-  <data name="NewGame" xml:space="preserve"><value>New Game</value></data>
-  <data name="SteamManagedMetadataNotice" xml:space="preserve"><value>This Steam game's metadata is managed by Bridge and stays in sync with Steam. Only the artwork (icon, cover, background) can be customized here.</value></data>
-  <data name="General" xml:space="preserve"><value>General</value></data>
-  <data name="Media" xml:space="preserve"><value>Media</value></data>
-  <data name="AddBanner" xml:space="preserve"><value>Add banner</value></data>
-  <data name="ChangeArt" xml:space="preserve"><value>Change art</value></data>
-  <data name="BigCovers" xml:space="preserve"><value>Big covers</value></data>
-  <data name="Clear" xml:space="preserve"><value>Clear</value></data>
-  <data name="SteamGridDb" xml:space="preserve"><value>SteamGridDB</value></data>
-  <data name="SetupSteamGridDb" xml:space="preserve"><value>Setup SteamGridDB</value></data>
-  <data name="SteamGridDbSetupPrompt" xml:space="preserve"><value>Connect SteamGridDB for community icons, covers, and hero art.</value></data>
-  <data name="SteamGridDbSetupHint" xml:space="preserve"><value>Free API key. Setup opens steamgriddb.com in your browser — the recommended and secure way.</value></data>
-  <data name="SteamGridDbSetupSecureNote" xml:space="preserve"><value>Bridge never sees your Steam password; only the API key you paste.</value></data>
-  <data name="SteamGridDbSettingsTitle" xml:space="preserve"><value>SteamGridDB Settings</value></data>
-  <data name="SteamGridDbSettingsHelp" xml:space="preserve"><value>SteamGridDB provides community-made icons, covers, and hero banners for games.</value></data>
-  <data name="SteamGridDbSettingsIntro" xml:space="preserve"><value>SteamGridDB is a well-known community site for custom game artwork — icons, grid covers, hero banners, and more.</value></data>
-  <data name="SteamGridDbApiKeyNeeded" xml:space="preserve"><value>To browse that artwork from Bridge, you need a free API key from your SteamGridDB profile.</value></data>
-  <data name="SteamGridDbObtainKeyHeading" xml:space="preserve"><value>To obtain it:</value></data>
-  <data name="SteamGridDbTutorialStep1" xml:space="preserve"><value>Click Open SteamGridDB below.</value></data>
-  <data name="SteamGridDbTutorialStep2" xml:space="preserve"><value>Sign in with Steam on steamgriddb.com (official Steam login).</value></data>
-  <data name="SteamGridDbTutorialStep3" xml:space="preserve"><value>Generate an API key on the API tab.</value></data>
-  <data name="SteamGridDbTutorialStep4" xml:space="preserve"><value>Paste the key below and save.</value></data>
-  <data name="SteamGridDbRecommended" xml:space="preserve"><value>Recommended</value></data>
-  <data name="SteamGridDbOpenPreferences" xml:space="preserve"><value>Open SteamGridDB</value></data>
-  <data name="SteamGridDbRefreshCallout" xml:space="preserve"><value>After Steam sign-in, press F5 if the page is blank.</value></data>
-  <data name="SteamGridDbInAppTitle" xml:space="preserve"><value>Only if your browser gives you trouble</value></data>
-  <data name="SteamGridDbOpenInApp" xml:space="preserve"><value>Open in Bridge instead</value></data>
-  <data name="SteamGridDbInAppHint" xml:space="preserve"><value>Embedded WebView2 browser — same steamgriddb.com and Steam sites, with auto-refresh after sign-in. Bridge never sees or stores your Steam password; use this only to simplify the flow.</value></data>
-  <data name="SteamGridDbBrowserTitle" xml:space="preserve"><value>SteamGridDB — API key</value></data>
-  <data name="SteamGridDbBrowserTrustNote" xml:space="preserve"><value>Same steamgriddb.com and Steam sign-in as your browser. Bridge never sees your Steam password.</value></data>
-  <data name="SteamGridDbBrowserOpenExternal" xml:space="preserve"><value>Open in browser</value></data>
-  <data name="SteamGridDbBrowserRefresh" xml:space="preserve"><value>Refresh page</value></data>
-  <data name="SteamGridDbApiKeyLabel" xml:space="preserve"><value>API key</value></data>
-  <data name="OpenSteamGridDbSettings" xml:space="preserve"><value>Open settings</value></data>
-  <data name="SettingsSteamGridDbCardDescription" xml:space="preserve"><value>API key for community game artwork in the media editor.</value></data>
-  <data name="RetroAchievementsSettingsTitle" xml:space="preserve"><value>RetroAchievements</value></data>
-  <data name="RetroAchievementsSettingsHelp" xml:space="preserve"><value>Web API key: achievement progress in Bridge. Account password: unlock achievements while playing in RetroArch (rcheevos). Get both from your RetroAchievements control panel.</value></data>
-  <data name="RetroAchievementsPasswordLabel" xml:space="preserve"><value>Account password (RetroArch)</value></data>
-  <data name="RetroAchievementsPasswordHint" xml:space="preserve"><value>Used only to sign in through RetroArch. Not your web API key.</value></data>
-  <data name="RetroAchievementsOpenControlPanel" xml:space="preserve"><value>Open RetroAchievements control panel</value></data>
-  <data name="RetroAchievementsUsernameLabel" xml:space="preserve"><value>Username</value></data>
-  <data name="RetroAchievementsApiKeyLabel" xml:space="preserve"><value>Web API key</value></data>
-  <data name="OpenRetroAchievementsSettings" xml:space="preserve"><value>Configure</value></data>
-  <data name="SettingsRetroAchievementsCardDescription" xml:space="preserve"><value>RetroAchievements credentials for ROM progress in Bridge and unlocks in RetroArch.</value></data>
-  <data name="SteamGridDbPickerTitle" xml:space="preserve"><value>SteamGridDB artwork</value></data>
-  <data name="SteamGridDbSelectGame" xml:space="preserve"><value>Select game</value></data>
-  <data name="SteamGridDbPickGameHint" xml:space="preserve"><value>Multiple matches — pick the correct game on the left.</value></data>
-  <data name="SteamGridDbMatchesTitle" xml:space="preserve"><value>Matching games</value></data>
-  <data name="SteamGridDbArtworkForFormat" xml:space="preserve"><value>Artwork for {0}</value></data>
-  <data name="SteamGridDbSearchHint" xml:space="preserve"><value>Search by game name. If several games match, choose one from the list.</value></data>
-  <data name="HeroBackgroundStyleLabel" xml:space="preserve"><value>Banner style</value></data>
-  <data name="HeroBackgroundDefault" xml:space="preserve"><value>Default</value></data>
-  <data name="HeroBackgroundBlack" xml:space="preserve"><value>Black</value></data>
-  <data name="HeroBackgroundCustom" xml:space="preserve"><value>Custom</value></data>
-  <data name="IgdbTutorialStep1" xml:space="preserve"><value>Sign in at dev.twitch.tv and open the Developer Console.</value></data>
-  <data name="IgdbTutorialStep2" xml:space="preserve"><value>Register a new application (any name; client type does not matter).</value></data>
-  <data name="IgdbTutorialStep3" xml:space="preserve"><value>Copy the Client ID from the app page.</value></data>
-  <data name="IgdbTutorialStep4" xml:space="preserve"><value>Generate a Client Secret and paste both values below.</value></data>
-  <data name="IgdbOpenDeveloperConsole" xml:space="preserve"><value>Open Twitch Developer Console</value></data>
-  <data name="SortingName" xml:space="preserve"><value>Sorting Name</value></data>
-  <data name="SortingNameTooltip" xml:space="preserve"><value>Name used for sorting (e.g. 'Witcher 3' for 'The Witcher 3: Wild Hunt'). Leave empty to sort by Name.</value></data>
-  <data name="ReleaseDateTooltip" xml:space="preserve"><value>YYYY, YYYY-MM or YYYY-MM-DD</value></data>
-  <data name="AddNewGenre" xml:space="preserve"><value>Add new genre</value></data>
-  <data name="AddNewDeveloper" xml:space="preserve"><value>Add new developer</value></data>
-  <data name="AddNewPublisher" xml:space="preserve"><value>Add new publisher</value></data>
-  <data name="AddNewPlatform" xml:space="preserve"><value>Add new platform</value></data>
-  <data name="IconLabel" xml:space="preserve"><value>Icon</value></data>
-  <data name="CoverImageLabel" xml:space="preserve"><value>Cover Image</value></data>
-  <data name="BackgroundImageLabel" xml:space="preserve"><value>Background Image</value></data>
-  <data name="Browse" xml:space="preserve"><value>Browse...</value></data>
-  <data name="SearchWeb" xml:space="preserve"><value>Search web...</value></data>
-  <data name="ScanRomsTitle" xml:space="preserve"><value>Scan ROMs</value></data>
-  <data name="FolderToScanForRoms" xml:space="preserve"><value>Folder to scan for ROMs</value></data>
-  <data name="ScanRomsHelp" xml:space="preserve"><value>Bridge scans this folder and its subfolders, identifies supported systems from each ROM extension, and downloads metadata automatically. RetroArch is installed only when you first play a ROM.</value></data>
-  <data name="Scan" xml:space="preserve"><value>Scan</value></data>
-  <data name="ScanAutomaticallyTitle" xml:space="preserve"><value>Scan Automatically</value></data>
-  <data name="ScanFolder" xml:space="preserve"><value>Scan Folder...</value></data>
-  <data name="DetectInstalled" xml:space="preserve"><value>Detect Installed</value></data>
-  <data name="SelectAll" xml:space="preserve"><value>Select All</value></data>
-  <data name="SelectNone" xml:space="preserve"><value>Select None</value></data>
-  <data name="SelectAllTooltip" xml:space="preserve"><value>Check every game in the list</value></data>
-  <data name="SelectNoneTooltip" xml:space="preserve"><value>Uncheck every game in the list</value></data>
-  <data name="HideAlreadyImported" xml:space="preserve"><value>Hide already imported</value></data>
-  <data name="AddGames" xml:space="preserve"><value>Add Games</value></data>
-  <data name="Screenshots" xml:space="preserve"><value>Screenshots</value></data>
-  <data name="AboutBridgeTitle" xml:space="preserve"><value>About Bridge</value></data>
-  <data name="AboutDescription" xml:space="preserve"><value>Bridge unifies your games — from external libraries, manual entries and emulated ROMs — into one fast, local, self-contained catalog. Incremental import, local metadata, fast virtualized views and emulation support, without a plugin runtime or a separate fullscreen frontend. Playnite is an inspiration, not a specification: Bridge's structure, architecture and implementation are its own.</value></data>
-  <data name="Credits" xml:space="preserve"><value>Credits</value></data>
-  <data name="AboutArtCredit" xml:space="preserve"><value>App icon and logo artwork by Erick Nuñez.</value></data>
-  <data name="Project" xml:space="preserve"><value>Project</value></data>
-  <data name="Environment" xml:space="preserve"><value>Environment</value></data>
-  <data name="Updates" xml:space="preserve"><value>Updates</value></data>
-  <data name="ReceiveBetaBuilds" xml:space="preserve"><value>Receive beta builds</value></data>
-  <data name="BetaBuildsDescription" xml:space="preserve"><value>Install prereleases published before their stable release.</value></data>
-  <data name="SettingsStartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
-  <data name="SettingsStartWithWindowsDescription" xml:space="preserve"><value>Launch Bridge automatically when you sign in to Windows.</value></data>
-  <data name="SettingsStartWithWindowsUnavailable" xml:space="preserve"><value>Available only when running the published Bridge.exe.</value></data>
-  <data name="SettingsStartWithWindowsFailed" xml:space="preserve"><value>Could not update the Windows startup setting.</value></data>
-  <data name="AboutDisclaimer" xml:space="preserve"><value>Made with care by ZavalaSebas. This software is provided "as is", without warranty of any kind. Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG or any platform or emulator project.</value></data>
-  <data name="BridgeAppName" xml:space="preserve"><value>Bridge</value></data>
-  <data name="RemoveFromFavorites" xml:space="preserve"><value>Remove from Favorites</value></data>
-  <data name="AddToFavorites" xml:space="preserve"><value>Add to Favorites</value></data>
-  <data name="ShowGame" xml:space="preserve"><value>Show Game</value></data>
-  <data name="HideGame" xml:space="preserve"><value>Hide Game</value></data>
-  <data name="RemoveGameTitle" xml:space="preserve"><value>Remove game</value></data>
-  <data name="RemoveGameConfirmFormat" xml:space="preserve"><value>Remove "{0}" from your Bridge library? This cannot be undone.</value></data>
-  <data name="SettingsIntegrations" xml:space="preserve"><value>Integrations</value></data>
-  <data name="SettingsAppearance" xml:space="preserve"><value>Appearance</value></data>
-  <data name="SettingsLanguageTitle" xml:space="preserve"><value>Language</value></data>
-  <data name="SettingsLanguageDescription" xml:space="preserve"><value>Interface language. Bridge restarts when you change this setting.</value></data>
-  <data name="SettingsLanguageEnglish" xml:space="preserve"><value>English</value></data>
-  <data name="SettingsLanguageSpanish" xml:space="preserve"><value>Español</value></data>
-  <data name="SettingsTrayIconTitle" xml:space="preserve"><value>System tray icon</value></data>
-  <data name="SettingsTrayIconDescription" xml:space="preserve"><value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value></data>
-  <data name="SettingsKeepSelectionTitle" xml:space="preserve"><value>Keep selection across views</value></data>
-  <data name="SettingsKeepSelectionDescription" xml:space="preserve"><value>When off, switching between List, Covers, and Table clears the selected game.</value></data>
-  <data name="SettingsCoversDetailLayoutTitle" xml:space="preserve"><value>Covers detail layout</value></data>
-  <data name="SettingsCoversDetailLayoutDescription" xml:space="preserve"><value>In Covers view, use the compact info panel or the full details panel at half the window width. List view still opens details larger.</value></data>
-  <data name="SettingsCoversDetailLayoutCompact" xml:space="preserve"><value>Compact</value></data>
-  <data name="SettingsCoversDetailLayoutStandard" xml:space="preserve"><value>Full details</value></data>
-  <data name="SettingsTranslucentSidebarTitle" xml:space="preserve"><value>Translucent sidebar</value></data>
-  <data name="SettingsTranslucentSidebarDescription" xml:space="preserve"><value>Use a semi-transparent sidebar so the selected game's background shows through. The title bar and status bar share the same frosted look.</value></data>
-  <data name="SettingsTranslucentBackgroundTitle" xml:space="preserve"><value>Translucent background</value></data>
-  <data name="SettingsTranslucentBackgroundDescription" xml:space="preserve"><value>Show blurred game artwork behind the library list and detail panels. Turn off for solid theme colors everywhere except Settings and Statistics.</value></data>
-  <data name="Overview" xml:space="preserve"><value>Overview</value></data>
-  <data name="Images" xml:space="preserve"><value>Images</value></data>
-  <data name="Achievements" xml:space="preserve"><value>Achievements</value></data>
-  <data name="AchievementsLoading" xml:space="preserve"><value>Loading achievements…</value></data>
-  <data name="AchievementsNotSupported" xml:space="preserve"><value>Achievements are not available for this game.</value></data>
-  <data name="AchievementsEpicLoginRequired" xml:space="preserve"><value>Sign in to the Epic Games Launcher to view achievements.</value></data>
-  <data name="AchievementsRetroAchievementsRequired" xml:space="preserve"><value>Configure your RetroAchievements account to view ROM achievements.</value></data>
-  <data name="AchievementsRomNotMatched" xml:space="preserve"><value>This ROM is not recognized by RetroAchievements. Only verified dumps that match RA's hash database show achievements.</value></data>
-  <data name="AchievementsRomDatNameNotRaVerified" xml:space="preserve"><value>Bridge matched this file to a game title from your DAT catalog, but RetroAchievements does not recognize its hash. Replace it with the verified dump RA supports for this game.</value></data>
-  <data name="AchievementsRomUnsupportedPlatform" xml:space="preserve"><value>RetroAchievements does not support this console yet.</value></data>
-  <data name="AchievementsRomApiError" xml:space="preserve"><value>Could not load RetroAchievements data. Check your API key and connection.</value></data>
-  <data name="AchievementsNone" xml:space="preserve"><value>No achievements were found for this game.</value></data>
-  <data name="AchievementsProgressFormat" xml:space="preserve"><value>{0} / {1} unlocked</value></data>
-  <data name="AchievementsBarSummaryFormat" xml:space="preserve"><value>{0}/{1} · {2} left</value></data>
-  <data name="AchievementsBarCompleteFormat" xml:space="preserve"><value>{0}/{1} ✓</value></data>
-  <data name="AchievementsCompletionPercentFormat" xml:space="preserve"><value>{0:0.#}% complete</value></data>
-  <data name="AchievementsRemainingFormat" xml:space="preserve"><value>{0} remaining</value></data>
-  <data name="AchievementsCatalogCountFormat" xml:space="preserve"><value>{0} achievements</value></data>
-  <data name="AchievementsCatalogOnlyHint" xml:space="preserve"><value>Catalog only — your progress in this copy is not tracked.</value></data>
-  <data name="AchievementGlobalPercentFormat" xml:space="preserve"><value>{0:0.#}% of players</value></data>
-  <data name="AchievementRarityCommon" xml:space="preserve"><value>Common</value></data>
-  <data name="AchievementRarityUncommon" xml:space="preserve"><value>Uncommon</value></data>
-  <data name="AchievementRarityRare" xml:space="preserve"><value>Rare</value></data>
-  <data name="AchievementRarityVeryRare" xml:space="preserve"><value>Very Rare</value></data>
-  <data name="AchievementRarityLegendary" xml:space="preserve"><value>Legendary</value></data>
-  <data name="HiddenAchievement" xml:space="preserve"><value>Hidden Achievement</value></data>
-  <data name="SettingsDetailSectionPositionTitle" xml:space="preserve"><value>Details section position</value></data>
-  <data name="SettingsDetailSectionPositionDescription" xml:space="preserve"><value>Place the metadata Details column on the left or right of the Overview and Images tabs in the game details panel.</value></data>
-  <data name="SettingsDetailPanelPositionTitle" xml:space="preserve"><value>Details panel position</value></data>
-  <data name="SettingsDetailPanelPositionDescription" xml:space="preserve"><value>Dock the game details panel to the left or right in List view and on the compact info panel in Covers view.</value></data>
-  <data name="TrayIconShowBridge" xml:space="preserve"><value>Show Bridge</value></data>
-  <data name="SettingsDataSection" xml:space="preserve"><value>Library &amp; data</value></data>
-  <data name="SettingsBackupTitle" xml:space="preserve"><value>Backup library</value></data>
-  <data name="SettingsBackupDescription" xml:space="preserve"><value>Save or restore your library database, preferences, and artwork cache from a zip file. RetroArch installs and logs are not included.</value></data>
-  <data name="CreateBackup" xml:space="preserve"><value>Create backup</value></data>
-  <data name="RestoreBackup" xml:space="preserve"><value>Restore backup</value></data>
-  <data name="BackupSaveDialogTitle" xml:space="preserve"><value>Save Bridge backup</value></data>
-  <data name="BackupRestoreDialogTitle" xml:space="preserve"><value>Select Bridge backup</value></data>
-  <data name="BackupRestoreConfirm" xml:space="preserve"><value>Restore this backup? Your current library, preferences, and artwork cache will be replaced. Bridge will restart.</value></data>
-  <data name="BackupCreatedFormat" xml:space="preserve"><value>Backup saved to {0}</value></data>
-  <data name="BackupFailedFormat" xml:space="preserve"><value>Could not create backup: {0}</value></data>
-  <data name="BackupRestoreFailedFormat" xml:space="preserve"><value>Could not restore backup: {0}</value></data>
-  <data name="SettingsUpdatesSection" xml:space="preserve"><value>Updates &amp; About</value></data>
-  <data name="SettingsEmulationCardDescription" xml:space="preserve"><value>Managed RetroArch install, core updates, and supported systems.</value></data>
-  <data name="SettingsIgdbCardDescription" xml:space="preserve"><value>IGDB credentials and metadata provider configuration.</value></data>
-  <data name="SettingsThemeCardDescription" xml:space="preserve"><value>Accent color presets and custom theme color.</value></data>
-  <data name="SettingsAboutCardDescription" xml:space="preserve"><value>Version, support links, and project information.</value></data>
-  <data name="OpenSettings" xml:space="preserve"><value>Open</value></data>
-  <data name="MenuAllSettings" xml:space="preserve"><value>All settings...</value></data>
-  <data name="UpdateAvailableTitle" xml:space="preserve"><value>Update available</value></data>
-  <data name="UpdateAvailableMessageFormat" xml:space="preserve"><value>Version {0} is available (you have {1}).&#xA;&#xA;Download and restart now?</value></data>
-  <data name="UpdateConfirm" xml:space="preserve"><value>Update</value></data>
-  <data name="NotNow" xml:space="preserve"><value>Not now</value></data>
-  <data name="UpdateFailedTitle" xml:space="preserve"><value>Update failed</value></data>
-  <data name="UpdateFailedMessageFormat" xml:space="preserve"><value>Could not install the update: {0}</value></data>
-  <data name="PendingUpdateTooltipFormat" xml:space="preserve"><value>Version {0} is available — click to download and restart</value></data>
-  <data name="NoInternetCheckUpdates" xml:space="preserve"><value>No internet connection. Check for updates again when you're back online.</value></data>
-  <data name="LatestVersionMessageFormat" xml:space="preserve"><value>Bridge {0} is the latest version.</value></data>
-  <data name="UpdatesNotApplicableMessage" xml:space="preserve"><value>Updates apply only to the published Bridge.exe.</value></data>
-  <data name="CouldNotCheckUpdatesMessage" xml:space="preserve"><value>Could not check for updates.</value></data>
-  <data name="CouldNotCheckUpdatesFormat" xml:space="preserve"><value>Could not check for updates: {0}</value></data>
-  <data name="ClickToExpand" xml:space="preserve"><value>Click to expand</value></data>
-  <data name="PreviousScreenshotTooltip" xml:space="preserve"><value>Previous (←)</value></data>
-  <data name="NextScreenshotTooltip" xml:space="preserve"><value>Next (→)</value></data>
-  <data name="ViewScreenshotTooltip" xml:space="preserve"><value>View screenshot</value></data>
-  <data name="CloseEscTooltip" xml:space="preserve"><value>Close (Esc)</value></data>
-  <data name="RuntimeFormat" xml:space="preserve"><value>.NET {0}</value></data>
-  <data name="OsFormat" xml:space="preserve"><value>{0} ({1}-bit)</value></data>
-  <data name="Manual" xml:space="preserve"><value>Manual</value></data>
-  <data name="Unknown" xml:space="preserve"><value>Unknown</value></data>
-  <data name="None" xml:space="preserve"><value>None</value></data>
-  <data name="ScanTitle" xml:space="preserve"><value>Scan</value></data>
-  <data name="Scanning" xml:space="preserve"><value>Scanning...</value></data>
-  <data name="ScanStartMenuFailedFormat" xml:space="preserve"><value>Couldn't scan the start menu: {0}</value></data>
-  <data name="SelectFolderToScanGames" xml:space="preserve"><value>Select folder to scan for games</value></data>
-  <data name="SelectExecutable" xml:space="preserve"><value>Select executable</value></data>
-  <data name="ExecutablesFilter" xml:space="preserve"><value>Executables (*.exe;*.lnk)|*.exe;*.lnk</value></data>
-  <data name="InvalidExecutable" xml:space="preserve"><value>Not a valid executable.</value></data>
-  <data name="AddGamesTitle" xml:space="preserve"><value>Add games</value></data>
-  <data name="NoGamesSelected" xml:space="preserve"><value>No games selected.</value></data>
-  <data name="CandidatesFoundFormat" xml:space="preserve"><value>{0} found</value></data>
-  <data name="CandidatesShownFormat" xml:space="preserve"><value>{0} of {1} shown</value></data>
-  <data name="AlreadyInLibrarySkippedFormat" xml:space="preserve"><value>Already in your library ({0}): {1}{2}. They were skipped.</value></data>
-  <data name="MoreSkippedFormat" xml:space="preserve"><value>, +{0} more</value></data>
-  <data name="StatisticsSummaryFormat" xml:space="preserve"><value>Total: {0} | Installed: {1} | Favorites: {2} | Hidden: {3} | Total playtime: {4}</value></data>
-  <data name="GamesInGroupTooltip" xml:space="preserve"><value>Games in group</value></data>
-  <data name="SaveFailedFormat" xml:space="preserve"><value>Save failed: {0}</value></data>
-  <data name="Saved" xml:space="preserve"><value>Saved.</value></data>
-  <data name="LoadingEmulationStatus" xml:space="preserve"><value>Loading emulation status...</value></data>
-  <data name="SplashLoading" xml:space="preserve"><value>Starting...</value></data>
-  <data name="RetroArchNotInstalled" xml:space="preserve"><value>RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.</value></data>
-  <data name="RetroArchInstalledWithCoresFormat" xml:space="preserve"><value>RetroArch is installed with {0} managed core(s). Cores are checked for updates when needed.</value></data>
-  <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve"><value>Could not update RetroArch: {0}</value></data>
-  <data name="Cheats" xml:space="preserve"><value>Cheats</value></data>
-  <data name="CheatsAttribution" xml:space="preserve"><value>Cheats sourced from the libretro-database project, licensed CC BY-SA 4.0.</value></data>
-  <data name="CheatsRequireManagedRom" xml:space="preserve"><value>Cheats require a ROM launched through Bridge-managed RetroArch.</value></data>
-  <data name="CheatsPlatformNotSupported" xml:space="preserve"><value>This platform isn't in the public cheat database Bridge uses.</value></data>
-  <data name="CheatsNotFoundForGame" xml:space="preserve"><value>No cheats found for this game.</value></data>
-  <data name="CheatsFetchFailed" xml:space="preserve"><value>Couldn't fetch cheats for this game.</value></data>
-  <data name="CheatsFileCorrupted" xml:space="preserve"><value>This game's cheat file couldn't be read.</value></data>
-  <data name="CouldNotSaveCheatTitle" xml:space="preserve"><value>Couldn't Save Cheat</value></data>
-  <data name="CouldNotSaveCheatFormat" xml:space="preserve"><value>Couldn't save this cheat's state: {0}</value></data>
-  <data name="AutoApplyCheatsOnLaunch" xml:space="preserve"><value>Apply enabled cheats automatically when launching ROMs</value></data>
-  <data name="AutoApplyCheatsOnLaunchDescription" xml:space="preserve"><value>Writes a per-game RetroArch override so enabled cheats take effect on launch. You can still toggle cheats manually in RetroArch's menu.</value></data>
-  <data name="DatabaseRestoredFromBackup" xml:space="preserve"><value>Your library database was damaged. Bridge restored it from the backup made before your last update.</value></data>
-  <data name="DatabaseFileLocked" xml:space="preserve"><value>Bridge could not access your library database because another Bridge instance is using it. Right-click the Bridge icon in the notification area and choose Exit, then start Bridge again.</value></data>
-  <data name="DatabaseCorruptNoBackupFormat" xml:space="preserve"><value>Your library database is damaged and no valid backup was found.
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Downloading...</value>
+  </data>
+  <data name="CompletionStatusAbandoned" xml:space="preserve">
+    <value>Abandoned</value>
+  </data>
+  <data name="CompletionStatusBeaten" xml:space="preserve">
+    <value>Beaten</value>
+  </data>
+  <data name="CompletionStatusCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="CompletionStatusNotPlayed" xml:space="preserve">
+    <value>Not Played</value>
+  </data>
+  <data name="CompletionStatusOnHold" xml:space="preserve">
+    <value>On Hold</value>
+  </data>
+  <data name="CompletionStatusPlanToPlay" xml:space="preserve">
+    <value>Plan to Play</value>
+  </data>
+  <data name="CompletionStatusPlaying" xml:space="preserve">
+    <value>Playing</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ClientId" xml:space="preserve">
+    <value>Client ID</value>
+  </data>
+  <data name="ClientSecret" xml:space="preserve">
+    <value>Client Secret</value>
+  </data>
+  <data name="InstallDirectory" xml:space="preserve">
+    <value>Install Directory</value>
+  </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="Searching" xml:space="preserve">
+    <value>Searching...</value>
+  </data>
+  <data name="NoResults" xml:space="preserve">
+    <value>No results.</value>
+  </data>
+  <data name="SearchFailed" xml:space="preserve">
+    <value>Search failed.</value>
+  </data>
+  <data name="ImageSelectLoadFailed" xml:space="preserve">
+    <value>Could not load the selected image. Try another result.</value>
+  </data>
+  <data name="LoadingImage" xml:space="preserve">
+    <value>Loading imageâ€¦</value>
+  </data>
+  <data name="ResultsCountFormat" xml:space="preserve">
+    <value>{0} results</value>
+  </data>
+  <data name="EmulationSettingsTitle" xml:space="preserve">
+    <value>Emulation</value>
+  </data>
+  <data name="EmulationManagedRetroArchHeading" xml:space="preserve">
+    <value>Bridge-managed RetroArch</value>
+  </data>
+  <data name="EmulationManagedRetroArchDescription" xml:space="preserve">
+    <value>Bridge detects supported ROM platforms automatically and downloads RetroArch plus the required core when you first play. No external emulator setup is required.</value>
+  </data>
+  <data name="EmulationSupportedSystems" xml:space="preserve">
+    <value>Supported systems include NES, SNES, Nintendo 64, Game Boy, Game Boy Advance, Nintendo DS, Sega 8/16-bit, Atari, PC Engine and WonderSwan.</value>
+  </data>
+  <data name="IgdbSettingsTitle" xml:space="preserve">
+    <value>IGDB Settings</value>
+  </data>
+  <data name="IgdbSettingsHelp" xml:space="preserve">
+    <value>Get a free Client ID and Secret from a Twitch Developer account: dev.twitch.tv/console/apps â€” register any app, "Client Type" doesn't matter for this.</value>
+  </data>
+  <data name="ConfigureEmulatorTitle" xml:space="preserve">
+    <value>Configure Emulator</value>
+  </data>
+  <data name="ExecutableRelativeOrAbsolute" xml:space="preserve">
+    <value>Executable (relative to Install Directory, or absolute)</value>
+  </data>
+  <data name="ArgumentsRomPathPlaceholder" xml:space="preserve">
+    <value>Arguments (use {RomPath} where the ROM path goes)</value>
+  </data>
+  <data name="RomExtensionsCommaSeparated" xml:space="preserve">
+    <value>ROM extensions (comma-separated, e.g. nes, zip)</value>
+  </data>
+  <data name="SearchImagesTitle" xml:space="preserve">
+    <value>Search images</value>
+  </data>
+  <data name="SearchImagesQueryName" xml:space="preserve">
+    <value>Image search query</value>
+  </data>
+  <data name="SearchImagesQueryTooltip" xml:space="preserve">
+    <value>Search term (game name)</value>
+  </data>
+  <data name="SearchImagesSelectHint" xml:space="preserve">
+    <value>Double-click a result or use Select. A preview appears on the right.</value>
+  </data>
+  <data name="SearchImagesEmptyState" xml:space="preserve">
+    <value>No images found. Try a different search term.</value>
+  </data>
+  <data name="SearchImagesPreviewCaption" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="SearchImagesPreviewPlaceholder" xml:space="preserve">
+    <value>Select an image to preview it here.</value>
+  </data>
+  <data name="ImageDimensionsFormat" xml:space="preserve">
+    <value>{0} Ã— {1}</value>
+  </data>
+  <data name="CustomThemeColorTitle" xml:space="preserve">
+    <value>Custom Theme Color</value>
+  </data>
+  <data name="CustomThemeColorDescription" xml:space="preserve">
+    <value>Pick an accent color â€” the whole theme recomputes from it.</value>
+  </data>
+  <data name="ViewList" xml:space="preserve">
+    <value>List view</value>
+  </data>
+  <data name="ViewCovers" xml:space="preserve">
+    <value>Covers view</value>
+  </data>
+  <data name="ViewTable" xml:space="preserve">
+    <value>Table view</value>
+  </data>
+  <data name="SearchGames" xml:space="preserve">
+    <value>Search games</value>
+  </data>
+  <data name="SearchGamesTooltip" xml:space="preserve">
+    <value>Search games (Ctrl+F)</value>
+  </data>
+  <data name="BridgeMenu" xml:space="preserve">
+    <value>Bridge menu</value>
+  </data>
+  <data name="FilterPresets" xml:space="preserve">
+    <value>Filter presets</value>
+  </data>
+  <data name="RemoveFilter" xml:space="preserve">
+    <value>Remove filter</value>
+  </data>
+  <data name="SortSettings" xml:space="preserve">
+    <value>Sort settings</value>
+  </data>
+  <data name="GroupSettings" xml:space="preserve">
+    <value>Group settings</value>
+  </data>
+  <data name="SelectRandomGame" xml:space="preserve">
+    <value>Select random game</value>
+  </data>
+  <data name="Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="Sources" xml:space="preserve">
+    <value>Sources</value>
+  </data>
+  <data name="SupportProject" xml:space="preserve">
+    <value>Support the project</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>Library</value>
+  </data>
+  <data name="SidebarRoms" xml:space="preserve">
+    <value>ROMs</value>
+  </data>
+  <data name="Statistics" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="Play" xml:space="preserve">
+    <value>Play</value>
+  </data>
+  <data name="RefreshLibrary" xml:space="preserve">
+    <value>Refresh Library</value>
+  </data>
+  <data name="RefreshLibraryInProgress" xml:space="preserve">
+    <value>Refreshing library...</value>
+  </data>
+  <data name="RefreshLibraryComplete" xml:space="preserve">
+    <value>Library refreshed.</value>
+  </data>
+  <data name="RefreshLibraryFailedFormat" xml:space="preserve">
+    <value>Couldn't refresh the library: {0}</value>
+  </data>
+  <data name="DownloadMetadata" xml:space="preserve">
+    <value>Download Metadata</value>
+  </data>
+  <data name="Links" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="OpenGameLocation" xml:space="preserve">
+    <value>Open Game Location</value>
+  </data>
+  <data name="OpenSaveLocation" xml:space="preserve">
+    <value>Open Save Location</value>
+  </data>
+  <data name="SetSaveLocation" xml:space="preserve">
+    <value>Set Save Location</value>
+  </data>
+  <data name="SetSaveLocationDialogTitle" xml:space="preserve">
+    <value>Select the save folder for this game</value>
+  </data>
+  <data name="SaveLocationSetFormat" xml:space="preserve">
+    <value>Save folder for {0} set to {1}.</value>
+  </data>
+  <data name="BackupRomSaves" xml:space="preserve">
+    <value>Backup Saves</value>
+  </data>
+  <data name="RestoreRomSaves" xml:space="preserve">
+    <value>Restore Saves</value>
+  </data>
+  <data name="RomSaveBackupAutomatic" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="RomSaveBackupManual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="RomSaveBackupItemFormat" xml:space="preserve">
+    <value>{0} â€” {1} ({2} files)</value>
+  </data>
+  <data name="RomSaveBackupCreatedFormat" xml:space="preserve">
+    <value>Saved a backup of {0} ({2} files) at {1}.</value>
+  </data>
+  <data name="RomSaveBackupFailedFormat" xml:space="preserve">
+    <value>Could not back up saves for {0}: {1}</value>
+  </data>
+  <data name="RomSaveRestoreConfirmFormat" xml:space="preserve">
+    <value>Restore {0} save files from {1} ({2}) for {3}? Current save files in that location will be replaced.</value>
+  </data>
+  <data name="RomSaveRestoreFailedFormat" xml:space="preserve">
+    <value>Could not restore saves for {0}: {1}</value>
+  </data>
+  <data name="RomSaveRestoredFormat" xml:space="preserve">
+    <value>Restored {2} save files for {0} from {1}.</value>
+  </data>
+  <data name="RomSaveAutoBackupStatusFormat" xml:space="preserve">
+    <value>Backed up {2} save files for {0} at {1}.</value>
+  </data>
+  <data name="SetCompletionStatus" xml:space="preserve">
+    <value>Set Completion Status</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="NameRequired" xml:space="preserve">
+    <value>Name is required.</value>
+  </data>
+  <data name="SelectFolderToScan" xml:space="preserve">
+    <value>Select a folder to scan.</value>
+  </data>
+  <data name="CouldNotCreateReferenceFormat" xml:space="preserve">
+    <value>Could not create {0}.</value>
+  </data>
+  <data name="AddReferenceTitle" xml:space="preserve">
+    <value>Add reference</value>
+  </data>
+  <data name="AddGame" xml:space="preserve">
+    <value>Add Game</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Steam" xml:space="preserve">
+    <value>Steam</value>
+  </data>
+  <data name="Epic" xml:space="preserve">
+    <value>Epic</value>
+  </data>
+  <data name="ScanAutomatically" xml:space="preserve">
+    <value>Scan Automatically...</value>
+  </data>
+  <data name="ScanRoms" xml:space="preserve">
+    <value>Scan ROMs...</value>
+  </data>
+  <data name="AddManually" xml:space="preserve">
+    <value>Add Manually...</value>
+  </data>
+  <data name="Support" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="ThirdPartyClients" xml:space="preserve">
+    <value>3rd party clients</value>
+  </data>
+  <data name="Sidebar" xml:space="preserve">
+    <value>Sidebar</value>
+  </data>
+  <data name="ShowSidebar" xml:space="preserve">
+    <value>Show Sidebar</value>
+  </data>
+  <data name="Position" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="Left" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Right" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="Top" xml:space="preserve">
+    <value>Top</value>
+  </data>
+  <data name="Bottom" xml:space="preserve">
+    <value>Bottom</value>
+  </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Manage integrations, appearance, language, library backups, and updates.</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="AboutBridge" xml:space="preserve">
+    <value>About Bridge...</value>
+  </data>
+  <data name="Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="GameRemovedFromLibrary" xml:space="preserve">
+    <value>Game removed from library.</value>
+  </data>
+  <data name="NoInstallDirectoryFormat" xml:space="preserve">
+    <value>'{0}' has no install directory.</value>
+  </data>
+  <data name="NoSaveLocationFormat" xml:space="preserve">
+    <value>'{0}' has no save location.</value>
+  </data>
+  <data name="CouldNotOpenDirectoryFormat" xml:space="preserve">
+    <value>Couldn't open '{0}'.</value>
+  </data>
+  <data name="ScanCompleteFormat" xml:space="preserve">
+    <value>Scan complete: {0} new ROM(s) imported from '{1}'.</value>
+  </data>
+  <data name="InstalledScanCompleteFormat" xml:space="preserve">
+    <value>Scan complete: {0} new game(s) imported from '{1}'.</value>
+  </data>
+  <data name="ScanFailedFormat" xml:space="preserve">
+    <value>Scan failed: {0}</value>
+  </data>
+  <data name="SteamNotDetectedSkippedImport" xml:space="preserve">
+    <value>Steam not detected â€” skipped import.</value>
+  </data>
+  <data name="EpicNotDetectedSkippedImport" xml:space="preserve">
+    <value>Epic Games Launcher not detected â€” skipped import.</value>
+  </data>
+  <data name="ImportResultFormat" xml:space="preserve">
+    <value>{0} import: {1} new, {2} updated.</value>
+  </data>
+  <data name="ImportFailedFormat" xml:space="preserve">
+    <value>{0} import failed: {1}</value>
+  </data>
+  <data name="StartupImportFailedFormat" xml:space="preserve">
+    <value>Startup import failed: {0}</value>
+  </data>
+  <data name="DownloadingMetadataForGameFormat" xml:space="preserve">
+    <value>Downloading metadata for '{0}'...</value>
+  </data>
+  <data name="NoMetadataFoundFormat" xml:space="preserve">
+    <value>No metadata found for '{0}'.</value>
+  </data>
+  <data name="NoInternetMetadataDeferred" xml:space="preserve">
+    <value>No internet connection. Metadata will download the next time Bridge opens with a connection.</value>
+  </data>
+  <data name="NoInternetMetadataDeferredForGamesFormat" xml:space="preserve">
+    <value>No internet connection. Metadata for {0} game(s) will download the next time Bridge opens with a connection.</value>
+  </data>
+  <data name="DownloadingMetadataForGamesFormat" xml:space="preserve">
+    <value>Downloading metadata for {0} game(s)...</value>
+  </data>
+  <data name="MetadataAppliedToGameFormat" xml:space="preserve">
+    <value>Metadata applied to '{0}' (source: {1}).</value>
+  </data>
+  <data name="MetadataAppliedBatchFormat" xml:space="preserve">
+    <value>Metadata applied: {0}/{1} game(s) updated.</value>
+  </data>
+  <data name="NoMetadataFoundForAddedGamesFormat" xml:space="preserve">
+    <value>No metadata found for the added game(s) ({0} checked).</value>
+  </data>
+  <data name="MetadataSyncCompleteFormat" xml:space="preserve">
+    <value>Metadata sync complete: {0}/{1} game(s) updated.</value>
+  </data>
+  <data name="MetadataSyncNoUpdatesFormat" xml:space="preserve">
+    <value>Metadata sync complete: no updates ({0} game(s) checked).</value>
+  </data>
+  <data name="MetadataSyncNoInternet" xml:space="preserve">
+    <value>Metadata sync could not run â€” no internet connection. It will retry the next time Bridge opens with a connection.</value>
+  </data>
+  <data name="LaunchingUninstallerFormat" xml:space="preserve">
+    <value>Launching uninstaller for '{0}'...</value>
+  </data>
+  <data name="GameUninstalledFormat" xml:space="preserve">
+    <value>'{0}' uninstalled.</value>
+  </data>
+  <data name="UninstallerFinishedStillInstalledFormat" xml:space="preserve">
+    <value>Uninstaller for '{0}' finished but the game is still detected as installed.</value>
+  </data>
+  <data name="GameRunningCloseBeforeDeleteFormat" xml:space="preserve">
+    <value>'{0}' is running â€” close it before deleting.</value>
+  </data>
+  <data name="GameRunningCloseBeforeUninstallFormat" xml:space="preserve">
+    <value>'{0}' is running â€” close it before uninstalling.</value>
+  </data>
+  <data name="NoUninstallerFoundFormat" xml:space="preserve">
+    <value>No uninstaller found for '{0}'.</value>
+  </data>
+  <data name="DownloadingUpdate" xml:space="preserve">
+    <value>Downloading update...</value>
+  </data>
+  <data name="UpdateFailedFormat" xml:space="preserve">
+    <value>Update failed: {0}</value>
+  </data>
+  <data name="PreparingRetroArchFormat" xml:space="preserve">
+    <value>Preparing RetroArch for '{0}'...</value>
+  </data>
+  <data name="CouldNotLaunchGameFormat" xml:space="preserve">
+    <value>Couldn't launch '{0}': {1}</value>
+  </data>
+  <data name="StoppingGameFormat" xml:space="preserve">
+    <value>Stopping '{0}'...</value>
+  </data>
+  <data name="PlayingGameFormat" xml:space="preserve">
+    <value>Playing {0}...</value>
+  </data>
+  <data name="SessionSummaryFormat" xml:space="preserve">
+    <value>{0} â€” session: {1}s, total: {2}s</value>
+  </data>
+  <data name="ShowHiddenGames" xml:space="preserve">
+    <value>Show hidden games</value>
+  </data>
+  <data name="Favorite" xml:space="preserve">
+    <value>Favorite</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="More" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="GameInfo" xml:space="preserve">
+    <value>Game info</value>
+  </data>
+  <data name="CoverZoom" xml:space="preserve">
+    <value>Cover zoom</value>
+  </data>
+  <data name="EmulationProgress" xml:space="preserve">
+    <value>Emulation progress</value>
+  </data>
+  <data name="StatusProgress" xml:space="preserve">
+    <value>Operation progress</value>
+  </data>
+  <data name="StatusMessage" xml:space="preserve">
+    <value>Status message</value>
+  </data>
+  <data name="GamesList" xml:space="preserve">
+    <value>Games list</value>
+  </data>
+  <data name="CoversGrid" xml:space="preserve">
+    <value>Covers grid</value>
+  </data>
+  <data name="GamesTable" xml:space="preserve">
+    <value>Games table</value>
+  </data>
+  <data name="ExpandGroup" xml:space="preserve">
+    <value>Expand or collapse group</value>
+  </data>
+  <data name="All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="NotPlayedFilter" xml:space="preserve">
+    <value>Not Played</value>
+  </data>
+  <data name="RecentlyPlayed" xml:space="preserve">
+    <value>Recently Played</value>
+  </data>
+  <data name="DontGroup" xml:space="preserve">
+    <value>Don't group</value>
+  </data>
+  <data name="Developer" xml:space="preserve">
+    <value>Developer</value>
+  </data>
+  <data name="Publisher" xml:space="preserve">
+    <value>Publisher</value>
+  </data>
+  <data name="Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Genre" xml:space="preserve">
+    <value>Genre</value>
+  </data>
+  <data name="InstallationStatus" xml:space="preserve">
+    <value>Installation Status</value>
+  </data>
+  <data name="CompletionStatus" xml:space="preserve">
+    <value>Completion Status</value>
+  </data>
+  <data name="TimePlayed" xml:space="preserve">
+    <value>Time Played</value>
+  </data>
+  <data name="PlayCount" xml:space="preserve">
+    <value>Play Count</value>
+  </data>
+  <data name="ReleaseYear" xml:space="preserve">
+    <value>Release Year</value>
+  </data>
+  <data name="LastPlayed" xml:space="preserve">
+    <value>Last Played</value>
+  </data>
+  <data name="ReleaseDate" xml:space="preserve">
+    <value>Release Date</value>
+  </data>
+  <data name="CriticScore" xml:space="preserve">
+    <value>Critic Score</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="SortAscending" xml:space="preserve">
+    <value>Ascending (A-Z)</value>
+  </data>
+  <data name="SortDescending" xml:space="preserve">
+    <value>Descending (Z-A)</value>
+  </data>
+  <data name="KoFi" xml:space="preserve">
+    <value>Ko-fi</value>
+  </data>
+  <data name="GitHubSponsors" xml:space="preserve">
+    <value>GitHub Sponsors</value>
+  </data>
+  <data name="IgdbMenu" xml:space="preserve">
+    <value>IGDB...</value>
+  </data>
+  <data name="CustomTheme" xml:space="preserve">
+    <value>Custom...</value>
+  </data>
+  <data name="ThemeBlue" xml:space="preserve">
+    <value>Blue</value>
+  </data>
+  <data name="ThemeCyan" xml:space="preserve">
+    <value>Cyan</value>
+  </data>
+  <data name="ThemeTeal" xml:space="preserve">
+    <value>Teal</value>
+  </data>
+  <data name="ThemeGreen" xml:space="preserve">
+    <value>Green</value>
+  </data>
+  <data name="ThemePurple" xml:space="preserve">
+    <value>Purple</value>
+  </data>
+  <data name="ThemePink" xml:space="preserve">
+    <value>Pink</value>
+  </data>
+  <data name="ThemeRed" xml:space="preserve">
+    <value>Red</value>
+  </data>
+  <data name="ThemeOrange" xml:space="preserve">
+    <value>Orange</value>
+  </data>
+  <data name="ThemeAmber" xml:space="preserve">
+    <value>Amber</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Added" xml:space="preserve">
+    <value>Added</value>
+  </data>
+  <data name="Playtime" xml:space="preserve">
+    <value>Playtime</value>
+  </data>
+  <data name="Completion" xml:space="preserve">
+    <value>Completion</value>
+  </data>
+  <data name="InstallDirectoryLabel" xml:space="preserve">
+    <value>Install Directory</value>
+  </data>
+  <data name="InstallSize" xml:space="preserve">
+    <value>Install Size</value>
+  </data>
+  <data name="Genres" xml:space="preserve">
+    <value>Genres</value>
+  </data>
+  <data name="Developers" xml:space="preserve">
+    <value>Developers</value>
+  </data>
+  <data name="Publishers" xml:space="preserve">
+    <value>Publishers</value>
+  </data>
+  <data name="Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Features" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="Tags" xml:space="preserve">
+    <value>Tags</value>
+  </data>
+  <data name="AgeRating" xml:space="preserve">
+    <value>Age Rating</value>
+  </data>
+  <data name="Series" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="RomDatRegion" xml:space="preserve">
+    <value>ROM region</value>
+  </data>
+  <data name="RomDatPlatform" xml:space="preserve">
+    <value>ROM platform</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="UserScore" xml:space="preserve">
+    <value>User Score</value>
+  </data>
+  <data name="CommunityScore" xml:space="preserve">
+    <value>Community Score</value>
+  </data>
+  <data name="NotInstalled" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="SelectAGame" xml:space="preserve">
+    <value>Select a game</value>
+  </data>
+  <data name="WhatsNewTitlePrefix" xml:space="preserve">
+    <value>What's New</value>
+  </data>
+  <data name="WhatsNewTitleFormat" xml:space="preserve">
+    <value>What's new in Bridge {0}</value>
+  </data>
+  <data name="WhatsNewGotIt" xml:space="preserve">
+    <value>Got it</value>
+  </data>
+  <data name="WhatsNewSectionAdded" xml:space="preserve">
+    <value>Added</value>
+  </data>
+  <data name="WhatsNewSectionChanged" xml:space="preserve">
+    <value>Changed</value>
+  </data>
+  <data name="WhatsNewSectionFixed" xml:space="preserve">
+    <value>Fixed</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Average" xml:space="preserve">
+    <value>Average</value>
+  </data>
+  <data name="Played" xml:space="preserve">
+    <value>Played</value>
+  </data>
+  <data name="Hidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="TopPlayTime" xml:space="preserve">
+    <value>Top Play Time</value>
+  </data>
+  <data name="GamesCountFormat" xml:space="preserve">
+    <value>{0} games</value>
+  </data>
+  <data name="CompletionCountFormat" xml:space="preserve">
+    <value>{0} ({1:0}%)</value>
+  </data>
+  <data name="Release" xml:space="preserve">
+    <value>Release</value>
+  </data>
+  <data name="LabelAdded" xml:space="preserve">
+    <value>Added:</value>
+  </data>
+  <data name="LabelPlaytime" xml:space="preserve">
+    <value>Playtime:</value>
+  </data>
+  <data name="LabelLastPlayed" xml:space="preserve">
+    <value>Last Played:</value>
+  </data>
+  <data name="LabelCompletion" xml:space="preserve">
+    <value>Completion:</value>
+  </data>
+  <data name="LabelInstall" xml:space="preserve">
+    <value>Install:</value>
+  </data>
+  <data name="LabelInstallSize" xml:space="preserve">
+    <value>Install Size:</value>
+  </data>
+  <data name="LabelLibrary" xml:space="preserve">
+    <value>Library:</value>
+  </data>
+  <data name="LabelPlatform" xml:space="preserve">
+    <value>Platform:</value>
+  </data>
+  <data name="LabelGenre" xml:space="preserve">
+    <value>Genre:</value>
+  </data>
+  <data name="LabelDeveloper" xml:space="preserve">
+    <value>Dev:</value>
+  </data>
+  <data name="LabelPublisher" xml:space="preserve">
+    <value>Publisher:</value>
+  </data>
+  <data name="LabelCategories" xml:space="preserve">
+    <value>Categories:</value>
+  </data>
+  <data name="LabelFeatures" xml:space="preserve">
+    <value>Features:</value>
+  </data>
+  <data name="LabelTags" xml:space="preserve">
+    <value>Tags:</value>
+  </data>
+  <data name="LabelAgeRating" xml:space="preserve">
+    <value>Age Rating:</value>
+  </data>
+  <data name="LabelSeries" xml:space="preserve">
+    <value>Series:</value>
+  </data>
+  <data name="LabelRegion" xml:space="preserve">
+    <value>Region:</value>
+  </data>
+  <data name="LabelVersion" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="LabelUserScore" xml:space="preserve">
+    <value>User Score:</value>
+  </data>
+  <data name="LabelCriticScore" xml:space="preserve">
+    <value>Critic Score:</value>
+  </data>
+  <data name="LabelCommunityScore" xml:space="preserve">
+    <value>Community Score:</value>
+  </data>
+  <data name="HeroCriticScoreShort" xml:space="preserve">
+    <value>Critics</value>
+  </data>
+  <data name="HeroCommunityScoreShort" xml:space="preserve">
+    <value>Community</value>
+  </data>
+  <data name="LabelLinks" xml:space="preserve">
+    <value>Links:</value>
+  </data>
+  <data name="Platforms" xml:space="preserve">
+    <value>Platforms</value>
+  </data>
+  <data name="EditGame" xml:space="preserve">
+    <value>Edit Game</value>
+  </data>
+  <data name="NewGame" xml:space="preserve">
+    <value>New Game</value>
+  </data>
+  <data name="SteamManagedMetadataNotice" xml:space="preserve">
+    <value>This Steam game's metadata is managed by Bridge and stays in sync with Steam. Only the artwork (icon, cover, background) can be customized here.</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Media" xml:space="preserve">
+    <value>Media</value>
+  </data>
+  <data name="AddBanner" xml:space="preserve">
+    <value>Add banner</value>
+  </data>
+  <data name="ChangeArt" xml:space="preserve">
+    <value>Change art</value>
+  </data>
+  <data name="BigCovers" xml:space="preserve">
+    <value>Big covers</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="SteamGridDb" xml:space="preserve">
+    <value>SteamGridDB</value>
+  </data>
+  <data name="SetupSteamGridDb" xml:space="preserve">
+    <value>Setup SteamGridDB</value>
+  </data>
+  <data name="SteamGridDbSetupPrompt" xml:space="preserve">
+    <value>Connect SteamGridDB for community icons, covers, and hero art.</value>
+  </data>
+  <data name="SteamGridDbSetupHint" xml:space="preserve">
+    <value>Free API key. Setup opens steamgriddb.com in your browser â€” the recommended and secure way.</value>
+  </data>
+  <data name="SteamGridDbSetupSecureNote" xml:space="preserve">
+    <value>Bridge never sees your Steam password; only the API key you paste.</value>
+  </data>
+  <data name="SteamGridDbSettingsTitle" xml:space="preserve">
+    <value>SteamGridDB Settings</value>
+  </data>
+  <data name="SteamGridDbSettingsHelp" xml:space="preserve">
+    <value>SteamGridDB provides community-made icons, covers, and hero banners for games.</value>
+  </data>
+  <data name="SteamGridDbSettingsIntro" xml:space="preserve">
+    <value>SteamGridDB is a well-known community site for custom game artwork â€” icons, grid covers, hero banners, and more.</value>
+  </data>
+  <data name="SteamGridDbApiKeyNeeded" xml:space="preserve">
+    <value>To browse that artwork from Bridge, you need a free API key from your SteamGridDB profile.</value>
+  </data>
+  <data name="SteamGridDbObtainKeyHeading" xml:space="preserve">
+    <value>To obtain it:</value>
+  </data>
+  <data name="SteamGridDbTutorialStep1" xml:space="preserve">
+    <value>Click Open SteamGridDB below.</value>
+  </data>
+  <data name="SteamGridDbTutorialStep2" xml:space="preserve">
+    <value>Sign in with Steam on steamgriddb.com (official Steam login).</value>
+  </data>
+  <data name="SteamGridDbTutorialStep3" xml:space="preserve">
+    <value>Generate an API key on the API tab.</value>
+  </data>
+  <data name="SteamGridDbTutorialStep4" xml:space="preserve">
+    <value>Paste the key below and save.</value>
+  </data>
+  <data name="SteamGridDbRecommended" xml:space="preserve">
+    <value>Recommended</value>
+  </data>
+  <data name="SteamGridDbOpenPreferences" xml:space="preserve">
+    <value>Open SteamGridDB</value>
+  </data>
+  <data name="SteamGridDbRefreshCallout" xml:space="preserve">
+    <value>After Steam sign-in, press F5 if the page is blank.</value>
+  </data>
+  <data name="SteamGridDbInAppTitle" xml:space="preserve">
+    <value>Only if your browser gives you trouble</value>
+  </data>
+  <data name="SteamGridDbOpenInApp" xml:space="preserve">
+    <value>Open in Bridge instead</value>
+  </data>
+  <data name="SteamGridDbInAppHint" xml:space="preserve">
+    <value>Embedded WebView2 browser â€” same steamgriddb.com and Steam sites, with auto-refresh after sign-in. Bridge never sees or stores your Steam password; use this only to simplify the flow.</value>
+  </data>
+  <data name="SteamGridDbBrowserTitle" xml:space="preserve">
+    <value>SteamGridDB â€” API key</value>
+  </data>
+  <data name="SteamGridDbBrowserTrustNote" xml:space="preserve">
+    <value>Same steamgriddb.com and Steam sign-in as your browser. Bridge never sees your Steam password.</value>
+  </data>
+  <data name="SteamGridDbBrowserOpenExternal" xml:space="preserve">
+    <value>Open in browser</value>
+  </data>
+  <data name="SteamGridDbBrowserRefresh" xml:space="preserve">
+    <value>Refresh page</value>
+  </data>
+  <data name="SteamGridDbApiKeyLabel" xml:space="preserve">
+    <value>API key</value>
+  </data>
+  <data name="OpenSteamGridDbSettings" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="SettingsSteamGridDbCardDescription" xml:space="preserve">
+    <value>API key for community game artwork in the media editor.</value>
+  </data>
+  <data name="RetroAchievementsSettingsTitle" xml:space="preserve">
+    <value>RetroAchievements</value>
+  </data>
+  <data name="RetroAchievementsSettingsHelp" xml:space="preserve">
+    <value>Web API key: achievement progress in Bridge. Account password: unlock achievements while playing in RetroArch (rcheevos). Get both from your RetroAchievements control panel.</value>
+  </data>
+  <data name="RetroAchievementsPasswordLabel" xml:space="preserve">
+    <value>Account password (RetroArch)</value>
+  </data>
+  <data name="RetroAchievementsPasswordHint" xml:space="preserve">
+    <value>Used only to sign in through RetroArch. Not your web API key.</value>
+  </data>
+  <data name="RetroAchievementsOpenControlPanel" xml:space="preserve">
+    <value>Open RetroAchievements control panel</value>
+  </data>
+  <data name="RetroAchievementsUsernameLabel" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="RetroAchievementsApiKeyLabel" xml:space="preserve">
+    <value>Web API key</value>
+  </data>
+  <data name="OpenRetroAchievementsSettings" xml:space="preserve">
+    <value>Configure</value>
+  </data>
+  <data name="SettingsRetroAchievementsCardDescription" xml:space="preserve">
+    <value>RetroAchievements credentials for ROM progress in Bridge and unlocks in RetroArch.</value>
+  </data>
+  <data name="SteamGridDbPickerTitle" xml:space="preserve">
+    <value>SteamGridDB artwork</value>
+  </data>
+  <data name="SteamGridDbSelectGame" xml:space="preserve">
+    <value>Select game</value>
+  </data>
+  <data name="SteamGridDbPickGameHint" xml:space="preserve">
+    <value>Multiple matches â€” pick the correct game on the left.</value>
+  </data>
+  <data name="SteamGridDbMatchesTitle" xml:space="preserve">
+    <value>Matching games</value>
+  </data>
+  <data name="SteamGridDbArtworkForFormat" xml:space="preserve">
+    <value>Artwork for {0}</value>
+  </data>
+  <data name="SteamGridDbSearchHint" xml:space="preserve">
+    <value>Search by game name. If several games match, choose one from the list.</value>
+  </data>
+  <data name="HeroBackgroundStyleLabel" xml:space="preserve">
+    <value>Banner style</value>
+  </data>
+  <data name="HeroBackgroundDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="HeroBackgroundBlack" xml:space="preserve">
+    <value>Black</value>
+  </data>
+  <data name="HeroBackgroundCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="IgdbTutorialStep1" xml:space="preserve">
+    <value>Sign in at dev.twitch.tv and open the Developer Console.</value>
+  </data>
+  <data name="IgdbTutorialStep2" xml:space="preserve">
+    <value>Register a new application (any name; client type does not matter).</value>
+  </data>
+  <data name="IgdbTutorialStep3" xml:space="preserve">
+    <value>Copy the Client ID from the app page.</value>
+  </data>
+  <data name="IgdbTutorialStep4" xml:space="preserve">
+    <value>Generate a Client Secret and paste both values below.</value>
+  </data>
+  <data name="IgdbOpenDeveloperConsole" xml:space="preserve">
+    <value>Open Twitch Developer Console</value>
+  </data>
+  <data name="SortingName" xml:space="preserve">
+    <value>Sorting Name</value>
+  </data>
+  <data name="SortingNameTooltip" xml:space="preserve">
+    <value>Name used for sorting (e.g. 'Witcher 3' for 'The Witcher 3: Wild Hunt'). Leave empty to sort by Name.</value>
+  </data>
+  <data name="ReleaseDateTooltip" xml:space="preserve">
+    <value>YYYY, YYYY-MM or YYYY-MM-DD</value>
+  </data>
+  <data name="AddNewGenre" xml:space="preserve">
+    <value>Add new genre</value>
+  </data>
+  <data name="AddNewDeveloper" xml:space="preserve">
+    <value>Add new developer</value>
+  </data>
+  <data name="AddNewPublisher" xml:space="preserve">
+    <value>Add new publisher</value>
+  </data>
+  <data name="AddNewPlatform" xml:space="preserve">
+    <value>Add new platform</value>
+  </data>
+  <data name="IconLabel" xml:space="preserve">
+    <value>Icon</value>
+  </data>
+  <data name="CoverImageLabel" xml:space="preserve">
+    <value>Cover Image</value>
+  </data>
+  <data name="BackgroundImageLabel" xml:space="preserve">
+    <value>Background Image</value>
+  </data>
+  <data name="Browse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="SearchWeb" xml:space="preserve">
+    <value>Search web...</value>
+  </data>
+  <data name="ScanRomsTitle" xml:space="preserve">
+    <value>Scan ROMs</value>
+  </data>
+  <data name="FolderToScanForRoms" xml:space="preserve">
+    <value>Folder to scan for ROMs</value>
+  </data>
+  <data name="ScanRomsHelp" xml:space="preserve">
+    <value>Bridge scans this folder and its subfolders, identifies supported systems from each ROM extension, and downloads metadata automatically. RetroArch is installed only when you first play a ROM.</value>
+  </data>
+  <data name="Scan" xml:space="preserve">
+    <value>Scan</value>
+  </data>
+  <data name="ScanAutomaticallyTitle" xml:space="preserve">
+    <value>Scan Automatically</value>
+  </data>
+  <data name="ScanFolder" xml:space="preserve">
+    <value>Scan Folder...</value>
+  </data>
+  <data name="DetectInstalled" xml:space="preserve">
+    <value>Detect Installed</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="SelectNone" xml:space="preserve">
+    <value>Select None</value>
+  </data>
+  <data name="SelectAllTooltip" xml:space="preserve">
+    <value>Check every game in the list</value>
+  </data>
+  <data name="SelectNoneTooltip" xml:space="preserve">
+    <value>Uncheck every game in the list</value>
+  </data>
+  <data name="HideAlreadyImported" xml:space="preserve">
+    <value>Hide already imported</value>
+  </data>
+  <data name="AddGames" xml:space="preserve">
+    <value>Add Games</value>
+  </data>
+  <data name="Screenshots" xml:space="preserve">
+    <value>Screenshots</value>
+  </data>
+  <data name="AboutBridgeTitle" xml:space="preserve">
+    <value>About Bridge</value>
+  </data>
+  <data name="AboutDescription" xml:space="preserve">
+    <value>Bridge unifies your games â€” from external libraries, manual entries and emulated ROMs â€” into one fast, local, self-contained catalog. Incremental import, local metadata, fast virtualized views and emulation support, without a plugin runtime or a separate fullscreen frontend. Playnite is an inspiration, not a specification: Bridge's structure, architecture and implementation are its own.</value>
+  </data>
+  <data name="Credits" xml:space="preserve">
+    <value>Credits</value>
+  </data>
+  <data name="AboutArtCredit" xml:space="preserve">
+    <value>App icon and logo artwork by Erick NuÃ±ez.</value>
+  </data>
+  <data name="Project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Environment" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="Updates" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="ReceiveBetaBuilds" xml:space="preserve">
+    <value>Receive beta builds</value>
+  </data>
+  <data name="BetaBuildsDescription" xml:space="preserve">
+    <value>Install prereleases published before their stable release.</value>
+  </data>
+  <data name="SettingsStartWithWindows" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="SettingsStartWithWindowsDescription" xml:space="preserve">
+    <value>Launch Bridge automatically when you sign in to Windows.</value>
+  </data>
+  <data name="SettingsStartWithWindowsUnavailable" xml:space="preserve">
+    <value>Available only when running the published Bridge.exe.</value>
+  </data>
+  <data name="SettingsStartWithWindowsFailed" xml:space="preserve">
+    <value>Could not update the Windows startup setting.</value>
+  </data>
+  <data name="AboutDisclaimer" xml:space="preserve">
+    <value>Made with care by ZavalaSebas. This software is provided "as is", without warranty of any kind. Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG or any platform or emulator project.</value>
+  </data>
+  <data name="BridgeAppName" xml:space="preserve">
+    <value>Bridge</value>
+  </data>
+  <data name="RemoveFromFavorites" xml:space="preserve">
+    <value>Remove from Favorites</value>
+  </data>
+  <data name="AddToFavorites" xml:space="preserve">
+    <value>Add to Favorites</value>
+  </data>
+  <data name="ShowGame" xml:space="preserve">
+    <value>Show Game</value>
+  </data>
+  <data name="HideGame" xml:space="preserve">
+    <value>Hide Game</value>
+  </data>
+  <data name="RemoveGameTitle" xml:space="preserve">
+    <value>Remove game</value>
+  </data>
+  <data name="RemoveGameConfirmFormat" xml:space="preserve">
+    <value>Remove "{0}" from your Bridge library? This cannot be undone.</value>
+  </data>
+  <data name="SettingsIntegrations" xml:space="preserve">
+    <value>Integrations</value>
+  </data>
+  <data name="SettingsAppearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="SettingsLanguageTitle" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SettingsLanguageDescription" xml:space="preserve">
+    <value>Interface language. Bridge restarts when you change this setting.</value>
+  </data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="SettingsLanguageSpanish" xml:space="preserve">
+    <value>EspaÃ±ol</value>
+  </data>
+  <data name="SettingsTrayIconTitle" xml:space="preserve">
+    <value>System tray icon</value>
+  </data>
+  <data name="SettingsTrayIconDescription" xml:space="preserve">
+    <value>Closing the window keeps Bridge in the notification area. Double-click the tray icon to reopen.</value>
+  </data>
+  <data name="SettingsKeepSelectionTitle" xml:space="preserve">
+    <value>Keep selection across views</value>
+  </data>
+  <data name="SettingsKeepSelectionDescription" xml:space="preserve">
+    <value>When off, switching between List, Covers, and Table clears the selected game.</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutTitle" xml:space="preserve">
+    <value>Covers detail layout</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutDescription" xml:space="preserve">
+    <value>In Covers view, use the compact info panel or the full details panel at half the window width. List view still opens details larger.</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutCompact" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="SettingsCoversDetailLayoutStandard" xml:space="preserve">
+    <value>Full details</value>
+  </data>
+  <data name="SettingsTranslucentSidebarTitle" xml:space="preserve">
+    <value>Translucent sidebar</value>
+  </data>
+  <data name="SettingsTranslucentSidebarDescription" xml:space="preserve">
+    <value>Use a semi-transparent sidebar so the selected game's background shows through. The title bar and status bar share the same frosted look.</value>
+  </data>
+  <data name="SettingsTranslucentBackgroundTitle" xml:space="preserve">
+    <value>Translucent background</value>
+  </data>
+  <data name="SettingsTranslucentBackgroundDescription" xml:space="preserve">
+    <value>Show blurred game artwork behind the library list and detail panels. Turn off for solid theme colors everywhere except Settings and Statistics.</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Images" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="Achievements" xml:space="preserve">
+    <value>Achievements</value>
+  </data>
+  <data name="AchievementsLoading" xml:space="preserve">
+    <value>Loading achievementsâ€¦</value>
+  </data>
+  <data name="AchievementsNotSupported" xml:space="preserve">
+    <value>Achievements are not available for this game.</value>
+  </data>
+  <data name="AchievementsEpicLoginRequired" xml:space="preserve">
+    <value>Sign in to the Epic Games Launcher to view achievements.</value>
+  </data>
+  <data name="AchievementsRetroAchievementsRequired" xml:space="preserve">
+    <value>Configure your RetroAchievements account to view ROM achievements.</value>
+  </data>
+  <data name="AchievementsRomNotMatched" xml:space="preserve">
+    <value>This ROM is not recognized by RetroAchievements. Only verified dumps that match RA's hash database show achievements.</value>
+  </data>
+  <data name="AchievementsRomDatNameNotRaVerified" xml:space="preserve">
+    <value>Bridge matched this file to a game title from your DAT catalog, but RetroAchievements does not recognize its hash. Replace it with the verified dump RA supports for this game.</value>
+  </data>
+  <data name="AchievementsRomUnsupportedPlatform" xml:space="preserve">
+    <value>RetroAchievements does not support this console yet.</value>
+  </data>
+  <data name="AchievementsRomApiError" xml:space="preserve">
+    <value>Could not load RetroAchievements data. Check your API key and connection.</value>
+  </data>
+  <data name="AchievementsNone" xml:space="preserve">
+    <value>No achievements were found for this game.</value>
+  </data>
+  <data name="AchievementsProgressFormat" xml:space="preserve">
+    <value>{0} / {1} unlocked</value>
+  </data>
+  <data name="AchievementsBarSummaryFormat" xml:space="preserve">
+    <value>{0}/{1} - {2} left</value>
+  </data>
+  <data name="AchievementsBarCompleteFormat" xml:space="preserve">
+    <value>{0}/{1} âœ“</value>
+  </data>
+  <data name="AchievementsCompletionPercentFormat" xml:space="preserve">
+    <value>{0:0.#}% complete</value>
+  </data>
+  <data name="AchievementsRemainingFormat" xml:space="preserve">
+    <value>{0} remaining</value>
+  </data>
+  <data name="AchievementsCatalogCountFormat" xml:space="preserve">
+    <value>{0} achievements</value>
+  </data>
+  <data name="AchievementsCatalogOnlyHint" xml:space="preserve">
+    <value>Catalog only â€” your progress in this copy is not tracked.</value>
+  </data>
+  <data name="AchievementGlobalPercentFormat" xml:space="preserve">
+    <value>{0:0.#}% of players</value>
+  </data>
+  <data name="AchievementRarityCommon" xml:space="preserve">
+    <value>Common</value>
+  </data>
+  <data name="AchievementRarityUncommon" xml:space="preserve">
+    <value>Uncommon</value>
+  </data>
+  <data name="AchievementRarityRare" xml:space="preserve">
+    <value>Rare</value>
+  </data>
+  <data name="AchievementRarityVeryRare" xml:space="preserve">
+    <value>Very Rare</value>
+  </data>
+  <data name="AchievementRarityLegendary" xml:space="preserve">
+    <value>Legendary</value>
+  </data>
+  <data name="HiddenAchievement" xml:space="preserve">
+    <value>Hidden Achievement</value>
+  </data>
+  <data name="SettingsDetailSectionPositionTitle" xml:space="preserve">
+    <value>Details section position</value>
+  </data>
+  <data name="SettingsDetailSectionPositionDescription" xml:space="preserve">
+    <value>Place the metadata Details column on the left or right of the Overview and Images tabs in the game details panel.</value>
+  </data>
+  <data name="SettingsDetailPanelPositionTitle" xml:space="preserve">
+    <value>Details panel position</value>
+  </data>
+  <data name="SettingsDetailPanelPositionDescription" xml:space="preserve">
+    <value>Dock the game details panel to the left or right in List view and on the compact info panel in Covers view.</value>
+  </data>
+  <data name="TrayIconShowBridge" xml:space="preserve">
+    <value>Show Bridge</value>
+  </data>
+  <data name="SettingsDataSection" xml:space="preserve">
+    <value>Library &amp; data</value>
+  </data>
+  <data name="SettingsBackupTitle" xml:space="preserve">
+    <value>Backup library</value>
+  </data>
+  <data name="SettingsBackupDescription" xml:space="preserve">
+    <value>Save or restore your library database, preferences, and artwork cache from a zip file. RetroArch installs and logs are not included.</value>
+  </data>
+  <data name="CreateBackup" xml:space="preserve">
+    <value>Create backup</value>
+  </data>
+  <data name="RestoreBackup" xml:space="preserve">
+    <value>Restore backup</value>
+  </data>
+  <data name="BackupSaveDialogTitle" xml:space="preserve">
+    <value>Save Bridge backup</value>
+  </data>
+  <data name="BackupRestoreDialogTitle" xml:space="preserve">
+    <value>Select Bridge backup</value>
+  </data>
+  <data name="BackupRestoreConfirm" xml:space="preserve">
+    <value>Restore this backup? Your current library, preferences, and artwork cache will be replaced. Bridge will restart.</value>
+  </data>
+  <data name="BackupCreatedFormat" xml:space="preserve">
+    <value>Backup saved to {0}</value>
+  </data>
+  <data name="BackupFailedFormat" xml:space="preserve">
+    <value>Could not create backup: {0}</value>
+  </data>
+  <data name="BackupRestoreFailedFormat" xml:space="preserve">
+    <value>Could not restore backup: {0}</value>
+  </data>
+  <data name="SettingsRomSavesTitle" xml:space="preserve">
+    <value>Saves</value>
+  </data>
+  <data name="SettingsRomSavesDescription" xml:space="preserve">
+    <value>ROM saves are found automatically. Steam, Epic, and other PC games need More â†’ Set Save Location first â€” there is no single save path. The folder picker starts in Steam Cloud, Epic Cloud, or a common Windows folder when one exists. After play, Bridge can copy that folder into dated backups. Restore from More. Export also packs ROM files up to 500 MB and any mapped PC save folders.</value>
+  </data>
+  <data name="SettingsRomSaveAutoBackupTitle" xml:space="preserve">
+    <value>Backup ROM saves after play</value>
+  </data>
+  <data name="SettingsRomSaveAutoBackupDescription" xml:space="preserve">
+    <value>Keep dated copies of SRAM and savestates in AppData. Export includes those saves plus lightweight ROM files (max 500 MB each). Import restores saves and copies those ROMs back.</value>
+  </data>
+  <data name="SettingsPcSaveAutoBackupTitle" xml:space="preserve">
+    <value>Backup Steam, Epic, and PC saves after play</value>
+  </data>
+  <data name="SettingsPcSaveAutoBackupDescription" xml:space="preserve">
+    <value>After a Steam, Epic, or external session, copy the folder you set with Set Save Location. Files larger than 64 MB are skipped. Export includes those folders too.</value>
+  </data>
+  <data name="ExportRomPack" xml:space="preserve">
+    <value>Export ROMs &amp; saves</value>
+  </data>
+  <data name="ImportRomPack" xml:space="preserve">
+    <value>Import ROMs &amp; saves</value>
+  </data>
+  <data name="RomPackSaveDialogTitle" xml:space="preserve">
+    <value>Save ROM pack</value>
+  </data>
+  <data name="RomPackRestoreDialogTitle" xml:space="preserve">
+    <value>Select ROM pack</value>
+  </data>
+  <data name="RomPackRestoreConfirm" xml:space="preserve">
+    <value>Import this pack? SRAM and savestates will be written to RetroArch's save folders. Steam/PC saves go back to the folders stored in the pack. ROM files up to 500 MB will be copied back (original folder if it still exists, otherwise your Scan ROMs folder).</value>
+  </data>
+  <data name="RomPackCreatedFormat" xml:space="preserve">
+    <value>Pack saved to {0}. Included saves for {1} games and {2} ROM files ({3} skipped as missing or larger than 500 MB).</value>
+  </data>
+  <data name="RomPackFailedFormat" xml:space="preserve">
+    <value>Could not create the ROM pack: {0}</value>
+  </data>
+  <data name="RomPackImportFailedFormat" xml:space="preserve">
+    <value>Could not import the ROM pack: {0}</value>
+  </data>
+  <data name="RomPackImportedFormat" xml:space="preserve">
+    <value>Restored {0} save files and copied {1} ROM files.</value>
+  </data>
+  <data name="SettingsOrganizeRomsTitle" xml:space="preserve">
+    <value>Organize ROMs</value>
+  </data>
+  <data name="SettingsOrganizeRomsDescription" xml:space="preserve">
+    <value>Put each ROM in a folder for its platform and rename the file to the official DAT name. Sidecar saves next to the ROM move with it.</value>
+  </data>
+  <data name="SettingsOrganizeRomsAutoTitle" xml:space="preserve">
+    <value>Organize on import</value>
+  </data>
+  <data name="SettingsOrganizeRomsAutoDescription" xml:space="preserve">
+    <value>After Scan ROMs (and watched-folder imports), sort files automatically. Use Organize now for ROMs already in the folder.</value>
+  </data>
+  <data name="OrganizeRomsNow" xml:space="preserve">
+    <value>Organize now</value>
+  </data>
+  <data name="OrganizeRomsNoFolder" xml:space="preserve">
+    <value>Set a ROM scan folder first (Scan ROMs).</value>
+  </data>
+  <data name="OrganizeRomsCompleteFormat" xml:space="preserve">
+    <value>Moved {0} ROM files. {1} already in place, {2} skipped.</value>
+  </data>
+  <data name="SettingsUpdatesSection" xml:space="preserve">
+    <value>Updates &amp; About</value>
+  </data>
+  <data name="SettingsEmulationCardDescription" xml:space="preserve">
+    <value>Managed RetroArch install, core updates, and supported systems.</value>
+  </data>
+  <data name="SettingsIgdbCardDescription" xml:space="preserve">
+    <value>IGDB credentials and metadata provider configuration.</value>
+  </data>
+  <data name="SettingsThemeCardDescription" xml:space="preserve">
+    <value>Accent color presets and custom theme color.</value>
+  </data>
+  <data name="SettingsAboutCardDescription" xml:space="preserve">
+    <value>Version, support links, and project information.</value>
+  </data>
+  <data name="OpenSettings" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="MenuAllSettings" xml:space="preserve">
+    <value>All settings...</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Update available</value>
+  </data>
+  <data name="UpdateAvailableMessageFormat" xml:space="preserve">
+    <value>Version {0} is available (you have {1}).
+
+Download and restart now?</value>
+  </data>
+  <data name="UpdateConfirm" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="NotNow" xml:space="preserve">
+    <value>Not now</value>
+  </data>
+  <data name="UpdateFailedTitle" xml:space="preserve">
+    <value>Update failed</value>
+  </data>
+  <data name="UpdateFailedMessageFormat" xml:space="preserve">
+    <value>Could not install the update: {0}</value>
+  </data>
+  <data name="PendingUpdateTooltipFormat" xml:space="preserve">
+    <value>Version {0} is available â€” click to download and restart</value>
+  </data>
+  <data name="NoInternetCheckUpdates" xml:space="preserve">
+    <value>No internet connection. Check for updates again when you're back online.</value>
+  </data>
+  <data name="LatestVersionMessageFormat" xml:space="preserve">
+    <value>Bridge {0} is the latest version.</value>
+  </data>
+  <data name="UpdatesNotApplicableMessage" xml:space="preserve">
+    <value>Updates apply only to the published Bridge.exe.</value>
+  </data>
+  <data name="CouldNotCheckUpdatesMessage" xml:space="preserve">
+    <value>Could not check for updates.</value>
+  </data>
+  <data name="CouldNotCheckUpdatesFormat" xml:space="preserve">
+    <value>Could not check for updates: {0}</value>
+  </data>
+  <data name="ClickToExpand" xml:space="preserve">
+    <value>Click to expand</value>
+  </data>
+  <data name="PreviousScreenshotTooltip" xml:space="preserve">
+    <value>Previous (â†)</value>
+  </data>
+  <data name="NextScreenshotTooltip" xml:space="preserve">
+    <value>Next (â†’)</value>
+  </data>
+  <data name="ViewScreenshotTooltip" xml:space="preserve">
+    <value>View screenshot</value>
+  </data>
+  <data name="CloseEscTooltip" xml:space="preserve">
+    <value>Close (Esc)</value>
+  </data>
+  <data name="RuntimeFormat" xml:space="preserve">
+    <value>.NET {0}</value>
+  </data>
+  <data name="OsFormat" xml:space="preserve">
+    <value>{0} ({1}-bit)</value>
+  </data>
+  <data name="Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="ScanTitle" xml:space="preserve">
+    <value>Scan</value>
+  </data>
+  <data name="Scanning" xml:space="preserve">
+    <value>Scanning...</value>
+  </data>
+  <data name="ScanStartMenuFailedFormat" xml:space="preserve">
+    <value>Couldn't scan the start menu: {0}</value>
+  </data>
+  <data name="SelectFolderToScanGames" xml:space="preserve">
+    <value>Select folder to scan for games</value>
+  </data>
+  <data name="SelectExecutable" xml:space="preserve">
+    <value>Select executable</value>
+  </data>
+  <data name="ExecutablesFilter" xml:space="preserve">
+    <value>Executables (*.exe;*.lnk)|*.exe;*.lnk</value>
+  </data>
+  <data name="InvalidExecutable" xml:space="preserve">
+    <value>Not a valid executable.</value>
+  </data>
+  <data name="AddGamesTitle" xml:space="preserve">
+    <value>Add games</value>
+  </data>
+  <data name="NoGamesSelected" xml:space="preserve">
+    <value>No games selected.</value>
+  </data>
+  <data name="CandidatesFoundFormat" xml:space="preserve">
+    <value>{0} found</value>
+  </data>
+  <data name="CandidatesShownFormat" xml:space="preserve">
+    <value>{0} of {1} shown</value>
+  </data>
+  <data name="AlreadyInLibrarySkippedFormat" xml:space="preserve">
+    <value>Already in your library ({0}): {1}{2}. They were skipped.</value>
+  </data>
+  <data name="MoreSkippedFormat" xml:space="preserve">
+    <value>, +{0} more</value>
+  </data>
+  <data name="StatisticsSummaryFormat" xml:space="preserve">
+    <value>Total: {0} | Installed: {1} | Favorites: {2} | Hidden: {3} | Total playtime: {4}</value>
+  </data>
+  <data name="GamesInGroupTooltip" xml:space="preserve">
+    <value>Games in group</value>
+  </data>
+  <data name="SaveFailedFormat" xml:space="preserve">
+    <value>Save failed: {0}</value>
+  </data>
+  <data name="Saved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="LoadingEmulationStatus" xml:space="preserve">
+    <value>Loading emulation status...</value>
+  </data>
+  <data name="SplashLoading" xml:space="preserve">
+    <value>Starting...</value>
+  </data>
+  <data name="RetroArchNotInstalled" xml:space="preserve">
+    <value>RetroArch is not installed. It will be installed automatically the first time you play a recognised ROM.</value>
+  </data>
+  <data name="RetroArchInstalledWithCoresFormat" xml:space="preserve">
+    <value>RetroArch is installed with {0} managed core(s). Cores are checked for updates when needed.</value>
+  </data>
+  <data name="CouldNotUpdateRetroArchFormat" xml:space="preserve">
+    <value>Could not update RetroArch: {0}</value>
+  </data>
+  <data name="Cheats" xml:space="preserve">
+    <value>Cheats</value>
+  </data>
+  <data name="CheatsAttribution" xml:space="preserve">
+    <value>Cheats sourced from the libretro-database project, licensed CC BY-SA 4.0.</value>
+  </data>
+  <data name="CheatsRequireManagedRom" xml:space="preserve">
+    <value>Cheats require a ROM launched through Bridge-managed RetroArch.</value>
+  </data>
+  <data name="CheatsPlatformNotSupported" xml:space="preserve">
+    <value>This platform isn't in the public cheat database Bridge uses.</value>
+  </data>
+  <data name="CheatsNotFoundForGame" xml:space="preserve">
+    <value>No cheats found for this game.</value>
+  </data>
+  <data name="CheatsFetchFailed" xml:space="preserve">
+    <value>Couldn't fetch cheats for this game.</value>
+  </data>
+  <data name="CheatsFileCorrupted" xml:space="preserve">
+    <value>This game's cheat file couldn't be read.</value>
+  </data>
+  <data name="CouldNotSaveCheatTitle" xml:space="preserve">
+    <value>Couldn't Save Cheat</value>
+  </data>
+  <data name="CouldNotSaveCheatFormat" xml:space="preserve">
+    <value>Couldn't save this cheat's state: {0}</value>
+  </data>
+  <data name="AutoApplyCheatsOnLaunch" xml:space="preserve">
+    <value>Apply enabled cheats automatically when launching ROMs</value>
+  </data>
+  <data name="AutoApplyCheatsOnLaunchDescription" xml:space="preserve">
+    <value>Writes a per-game RetroArch override so enabled cheats take effect on launch. You can still toggle cheats manually in RetroArch's menu.</value>
+  </data>
+  <data name="DatabaseRestoredFromBackup" xml:space="preserve">
+    <value>Your library database was damaged. Bridge restored it from the backup made before your last update.</value>
+  </data>
+  <data name="DatabaseFileLocked" xml:space="preserve">
+    <value>Bridge could not access your library database because another Bridge instance is using it. Right-click the Bridge icon in the notification area and choose Exit, then start Bridge again.</value>
+  </data>
+  <data name="DatabaseCorruptNoBackupFormat" xml:space="preserve">
+    <value>Your library database is damaged and no valid backup was found.
 
 Check for bridge.db.bak-update or bridge.db.corrupt-* in:
 {0}
 
-Restore a backup manually, or rename/delete bridge.db to start with an empty library.</value></data>
-  <data name="VersionFormat" xml:space="preserve"><value>Version {0}</value></data>
-  <data name="SourceCode" xml:space="preserve"><value>Source code</value></data>
-  <data name="License" xml:space="preserve"><value>License</value></data>
-  <data name="BuyMeACoffee" xml:space="preserve"><value>Buy me a coffee</value></data>
-  <data name="SupportOnGitHub" xml:space="preserve"><value>Support development on GitHub</value></data>
-  <data name="GnuGplLicense" xml:space="preserve"><value>GNU General Public License v3.0</value></data>
-  <data name="OpenEmulationSettings" xml:space="preserve"><value>Open emulation settings</value></data>
-  <data name="OpenIgdbSettings" xml:space="preserve"><value>Open IGDB settings</value></data>
-  <data name="OpenThemeSettings" xml:space="preserve"><value>Open theme settings</value></data>
-  <data name="ViewAbout" xml:space="preserve"><value>View about</value></data>
-  <data name="SelectRomFolderTitle" xml:space="preserve"><value>Select ROM folder</value></data>
-  <data name="SelectImageTitle" xml:space="preserve"><value>Select image</value></data>
-  <data name="ImageFilesFilter" xml:space="preserve"><value>Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All files|*.*</value></data>
-  <data name="AddReferenceNamePromptFormat" xml:space="preserve"><value>Name for the new {0}:</value></data>
-  <data name="AddReferenceTitleFormat" xml:space="preserve"><value>Add {0}</value></data>
-  <data name="EmulatorSavedFormat" xml:space="preserve"><value>Saved '{0}'.</value></data>
-  <data name="SupportDevelopmentOnGitHub" xml:space="preserve"><value>Support development on GitHub</value></data>
-  <data name="BridgeRepositoryPath" xml:space="preserve"><value>github.com/ZavalaSebas/Bridge</value></data>
-  <data name="UnexpectedErrorFormat" xml:space="preserve"><value>An unexpected error occurred: {0}</value></data>
-  <data name="PlaytimeNotPlayed" xml:space="preserve"><value>Not played</value></data>
-  <data name="PlaytimeOneSecond" xml:space="preserve"><value>1 second</value></data>
-  <data name="PlaytimeSecondsFormat" xml:space="preserve"><value>{0} seconds</value></data>
-  <data name="PlaytimeOneMinute" xml:space="preserve"><value>1 minute</value></data>
-  <data name="PlaytimeMinutesFormat" xml:space="preserve"><value>{0} minutes</value></data>
-  <data name="PlaytimeHoursFormat" xml:space="preserve"><value>{0} hours</value></data>
-  <data name="HowLongToBeat" xml:space="preserve"><value>How Long to Beat</value></data>
-  <data name="HowLongToBeatAppliedToGameFormat" xml:space="preserve"><value>How Long to Beat data applied to {0}.</value></data>
-  <data name="TimeToBeatMainStory" xml:space="preserve"><value>Main</value></data>
-  <data name="TimeToBeatMainExtra" xml:space="preserve"><value>Main + Extras</value></data>
-  <data name="TimeToBeatCompletionist" xml:space="preserve"><value>Completionist</value></data>
-  <data name="TimeToBeatProgressFormat" xml:space="preserve"><value>{0} / {1}</value></data>
-  <data name="TimeToBeatZeroDuration" xml:space="preserve"><value>0 hours</value></data>
-  <data name="SizeZeroBytes" xml:space="preserve"><value>0 B</value></data>
-  <data name="SizeBytesFormat" xml:space="preserve"><value>{0} B</value></data>
-  <data name="SizeKilobytesFormat" xml:space="preserve"><value>{0} KB</value></data>
-  <data name="SizeMegabytesFormat" xml:space="preserve"><value>{0} MB</value></data>
-  <data name="SizeGigabytesFormat" xml:space="preserve"><value>{0} GB</value></data>
-  <data name="GroupNeverPlayed" xml:space="preserve"><value>Never played</value></data>
-  <data name="GroupPlayedOnce" xml:space="preserve"><value>Once</value></data>
-  <data name="GroupPlayedMultiple" xml:space="preserve"><value>Multiple times</value></data>
-  <data name="GroupLessThanOneHour" xml:space="preserve"><value>Less than 1 hour</value></data>
-  <data name="GroupOneToTenHours" xml:space="preserve"><value>1 - 10 hours</value></data>
-  <data name="GroupTenToHundredHours" xml:space="preserve"><value>10 - 100 hours</value></data>
-  <data name="GroupHundredPlusHours" xml:space="preserve"><value>100+ hours</value></data>
-  <data name="GroupUnknownSize" xml:space="preserve"><value>Unknown size</value></data>
-  <data name="GroupLessThanOneGb" xml:space="preserve"><value>Less than 1 GB</value></data>
-  <data name="GroupOneToTenGb" xml:space="preserve"><value>1 - 10 GB</value></data>
-  <data name="GroupTenToHundredGb" xml:space="preserve"><value>10 - 100 GB</value></data>
-  <data name="GroupHundredPlusGb" xml:space="preserve"><value>100+ GB</value></data>
-  <data name="GroupNever" xml:space="preserve"><value>Never</value></data>
-  <data name="GroupToday" xml:space="preserve"><value>Today</value></data>
-  <data name="GroupLastSevenDays" xml:space="preserve"><value>Last 7 days</value></data>
-  <data name="GroupLastThirtyDays" xml:space="preserve"><value>Last 30 days</value></data>
-  <data name="GroupLastYear" xml:space="preserve"><value>Last year</value></data>
-  <data name="GroupOlder" xml:space="preserve"><value>Older</value></data>
-  <data name="GroupNoScore" xml:space="preserve"><value>No score</value></data>
-  <data name="GroupScore0To49" xml:space="preserve"><value>0 - 49</value></data>
-  <data name="GroupScore50To69" xml:space="preserve"><value>50 - 69</value></data>
-  <data name="GroupScore70To89" xml:space="preserve"><value>70 - 89</value></data>
-  <data name="GroupScore90To100" xml:space="preserve"><value>90 - 100</value></data>
-  <data name="SetupWizardTitle" xml:space="preserve"><value>Welcome to Bridge</value></data>
-  <data name="SetupStepFormat" xml:space="preserve"><value>Step {0} of {1}</value></data>
-  <data name="SetupBack" xml:space="preserve"><value>Back</value></data>
-  <data name="SetupNext" xml:space="preserve"><value>Next</value></data>
-  <data name="SetupGetStarted" xml:space="preserve"><value>Get started</value></data>
-  <data name="SetupProfileStepTitle" xml:space="preserve"><value>Your profile</value></data>
-  <data name="SetupProfileStepDescription" xml:space="preserve"><value>Tell Bridge what to call you and pick an avatar for your library.</value></data>
-  <data name="SetupDisplayNameLabel" xml:space="preserve"><value>Display name</value></data>
-  <data name="SetupDisplayNameRequired" xml:space="preserve"><value>Enter a display name to continue.</value></data>
-  <data name="SetupAvatarLabel" xml:space="preserve"><value>Avatar</value></data>
-  <data name="SetupChoosePhoto" xml:space="preserve"><value>Choose photo</value></data>
-  <data name="SetupUseDefaultAvatar" xml:space="preserve"><value>Use preset avatar</value></data>
-  <data name="SetupPhotoFilter" xml:space="preserve"><value>Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All files|*.*</value></data>
-  <data name="SetupLibrariesStepTitle" xml:space="preserve"><value>Game libraries</value></data>
-  <data name="SetupLibrariesStepDescription" xml:space="preserve"><value>Bridge imports Steam and Epic automatically. Add a folder for external games outside those stores.</value></data>
-  <data name="SetupStoreLibrariesTitle" xml:space="preserve"><value>Store libraries</value></data>
-  <data name="SetupStoreLibrariesHelp" xml:space="preserve"><value>These launchers are scanned on startup — no folder setup needed.</value></data>
-  <data name="SetupSteamDetected" xml:space="preserve"><value>Steam detected</value></data>
-  <data name="SetupSteamDetectedHelp" xml:space="preserve"><value>Your Steam library will be imported automatically.</value></data>
-  <data name="SetupSteamNotDetected" xml:space="preserve"><value>Steam not detected</value></data>
-  <data name="SetupSteamNotDetectedHelp" xml:space="preserve"><value>Install Steam anytime — Bridge will import your library on the next launch.</value></data>
-  <data name="SetupEpicDetected" xml:space="preserve"><value>Epic Games detected</value></data>
-  <data name="SetupEpicDetectedHelp" xml:space="preserve"><value>Your Epic library will be imported automatically.</value></data>
-  <data name="SetupEpicNotDetected" xml:space="preserve"><value>Epic Games not detected</value></data>
-  <data name="SetupEpicNotDetectedHelp" xml:space="preserve"><value>Install the Epic Games Launcher anytime — Bridge will import your library on the next launch.</value></data>
-  <data name="SetupExternalGamesFolderTitle" xml:space="preserve"><value>External games folder</value></data>
-  <data name="SetupExternalGamesFolderHelp" xml:space="preserve"><value>For games outside Steam and Epic — GOG, itch.io, portable installs, and other local folders. Bridge watches this folder and adds new games automatically.</value></data>
-  <data name="SetupInvalidExternalGamesFolder" xml:space="preserve"><value>The external games folder does not exist.</value></data>
-  <data name="SetupRomStepTitle" xml:space="preserve"><value>ROM folder</value></data>
-  <data name="SetupRomStepDescription" xml:space="preserve"><value>Optionally point Bridge at the folder where you keep ROM files.</value></data>
-  <data name="SetupRomFolderTitle" xml:space="preserve"><value>ROM folder</value></data>
-  <data name="SetupRomFolderHelp" xml:space="preserve"><value>Bridge scans this folder recursively and imports supported ROMs with metadata. New files are added automatically.</value></data>
-  <data name="SetupInvalidRomFolder" xml:space="preserve"><value>The ROM folder does not exist.</value></data>
-  <data name="SetupReadyTitle" xml:space="preserve"><value>You're all set</value></data>
-  <data name="SetupReadyHelp" xml:space="preserve"><value>Bridge will import your libraries, scan the folders you chose, and keep watching them for new games.</value></data>
-  <data name="SetupProfileGreetingFormat" xml:space="preserve"><value>Welcome, {0}</value></data>
-  <data name="SettingsProfileSection" xml:space="preserve"><value>Profile</value></data>
-  <data name="SettingsProfileTitle" xml:space="preserve"><value>Your profile</value></data>
-  <data name="SettingsProfileDescription" xml:space="preserve"><value>Change the name and avatar shown in Statistics.</value></data>
-  <data name="SettingsSaveProfile" xml:space="preserve"><value>Save profile</value></data>
-  <data name="SettingsProfileSaved" xml:space="preserve"><value>Profile saved.</value></data>
+Restore a backup manually, or rename/delete bridge.db to start with an empty library.</value>
+  </data>
+  <data name="VersionFormat" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="SourceCode" xml:space="preserve">
+    <value>Source code</value>
+  </data>
+  <data name="License" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="BuyMeACoffee" xml:space="preserve">
+    <value>Buy me a coffee</value>
+  </data>
+  <data name="SupportOnGitHub" xml:space="preserve">
+    <value>Support development on GitHub</value>
+  </data>
+  <data name="GnuGplLicense" xml:space="preserve">
+    <value>GNU General Public License v3.0</value>
+  </data>
+  <data name="OpenEmulationSettings" xml:space="preserve">
+    <value>Open emulation settings</value>
+  </data>
+  <data name="OpenIgdbSettings" xml:space="preserve">
+    <value>Open IGDB settings</value>
+  </data>
+  <data name="OpenThemeSettings" xml:space="preserve">
+    <value>Open theme settings</value>
+  </data>
+  <data name="ViewAbout" xml:space="preserve">
+    <value>View about</value>
+  </data>
+  <data name="SelectRomFolderTitle" xml:space="preserve">
+    <value>Select ROM folder</value>
+  </data>
+  <data name="SelectImageTitle" xml:space="preserve">
+    <value>Select image</value>
+  </data>
+  <data name="ImageFilesFilter" xml:space="preserve">
+    <value>Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All files|*.*</value>
+  </data>
+  <data name="AddReferenceNamePromptFormat" xml:space="preserve">
+    <value>Name for the new {0}:</value>
+  </data>
+  <data name="AddReferenceTitleFormat" xml:space="preserve">
+    <value>Add {0}</value>
+  </data>
+  <data name="EmulatorSavedFormat" xml:space="preserve">
+    <value>Saved '{0}'.</value>
+  </data>
+  <data name="SupportDevelopmentOnGitHub" xml:space="preserve">
+    <value>Support development on GitHub</value>
+  </data>
+  <data name="BridgeRepositoryPath" xml:space="preserve">
+    <value>github.com/ZavalaSebas/Bridge</value>
+  </data>
+  <data name="UnexpectedErrorFormat" xml:space="preserve">
+    <value>An unexpected error occurred: {0}</value>
+  </data>
+  <data name="PlaytimeNotPlayed" xml:space="preserve">
+    <value>Not played</value>
+  </data>
+  <data name="PlaytimeOneSecond" xml:space="preserve">
+    <value>1 second</value>
+  </data>
+  <data name="PlaytimeSecondsFormat" xml:space="preserve">
+    <value>{0} seconds</value>
+  </data>
+  <data name="PlaytimeOneMinute" xml:space="preserve">
+    <value>1 minute</value>
+  </data>
+  <data name="PlaytimeMinutesFormat" xml:space="preserve">
+    <value>{0} minutes</value>
+  </data>
+  <data name="PlaytimeHoursFormat" xml:space="preserve">
+    <value>{0} hours</value>
+  </data>
+  <data name="HowLongToBeat" xml:space="preserve">
+    <value>How Long to Beat</value>
+  </data>
+  <data name="HowLongToBeatAppliedToGameFormat" xml:space="preserve">
+    <value>How Long to Beat data applied to {0}.</value>
+  </data>
+  <data name="TimeToBeatMainStory" xml:space="preserve">
+    <value>Main</value>
+  </data>
+  <data name="TimeToBeatMainExtra" xml:space="preserve">
+    <value>Main + Extras</value>
+  </data>
+  <data name="TimeToBeatCompletionist" xml:space="preserve">
+    <value>Completionist</value>
+  </data>
+  <data name="TimeToBeatProgressFormat" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="TimeToBeatZeroDuration" xml:space="preserve">
+    <value>0 hours</value>
+  </data>
+  <data name="SizeZeroBytes" xml:space="preserve">
+    <value>0 B</value>
+  </data>
+  <data name="SizeBytesFormat" xml:space="preserve">
+    <value>{0} B</value>
+  </data>
+  <data name="SizeKilobytesFormat" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="SizeMegabytesFormat" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="SizeGigabytesFormat" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="GroupNeverPlayed" xml:space="preserve">
+    <value>Never played</value>
+  </data>
+  <data name="GroupPlayedOnce" xml:space="preserve">
+    <value>Once</value>
+  </data>
+  <data name="GroupPlayedMultiple" xml:space="preserve">
+    <value>Multiple times</value>
+  </data>
+  <data name="GroupLessThanOneHour" xml:space="preserve">
+    <value>Less than 1 hour</value>
+  </data>
+  <data name="GroupOneToTenHours" xml:space="preserve">
+    <value>1 - 10 hours</value>
+  </data>
+  <data name="GroupTenToHundredHours" xml:space="preserve">
+    <value>10 - 100 hours</value>
+  </data>
+  <data name="GroupHundredPlusHours" xml:space="preserve">
+    <value>100+ hours</value>
+  </data>
+  <data name="GroupUnknownSize" xml:space="preserve">
+    <value>Unknown size</value>
+  </data>
+  <data name="GroupLessThanOneGb" xml:space="preserve">
+    <value>Less than 1 GB</value>
+  </data>
+  <data name="GroupOneToTenGb" xml:space="preserve">
+    <value>1 - 10 GB</value>
+  </data>
+  <data name="GroupTenToHundredGb" xml:space="preserve">
+    <value>10 - 100 GB</value>
+  </data>
+  <data name="GroupHundredPlusGb" xml:space="preserve">
+    <value>100+ GB</value>
+  </data>
+  <data name="GroupNever" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="GroupToday" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="GroupLastSevenDays" xml:space="preserve">
+    <value>Last 7 days</value>
+  </data>
+  <data name="GroupLastThirtyDays" xml:space="preserve">
+    <value>Last 30 days</value>
+  </data>
+  <data name="GroupLastYear" xml:space="preserve">
+    <value>Last year</value>
+  </data>
+  <data name="GroupOlder" xml:space="preserve">
+    <value>Older</value>
+  </data>
+  <data name="GroupNoScore" xml:space="preserve">
+    <value>No score</value>
+  </data>
+  <data name="GroupScore0To49" xml:space="preserve">
+    <value>0 - 49</value>
+  </data>
+  <data name="GroupScore50To69" xml:space="preserve">
+    <value>50 - 69</value>
+  </data>
+  <data name="GroupScore70To89" xml:space="preserve">
+    <value>70 - 89</value>
+  </data>
+  <data name="GroupScore90To100" xml:space="preserve">
+    <value>90 - 100</value>
+  </data>
+  <data name="SetupWizardTitle" xml:space="preserve">
+    <value>Welcome to Bridge</value>
+  </data>
+  <data name="SetupStepFormat" xml:space="preserve">
+    <value>Step {0} of {1}</value>
+  </data>
+  <data name="SetupBack" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="SetupNext" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="SetupGetStarted" xml:space="preserve">
+    <value>Get started</value>
+  </data>
+  <data name="SetupProfileStepTitle" xml:space="preserve">
+    <value>Your profile</value>
+  </data>
+  <data name="SetupProfileStepDescription" xml:space="preserve">
+    <value>Tell Bridge what to call you and pick an avatar for your library.</value>
+  </data>
+  <data name="SetupDisplayNameLabel" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="SetupDisplayNameRequired" xml:space="preserve">
+    <value>Enter a display name to continue.</value>
+  </data>
+  <data name="SetupAvatarLabel" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="SetupChoosePhoto" xml:space="preserve">
+    <value>Choose photo</value>
+  </data>
+  <data name="SetupUseDefaultAvatar" xml:space="preserve">
+    <value>Use preset avatar</value>
+  </data>
+  <data name="SetupPhotoFilter" xml:space="preserve">
+    <value>Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All files|*.*</value>
+  </data>
+  <data name="SetupLibrariesStepTitle" xml:space="preserve">
+    <value>Game libraries</value>
+  </data>
+  <data name="SetupLibrariesStepDescription" xml:space="preserve">
+    <value>Bridge imports Steam and Epic automatically. Add a folder for external games outside those stores.</value>
+  </data>
+  <data name="SetupStoreLibrariesTitle" xml:space="preserve">
+    <value>Store libraries</value>
+  </data>
+  <data name="SetupStoreLibrariesHelp" xml:space="preserve">
+    <value>These launchers are scanned on startup â€” no folder setup needed.</value>
+  </data>
+  <data name="SetupSteamDetected" xml:space="preserve">
+    <value>Steam detected</value>
+  </data>
+  <data name="SetupSteamDetectedHelp" xml:space="preserve">
+    <value>Your Steam library will be imported automatically.</value>
+  </data>
+  <data name="SetupSteamNotDetected" xml:space="preserve">
+    <value>Steam not detected</value>
+  </data>
+  <data name="SetupSteamNotDetectedHelp" xml:space="preserve">
+    <value>Install Steam anytime â€” Bridge will import your library on the next launch.</value>
+  </data>
+  <data name="SetupEpicDetected" xml:space="preserve">
+    <value>Epic Games detected</value>
+  </data>
+  <data name="SetupEpicDetectedHelp" xml:space="preserve">
+    <value>Your Epic library will be imported automatically.</value>
+  </data>
+  <data name="SetupEpicNotDetected" xml:space="preserve">
+    <value>Epic Games not detected</value>
+  </data>
+  <data name="SetupEpicNotDetectedHelp" xml:space="preserve">
+    <value>Install the Epic Games Launcher anytime â€” Bridge will import your library on the next launch.</value>
+  </data>
+  <data name="SetupExternalGamesFolderTitle" xml:space="preserve">
+    <value>External games folder</value>
+  </data>
+  <data name="SetupExternalGamesFolderHelp" xml:space="preserve">
+    <value>For games outside Steam and Epic â€” GOG, itch.io, portable installs, and other local folders. Bridge watches this folder and adds new games automatically.</value>
+  </data>
+  <data name="SetupInvalidExternalGamesFolder" xml:space="preserve">
+    <value>The external games folder does not exist.</value>
+  </data>
+  <data name="SetupRomStepTitle" xml:space="preserve">
+    <value>ROM folder</value>
+  </data>
+  <data name="SetupRomStepDescription" xml:space="preserve">
+    <value>Optionally point Bridge at the folder where you keep ROM files.</value>
+  </data>
+  <data name="SetupRomFolderTitle" xml:space="preserve">
+    <value>ROM folder</value>
+  </data>
+  <data name="SetupRomFolderHelp" xml:space="preserve">
+    <value>Bridge scans this folder recursively and imports supported ROMs with metadata. New files are added automatically.</value>
+  </data>
+  <data name="SetupInvalidRomFolder" xml:space="preserve">
+    <value>The ROM folder does not exist.</value>
+  </data>
+  <data name="SetupReadyTitle" xml:space="preserve">
+    <value>You're all set</value>
+  </data>
+  <data name="SetupReadyHelp" xml:space="preserve">
+    <value>Bridge will import your libraries, scan the folders you chose, and keep watching them for new games.</value>
+  </data>
+  <data name="SetupProfileGreetingFormat" xml:space="preserve">
+    <value>Welcome, {0}</value>
+  </data>
+  <data name="SettingsProfileSection" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="SettingsProfileTitle" xml:space="preserve">
+    <value>Your profile</value>
+  </data>
+  <data name="SettingsProfileDescription" xml:space="preserve">
+    <value>Change the name and avatar shown in Statistics.</value>
+  </data>
+  <data name="SettingsSaveProfile" xml:space="preserve">
+    <value>Save profile</value>
+  </data>
+  <data name="SettingsProfileSaved" xml:space="preserve">
+    <value>Profile saved.</value>
+  </data>
+  <data name="SettingsDetailHeroButtonsTitle" xml:space="preserve">
+    <value>Detail hero buttons</value>
+  </data>
+  <data name="SettingsDetailHeroButtonsDescription" xml:space="preserve">
+    <value>Show the Play, More, and Edit buttons on the hero header. Turn off to use only the side buttons or hide them entirely.</value>
+  </data>
+  <data name="SettingsDetailSideButtonsTitle" xml:space="preserve">
+    <value>Detail side buttons</value>
+  </data>
+  <data name="SettingsDetailSideButtonsDescription" xml:space="preserve">
+    <value>Show floating Play, More, and Edit tabs protruding from the list edge over the hero. Off by default.</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="HomeFeatured" xml:space="preserve">
+    <value>Featured</value>
+  </data>
+  <data name="HomeWhatToPlayNext" xml:space="preserve">
+    <value>What to play next</value>
+  </data>
+  <data name="HomeContinuePlaying" xml:space="preserve">
+    <value>Continue playing</value>
+  </data>
+  <data name="HomeRecentlyPlayed" xml:space="preserve">
+    <value>Recently played</value>
+  </data>
+  <data name="HomeRecentlyAdded" xml:space="preserve">
+    <value>Recently added</value>
+  </data>
+  <data name="HomeFavoritePicks" xml:space="preserve">
+    <value>Favorite picks</value>
+  </data>
+  <data name="HomeRecentAchievements" xml:space="preserve">
+    <value>Recent achievements</value>
+  </data>
+  <data name="HomeNoAchievements" xml:space="preserve">
+    <value>No recent achievements yet. Play a game to unlock some!</value>
+  </data>
+  <data name="HomeViewAll" xml:space="preserve">
+    <value>View all</value>
+  </data>
+  <data name="HomeContinue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="HomePlayNow" xml:space="preserve">
+    <value>Play now</value>
+  </data>
+  <data name="HomeEmptyLibrary" xml:space="preserve">
+    <value>Your library is empty. Import games to build your Home.</value>
+  </data>
+  <data name="SettingsStartupSectionTitle" xml:space="preserve">
+    <value>Startup view</value>
+  </data>
+  <data name="SettingsStartupSectionDescription" xml:space="preserve">
+    <value>Choose which view opens when Bridge starts: Home, Library, or ROMs.</value>
+  </data>
+  <data name="SettingsMinimizeOnGameLaunchTitle" xml:space="preserve">
+    <value>Minimize on game launch</value>
+  </data>
+  <data name="SettingsMinimizeOnGameLaunchDescription" xml:space="preserve">
+    <value>Minimize Bridge when a game starts and restore it when the game closes. Enabled by default.</value>
+  </data>
+  <data name="SettingsDangerZoneTitle" xml:space="preserve">
+    <value>Danger zone</value>
+  </data>
+  <data name="SettingsDangerZoneDescription" xml:space="preserve">
+    <value>Irreversible actions. Proceed with caution.</value>
+  </data>
+  <data name="DeleteAllDataTitle" xml:space="preserve">
+    <value>Delete all data</value>
+  </data>
+  <data name="DeleteAllDataDescription" xml:space="preserve">
+    <value>Permanently delete your entire library, settings, image cache and save backups. This cannot be undone.</value>
+  </data>
+  <data name="DeleteAllDataButton" xml:space="preserve">
+    <value>Delete all data</value>
+  </data>
+  <data name="DeleteAllDataConfirm1Title" xml:space="preserve">
+    <value>Delete all data?</value>
+  </data>
+  <data name="DeleteAllDataConfirm1Message" xml:space="preserve">
+    <value>Are you sure you want to permanently delete ALL Bridge data? Your library, settings, image cache and save backups will be removed. This cannot be undone.</value>
+  </data>
+  <data name="DeleteAllDataConfirm2Title" xml:space="preserve">
+    <value>Type BORRAR to confirm</value>
+  </data>
+  <data name="DeleteAllDataConfirm2Message" xml:space="preserve">
+    <value>Type BORRAR in the box below and check the box to confirm you understand this is irreversible.</value>
+  </data>
+  <data name="DeleteAllDataConfirm3Title" xml:space="preserve">
+    <value>Final confirmation</value>
+  </data>
+  <data name="DeleteAllDataConfirm3Message" xml:space="preserve">
+    <value>This is your last chance. All Bridge data will be deleted and the app will restart empty. Do you really want to continue?</value>
+  </data>
+  <data name="DeleteAllDataSuccess" xml:space="preserve">
+    <value>All data deleted. Bridge will restart now.</value>
+  </data>
+  <data name="DeleteAllDataFailedFormat" xml:space="preserve">
+    <value>Failed to delete data: {0}</value>
+  </data>
+  <data name="TypeBorrarPlaceholder" xml:space="preserve">
+    <value>Type BORRAR</value>
+  </data>
+  <data name="IUnderstandIrreversible" xml:space="preserve">
+    <value>I understand this is irreversible</value>
+  </data>
 </root>

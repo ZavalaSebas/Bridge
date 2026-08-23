@@ -33,60 +33,115 @@ public sealed class RetroArchCheatService
             return new CheatsResult { Outcome = CheatFetchOutcome.PlatformNotSupported };
         }
 
+        var candidates = GetCandidateBaseNames(game);
+        var encodedFolder = Uri.EscapeDataString(platform.LibretroCheatFolder!);
+        var suffixes = new[] { "", " (Code Breaker)", " (Action Replay)", " (GameShark)" };
+
+        // Try local cache for any candidate first (covers previous Code Breaker downloads)
+        foreach (var baseName in candidates)
+        {
+            foreach (var suffix in suffixes)
+            {
+                var candidate = baseName + suffix;
+                var localCandidatePath = GetCheatFilePathForBase(game, platform, candidate);
+                if (localCandidatePath is not null && File.Exists(localCandidatePath))
+                {
+                    return await LoadLocalAsync(localCandidatePath, ct);
+                }
+            }
+        }
+
+        // Also try original path (already covered but keep for compat)
         var localPath = GetCheatFilePath(game, platform);
         if (localPath is not null && File.Exists(localPath))
         {
             return await LoadLocalAsync(localPath, ct);
         }
 
-        var cheatBaseName = RomCheatNameResolver.GetCheatBaseName(game);
-        var encodedFolder = Uri.EscapeDataString(platform.LibretroCheatFolder!);
-        var encodedName = Uri.EscapeDataString(cheatBaseName);
-        var rawUrl = $"{CheatDatabaseUrls.RawBaseUrl}/{encodedFolder}/{encodedName}.cht";
-        var blobUrl = $"{CheatDatabaseUrls.BlobBaseUrl}/{encodedFolder}/{encodedName}.cht";
-
-        string content;
-        try
+        string? lastNotFoundUrl = null;
+        foreach (var baseName in candidates)
         {
-            using var response = await _httpClient.GetAsync(rawUrl, ct);
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            foreach (var suffix in suffixes)
             {
-                return new CheatsResult { Outcome = CheatFetchOutcome.NotFound };
+                var name = baseName + suffix;
+                var encodedName = Uri.EscapeDataString(name);
+                var rawUrl = $"{CheatDatabaseUrls.RawBaseUrl}/{encodedFolder}/{encodedName}.cht";
+                var blobUrl = $"{CheatDatabaseUrls.BlobBaseUrl}/{encodedFolder}/{encodedName}.cht";
+
+                string content;
+                try
+                {
+                    using var response = await _httpClient.GetAsync(rawUrl, ct);
+                    if (response.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        lastNotFoundUrl = rawUrl;
+                        continue;
+                    }
+
+                    response.EnsureSuccessStatusCode();
+                    content = await response.Content.ReadAsStringAsync(ct);
+                }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+                {
+                    return new CheatsResult
+                    {
+                        Outcome = CheatFetchOutcome.FetchFailed,
+                        ErrorMessage = "Couldn't reach the cheat database. Check your connection and try again."
+                    };
+                }
+
+                var parseResult = CheatFileParser.Parse(content);
+                if (!parseResult.IsValid)
+                {
+                    return new CheatsResult
+                    {
+                        Outcome = CheatFetchOutcome.Corrupted,
+                        ErrorMessage = "The cheat file for this game couldn't be read — its format wasn't recognized."
+                    };
+                }
+
+                if (localPath is null)
+                {
+                    return new CheatsResult { Outcome = CheatFetchOutcome.PlatformNotSupported };
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
+                await File.WriteAllTextAsync(localPath, content, ct);
+                await File.WriteAllTextAsync(GetSourceSidecarPath(game, platform)!, blobUrl, ct);
+
+                return new CheatsResult { Outcome = CheatFetchOutcome.Success, Cheats = parseResult.Cheats, SourceFileUrl = blobUrl };
             }
-
-            response.EnsureSuccessStatusCode();
-            content = await response.Content.ReadAsStringAsync(ct);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-        {
-            return new CheatsResult
-            {
-                Outcome = CheatFetchOutcome.FetchFailed,
-                ErrorMessage = "Couldn't reach the cheat database. Check your connection and try again."
-            };
         }
 
-        var parseResult = CheatFileParser.Parse(content);
-        if (!parseResult.IsValid)
-        {
-            return new CheatsResult
-            {
-                Outcome = CheatFetchOutcome.Corrupted,
-                ErrorMessage = "The cheat file for this game couldn't be read — its format wasn't recognized."
-            };
-        }
-
-        if (localPath is null)
-        {
-            return new CheatsResult { Outcome = CheatFetchOutcome.PlatformNotSupported };
-        }
-
-        Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
-        await File.WriteAllTextAsync(localPath, content, ct);
-        await File.WriteAllTextAsync(GetSourceSidecarPath(game, platform)!, blobUrl, ct);
-
-        return new CheatsResult { Outcome = CheatFetchOutcome.Success, Cheats = parseResult.Cheats, SourceFileUrl = blobUrl };
+        return new CheatsResult { Outcome = CheatFetchOutcome.NotFound };
     }
+
+    private static IReadOnlyList<string> GetCandidateBaseNames(Game game)
+    {
+        var list = new List<string>();
+        var romBase = RomCheatNameResolver.GetCheatBaseName(game);
+        if (!string.IsNullOrWhiteSpace(romBase))
+            list.Add(romBase.Trim());
+
+        var displayName = game.Name?.Trim();
+        if (!string.IsNullOrWhiteSpace(displayName) && !list.Contains(displayName, StringComparer.OrdinalIgnoreCase))
+            list.Add(displayName);
+
+        // Also try sanitized display name without region tags as fallback for badly named ROMs
+        if (!string.IsNullOrWhiteSpace(displayName))
+        {
+            var sanitized = System.Text.RegularExpressions.Regex.Replace(displayName, @"\s*\(.*?\)", "").Trim();
+            if (!string.IsNullOrWhiteSpace(sanitized) && !list.Contains(sanitized, StringComparer.OrdinalIgnoreCase))
+                list.Add(sanitized);
+        }
+
+        return list;
+    }
+
+    private string? GetCheatFilePathForBase(Game game, RomPlatformDefinition platform, string baseName) =>
+        platform.SupportsCheats
+            ? Path.Combine(GetGameRootDirectory(game), platform.RetroArchCoreName!, $"{baseName}.cht")
+            : null;
 
     public async Task SetCheatEnabledAsync(Game game, RomPlatformDefinition platform, int cheatIndex, bool enabled, CancellationToken ct = default)
     {

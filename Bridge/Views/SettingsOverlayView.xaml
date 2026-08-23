@@ -1,54 +1,67 @@
-<UserControl x:Class="Bridge.Views.SettingsOverlayView"
+﻿<UserControl x:Class="Bridge.Views.SettingsOverlayView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:res="clr-namespace:Bridge.Resources">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,28" MaxWidth="920">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                <ui:SymbolIcon Symbol="Settings24" FontSize="22" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                <TextBlock Text="{x:Static res:Strings.Settings}" FontSize="{StaticResource Bridge.FontSize.Title}" FontWeight="SemiBold" Margin="10,0,0,0"/>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+        <StackPanel Margin="36,32" MaxWidth="960">
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <Border Width="36" Height="36" CornerRadius="9" Background="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center">
+                    <ui:SymbolIcon Symbol="Settings24" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Static res:Strings.Settings}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="{x:Static res:Strings.SettingsDescription}" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+                </StackPanel>
             </StackPanel>
-            <TextBlock Text="{x:Static res:Strings.SettingsDescription}" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,0,0,24"/>
 
-            <TextBlock Text="{x:Static res:Strings.SettingsProfileSection}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,10"/>
-            <Border Margin="0,0,0,24" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+            <!-- Perfil -->
+            <StackPanel Orientation="Horizontal" Margin="0,24,0,10">
+                <ui:SymbolIcon Symbol="Person24" FontSize="16" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SettingsProfileSection}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Border CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="20" Margin="0,0,0,28">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <ui:SymbolIcon Symbol="Person24" FontSize="18" Margin="0,0,8,0"/>
-                        <TextBlock Text="{x:Static res:Strings.SettingsProfileTitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <ui:SymbolIcon Symbol="PersonCircle24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{x:Static res:Strings.SettingsProfileTitle}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                        <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4" Background="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Static res:Strings.SettingsProfileSection}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                        </Border>
                     </StackPanel>
-                    <TextBlock Text="{x:Static res:Strings.SettingsProfileDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
+                    <TextBlock Text="{x:Static res:Strings.SettingsProfileDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,16"/>
                     <TextBlock Text="{x:Static res:Strings.SetupDisplayNameLabel}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                    <TextBox x:Name="ProfileDisplayNameBox" Padding="8,6" MaxLength="40" Margin="0,0,0,14"/>
+                    <TextBox x:Name="ProfileDisplayNameBox" Padding="10,7" MaxLength="40" Margin="0,0,0,16" FontSize="13"/>
                     <TextBlock Text="{x:Static res:Strings.SetupAvatarLabel}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,12"/>
-                    <Grid Margin="0,0,0,12">
+                    <Grid Margin="0,0,0,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border Width="72" Height="72" CornerRadius="36" ClipToBounds="True"
-                                BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+                        <Border Width="80" Height="80" CornerRadius="40" ClipToBounds="True"
+                                BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}" BorderThickness="2">
                             <Image x:Name="ProfileAvatarPreview" Stretch="UniformToFill"/>
                         </Border>
-                        <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                            <Button x:Name="ProfileChoosePhotoButton" HorizontalAlignment="Left" Padding="12,6" Click="ProfileChoosePhoto_Click"
-                                    Content="{x:Static res:Strings.SetupChoosePhoto}"/>
-                            <Button x:Name="ProfileUseDefaultAvatarButton" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,6" Click="ProfileUseDefaultAvatar_Click"
+                        <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
+                            <Button x:Name="ProfileChoosePhotoButton" HorizontalAlignment="Left" Padding="14,7" Click="ProfileChoosePhoto_Click"
+                                    Content="{x:Static res:Strings.SetupChoosePhoto}" FontWeight="SemiBold"/>
+                            <Button x:Name="ProfileUseDefaultAvatarButton" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="14,7" Click="ProfileUseDefaultAvatar_Click"
                                     Content="{x:Static res:Strings.SetupUseDefaultAvatar}"/>
                         </StackPanel>
                     </Grid>
-                    <UniformGrid x:Name="ProfileDefaultAvatarGrid" Columns="6" Rows="1" Margin="0,0,0,14"/>
-                    <Button x:Name="SaveProfileButton" HorizontalAlignment="Left" MinWidth="120" Padding="14,7" Click="SaveProfile_Click">
+                    <UniformGrid x:Name="ProfileDefaultAvatarGrid" Columns="6" Rows="1" Margin="0,0,0,16"/>
+                    <Button x:Name="SaveProfileButton" HorizontalAlignment="Left" MinWidth="140" Padding="16,9" Click="SaveProfile_Click" FontWeight="SemiBold">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextOnAccentFillColorPrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
                                 <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Cursor" Value="Hand"/>
                                 <Style.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorSecondaryBrush}"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -58,88 +71,13 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="{x:Static res:Strings.SettingsIntegrations}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,10"/>
-            <Grid Margin="0,0,0,24">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Margin="0,0,8,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
-                    <DockPanel LastChildFill="True">
-                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="ConfigureEmulator_Click" AutomationProperties.Name="{x:Static res:Strings.ConfigureEmulatorTitle}">
-                            <TextBlock Text="{x:Static res:Strings.OpenEmulationSettings}"/>
-                        </Button>
-                        <StackPanel MinWidth="0">
-                            <Grid Margin="0,0,0,6" MinWidth="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon Symbol="Box24" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Top"/>
-                                <TextBlock Grid.Column="1" Text="{x:Static res:Strings.ConfigureEmulatorTitle}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                            </Grid>
-                            <TextBlock Text="{x:Static res:Strings.SettingsEmulationCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Border>
-                <Border Grid.Column="1" Margin="4,0,4,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
-                    <DockPanel LastChildFill="True">
-                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="IgdbSettings_Click" AutomationProperties.Name="{x:Static res:Strings.IgdbSettingsTitle}">
-                            <TextBlock Text="{x:Static res:Strings.OpenIgdbSettings}"/>
-                        </Button>
-                        <StackPanel MinWidth="0">
-                            <Grid Margin="0,0,0,6" MinWidth="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon Symbol="Database24" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Top"/>
-                                <TextBlock Grid.Column="1" Text="{x:Static res:Strings.IgdbSettingsTitle}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                            </Grid>
-                            <TextBlock Text="{x:Static res:Strings.SettingsIgdbCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Border>
-                <Border Grid.Column="2" Margin="8,0,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
-                    <DockPanel LastChildFill="True">
-                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="SteamGridDbSettings_Click" AutomationProperties.Name="{x:Static res:Strings.SteamGridDbSettingsTitle}">
-                            <TextBlock Text="{x:Static res:Strings.OpenSteamGridDbSettings}"/>
-                        </Button>
-                        <StackPanel MinWidth="0">
-                            <Grid Margin="0,0,0,6" MinWidth="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon Symbol="ImageMultiple24" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Top"/>
-                                <TextBlock Grid.Column="1" Text="{x:Static res:Strings.SteamGridDbSettingsTitle}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                            </Grid>
-                            <TextBlock Text="{x:Static res:Strings.SettingsSteamGridDbCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Border>
-            </Grid>
-
-            <Border Margin="0,0,0,24" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
-                <DockPanel LastChildFill="True">
-                    <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="RetroAchievementsSettings_Click" AutomationProperties.Name="{x:Static res:Strings.RetroAchievementsSettingsTitle}">
-                        <TextBlock Text="{x:Static res:Strings.OpenRetroAchievementsSettings}"/>
-                    </Button>
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <ui:SymbolIcon Symbol="Trophy24" FontSize="18" Margin="0,0,8,0"/>
-                            <TextBlock Text="{x:Static res:Strings.RetroAchievementsSettingsTitle}" FontWeight="SemiBold"/>
-                        </StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.SettingsRetroAchievementsCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                    </StackPanel>
-                </DockPanel>
-            </Border>
-
-            <TextBlock Text="{x:Static res:Strings.SettingsAppearance}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,10"/>
-            <Grid Margin="0,0,0,24">
+            <!-- Apariencia -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <ui:SymbolIcon Symbol="PaintBrush24" FontSize="16" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SettingsAppearance}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,28">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -152,209 +90,442 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Row="0" Grid.Column="0" Margin="0,0,8,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <!-- Row 0: Tema + Idioma -->
+                <Border Grid.Row="0" Grid.Column="0" Margin="0,0,6,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
                         <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="CustomThemeColor_Click" AutomationProperties.Name="{x:Static res:Strings.CustomThemeColorTitle}">
-                            <TextBlock Text="{x:Static res:Strings.OpenThemeSettings}"/>
+                            <TextBlock Text="{x:Static res:Strings.OpenThemeSettings}" FontWeight="SemiBold"/>
                         </Button>
-                        <StackPanel>
+                        <StackPanel MinWidth="0" Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="Color24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.CustomThemeColorTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="Color24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.CustomThemeColorTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsThemeCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="0" Grid.Column="1" Margin="8,0,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <Border Grid.Row="0" Grid.Column="1" Margin="6,0,0,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
                         <ComboBox DockPanel.Dock="Right" x:Name="LanguageCombo" MinWidth="140" VerticalAlignment="Center" SelectionChanged="LanguageCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsLanguageTitle}">
                             <ComboBoxItem Content="{x:Static res:Strings.SettingsLanguageEnglish}"/>
                             <ComboBoxItem Content="{x:Static res:Strings.SettingsLanguageSpanish}"/>
                         </ComboBox>
-                        <StackPanel>
+                        <StackPanel Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="LocalLanguage24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsLanguageTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="LocalLanguage24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsLanguageTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsLanguageDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <!-- Row 1: Tray + Keep selection -->
+                <Border Grid.Row="1" Grid.Column="0" Margin="0,0,6,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
                         <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="TrayIconToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="TrayIconToggle_Changed" Unchecked="TrayIconToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsTrayIconTitle}"/>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="TrayItemAdd24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsTrayIconTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="TrayItemAdd24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsTrayIconTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsTrayIconDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <Border Grid.Row="1" Grid.Column="1" Margin="6,0,0,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
                         <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="KeepSelectionToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="KeepSelectionToggle_Changed" Unchecked="KeepSelectionToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsKeepSelectionTitle}"/>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="ArrowSwap24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsKeepSelectionTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="ArrowSwap24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsKeepSelectionTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsKeepSelectionDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <!-- Row 2: Panel position + Covers layout -->
+                <Border Grid.Row="2" Grid.Column="0" Margin="0,0,6,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
-                        <ComboBox DockPanel.Dock="Right" x:Name="DetailPanelPositionCombo" MinWidth="140" VerticalAlignment="Center" SelectionChanged="DetailPanelPositionCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsDetailPanelPositionTitle}">
+                        <ComboBox DockPanel.Dock="Right" x:Name="DetailPanelPositionCombo" MinWidth="120" VerticalAlignment="Center" SelectionChanged="DetailPanelPositionCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsDetailPanelPositionTitle}">
                             <ComboBoxItem Content="{x:Static res:Strings.Left}"/>
                             <ComboBoxItem Content="{x:Static res:Strings.Right}"/>
                         </ComboBox>
-                        <StackPanel>
+                        <StackPanel Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="PanelRight24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsDetailPanelPositionTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="PanelRight24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsDetailPanelPositionTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsDetailPanelPositionDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <Border Grid.Row="2" Grid.Column="1" Margin="6,0,0,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
-                        <ComboBox DockPanel.Dock="Right" x:Name="CoversDetailLayoutCombo" MinWidth="140" VerticalAlignment="Center" SelectionChanged="CoversDetailLayoutCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsCoversDetailLayoutTitle}">
+                        <ComboBox DockPanel.Dock="Right" x:Name="CoversDetailLayoutCombo" MinWidth="120" VerticalAlignment="Center" SelectionChanged="CoversDetailLayoutCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsCoversDetailLayoutTitle}">
                             <ComboBoxItem Content="{x:Static res:Strings.SettingsCoversDetailLayoutCompact}"/>
                             <ComboBoxItem Content="{x:Static res:Strings.SettingsCoversDetailLayoutStandard}"/>
                         </ComboBox>
-                        <StackPanel>
+                        <StackPanel Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="Apps24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsCoversDetailLayoutTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="Apps24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsCoversDetailLayoutTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsCoversDetailLayoutDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <!-- Row 3: Section position + Startup -->
+                <Border Grid.Row="3" Grid.Column="0" Margin="0,0,6,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
-                        <ComboBox DockPanel.Dock="Right" x:Name="DetailSectionPositionCombo" MinWidth="140" VerticalAlignment="Center" SelectionChanged="DetailSectionPositionCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsDetailSectionPositionTitle}">
+                        <ComboBox DockPanel.Dock="Right" x:Name="DetailSectionPositionCombo" MinWidth="120" VerticalAlignment="Center" SelectionChanged="DetailSectionPositionCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsDetailSectionPositionTitle}">
                             <ComboBoxItem Content="{x:Static res:Strings.Left}"/>
                             <ComboBoxItem Content="{x:Static res:Strings.Right}"/>
                         </ComboBox>
-                        <StackPanel>
+                        <StackPanel Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="ColumnTriple24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsDetailSectionPositionTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="ColumnTriple24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsDetailSectionPositionTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsDetailSectionPositionDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <Border Grid.Row="3" Grid.Column="1" Margin="6,0,0,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <ComboBox DockPanel.Dock="Right" x:Name="StartupSectionCombo" MinWidth="120" VerticalAlignment="Center" SelectionChanged="StartupSectionCombo_SelectionChanged" AutomationProperties.Name="{x:Static res:Strings.SettingsStartupSectionTitle}">
+                            <ComboBoxItem Content="{x:Static res:Strings.Home}"/>
+                            <ComboBoxItem Content="{x:Static res:Strings.Library}"/>
+                            <ComboBoxItem Content="{x:Static res:Strings.SidebarRoms}"/>
+                        </ComboBox>
+                        <StackPanel Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="Home24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsStartupSectionTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsStartupSectionDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <!-- Row 4: Translucent -->
+                <Border Grid.Row="4" Grid.Column="0" Margin="0,0,6,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
                         <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="TranslucentSidebarToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="TranslucentSidebarToggle_Changed" Unchecked="TranslucentSidebarToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsTranslucentSidebarTitle}"/>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="PanelLeft24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsTranslucentSidebarTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="PanelLeft24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsTranslucentSidebarTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsTranslucentSidebarDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <Border Grid.Row="4" Grid.Column="1" Margin="6,0,0,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
                         <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="TranslucentBackgroundToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="TranslucentBackgroundToggle_Changed" Unchecked="TranslucentBackgroundToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsTranslucentBackgroundTitle}"/>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="ImageAltText24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.SettingsTranslucentBackgroundTitle}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="ImageAltText24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsTranslucentBackgroundTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                             <TextBlock Text="{x:Static res:Strings.SettingsTranslucentBackgroundDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
-            </Grid>
-
-            <TextBlock Text="{x:Static res:Strings.SettingsDataSection}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,10"/>
-            <Border Margin="0,0,0,24" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
-                <DockPanel LastChildFill="True">
-                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,0,0">
-                        <Button MinWidth="112" Padding="12,8" Click="CreateBackup_Click" AutomationProperties.Name="{x:Static res:Strings.CreateBackup}">
-                            <TextBlock Text="{x:Static res:Strings.CreateBackup}"/>
-                        </Button>
-                        <Button MinWidth="112" Padding="12,8" Margin="0,8,0,0" Click="RestoreBackup_Click" AutomationProperties.Name="{x:Static res:Strings.RestoreBackup}">
-                            <TextBlock Text="{x:Static res:Strings.RestoreBackup}"/>
-                        </Button>
-                    </StackPanel>
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <ui:SymbolIcon Symbol="Archive24" FontSize="18" Margin="0,0,8,0"/>
-                            <TextBlock Text="{x:Static res:Strings.SettingsBackupTitle}" FontWeight="SemiBold"/>
-                        </StackPanel>
-                        <TextBlock Text="{x:Static res:Strings.SettingsBackupDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                    </StackPanel>
-                </DockPanel>
-            </Border>
-
-            <TextBlock Text="{x:Static res:Strings.SettingsUpdatesSection}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,10"/>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Margin="0,0,8,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" Margin="0,0,8,0"/>
-                            <TextBlock Text="{x:Static res:Strings.CheckForUpdates}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button Padding="12,8" HorizontalAlignment="Left" Command="{Binding CheckForUpdatesCommand}" AutomationProperties.Name="{x:Static res:Strings.CheckForUpdates}">
-                            <TextBlock Text="{x:Static res:Strings.CheckForUpdates}"/>
-                        </Button>
-                        <Border Margin="0,14,0,0" CornerRadius="8" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="12,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{x:Static res:Strings.ReceiveBetaBuilds}" FontWeight="Medium" FontSize="13"/>
-                                    <TextBlock Text="{x:Static res:Strings.BetaBuildsDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-                                <ui:ToggleSwitch Grid.Column="1" x:Name="BetaChannelToggle" VerticalAlignment="Center" Margin="14,0,0,0" Checked="BetaChannelToggle_Changed" Unchecked="BetaChannelToggle_Changed"/>
-                            </Grid>
-                        </Border>
-                        <Border Margin="0,10,0,0" CornerRadius="8" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="12,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{x:Static res:Strings.SettingsStartWithWindows}" FontWeight="Medium" FontSize="13"/>
-                                    <TextBlock x:Name="StartWithWindowsDescription" Text="{x:Static res:Strings.SettingsStartWithWindowsDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-                                <ui:ToggleSwitch Grid.Column="1" x:Name="StartWithWindowsToggle" VerticalAlignment="Center" Margin="14,0,0,0" Checked="StartWithWindowsToggle_Changed" Unchecked="StartWithWindowsToggle_Changed"/>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="1" Margin="8,0,0,0" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="16">
+                <!-- Row 5: Hero buttons + Side buttons -->
+                <Border Grid.Row="5" Grid.Column="0" Margin="0,0,6,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
                     <DockPanel LastChildFill="True">
-                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="About_Click" AutomationProperties.Name="{x:Static res:Strings.AboutBridge}">
-                            <TextBlock Text="{x:Static res:Strings.ViewAbout}"/>
-                        </Button>
+                        <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="DetailHeroButtonsToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="DetailHeroButtonsToggle_Changed" Unchecked="DetailHeroButtonsToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsDetailHeroButtonsTitle}"/>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <ui:SymbolIcon Symbol="Info24" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="{x:Static res:Strings.AboutBridge}" FontWeight="SemiBold"/>
+                                <ui:SymbolIcon Symbol="WindowApps24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsDetailHeroButtonsTitle}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
-                            <TextBlock Text="{x:Static res:Strings.SettingsAboutCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                            <TextBlock Text="{x:Static res:Strings.SettingsDetailHeroButtonsDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,6,0,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="MinimizeOnGameLaunchToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="MinimizeOnGameLaunchToggle_Changed" Unchecked="MinimizeOnGameLaunchToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsMinimizeOnGameLaunchTitle}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="ArrowMinimize24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsMinimizeOnGameLaunchTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsMinimizeOnGameLaunchDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="5" Grid.Column="1" Margin="6,0,0,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <ui:ToggleSwitch DockPanel.Dock="Right" x:Name="DetailSideButtonsToggle" VerticalAlignment="Center" Margin="12,0,0,0" Checked="DetailSideButtonsToggle_Changed" Unchecked="DetailSideButtonsToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsDetailSideButtonsTitle}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="PanelLeftExpand24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SettingsDetailSideButtonsTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsDetailSideButtonsDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
             </Grid>
+
+            <!-- Integraciones -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <ui:SymbolIcon Symbol="PlugConnected24" FontSize="16" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SettingsIntegrations}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,28">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Row="0" Grid.Column="0" Margin="0,0,6,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="ConfigureEmulator_Click" AutomationProperties.Name="{x:Static res:Strings.ConfigureEmulatorTitle}">
+                            <TextBlock Text="{x:Static res:Strings.OpenEmulationSettings}" FontWeight="SemiBold"/>
+                        </Button>
+                        <StackPanel MinWidth="0" Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="Box24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Static res:Strings.ConfigureEmulatorTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsEmulationCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="0" Grid.Column="1" Margin="6,0,0,6" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="IgdbSettings_Click" AutomationProperties.Name="{x:Static res:Strings.IgdbSettingsTitle}">
+                            <TextBlock Text="{x:Static res:Strings.OpenIgdbSettings}" FontWeight="SemiBold"/>
+                        </Button>
+                        <StackPanel MinWidth="0" Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="Database24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.IgdbSettingsTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsIgdbCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="0" Margin="0,0,6,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="SteamGridDbSettings_Click" AutomationProperties.Name="{x:Static res:Strings.SteamGridDbSettingsTitle}">
+                            <TextBlock Text="{x:Static res:Strings.OpenSteamGridDbSettings}" FontWeight="SemiBold"/>
+                        </Button>
+                        <StackPanel MinWidth="0" Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="ImageMultiple24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.SteamGridDbSettingsTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsSteamGridDbCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" Margin="6,0,0,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="18">
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right" MinWidth="88" Padding="12,8" VerticalAlignment="Center" Click="RetroAchievementsSettings_Click" AutomationProperties.Name="{x:Static res:Strings.RetroAchievementsSettingsTitle}">
+                            <TextBlock Text="{x:Static res:Strings.OpenRetroAchievementsSettings}" FontWeight="SemiBold"/>
+                        </Button>
+                        <StackPanel MinWidth="0" Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <ui:SymbolIcon Symbol="Trophy24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.RetroAchievementsSettingsTitle}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.SettingsRetroAchievementsCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- Biblioteca y datos -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <ui:SymbolIcon Symbol="Library24" FontSize="16" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SettingsDataSection}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Border Margin="0,0,0,16" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="20">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <Button MinWidth="120" Padding="14,9" Click="CreateBackup_Click" AutomationProperties.Name="{x:Static res:Strings.CreateBackup}" FontWeight="SemiBold">
+                            <TextBlock Text="{x:Static res:Strings.CreateBackup}"/>
+                        </Button>
+                        <Button MinWidth="120" Padding="14,9" Margin="0,10,0,0" Click="RestoreBackup_Click" AutomationProperties.Name="{x:Static res:Strings.RestoreBackup}">
+                            <TextBlock Text="{x:Static res:Strings.RestoreBackup}"/>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Archive24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                            <TextBlock Text="{x:Static res:Strings.SettingsBackupTitle}" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.SettingsBackupDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" LineHeight="16"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            <Border Margin="0,0,0,16" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <ui:SymbolIcon Symbol="Save24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static res:Strings.SettingsRomSavesTitle}" FontWeight="SemiBold" FontSize="14"/>
+                    </StackPanel>
+                    <TextBlock Text="{x:Static res:Strings.SettingsRomSavesDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" LineHeight="16" Margin="0,0,0,16"/>
+                    <DockPanel LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+                            <Button MinWidth="120" Padding="14,9" Click="ExportRomPack_Click" AutomationProperties.Name="{x:Static res:Strings.ExportRomPack}" FontWeight="SemiBold">
+                                <TextBlock Text="{x:Static res:Strings.ExportRomPack}"/>
+                            </Button>
+                            <Button MinWidth="120" Padding="14,9" Margin="0,10,0,0" Click="ImportRomPack_Click" AutomationProperties.Name="{x:Static res:Strings.ImportRomPack}">
+                                <TextBlock Text="{x:Static res:Strings.ImportRomPack}"/>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel>
+                            <Border CornerRadius="10" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="14,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Text="{x:Static res:Strings.SettingsRomSaveAutoBackupTitle}" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock Text="{x:Static res:Strings.SettingsRomSaveAutoBackupDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="14"/>
+                                    </StackPanel>
+                                    <ui:ToggleSwitch Grid.Column="1" x:Name="RomSaveAutoBackupToggle" VerticalAlignment="Center" Checked="RomSaveAutoBackupToggle_Changed" Unchecked="RomSaveAutoBackupToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsRomSaveAutoBackupTitle}"/>
+                                </Grid>
+                            </Border>
+                            <Border Margin="0,10,0,0" CornerRadius="10" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="14,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Text="{x:Static res:Strings.SettingsPcSaveAutoBackupTitle}" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock Text="{x:Static res:Strings.SettingsPcSaveAutoBackupDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="14"/>
+                                    </StackPanel>
+                                    <ui:ToggleSwitch Grid.Column="1" x:Name="PcSaveAutoBackupToggle" VerticalAlignment="Center" Checked="PcSaveAutoBackupToggle_Changed" Unchecked="PcSaveAutoBackupToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsPcSaveAutoBackupTitle}"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+            <Border Margin="0,0,0,28" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <ui:SymbolIcon Symbol="Folder24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static res:Strings.SettingsOrganizeRomsTitle}" FontWeight="SemiBold" FontSize="14"/>
+                    </StackPanel>
+                    <TextBlock Text="{x:Static res:Strings.SettingsOrganizeRomsDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" LineHeight="16" Margin="0,0,0,16"/>
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right" MinWidth="120" Padding="14,9" Margin="16,0,0,0" VerticalAlignment="Center" Click="OrganizeRomsNow_Click" AutomationProperties.Name="{x:Static res:Strings.OrganizeRomsNow}" FontWeight="SemiBold">
+                            <TextBlock Text="{x:Static res:Strings.OrganizeRomsNow}"/>
+                        </Button>
+                        <Border CornerRadius="10" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="14,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{x:Static res:Strings.SettingsOrganizeRomsAutoTitle}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="{x:Static res:Strings.SettingsOrganizeRomsAutoDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="14"/>
+                                </StackPanel>
+                                <ui:ToggleSwitch Grid.Column="1" x:Name="RomOrganizeToggle" VerticalAlignment="Center" Checked="RomOrganizeToggle_Changed" Unchecked="RomOrganizeToggle_Changed" AutomationProperties.Name="{x:Static res:Strings.SettingsOrganizeRomsAutoTitle}"/>
+                            </Grid>
+                        </Border>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Actualizaciones y Acerca -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SettingsUpdatesSection}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Margin="0,0,6,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="20">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                            <TextBlock Text="{x:Static res:Strings.CheckForUpdates}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Padding="14,9" HorizontalAlignment="Left" Command="{Binding CheckForUpdatesCommand}" AutomationProperties.Name="{x:Static res:Strings.CheckForUpdates}" FontWeight="SemiBold">
+                            <TextBlock Text="{x:Static res:Strings.CheckForUpdates}"/>
+                        </Button>
+                        <Border Margin="0,16,0,0" CornerRadius="10" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="14,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{x:Static res:Strings.ReceiveBetaBuilds}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="{x:Static res:Strings.BetaBuildsDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="14"/>
+                                </StackPanel>
+                                <ui:ToggleSwitch Grid.Column="1" x:Name="BetaChannelToggle" VerticalAlignment="Center" Checked="BetaChannelToggle_Changed" Unchecked="BetaChannelToggle_Changed"/>
+                            </Grid>
+                        </Border>
+                        <Border Margin="0,10,0,0" CornerRadius="10" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="14,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{x:Static res:Strings.SettingsStartWithWindows}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock x:Name="StartWithWindowsDescription" Text="{x:Static res:Strings.SettingsStartWithWindowsDescription}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="14"/>
+                                </StackPanel>
+                                <ui:ToggleSwitch Grid.Column="1" x:Name="StartWithWindowsToggle" VerticalAlignment="Center" Checked="StartWithWindowsToggle_Changed" Unchecked="StartWithWindowsToggle_Changed"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Margin="6,0,0,0" CornerRadius="12" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="20">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <ui:SymbolIcon Symbol="Info24" FontSize="18" Margin="0,0,8,0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                            <TextBlock Text="{x:Static res:Strings.AboutBridge}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.SettingsAboutCardDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" LineHeight="16" Margin="0,0,0,16"/>
+                        <Button MinWidth="120" Padding="14,9" HorizontalAlignment="Left" Click="About_Click" AutomationProperties.Name="{x:Static res:Strings.AboutBridge}" FontWeight="SemiBold">
+                            <TextBlock Text="{x:Static res:Strings.ViewAbout}"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Danger Zone -->
+            <StackPanel Orientation="Horizontal" Margin="0,24,0,10">
+                <ui:SymbolIcon Symbol="Warning24" FontSize="16" Foreground="#FF4444" VerticalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.SettingsDangerZoneTitle}" FontWeight="Bold" FontSize="13" Foreground="#FF4444" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="{x:Static res:Strings.SettingsDangerZoneDescription}" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+            <Border CornerRadius="12" Background="#0AFF4444" BorderBrush="#66FF4444" BorderThickness="1" Padding="20">
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right" MinWidth="140" Padding="14,9" Background="#FF4444" Foreground="White" BorderThickness="0" Cursor="Hand" Click="DeleteAllData_Click" FontWeight="SemiBold">
+                        <TextBlock Text="{x:Static res:Strings.DeleteAllDataButton}"/>
+                    </Button>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <ui:SymbolIcon Symbol="Delete24" FontSize="18" Margin="0,0,8,0" Foreground="#FF4444"/>
+                            <TextBlock Text="{x:Static res:Strings.DeleteAllDataTitle}" FontWeight="SemiBold" FontSize="14" Foreground="#FF4444"/>
+                        </StackPanel>
+                        <TextBlock Text="{x:Static res:Strings.DeleteAllDataDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="12" LineHeight="16"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
+
+

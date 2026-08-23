@@ -1,7 +1,10 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using Bridge.Core.Enums;
 using Bridge.Resources;
 using Bridge.Services;
 using Bridge.ViewModels;
@@ -22,6 +25,13 @@ public partial class SettingsOverlayView : UserControl
     private bool _loadingDetailSectionPosition;
     private bool _loadingTranslucentSidebar;
     private bool _loadingTranslucentBackground;
+    private bool _loadingDetailHeroButtons;
+    private bool _loadingDetailSideButtons;
+    private bool _loadingStartupSection;
+    private bool _loadingMinimizeOnGameLaunch;
+    private bool _loadingRomSaveAutoBackup;
+    private bool _loadingPcSaveAutoBackup;
+    private bool _loadingRomOrganize;
     private ProfileEditorHelper.AvatarEditorState _profileState = new();
 
     private static readonly string[] DetailPanelPositionValues =
@@ -93,6 +103,34 @@ public partial class SettingsOverlayView : UserControl
             _loadingTranslucentBackground = true;
             TranslucentBackgroundToggle.IsChecked = TranslucentBackgroundSettingsStore.Load();
             _loadingTranslucentBackground = false;
+
+            _loadingDetailHeroButtons = true;
+            DetailHeroButtonsToggle.IsChecked = DetailHeroButtonsSettingsStore.Load();
+            _loadingDetailHeroButtons = false;
+
+            _loadingDetailSideButtons = true;
+            DetailSideButtonsToggle.IsChecked = DetailSideButtonsSettingsStore.Load();
+            _loadingDetailSideButtons = false;
+
+            _loadingStartupSection = true;
+            StartupSectionCombo.SelectedIndex = IndexForStartupSection(StartupSectionSettingsStore.Load());
+            _loadingStartupSection = false;
+
+            _loadingMinimizeOnGameLaunch = true;
+            MinimizeOnGameLaunchToggle.IsChecked = MinimizeOnGameLaunchSettingsStore.Load();
+            _loadingMinimizeOnGameLaunch = false;
+
+            _loadingRomSaveAutoBackup = true;
+            RomSaveAutoBackupToggle.IsChecked = RomSaveAutoBackupSettingsStore.Load();
+            _loadingRomSaveAutoBackup = false;
+
+            _loadingPcSaveAutoBackup = true;
+            PcSaveAutoBackupToggle.IsChecked = PcSaveAutoBackupSettingsStore.Load();
+            _loadingPcSaveAutoBackup = false;
+
+            _loadingRomOrganize = true;
+            RomOrganizeToggle.IsChecked = RomOrganizeSettingsStore.Load();
+            _loadingRomOrganize = false;
 
             LoadProfileEditor();
         };
@@ -485,5 +523,329 @@ public partial class SettingsOverlayView : UserControl
 
         TranslucentBackgroundSettingsStore.Save(enabled);
         ThemeManager.ApplyTranslucentBackground();
+    }
+
+    private void DetailHeroButtonsToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingDetailHeroButtons)
+            return;
+
+        var enabled = DetailHeroButtonsToggle.IsChecked == true;
+        if (enabled == DetailHeroButtonsSettingsStore.Load())
+            return;
+
+        DetailHeroButtonsSettingsStore.Save(enabled);
+        if (DataContext is MainViewModel vm)
+            vm.ShowDetailHeroButtons = enabled;
+    }
+
+    private void DetailSideButtonsToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingDetailSideButtons)
+            return;
+
+        var enabled = DetailSideButtonsToggle.IsChecked == true;
+        if (enabled == DetailSideButtonsSettingsStore.Load())
+            return;
+
+        DetailSideButtonsSettingsStore.Save(enabled);
+        if (DataContext is MainViewModel vm)
+            vm.ShowDetailSideButtons = enabled;
+    }
+
+    private void MinimizeOnGameLaunchToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingMinimizeOnGameLaunch) return;
+        var enabled = MinimizeOnGameLaunchToggle.IsChecked == true;
+        if (enabled == MinimizeOnGameLaunchSettingsStore.Load()) return;
+        MinimizeOnGameLaunchSettingsStore.Save(enabled);
+    }
+
+    private static readonly NavigationSection[] StartupSectionValues =
+    [
+        NavigationSection.Home,
+        NavigationSection.Library,
+        NavigationSection.Roms
+    ];
+
+    private static int IndexForStartupSection(NavigationSection section)
+    {
+        for (var i = 0; i < StartupSectionValues.Length; i++)
+            if (StartupSectionValues[i] == section) return i;
+        return 1;
+    }
+
+    private void StartupSectionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingStartupSection || StartupSectionCombo.SelectedIndex < 0) return;
+        var selected = StartupSectionValues[StartupSectionCombo.SelectedIndex];
+        if (selected == StartupSectionSettingsStore.Load()) return;
+        StartupSectionSettingsStore.Save(selected);
+    }
+
+    private void DeleteAllData_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        // 1st verification
+        if (!MessageDialogWindow.ShowConfirm(
+                Strings.DeleteAllDataConfirm1Message,
+                Strings.DeleteAllDataConfirm1Title,
+                SymbolRegular.Warning24,
+                Strings.DeleteAllDataButton,
+                Strings.Cancel,
+                owner))
+            return;
+
+        // 2nd verification - type BORRAR + checkbox
+        var win2 = new DeleteConfirmWindow { Owner = owner };
+        if (win2.ShowDialog() != true || !win2.Confirmed)
+            return;
+
+        // 3rd verification
+        if (!MessageDialogWindow.ShowConfirm(
+                Strings.DeleteAllDataConfirm3Message,
+                Strings.DeleteAllDataConfirm3Title,
+                SymbolRegular.Warning24,
+                Strings.DeleteAllDataButton,
+                Strings.Cancel,
+                owner))
+            return;
+
+        Mouse.OverrideCursor = Cursors.Wait;
+        try
+        {
+            var result = AppDataPurgeService.PurgeAllData();
+            if (!result.Success)
+            {
+                MessageDialogWindow.Show(
+                    string.Format(Strings.DeleteAllDataFailedFormat, result.Message ?? Strings.Unknown),
+                    Config.AppName,
+                    SymbolRegular.ErrorCircle24,
+                    owner);
+                return;
+            }
+
+            MessageDialogWindow.Show(
+                Strings.DeleteAllDataSuccess,
+                Config.AppName,
+                SymbolRegular.CheckmarkCircle24,
+                owner);
+            RestartApplication();
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void RomSaveAutoBackupToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingRomSaveAutoBackup)
+            return;
+
+        var enabled = RomSaveAutoBackupToggle.IsChecked == true;
+        if (enabled == RomSaveAutoBackupSettingsStore.Load())
+            return;
+
+        RomSaveAutoBackupSettingsStore.Save(enabled);
+    }
+
+    private void PcSaveAutoBackupToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingPcSaveAutoBackup)
+            return;
+
+        var enabled = PcSaveAutoBackupToggle.IsChecked == true;
+        if (enabled == PcSaveAutoBackupSettingsStore.Load())
+            return;
+
+        PcSaveAutoBackupSettingsStore.Save(enabled);
+    }
+
+    private async void ExportRomPack_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        if (DataContext is not MainViewModel viewModel)
+            return;
+
+        var dialog = new SaveFileDialog
+        {
+            Title = Strings.RomPackSaveDialogTitle,
+            Filter = "Bridge ROM pack (*.zip)|*.zip",
+            FileName = $"Bridge-roms-{DateTime.Now:yyyy-MMdd-HHmm}.zip",
+            DefaultExt = ".zip",
+            AddExtension = true
+        };
+
+        if (dialog.ShowDialog(owner) != true)
+            return;
+
+        var games = viewModel.Games.ToList();
+        Mouse.OverrideCursor = Cursors.Wait;
+        RomLibraryPackResult result;
+        try
+        {
+            result = await Task.Run(() => RomLibraryPackService.Create(
+                games,
+                dialog.FileName,
+                customSaveFolders: GameSaveFolderStore.GetAll()));
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+
+        if (result.Success)
+        {
+            MessageDialogWindow.Show(
+                Strings.Format(
+                    nameof(Strings.RomPackCreatedFormat),
+                    result.FilePath!,
+                    result.GamesWithSaves,
+                    result.RomsIncluded,
+                    result.RomsSkipped),
+                Config.AppName,
+                SymbolRegular.CheckmarkCircle24,
+                owner);
+            return;
+        }
+
+        MessageDialogWindow.Show(
+            Strings.Format(nameof(Strings.RomPackFailedFormat), result.Message ?? Strings.Unknown),
+            Config.AppName,
+            SymbolRegular.ErrorCircle24,
+            owner);
+    }
+
+    private async void ImportRomPack_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        if (DataContext is not MainViewModel viewModel)
+            return;
+
+        var dialog = new OpenFileDialog
+        {
+            Title = Strings.RomPackRestoreDialogTitle,
+            Filter = "Bridge ROM pack (*.zip)|*.zip",
+            CheckFileExists = true
+        };
+
+        if (dialog.ShowDialog(owner) != true)
+            return;
+
+        if (!MessageDialogWindow.ShowConfirm(
+                Strings.RomPackRestoreConfirm,
+                Strings.ImportRomPack,
+                SymbolRegular.ArrowImport24,
+                Strings.ImportRomPack,
+                Strings.Cancel,
+                owner))
+        {
+            return;
+        }
+
+        var romFolder = RomScanFolderSettingsStore.Load();
+        if (string.IsNullOrWhiteSpace(romFolder) || !Directory.Exists(romFolder))
+            romFolder = Config.ImportedRomsPath;
+
+        Mouse.OverrideCursor = Cursors.Wait;
+        RomLibraryPackResult result;
+        try
+        {
+            result = await Task.Run(() => RomLibraryPackService.Import(dialog.FileName, romFolder));
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+
+        if (!result.Success)
+        {
+            MessageDialogWindow.Show(
+                Strings.Format(nameof(Strings.RomPackImportFailedFormat), result.Message ?? Strings.Unknown),
+                Config.AppName,
+                SymbolRegular.ErrorCircle24,
+                owner);
+            return;
+        }
+
+        if (result.RestoredSaveFolders is { Count: > 0 })
+        {
+            foreach (var (gameId, folder) in result.RestoredSaveFolders)
+                GameSaveFolderStore.Set(gameId, folder);
+
+            viewModel.NotifySaveFolderBindings();
+        }
+
+        if (result.RomsCopied > 0)
+        {
+            foreach (var folder in result.RomDestinations ?? [])
+            {
+                if (!string.IsNullOrWhiteSpace(folder))
+                    await viewModel.ScanRomFolderAsync(folder, silent: true, persistWatchedFolder: false);
+            }
+        }
+
+        viewModel.RefreshSelectedGameSaveBackups();
+
+        MessageDialogWindow.Show(
+            Strings.Format(
+                nameof(Strings.RomPackImportedFormat),
+                result.SavesRestored,
+                result.RomsCopied),
+            Config.AppName,
+            SymbolRegular.CheckmarkCircle24,
+            owner);
+    }
+
+    private void RomOrganizeToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingRomOrganize)
+            return;
+
+        var enabled = RomOrganizeToggle.IsChecked == true;
+        if (enabled == RomOrganizeSettingsStore.Load())
+            return;
+
+        RomOrganizeSettingsStore.Save(enabled);
+    }
+
+    private async void OrganizeRomsNow_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        if (DataContext is not MainViewModel viewModel)
+            return;
+
+        var folder = RomScanFolderSettingsStore.Load();
+        if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+        {
+            MessageDialogWindow.Show(
+                Strings.OrganizeRomsNoFolder,
+                Strings.SettingsOrganizeRomsTitle,
+                SymbolRegular.Folder24,
+                owner);
+            return;
+        }
+
+        Mouse.OverrideCursor = Cursors.Wait;
+        Bridge.Emulation.RomOrganizeResult result;
+        try
+        {
+            result = await viewModel.OrganizeRomsNowAsync();
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+
+        MessageDialogWindow.Show(
+            Strings.Format(
+                nameof(Strings.OrganizeRomsCompleteFormat),
+                result.Changes.Count,
+                result.Unchanged,
+                result.Skipped + result.Failed),
+            Strings.SettingsOrganizeRomsTitle,
+            SymbolRegular.CheckmarkCircle24,
+            owner);
     }
 }

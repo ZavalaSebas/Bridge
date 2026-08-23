@@ -1,0 +1,25 @@
+<Window x:Class="Bridge.DeleteConfirmWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:res="clr-namespace:Bridge.Resources"
+        Title="{x:Static res:Strings.DeleteAllDataConfirm2Title}" Height="260" Width="420"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{DynamicResource ApplicationBackgroundBrush}" WindowStyle="SingleBorderWindow">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="{x:Static res:Strings.DeleteAllDataConfirm2Message}" TextWrapping="Wrap" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,16"/>
+        <TextBox x:Name="InputBox" Grid.Row="1" Padding="8,6" FontSize="13" Margin="0,0,0,12" TextChanged="InputBox_TextChanged"/>
+        <CheckBox x:Name="ConfirmCheck" Grid.Row="2" Content="{x:Static res:Strings.IUnderstandIrreversible}" Margin="0,0,0,16" Checked="ConfirmCheck_Changed" Unchecked="ConfirmCheck_Changed"/>
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="{x:Static res:Strings.Cancel}" Padding="16,7" Margin="0,0,8,0" Click="Cancel_Click" MinWidth="80"/>
+            <Button x:Name="ConfirmButton" Content="{x:Static res:Strings.OK}" Padding="16,7" MinWidth="80" IsEnabled="False" Click="Confirm_Click" Background="{DynamicResource SystemAccentColorPrimaryBrush}" Foreground="White" BorderThickness="0"/>
+        </StackPanel>
+    </Grid>
+</Window>

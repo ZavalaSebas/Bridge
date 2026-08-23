@@ -88,6 +88,8 @@ public partial class MainWindow
         }
     }
 
+    public void ShowScanInstalledDialog() => ScanInstalled_Click(this, new RoutedEventArgs());
+
     private async void ScanInstalled_Click(object sender, RoutedEventArgs e)
     {
         var background = (DataContext as MainViewModel)?.SelectedGame?.BackgroundImage;

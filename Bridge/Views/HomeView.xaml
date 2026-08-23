@@ -1,0 +1,387 @@
+﻿<UserControl x:Class="Bridge.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:res="clr-namespace:Bridge.Resources"
+             xmlns:converters="clr-namespace:Bridge.Converters"
+             xmlns:controls="clr-namespace:Bridge.Controls"
+             xmlns:art="clr-namespace:Bridge.Assets"
+             x:Name="HomeRoot">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Bridge;component/Styles/MainWindowResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+            <converters:CountToVisibilityConverter x:Key="CountToVisibility"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibility"/>
+            <converters:CarouselIsSelectedConverter x:Key="CarouselIsSelectedConverter"/>
+            <converters:FallbackCoverConverter x:Key="FallbackCoverConverter"/>
+            <converters:FallbackIconConverter x:Key="FallbackIconConverter"/>
+            <converters:PlaytimeShortConverter x:Key="PlaytimeShortConverter"/>
+            <Style x:Key="HomeRowArrow" TargetType="Button">
+                <Setter Property="Width" Value="36"/>
+                <Setter Property="Height" Value="36"/>
+                <Setter Property="Background" Value="#CC1E2436"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="#22FFFFFF"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Visibility" Value="Visible"/>
+                <Setter Property="Opacity" Value="0.75"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="18">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#E61E2436"/><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/></Trigger>
+                                <Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#FF1E2436"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Background="{DynamicResource ApplicationBackgroundBrush}">
+        <Grid Visibility="{Binding HomeHasGames, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
+                <ui:SymbolIcon Symbol="Home24" FontSize="48" Foreground="{StaticResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center"/>
+                <TextBlock Text="{x:Static res:Strings.HomeEmptyLibrary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,16,0,24" Foreground="{StaticResource TextFillColorSecondaryBrush}" FontSize="14"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Padding="16,10" Background="{DynamicResource SystemAccentColorPrimaryBrush}" Foreground="White" BorderThickness="0" Cursor="Hand" Click="ImportSteam_Click">
+                        <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="{x:Static res:Strings.Steam}"/></StackPanel>
+                    </Button>
+                    <Button Padding="16,10" Margin="8,0,0,0" Click="Scan_Click"><TextBlock Text="{x:Static res:Strings.ScanAutomatically}"/></Button>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Visibility="{Binding HomeHasGames, Converter={StaticResource BoolToVisibility}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="260"/>
+            </Grid.ColumnDefinitions>
+            <ScrollViewer x:Name="MainScrollHost" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,0,24" PanningMode="VerticalOnly">
+                <StackPanel>
+                    <Grid x:Name="CarouselHost" Height="420" ClipToBounds="True" Background="#0B0B0B">
+                        <controls:FadeImage x:Name="CarouselImage" SourceUrl="{Binding HomeFeaturedGame.BackgroundImage, Converter={StaticResource HeroArtSource}}" FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" Stretch="UniformToFill" DecodeSize="Hero"/>
+                        <Border>
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#00000000" Offset="0"/>
+                                    <GradientStop Color="#66000000" Offset="0.55"/>
+                                    <GradientStop Color="#CC0B0F1E" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <Grid MaxWidth="1100" Margin="32,24,32,32">
+                                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" VerticalAlignment="Bottom" MaxWidth="560" HorizontalAlignment="Left">
+                                    <TextBlock Text="{x:Static res:Strings.HomeFeatured}" FontSize="12" FontWeight="SemiBold" Foreground="#90FFFFFF" Margin="0,0,0,8" Visibility="{Binding HomeFeaturedGame, Converter={StaticResource NullToVisibility}}"/>
+                                    <TextBlock Text="{Binding HomeFeaturedGame.Name}" FontSize="32" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" MaxWidth="560">
+                                        <TextBlock.Effect><DropShadowEffect ShadowDepth="2" BlurRadius="8" Opacity="0.7"/></TextBlock.Effect>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding HomeFeaturedGame.Description}" FontSize="13" Foreground="#E6FFFFFF" TextWrapping="Wrap" MaxHeight="72" TextTrimming="CharacterEllipsis" Margin="0,8,0,0" Opacity="0.9" MaxWidth="560"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                        <Button MinWidth="140" Padding="14,8" Background="{DynamicResource SystemAccentColorPrimaryBrush}" Foreground="White" BorderThickness="0" Cursor="Hand" Command="{Binding HomePlayFeaturedCommand}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <ui:SymbolIcon FontSize="18" Foreground="White"><ui:SymbolIcon.Style><Style TargetType="ui:SymbolIcon"><Setter Property="Symbol" Value="Play24"/><Style.Triggers><DataTrigger Binding="{Binding HomeFeaturedGame.IsRunning}" Value="True"><Setter Property="Symbol" Value="Stop24"/></DataTrigger><DataTrigger Binding="{Binding HomeFeaturedGame.NeedsEmulatorDownload}" Value="True"><Setter Property="Symbol" Value="ArrowDownload24"/></DataTrigger></Style.Triggers></Style></ui:SymbolIcon.Style></ui:SymbolIcon>
+                                                <TextBlock Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{x:Static res:Strings.HomePlayNow}"/><Style.Triggers><DataTrigger Binding="{Binding HomeFeaturedGame.IsRunning}" Value="True"><Setter Property="Text" Value="{x:Static res:Strings.Stop}"/></DataTrigger><DataTrigger Binding="{Binding HomeFeaturedGame.NeedsEmulatorDownload}" Value="True"><Setter Property="Text" Value="{x:Static res:Strings.Download}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="10,0,0,0" Padding="14,8" Background="#22FFFFFF" Foreground="White" BorderBrush="#44FFFFFF" BorderThickness="1" Cursor="Hand" Command="{Binding HomeSelectFeaturedCommand}">
+                                            <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="Info24" FontSize="16" Foreground="White"/><TextBlock Text="{x:Static res:Strings.More}" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,18,0,0" Visibility="{Binding HomeFeaturedGames.Count, Converter={StaticResource CountToVisibility}}">
+                                    <ItemsControl ItemsSource="{Binding HomeFeaturedGames}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Width="24" Height="4" CornerRadius="2" Margin="0,0,6,0" Background="#44FFFFFF">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Value="True">
+                                                                    <DataTrigger.Binding>
+                                                                        <MultiBinding Converter="{StaticResource CarouselIsSelectedConverter}">
+                                                                            <Binding/>
+                                                                            <Binding Path="DataContext.HomeFeaturedGame" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                        </MultiBinding>
+                                                                    </DataTrigger.Binding>
+                                                                    <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                                                    <Setter Property="Width" Value="36"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Button HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0" Width="36" Height="36" Background="#66000000" BorderThickness="0" Cursor="Hand" Click="CarouselPrev_Click">
+                            <ui:SymbolIcon Symbol="ChevronLeft24" FontSize="20" Foreground="White"/>
+                        </Button>
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" Width="36" Height="36" Background="#66000000" BorderThickness="0" Cursor="Hand" Click="CarouselNext_Click">
+                            <ui:SymbolIcon Symbol="ChevronRight24" FontSize="20" Foreground="White"/>
+                        </Button>
+                    </Grid>
+                    <StackPanel Margin="24,18,24,0">
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Static res:Strings.HomeWhatToPlayNext}" FontSize="16" FontWeight="SemiBold"/>
+                            <Button Grid.Column="1" Content="{x:Static res:Strings.HomeViewAll}" FontSize="12" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" Cursor="Hand" Click="ViewAllWhatToPlay_Click"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,16" x:Name="WhatToPlayRow">
+                            <ScrollViewer x:Name="WhatToPlayScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" PreviewMouseWheel="RowScrollViewer_PreviewMouseWheel" PreviewMouseLeftButtonDown="RowScrollViewer_PreviewMouseDown" PreviewMouseMove="RowScrollViewer_PreviewMouseMove" PreviewMouseLeftButtonUp="RowScrollViewer_PreviewMouseUp" MouseLeave="RowScrollViewer_MouseLeave" Cursor="Hand">
+                                <ItemsControl ItemsSource="{Binding HomeWhatToPlayNext}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Margin="0,0,12,0" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="GameCard_Click" Tag="{Binding}" ContextMenu="{StaticResource Bridge.GameContextMenu}">
+                                                <StackPanel Width="150">
+                                                    <Border CornerRadius="8" ClipToBounds="True" Height="210" Background="#1A1A1A">
+                                                        <Image Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" Source="{Binding CoverImage, Converter={StaticResource FallbackCoverConverter}}"/>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" MaxWidth="150"/>
+                                                    <TextBlock Text="{Binding PlaytimeSeconds, Converter={StaticResource PlaytimeShortConverter}}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Button HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0" Style="{StaticResource HomeRowArrow}" Click="RowLeft_Click" Tag="{Binding ElementName=WhatToPlayScroll}"><ui:SymbolIcon Symbol="ChevronLeft16" FontSize="14" Foreground="White"/></Button>
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource HomeRowArrow}" Click="RowRight_Click" Tag="{Binding ElementName=WhatToPlayScroll}"><ui:SymbolIcon Symbol="ChevronRight16" FontSize="14" Foreground="White"/></Button>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Static res:Strings.HomeContinuePlaying}" FontSize="16" FontWeight="SemiBold"/>
+                            <Button Grid.Column="1" Content="{x:Static res:Strings.HomeViewAll}" FontSize="12" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" Cursor="Hand" Click="ViewAllContinue_Click"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,16" x:Name="ContinueRow">
+                            <ScrollViewer x:Name="ContinueScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" PreviewMouseWheel="RowScrollViewer_PreviewMouseWheel" PreviewMouseLeftButtonDown="RowScrollViewer_PreviewMouseDown" PreviewMouseMove="RowScrollViewer_PreviewMouseMove" PreviewMouseLeftButtonUp="RowScrollViewer_PreviewMouseUp" MouseLeave="RowScrollViewer_MouseLeave" Cursor="Hand">
+                                <ItemsControl ItemsSource="{Binding HomeContinuePlaying}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Margin="0,0,12,0" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="GameCard_Click" Tag="{Binding}" ContextMenu="{StaticResource Bridge.GameContextMenu}">
+                                                <Border Width="260" CornerRadius="8" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Padding="0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" CornerRadius="8,0,0,8" ClipToBounds="True" Height="90"><Image Stretch="UniformToFill" Source="{Binding CoverImage, Converter={StaticResource FallbackCoverConverter}}"/></Border>
+                                                        <StackPanel Grid.Column="1" Margin="10,8,10,8" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" MaxWidth="150"/>
+                                                            <TextBlock Text="{Binding LastActivity, StringFormat={}{0:d}}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" Margin="0,2,0,6"/>
+                                                            <ProgressBar Value="{Binding PlaytimeSeconds}" Maximum="36000" Height="4" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Button HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0" Style="{StaticResource HomeRowArrow}" Click="RowLeft_Click" Tag="{Binding ElementName=ContinueScroll}"><ui:SymbolIcon Symbol="ChevronLeft16" FontSize="14" Foreground="White"/></Button>
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource HomeRowArrow}" Click="RowRight_Click" Tag="{Binding ElementName=ContinueScroll}"><ui:SymbolIcon Symbol="ChevronRight16" FontSize="14" Foreground="White"/></Button>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Static res:Strings.HomeRecentlyAdded}" FontSize="16" FontWeight="SemiBold"/>
+                            <Button Grid.Column="1" Content="{x:Static res:Strings.HomeViewAll}" FontSize="12" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" Cursor="Hand" Click="ViewAllRecentlyAdded_Click"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,16">
+                            <ScrollViewer x:Name="RecentlyAddedScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" PreviewMouseWheel="RowScrollViewer_PreviewMouseWheel" PreviewMouseLeftButtonDown="RowScrollViewer_PreviewMouseDown" PreviewMouseMove="RowScrollViewer_PreviewMouseMove" PreviewMouseLeftButtonUp="RowScrollViewer_PreviewMouseUp" MouseLeave="RowScrollViewer_MouseLeave" Cursor="Hand">
+                                <ItemsControl ItemsSource="{Binding HomeRecentlyAdded}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Margin="0,0,12,0" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="GameCard_Click" Tag="{Binding}" ContextMenu="{StaticResource Bridge.GameContextMenu}">
+                                                <StackPanel Width="130">
+                                                    <Border CornerRadius="8" ClipToBounds="True" Height="180" Background="#1A1A1A"><Image Stretch="UniformToFill" Source="{Binding CoverImage, Converter={StaticResource FallbackCoverConverter}}"/></Border>
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Button HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0" Style="{StaticResource HomeRowArrow}" Click="RowLeft_Click" Tag="{Binding ElementName=RecentlyAddedScroll}"><ui:SymbolIcon Symbol="ChevronLeft16" FontSize="14" Foreground="White"/></Button>
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource HomeRowArrow}" Click="RowRight_Click" Tag="{Binding ElementName=RecentlyAddedScroll}"><ui:SymbolIcon Symbol="ChevronRight16" FontSize="14" Foreground="White"/></Button>
+                        </Grid>
+                        <Grid Margin="0,0,0,8" Visibility="{Binding HomeFavorites.Count, Converter={StaticResource CountToVisibility}}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Static res:Strings.HomeFavoritePicks}" FontSize="16" FontWeight="SemiBold"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,16" Visibility="{Binding HomeFavorites.Count, Converter={StaticResource CountToVisibility}}">
+                            <ScrollViewer x:Name="FavoritesScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" PreviewMouseWheel="RowScrollViewer_PreviewMouseWheel" PreviewMouseLeftButtonDown="RowScrollViewer_PreviewMouseDown" PreviewMouseMove="RowScrollViewer_PreviewMouseMove" PreviewMouseLeftButtonUp="RowScrollViewer_PreviewMouseUp" MouseLeave="RowScrollViewer_MouseLeave" Cursor="Hand">
+                                <ItemsControl ItemsSource="{Binding HomeFavorites}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Margin="0,0,12,0" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="GameCard_Click" Tag="{Binding}" ContextMenu="{StaticResource Bridge.GameContextMenu}">
+                                                <StackPanel Width="150">
+                                                    <Border CornerRadius="8" ClipToBounds="True" Height="210"><Image Stretch="UniformToFill" Source="{Binding CoverImage, Converter={StaticResource FallbackCoverConverter}}"/></Border>
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Button HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0" Style="{StaticResource HomeRowArrow}" Click="RowLeft_Click" Tag="{Binding ElementName=FavoritesScroll}"><ui:SymbolIcon Symbol="ChevronLeft16" FontSize="14" Foreground="White"/></Button>
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource HomeRowArrow}" Click="RowRight_Click" Tag="{Binding ElementName=FavoritesScroll}"><ui:SymbolIcon Symbol="ChevronRight16" FontSize="14" Foreground="White"/></Button>
+                        </Grid>
+                        
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+            <Border Grid.Column="1" Background="{DynamicResource Bridge.Panel.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12,12,12,12">
+                    <StackPanel>
+                        <StackPanel Margin="0,0,0,16">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <ui:SymbolIcon Symbol="PlayCircle24" FontSize="14" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.HomeContinue}" FontWeight="SemiBold" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding HomeRightContinue}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,6" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Cursor="Hand" Click="RightPanelPlay_Click" Tag="{Binding}" ContextMenu="{StaticResource Bridge.GameContextMenu}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="8">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="4" ClipToBounds="True"><Image Stretch="UniformToFill" Source="{Binding Icon, Converter={StaticResource FallbackIconConverter}}"/></Border>
+                                                            <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="140"/>
+                                                                <TextBlock Text="{Binding LastActivity, StringFormat={}{0:d}}" FontSize="10" Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                                                            </StackPanel>
+                                                            <ui:SymbolIcon Grid.Column="2" FontSize="10" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" VerticalAlignment="Center"><ui:SymbolIcon.Style><Style TargetType="ui:SymbolIcon"><Setter Property="Symbol" Value="Play24"/><Style.Triggers><DataTrigger Binding="{Binding IsRunning}" Value="True"><Setter Property="Symbol" Value="Stop24"/></DataTrigger><DataTrigger Binding="{Binding NeedsEmulatorDownload}" Value="True"><Setter Property="Symbol" Value="ArrowDownload24"/></DataTrigger></Style.Triggers></Style></ui:SymbolIcon.Style></ui:SymbolIcon>
+                                                        </Grid>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{x:Static res:Strings.HomeNoAchievements}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Visibility="{Binding HomeRightContinue.Count, Converter={StaticResource CountToVisibility}, ConverterParameter=invert}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,16">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <ui:SymbolIcon Symbol="Trophy24" FontSize="14" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                <TextBlock Text="{x:Static res:Strings.HomeRecentAchievements}" FontWeight="SemiBold" FontSize="12" Margin="6,0,0,0"/>
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding HomeRecentAchievements}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,6" Background="{DynamicResource Bridge.Card.Background}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" CornerRadius="6" Padding="8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="4" ClipToBounds="True" Background="#1A1A1A">
+                                                    <Image Stretch="UniformToFill" Source="{Binding Achievement.IconUrl}"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Achievement.Name}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="150"/>
+                                                    <TextBlock Text="{Binding Game.Name}" FontSize="10" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Achievement.UnlockedAt, StringFormat={}{0:g}}" FontSize="9" Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Visibility="{Binding HomeRecentAchievements.Count, Converter={StaticResource CountToVisibility}, ConverterParameter=invert}" Background="{DynamicResource Bridge.Card.Background}" CornerRadius="6" Padding="10" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1">
+                                <TextBlock Text="{x:Static res:Strings.HomeNoAchievements}" FontSize="11" Foreground="{StaticResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+        <!-- Quick view popup overlay (no white bar, with nav arrows, no gap on screenshots) -->
+        <Grid Visibility="{Binding QuickViewGame, Converter={StaticResource NullToVisibility}}" Background="#AA0B0F1E" Panel.ZIndex="20" MouseLeftButtonDown="QuickViewOverlay_BackgroundClick">
+            <Border Width="760" MaxHeight="620" CornerRadius="10" Background="{DynamicResource ApplicationBackgroundBrush}" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" ClipToBounds="True" HorizontalAlignment="Center" VerticalAlignment="Center" MouseLeftButtonDown="QuickViewPopup_Click">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="260"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Grid.Row="0" ClipToBounds="True">
+                        <controls:FadeImage SourceUrl="{Binding QuickViewGame.BackgroundImage, Converter={StaticResource HeroArtSource}}" FallbackArtwork="{x:Static art:GameArtworkFallback.Background}" Stretch="UniformToFill" DecodeSize="Hero"/>
+                        <Border>
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#00000000" Offset="0"/>
+                                    <GradientStop Color="#CC0B0F1E" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10" Width="32" Height="32" Background="#66000000" BorderThickness="0" Foreground="White" Cursor="Hand" Click="QuickViewClose_Click">
+                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="White"/>
+                        </Button>
+                        <Button HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" Width="36" Height="36" Background="#66000000" BorderThickness="0" Foreground="White" Cursor="Hand" Command="{Binding QuickViewPrevCommand}">
+                            <ui:SymbolIcon Symbol="ChevronLeft24" FontSize="18" Foreground="White"/>
+                        </Button>
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" Width="36" Height="36" Background="#66000000" BorderThickness="0" Foreground="White" Cursor="Hand" Command="{Binding QuickViewNextCommand}">
+                            <ui:SymbolIcon Symbol="ChevronRight24" FontSize="18" Foreground="White"/>
+                        </Button>
+                        <StackPanel VerticalAlignment="Bottom" Margin="16,0,16,16" MaxWidth="700" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding QuickViewGame.Name}" FontSize="22" FontWeight="Bold" Foreground="White" TextWrapping="Wrap">
+                                <TextBlock.Effect><DropShadowEffect ShadowDepth="2" BlurRadius="8" Opacity="0.7"/></TextBlock.Effect>
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button MinWidth="110" Padding="12,7" Cursor="Hand" Command="{Binding QuickViewPlayCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding QuickViewGame.IsRunning}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Bridge.StopBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon FontSize="14" Foreground="White"><ui:SymbolIcon.Style><Style TargetType="ui:SymbolIcon"><Setter Property="Symbol" Value="Play24"/><Style.Triggers><DataTrigger Binding="{Binding QuickViewGame.IsRunning}" Value="True"><Setter Property="Symbol" Value="Stop24"/></DataTrigger><DataTrigger Binding="{Binding QuickViewGame.NeedsEmulatorDownload}" Value="True"><Setter Property="Symbol" Value="ArrowDownload24"/></DataTrigger></Style.Triggers></Style></ui:SymbolIcon.Style></ui:SymbolIcon>
+                                        <TextBlock Margin="6,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{x:Static res:Strings.Play}"/><Style.Triggers><DataTrigger Binding="{Binding QuickViewGame.IsRunning}" Value="True"><Setter Property="Text" Value="{x:Static res:Strings.Stop}"/></DataTrigger><DataTrigger Binding="{Binding QuickViewGame.NeedsEmulatorDownload}" Value="True"><Setter Property="Text" Value="{x:Static res:Strings.Download}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                                    </StackPanel>
+                                </Button>
+                                <Button Margin="8,0,0,0" Padding="10,7" Background="#22FFFFFF" Foreground="White" BorderBrush="#44FFFFFF" BorderThickness="1" Cursor="Hand" Command="{Binding QuickViewOpenDetailsCommand}">
+                                    <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="Info24" FontSize="14" Foreground="White"/><TextBlock Text="{x:Static res:Strings.More}" Margin="6,0,0,0"/></StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.Overview}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,6" Visibility="{Binding QuickViewGame.Description, Converter={StaticResource EmptyToVis}}"/>
+                            <TextBlock Text="{Binding QuickViewGame.Description}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextFillColorPrimaryBrush}" Visibility="{Binding QuickViewGame.Description, Converter={StaticResource EmptyToVis}}"/>
+                            <TextBlock Text="{x:Static res:Strings.Screenshots}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,16,0,8" Visibility="{Binding QuickViewGame.Screenshots.Count, Converter={StaticResource NonZeroToVis}}"/>
+                            <ItemsControl ItemsSource="{Binding QuickViewGame.Screenshots}" Visibility="{Binding QuickViewGame.Screenshots.Count, Converter={StaticResource NonZeroToVis}}">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="4" CornerRadius="6" ClipToBounds="True" Background="#1A1A1A" Height="120">
+                                            <Image Stretch="UniformToFill" converters:CachedImage.SourceUrl="{Binding}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
+
+
+

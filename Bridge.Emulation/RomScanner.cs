@@ -32,7 +32,7 @@ public partial class RomScanner(RomDatMatcher datMatcher)
         foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
         {
             var extension = Path.GetExtension(file).TrimStart('.').ToLowerInvariant();
-            if (IsCompanionFile(extension))
+            if (IsSidecarFile(extension))
             {
                 continue;
             }
@@ -110,10 +110,13 @@ public partial class RomScanner(RomDatMatcher datMatcher)
         results.Add(game);
     }
 
-    private static bool IsCompanionFile(string extension) =>
-        extension is "sav" or "srm"
-        || (extension.StartsWith("state", StringComparison.Ordinal) && extension[5..].All(char.IsDigit))
-        || (extension.StartsWith("ss", StringComparison.Ordinal) && extension.Length > 2 && extension[2..].All(char.IsDigit));
+    public static bool IsSidecarFile(string extension)
+    {
+        extension = extension.TrimStart('.').ToLowerInvariant();
+        return extension is "sav" or "srm" or "eep" or "fla" or "rtc" or "mcr" or "mem"
+            || extension.StartsWith("state", StringComparison.Ordinal)
+            || (extension.StartsWith("ss", StringComparison.Ordinal) && extension.Length > 2 && extension[2..].All(char.IsDigit));
+    }
 
     // Strips [region]/ (flags) tags and trademark symbols; normalizes underscores.
     [GeneratedRegex(@"\[(.*?)\]|\((.*?)\)", RegexOptions.Compiled)]

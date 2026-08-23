@@ -286,6 +286,7 @@ namespace Bridge
             services.AddSingleton(sp => new SteamGridDbClient(
                 sp.GetRequiredService<MetadataHttpClient>().Client,
                 sp.GetRequiredService<SteamGridDbSettings>()));
+            services.AddSingleton(sp => new FreeGamesService(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton(sp => new AppUpdateService(sp.GetRequiredService<MetadataHttpClient>().Client));
             services.AddSingleton(new EmulationPaths(
                 Config.EmulatorInstallPath,

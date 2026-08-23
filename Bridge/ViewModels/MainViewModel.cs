@@ -87,6 +87,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isEmulationBusy;
 
+    public event Action? MinimizeWindowRequested;
+    public event Action? RestoreWindowRequested;
+
     // True when the selected managed ROM has no installed frontend/core yet, so
     // the Play button reads "Download" and installs on first click instead of
     // pretending it will launch immediately.
@@ -199,6 +202,24 @@ public partial class MainViewModel : ObservableObject
         GamesView.Refresh();
     }
 
+    // Detail hero buttons (Play / More / Edit) directly on the hero header.
+    [ObservableProperty]
+    private bool _showDetailHeroButtons = DetailHeroButtonsSettingsStore.Load();
+
+    partial void OnShowDetailHeroButtonsChanged(bool value)
+    {
+        DetailHeroButtonsSettingsStore.Save(value);
+    }
+
+    // Floating side buttons protruding from the list edge over the hero image.
+    [ObservableProperty]
+    private bool _showDetailSideButtons = DetailSideButtonsSettingsStore.Load();
+
+    partial void OnShowDetailSideButtonsChanged(bool value)
+    {
+        DetailSideButtonsSettingsStore.Save(value);
+    }
+
     // Covers-view zoom (0.6x - 1.6x). Scales the cover cards so the wrapping
     // grid reflows to fit more/fewer columns.
     [ObservableProperty]
@@ -262,6 +283,10 @@ public partial class MainViewModel : ObservableObject
     {
         switch (value)
         {
+            case NavigationSection.Home:
+                // Home is a standalone streaming-like hub — keep library state
+                // intact so returning to Library restores previous filter/group.
+                break;
             case NavigationSection.Library:
                 // The sidebar "Library" shortcut means "show the whole library":
                 // reset filter/group shortcuts other sidebar entries may have left
@@ -357,7 +382,7 @@ public partial class MainViewModel : ObservableObject
 
     private void SyncNavigationSectionFromFilters()
     {
-        if (NavigationSection is NavigationSection.Statistics or NavigationSection.Settings)
+        if (NavigationSection is NavigationSection.Home or NavigationSection.Statistics or NavigationSection.Settings)
             return;
 
         if (FilterPreset == LibraryFilterPreset.Favorite)
@@ -378,7 +403,7 @@ public partial class MainViewModel : ObservableObject
 
     private void SyncNavigationSectionFromGrouping()
     {
-        if (NavigationSection is NavigationSection.Statistics or NavigationSection.Settings)
+        if (NavigationSection is NavigationSection.Home or NavigationSection.Statistics or NavigationSection.Settings)
             return;
 
         if (GroupField == GameGroupField.Library)
@@ -482,6 +507,23 @@ public partial class MainViewModel : ObservableObject
     public bool SelectedGameIsManagedRom =>
         SelectedGame is not null && _retroArch.IsManagedRom(SelectedGame);
 
+    public bool SelectedGameIsRom =>
+        SelectedGame is not null && RomSaveBackupService.IsRomGame(SelectedGame);
+
+    public bool SelectedGameNeedsSaveFolder =>
+        SelectedGame is not null && !SelectedGameIsRom;
+
+    public bool SelectedGameHasCustomSaveFolder =>
+        SelectedGame is not null &&
+        !string.IsNullOrWhiteSpace(GameSaveFolderStore.Get(SelectedGame.Id));
+
+    public bool SelectedGameCanBackupSaves =>
+        SelectedGameIsRom || SelectedGameHasCustomSaveFolder;
+
+    public bool SelectedGameHasRomSaveBackups => SelectedGameSaveBackups.Count > 0;
+
+    public ObservableCollection<RomSaveBackupListItem> SelectedGameSaveBackups { get; } = [];
+
     partial void OnSelectedGameChanged(Game? value)
     {
         if (_selectedGameSubscription is not null)
@@ -493,6 +535,13 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(HiddenMenuText));
         OnPropertyChanged(nameof(SelectedGameLinks));
         OnPropertyChanged(nameof(SelectedGameIsManagedRom));
+        OnPropertyChanged(nameof(SelectedGameIsRom));
+        OnPropertyChanged(nameof(SelectedGameNeedsSaveFolder));
+        OnPropertyChanged(nameof(SelectedGameHasCustomSaveFolder));
+        OnPropertyChanged(nameof(SelectedGameCanBackupSaves));
+        RefreshSelectedGameSaveBackups();
+        BackupRomSavesCommand.NotifyCanExecuteChanged();
+        SetSaveLocationCommand.NotifyCanExecuteChanged();
         if (value is not null)
         {
             value.PropertyChanged += OnSelectedGamePropertyChanged;
@@ -717,7 +766,8 @@ public partial class MainViewModel : ObservableObject
         HowLongToBeatService howLongToBeatService,
         IDialogService dialogService,
         InstalledGameImportService installedGameImport,
-        WatchedScanFolderService watchedScanFolders)
+        WatchedScanFolderService watchedScanFolders,
+        FreeGamesService? freeGamesService = null)
     {
         _gameRepository = gameRepository;
         _genreRepository = genreRepository;
@@ -750,10 +800,12 @@ public partial class MainViewModel : ObservableObject
         _dialogService = dialogService;
         _installedGameImport = installedGameImport;
         _watchedScanFolders = watchedScanFolders;
+        _freeGamesService = freeGamesService;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
         SelectedGame = SelectInitialGame(Games);
+        Games.CollectionChanged += (_, _) => RefreshHome();
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
         ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) =>
@@ -776,6 +828,8 @@ public partial class MainViewModel : ObservableObject
         ActiveDeveloperFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         ActivePublisherFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         ActiveFeatureFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
+        // Apply startup section preference (Home/Library/Roms) after library is loaded
+        NavigationSection = StartupSectionSettingsStore.Load();
         InitializeAsync().FireAndForget("MainViewModel.Initialize");
     }
 
@@ -839,6 +893,7 @@ public partial class MainViewModel : ObservableObject
             await RefreshLibraryCoreAsync();
 
             _watchedScanFolders.Start(this);
+            _ = RefreshFreeGamesAsync();
 
             // First run: the constructor's SelectInitialGame ran against an empty
             // library, so nothing got selected. Pick the initial game now that the
@@ -1025,6 +1080,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         RefreshStatistics();
+        RefreshHome();
         RefreshAllEmulatorDownloadStates();
     }
 

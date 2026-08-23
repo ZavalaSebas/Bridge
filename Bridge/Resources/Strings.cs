@@ -1,4 +1,4 @@
-namespace Bridge.Resources;
+﻿namespace Bridge.Resources;
 
 /// <summary>
 /// Localized UI strings backed by <c>Strings.resx</c> and satellite cultures.
@@ -76,6 +76,21 @@ public static class Strings
     public static string DownloadMetadata => Get(nameof(DownloadMetadata));
     public static string Links => Get(nameof(Links));
     public static string OpenGameLocation => Get(nameof(OpenGameLocation));
+    public static string OpenSaveLocation => Get(nameof(OpenSaveLocation));
+    public static string SetSaveLocation => Get(nameof(SetSaveLocation));
+    public static string SetSaveLocationDialogTitle => Get(nameof(SetSaveLocationDialogTitle));
+    public static string SaveLocationSetFormat => Get(nameof(SaveLocationSetFormat));
+    public static string BackupRomSaves => Get(nameof(BackupRomSaves));
+    public static string RestoreRomSaves => Get(nameof(RestoreRomSaves));
+    public static string RomSaveBackupAutomatic => Get(nameof(RomSaveBackupAutomatic));
+    public static string RomSaveBackupManual => Get(nameof(RomSaveBackupManual));
+    public static string RomSaveBackupItemFormat => Get(nameof(RomSaveBackupItemFormat));
+    public static string RomSaveBackupCreatedFormat => Get(nameof(RomSaveBackupCreatedFormat));
+    public static string RomSaveBackupFailedFormat => Get(nameof(RomSaveBackupFailedFormat));
+    public static string RomSaveRestoreConfirmFormat => Get(nameof(RomSaveRestoreConfirmFormat));
+    public static string RomSaveRestoreFailedFormat => Get(nameof(RomSaveRestoreFailedFormat));
+    public static string RomSaveRestoredFormat => Get(nameof(RomSaveRestoredFormat));
+    public static string RomSaveAutoBackupStatusFormat => Get(nameof(RomSaveAutoBackupStatusFormat));
     public static string SetCompletionStatus => Get(nameof(SetCompletionStatus));
     public static string Remove => Get(nameof(Remove));
     public static string Uninstall => Get(nameof(Uninstall));
@@ -99,6 +114,19 @@ public static class Strings
     public static string Right => Get(nameof(Right));
     public static string Top => Get(nameof(Top));
     public static string Bottom => Get(nameof(Bottom));
+    public static string Home => Get(nameof(Home));
+    public static string HomeFeatured => Get(nameof(HomeFeatured));
+    public static string HomeWhatToPlayNext => Get(nameof(HomeWhatToPlayNext));
+    public static string HomeContinuePlaying => Get(nameof(HomeContinuePlaying));
+    public static string HomeRecentlyPlayed => Get(nameof(HomeRecentlyPlayed));
+    public static string HomeRecentlyAdded => Get(nameof(HomeRecentlyAdded));
+    public static string HomeFavoritePicks => Get(nameof(HomeFavoritePicks));
+    public static string HomeRecentAchievements => Get(nameof(HomeRecentAchievements));
+    public static string HomeNoAchievements => Get(nameof(HomeNoAchievements));
+    public static string HomeViewAll => Get(nameof(HomeViewAll));
+    public static string HomeContinue => Get(nameof(HomeContinue));
+    public static string HomePlayNow => Get(nameof(HomePlayNow));
+    public static string HomeEmptyLibrary => Get(nameof(HomeEmptyLibrary));
     public static string Theme => Get(nameof(Theme));
     public static string Settings => Get(nameof(Settings));
     public static string SettingsDescription => Get(nameof(SettingsDescription));
@@ -106,6 +134,7 @@ public static class Strings
     public static string Exit => Get(nameof(Exit));
     public static string GameRemovedFromLibrary => Get(nameof(GameRemovedFromLibrary));
     public static string NoInstallDirectoryFormat => Get(nameof(NoInstallDirectoryFormat));
+    public static string NoSaveLocationFormat => Get(nameof(NoSaveLocationFormat));
     public static string CouldNotOpenDirectoryFormat => Get(nameof(CouldNotOpenDirectoryFormat));
     public static string ScanCompleteFormat => Get(nameof(ScanCompleteFormat));
     public static string InstalledScanCompleteFormat => Get(nameof(InstalledScanCompleteFormat));
@@ -376,6 +405,29 @@ public static class Strings
     public static string SettingsTranslucentBackgroundDescription => Get(nameof(SettingsTranslucentBackgroundDescription));
     public static string SettingsDetailPanelPositionTitle => Get(nameof(SettingsDetailPanelPositionTitle));
     public static string SettingsDetailPanelPositionDescription => Get(nameof(SettingsDetailPanelPositionDescription));
+    public static string SettingsDetailHeroButtonsTitle => Get(nameof(SettingsDetailHeroButtonsTitle));
+    public static string SettingsDetailHeroButtonsDescription => Get(nameof(SettingsDetailHeroButtonsDescription));
+    public static string SettingsDetailSideButtonsTitle => Get(nameof(SettingsDetailSideButtonsTitle));
+    public static string SettingsDetailSideButtonsDescription => Get(nameof(SettingsDetailSideButtonsDescription));
+    public static string SettingsStartupSectionTitle => Get(nameof(SettingsStartupSectionTitle));
+    public static string SettingsStartupSectionDescription => Get(nameof(SettingsStartupSectionDescription));
+    public static string SettingsMinimizeOnGameLaunchTitle => Get(nameof(SettingsMinimizeOnGameLaunchTitle));
+    public static string SettingsMinimizeOnGameLaunchDescription => Get(nameof(SettingsMinimizeOnGameLaunchDescription));
+    public static string SettingsDangerZoneTitle => Get(nameof(SettingsDangerZoneTitle));
+    public static string SettingsDangerZoneDescription => Get(nameof(SettingsDangerZoneDescription));
+    public static string DeleteAllDataTitle => Get(nameof(DeleteAllDataTitle));
+    public static string DeleteAllDataDescription => Get(nameof(DeleteAllDataDescription));
+    public static string DeleteAllDataButton => Get(nameof(DeleteAllDataButton));
+    public static string DeleteAllDataConfirm1Title => Get(nameof(DeleteAllDataConfirm1Title));
+    public static string DeleteAllDataConfirm1Message => Get(nameof(DeleteAllDataConfirm1Message));
+    public static string DeleteAllDataConfirm2Title => Get(nameof(DeleteAllDataConfirm2Title));
+    public static string DeleteAllDataConfirm2Message => Get(nameof(DeleteAllDataConfirm2Message));
+    public static string DeleteAllDataConfirm3Title => Get(nameof(DeleteAllDataConfirm3Title));
+    public static string DeleteAllDataConfirm3Message => Get(nameof(DeleteAllDataConfirm3Message));
+    public static string DeleteAllDataSuccess => Get(nameof(DeleteAllDataSuccess));
+    public static string DeleteAllDataFailedFormat => Get(nameof(DeleteAllDataFailedFormat));
+    public static string TypeBorrarPlaceholder => Get(nameof(TypeBorrarPlaceholder));
+    public static string IUnderstandIrreversible => Get(nameof(IUnderstandIrreversible));
     public static string Overview => Get(nameof(Overview));
     public static string Images => Get(nameof(Images));
     public static string Achievements => Get(nameof(Achievements));
@@ -416,6 +468,28 @@ public static class Strings
     public static string BackupCreatedFormat => Get(nameof(BackupCreatedFormat));
     public static string BackupFailedFormat => Get(nameof(BackupFailedFormat));
     public static string BackupRestoreFailedFormat => Get(nameof(BackupRestoreFailedFormat));
+    public static string SettingsRomSavesTitle => Get(nameof(SettingsRomSavesTitle));
+    public static string SettingsRomSavesDescription => Get(nameof(SettingsRomSavesDescription));
+    public static string SettingsRomSaveAutoBackupTitle => Get(nameof(SettingsRomSaveAutoBackupTitle));
+    public static string SettingsRomSaveAutoBackupDescription => Get(nameof(SettingsRomSaveAutoBackupDescription));
+    public static string SettingsPcSaveAutoBackupTitle => Get(nameof(SettingsPcSaveAutoBackupTitle));
+    public static string SettingsPcSaveAutoBackupDescription => Get(nameof(SettingsPcSaveAutoBackupDescription));
+    public static string ExportRomPack => Get(nameof(ExportRomPack));
+    public static string ImportRomPack => Get(nameof(ImportRomPack));
+    public static string RomPackSaveDialogTitle => Get(nameof(RomPackSaveDialogTitle));
+    public static string RomPackRestoreDialogTitle => Get(nameof(RomPackRestoreDialogTitle));
+    public static string RomPackRestoreConfirm => Get(nameof(RomPackRestoreConfirm));
+    public static string RomPackCreatedFormat => Get(nameof(RomPackCreatedFormat));
+    public static string RomPackFailedFormat => Get(nameof(RomPackFailedFormat));
+    public static string RomPackImportFailedFormat => Get(nameof(RomPackImportFailedFormat));
+    public static string RomPackImportedFormat => Get(nameof(RomPackImportedFormat));
+    public static string SettingsOrganizeRomsTitle => Get(nameof(SettingsOrganizeRomsTitle));
+    public static string SettingsOrganizeRomsDescription => Get(nameof(SettingsOrganizeRomsDescription));
+    public static string SettingsOrganizeRomsAutoTitle => Get(nameof(SettingsOrganizeRomsAutoTitle));
+    public static string SettingsOrganizeRomsAutoDescription => Get(nameof(SettingsOrganizeRomsAutoDescription));
+    public static string OrganizeRomsNow => Get(nameof(OrganizeRomsNow));
+    public static string OrganizeRomsNoFolder => Get(nameof(OrganizeRomsNoFolder));
+    public static string OrganizeRomsCompleteFormat => Get(nameof(OrganizeRomsCompleteFormat));
     public static string SettingsUpdatesSection => Get(nameof(SettingsUpdatesSection));
     public static string SettingsEmulationCardDescription => Get(nameof(SettingsEmulationCardDescription));
     public static string SettingsIgdbCardDescription => Get(nameof(SettingsIgdbCardDescription));
@@ -590,3 +664,4 @@ public static class Strings
     private static string Get(string key) =>
         StringsResourceManager.GetString(key) ?? key;
 }
+

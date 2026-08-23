@@ -396,6 +396,12 @@ public partial class MainWindow
         window.ShowDialog();
     }
 
+    private void ShowHome_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.NavigationSection = Bridge.Core.Enums.NavigationSection.Home;
+    }
+
     private void ShowLibrary_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm)

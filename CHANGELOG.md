@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Home view** — a streaming-style hub above Library in the sidebar: a big featured carousel with auto-advance, Play-now/More and dot indicators; draggable "What to play next", "Continue playing", "Recently added", and "Favorite picks" rows with chevron paging (wheel still scrolls the page); a compact right rail with Continue and recent achievements; clicking a never-played game opens an in-Home quick-view popup (hero, overview, screenshots, prev/next, Play goes to the detail view) while played games jump straight to their detail; empty-library placeholder with import shortcuts (`HomeView`, `MainViewModel.Home.cs`).
+- **Startup view setting** — Settings → Appearance → Startup view picks Home, Library, or ROMs (`startup-section.txt`, default Library).
+- **Detail hero side buttons** — optional floating Play/More/Edit tabs protruding from the list edge over the hero, theme-colored Play that widens to Stop/Download while a game runs or needs a core, stepped sizes (Play > More > Edit), toggled from Settings (`detail-hero-buttons.txt` for the normal hero row, `detail-side-buttons.txt` default off; both follow the detail-panel dock).
+- **Free game alerts** — a title-bar bell with an unseen-count badge surfaces active Epic Games Store and Steam giveaways via GamerPower (`FreeGamesService`, 1h cache, `free-games-seen.json`); the popup lists thumbnail, platform, and value with a one-click Reclamar link, mark-seen, and manual refresh.
+- **Minimize on game launch** — Bridge minimizes when a game starts and restores when the session ends (`minimize-on-game-launch.txt`, on by default; Settings → Appearance).
+- **Delete all data (danger zone)** — Settings → Danger zone purges `%LOCALAPPDATA%\Bridge` (library, settings, image cache, save backups) behind three confirmations including a typed `BORRAR` + checkbox, then restarts empty (`AppDataPurgeService`, `DeleteConfirmWindow`).
+- **Cheat search fallbacks** — cheat lookup now tries the ROM base name, the display name, and a sanitized name against the plain, `(Code Breaker)`, `(Action Replay)`, and `(GameShark)` file variants, so titles like Pokémon Emerald (only published as `(Code Breaker)`) are found.
+- **Open Save Location** — For ROMs, More / the game context menu opens RetroArch SRAM/savestates (`saves` / `states`, or next to the ROM). The RetroArch `saves` folder is created if it does not exist yet. Steam, Epic, and other PC games hide Open / Backup / Restore until you use **Set Save Location**. The folder picker starts in Steam Cloud, Epic Cloud, or a common Windows folder when one exists — those are candidates, not a guaranteed live save path.
+- **ROM save backups** — After each ROM session, SRAM and savestates are copied into a dated snapshot under `%LOCALAPPDATA%\Bridge\save-backups\` (last 5 automatic copies per game). More menu: **Backup Saves** and **Restore Saves** (with timestamp). Settings → Library & data can export/import all ROM saves plus ROM files up to 500 MB.
+- **Steam, Epic, and PC save backups** — More → **Set Save Location** stores a per-game folder in `config/game-save-folders.json`. After play (toggle in Settings), that folder is copied into the same `save-backups/` snapshots. Export includes mapped folders; files larger than 64 MB are skipped.
+- **Organize ROMs** — On import (and from Settings → Organize ROMs), files under the scan folder are moved into per-platform directories and renamed to the official DAT title. Sidecar SRAM next to the ROM moves with it.
+
+
+### Changed
+- **Settings hub redesign** — grouped sections (Profile, Appearance, Integrations, Library & data, Updates & About) with a two-column card grid, accent section headers, larger paddings/radii, and a red Danger zone footer.
+- **Achievements summary separator** — the `{0}/{1} · {2} left` bar now uses a plain `-` (the middle dot was double-encoded and rendered as `Â·`).
 ## [0.9.0] - 2026-08-23
 
 ### Added

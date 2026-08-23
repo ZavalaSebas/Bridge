@@ -10,6 +10,27 @@ namespace Bridge.Services;
 /// </summary>
 public static class SafeLauncher
 {
+    /// <summary>
+    /// Opens an existing directory in Explorer. Rejects missing/blank paths so
+    /// a bad DB value never launches a random shell command.
+    /// </summary>
+    public static bool TryOpenDirectory(string? directory)
+    {
+        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+            return false;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{directory}\"") { UseShellExecute = true });
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            App.LogException(ex);
+            return false;
+        }
+    }
+
     public static bool TryOpenUrl(string? url)
     {
         if (!UrlValidator.IsSafeToOpen(url))

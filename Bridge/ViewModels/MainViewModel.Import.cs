@@ -2,6 +2,7 @@ using System.IO;
 using System.Net.NetworkInformation;
 using Bridge.Core.Entities;
 using Bridge.Core.Import;
+using Bridge.Core.Utilities;
 using Bridge.Emulation;
 using Bridge.Emulation.Dat;
 using Bridge.Import.Epic;
@@ -14,7 +15,7 @@ namespace Bridge.ViewModels;
 
 public partial class MainViewModel
 {
-    public async Task ScanRomFolderAsync(string? romFolder, bool silent = false)
+    public async Task ScanRomFolderAsync(string? romFolder, bool silent = false, bool persistWatchedFolder = true)
     {
         if (string.IsNullOrWhiteSpace(romFolder))
         {
@@ -34,8 +35,11 @@ public partial class MainViewModel
 
         try
         {
-            RomScanFolderSettingsStore.Save(folder);
-            _watchedScanFolders.RestartWatchers();
+            if (persistWatchedFolder)
+            {
+                RomScanFolderSettingsStore.Save(folder);
+                _watchedScanFolders.RestartWatchers();
+            }
 
             // Build the already-imported set on the UI thread, then enumerate + hash
             // + DAT-match off the UI thread so a large folder never freezes the
@@ -105,6 +109,7 @@ public partial class MainViewModel
 
             // DAT re-identification runs its own synchronous suspend region after.
             await ReidentifyRomGamesFromDatAsync();
+            await OrganizeRomsInFolderAsync(folder, force: false);
 
             RefreshStatistics();
             RefreshAllEmulatorDownloadStates();
@@ -464,5 +469,89 @@ public partial class MainViewModel
         {
             EndDetailRowSuspension();
         }
+    }
+
+    public async Task<RomOrganizeResult> OrganizeRomsNowAsync()
+    {
+        var folder = RomScanFolderSettingsStore.Load();
+        if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+            return new RomOrganizeResult([], 0, 0, 0);
+
+        return await OrganizeRomsInFolderAsync(folder, force: true);
+    }
+
+    private async Task<RomOrganizeResult> OrganizeRomsInFolderAsync(string folder, bool force)
+    {
+        if (!force && !RomOrganizeSettingsStore.Load())
+            return new RomOrganizeResult([], 0, 0, 0);
+
+        var root = Path.GetFullPath(folder);
+        var targets = new List<RomOrganizeTarget>();
+        foreach (var game in Games)
+        {
+            if (game.Roms.Count == 0)
+                continue;
+
+            var rom = game.Roms[0];
+            if (string.IsNullOrWhiteSpace(rom.Path))
+                continue;
+
+            var diskPath = RomArchivePath.TrySplit(rom.Path, out var archivePath, out _)
+                ? archivePath
+                : rom.Path;
+            if (!PathContainment.IsUnderRoot(diskPath, root))
+                continue;
+
+            targets.Add(new RomOrganizeTarget(
+                rom.Path,
+                string.IsNullOrWhiteSpace(rom.Name) ? game.Name : rom.Name,
+                rom.DatPlatform ?? RomDatMatcher.ResolvePlatformName(rom.Path),
+                Skip: game.IsRunning));
+        }
+
+        if (targets.Count == 0)
+            return new RomOrganizeResult([], 0, 0, 0);
+
+        _watchedScanFolders.SuspendRomWatcher();
+        RomOrganizeResult result;
+        try
+        {
+            result = await Task.Run(() => RomOrganizeService.Organize(targets, root));
+        }
+        finally
+        {
+            _watchedScanFolders.ResumeRomWatcher();
+        }
+
+        if (result.Changes.Count == 0)
+            return result;
+
+        _suspendDetailedRows++;
+        try
+        {
+            var byOriginal = result.Changes.ToDictionary(
+                change => change.OriginalRomPath,
+                StringComparer.OrdinalIgnoreCase);
+            foreach (var game in Games)
+            {
+                if (game.Roms.Count == 0)
+                    continue;
+
+                var rom = game.Roms[0];
+                if (!byOriginal.TryGetValue(rom.Path, out var change))
+                    continue;
+
+                rom.Path = change.NewRomPath;
+                game.ExternalId = RomArchivePath.Normalize(change.NewRomPath);
+                _gameRepository.Update(game);
+                RefreshListDisplay(game);
+            }
+        }
+        finally
+        {
+            EndDetailRowSuspension();
+        }
+
+        return result;
     }
 }

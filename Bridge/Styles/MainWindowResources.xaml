@@ -285,6 +285,12 @@
         <Setter Property="Header" Value="{Binding Name}" />
     </Style>
 
+    <Style x:Key="Bridge.RomSaveBackupMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Header" Value="{Binding Header}" />
+        <Setter Property="Command" Value="{Binding RestoreRomSaveCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+        <Setter Property="CommandParameter" Value="{Binding}" />
+    </Style>
+
     <Style x:Key="Bridge.CompletionStatusMenuItemStyle" TargetType="MenuItem">
         <Setter Property="Header" Value="{Binding}" />
     </Style>
@@ -406,6 +412,82 @@
                                FontSize="16"
                                Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
             </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Command="{Binding SetSaveLocationCommand}">
+            <MenuItem.Style>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Header" Value="{x:Static res:Strings.SetSaveLocation}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameNeedsSaveFolder}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </MenuItem.Style>
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="FolderAdd24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Command="{Binding OpenSaveLocationCommand}">
+            <MenuItem.Style>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Header" Value="{x:Static res:Strings.OpenSaveLocation}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameCanBackupSaves}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </MenuItem.Style>
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Save24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Command="{Binding BackupRomSavesCommand}">
+            <MenuItem.Style>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Header" Value="{x:Static res:Strings.BackupRomSaves}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameCanBackupSaves}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </MenuItem.Style>
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="ArrowUpload24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="{x:Static res:Strings.RestoreRomSaves}"
+                  ItemsSource="{Binding SelectedGameSaveBackups}"
+                  IsEnabled="{Binding SelectedGameHasRomSaveBackups}">
+            <MenuItem.Style>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedGameCanBackupSaves}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </MenuItem.Style>
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="ArrowReset24"
+                               FontSize="16"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            </MenuItem.Icon>
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource Bridge.RomSaveBackupMenuItemStyle}" />
+            </MenuItem.ItemContainerStyle>
         </MenuItem>
         <Separator />
         <MenuItem Header="{x:Static res:Strings.SetCompletionStatus}" ItemsSource="{Binding CompletionStatuses}">

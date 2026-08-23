@@ -271,6 +271,51 @@
   <data name="OpenGameLocation" xml:space="preserve">
     <value>Abrir ubicación del juego</value>
   </data>
+  <data name="OpenSaveLocation" xml:space="preserve">
+    <value>Abrir ubicación del guardado</value>
+  </data>
+  <data name="SetSaveLocation" xml:space="preserve">
+    <value>Elegir ubicación del guardado</value>
+  </data>
+  <data name="SetSaveLocationDialogTitle" xml:space="preserve">
+    <value>Selecciona la carpeta de partidas de este juego</value>
+  </data>
+  <data name="SaveLocationSetFormat" xml:space="preserve">
+    <value>La carpeta de partidas de {0} ahora es {1}.</value>
+  </data>
+  <data name="BackupRomSaves" xml:space="preserve">
+    <value>Respaldar partidas</value>
+  </data>
+  <data name="RestoreRomSaves" xml:space="preserve">
+    <value>Restaurar partidas</value>
+  </data>
+  <data name="RomSaveBackupAutomatic" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="RomSaveBackupManual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="RomSaveBackupItemFormat" xml:space="preserve">
+    <value>{0} — {1} ({2} archivos)</value>
+  </data>
+  <data name="RomSaveBackupCreatedFormat" xml:space="preserve">
+    <value>Se guardó una copia de {0} ({2} archivos) el {1}.</value>
+  </data>
+  <data name="RomSaveBackupFailedFormat" xml:space="preserve">
+    <value>No se pudieron respaldar las partidas de {0}: {1}</value>
+  </data>
+  <data name="RomSaveRestoreConfirmFormat" xml:space="preserve">
+    <value>¿Restaurar {0} archivos de partida del {1} ({2}) para {3}? Se reemplazarán los archivos de partida actuales en esa ubicación.</value>
+  </data>
+  <data name="RomSaveRestoreFailedFormat" xml:space="preserve">
+    <value>No se pudieron restaurar las partidas de {0}: {1}</value>
+  </data>
+  <data name="RomSaveRestoredFormat" xml:space="preserve">
+    <value>Se restauraron {2} archivos de partida de {0} del {1}.</value>
+  </data>
+  <data name="RomSaveAutoBackupStatusFormat" xml:space="preserve">
+    <value>Se respaldaron {2} archivos de partida de {0} el {1}.</value>
+  </data>
   <data name="SetCompletionStatus" xml:space="preserve">
     <value>Establecer estado de finalización</value>
   </data>
@@ -360,6 +405,9 @@
   </data>
   <data name="NoInstallDirectoryFormat" xml:space="preserve">
     <value>'{0}' no tiene directorio de instalación.</value>
+  </data>
+  <data name="NoSaveLocationFormat" xml:space="preserve">
+    <value>'{0}' no tiene una ubicación de guardado.</value>
   </data>
   <data name="CouldNotOpenDirectoryFormat" xml:space="preserve">
     <value>No se pudo abrir '{0}'.</value>
@@ -1205,7 +1253,7 @@
     <value>{0} / {1} desbloqueados</value>
   </data>
   <data name="AchievementsBarSummaryFormat" xml:space="preserve">
-    <value>{0}/{1} · faltan {2}</value>
+    <value>{0}/{1} - faltan {2}</value>
   </data>
   <data name="AchievementsBarCompleteFormat" xml:space="preserve">
     <value>{0}/{1} ✓</value>
@@ -1290,6 +1338,72 @@
   </data>
   <data name="BackupRestoreFailedFormat" xml:space="preserve">
     <value>No se pudo restaurar la copia de seguridad: {0}</value>
+  </data>
+  <data name="SettingsRomSavesTitle" xml:space="preserve">
+    <value>Partidas</value>
+  </data>
+  <data name="SettingsRomSavesDescription" xml:space="preserve">
+    <value>Las partidas de ROM se encuentran solas. Steam, Epic y otros juegos de PC necesitan Más → Elegir ubicación del guardado: no hay una sola ruta. El selector parte de Steam Cloud, Epic Cloud o una carpeta habitual de Windows si existe. Al terminar de jugar, Bridge puede copiar esa carpeta en respaldos con fecha. Restaura desde Más. Exportar también empaqueta ROMs de hasta 500 MB y las carpetas de PC que hayas apuntado.</value>
+  </data>
+  <data name="SettingsRomSaveAutoBackupTitle" xml:space="preserve">
+    <value>Respaldar partidas de ROM al jugar</value>
+  </data>
+  <data name="SettingsRomSaveAutoBackupDescription" xml:space="preserve">
+    <value>Guarda copias con fecha del SRAM y los savestates en AppData. Exportar incluye esas partidas y los archivos de ROM livianos (máximo 500 MB cada uno). Importar restaura las partidas y copia esas ROMs de vuelta.</value>
+  </data>
+  <data name="SettingsPcSaveAutoBackupTitle" xml:space="preserve">
+    <value>Respaldar partidas de Steam, Epic y PC al jugar</value>
+  </data>
+  <data name="SettingsPcSaveAutoBackupDescription" xml:space="preserve">
+    <value>Al terminar una sesión de Steam, Epic o externa, copia la carpeta que elegiste con Elegir ubicación del guardado. Se omiten archivos de más de 64 MB. Exportar también incluye esas carpetas.</value>
+  </data>
+  <data name="ExportRomPack" xml:space="preserve">
+    <value>Exportar ROMs y partidas</value>
+  </data>
+  <data name="ImportRomPack" xml:space="preserve">
+    <value>Importar ROMs y partidas</value>
+  </data>
+  <data name="RomPackSaveDialogTitle" xml:space="preserve">
+    <value>Guardar paquete de ROMs</value>
+  </data>
+  <data name="RomPackRestoreDialogTitle" xml:space="preserve">
+    <value>Seleccionar paquete de ROMs</value>
+  </data>
+  <data name="RomPackRestoreConfirm" xml:space="preserve">
+    <value>¿Importar este paquete? El SRAM y los savestates se escribirán en las carpetas de RetroArch. Las partidas de Steam/PC vuelven a las carpetas guardadas en el paquete. Las ROMs de hasta 500 MB se copiarán de vuelta (la carpeta original si aún existe; si no, la carpeta de Escanear ROMs).</value>
+  </data>
+  <data name="RomPackCreatedFormat" xml:space="preserve">
+    <value>Paquete guardado en {0}. Incluyó partidas de {1} juegos y {2} archivos ROM ({3} omitidos por faltar o superar 500 MB).</value>
+  </data>
+  <data name="RomPackFailedFormat" xml:space="preserve">
+    <value>No se pudo crear el paquete de ROMs: {0}</value>
+  </data>
+  <data name="RomPackImportFailedFormat" xml:space="preserve">
+    <value>No se pudo importar el paquete de ROMs: {0}</value>
+  </data>
+  <data name="RomPackImportedFormat" xml:space="preserve">
+    <value>Se restauraron {0} archivos de partida y se copiaron {1} archivos ROM.</value>
+  </data>
+  <data name="SettingsOrganizeRomsTitle" xml:space="preserve">
+    <value>Ordenar ROMs</value>
+  </data>
+  <data name="SettingsOrganizeRomsDescription" xml:space="preserve">
+    <value>Coloca cada ROM en una carpeta de su plataforma y renombra el archivo al nombre oficial del DAT. Las partidas junto a la ROM se mueven con ella.</value>
+  </data>
+  <data name="SettingsOrganizeRomsAutoTitle" xml:space="preserve">
+    <value>Ordenar al importar</value>
+  </data>
+  <data name="SettingsOrganizeRomsAutoDescription" xml:space="preserve">
+    <value>Después de Escanear ROMs (y de la carpeta vigilada), ordena los archivos automáticamente. Usa Ordenar ahora para las ROMs que ya están en la carpeta.</value>
+  </data>
+  <data name="OrganizeRomsNow" xml:space="preserve">
+    <value>Ordenar ahora</value>
+  </data>
+  <data name="OrganizeRomsNoFolder" xml:space="preserve">
+    <value>Primero elige una carpeta de ROMs (Escanear ROMs).</value>
+  </data>
+  <data name="OrganizeRomsCompleteFormat" xml:space="preserve">
+    <value>Se movieron {0} archivos ROM. {1} ya estaban en su sitio, {2} omitidos.</value>
   </data>
   <data name="SettingsUpdatesSection" xml:space="preserve">
     <value>Actualizaciones y acerca de</value>
@@ -1795,5 +1909,113 @@ Restaura una copia de seguridad manualmente, o renombra/elimina bridge.db para e
   </data>
   <data name="SettingsProfileSaved" xml:space="preserve">
     <value>Perfil guardado.</value>
+  </data>
+  <data name="SettingsDetailHeroButtonsTitle" xml:space="preserve">
+    <value>Botones del hero</value>
+  </data>
+  <data name="SettingsDetailHeroButtonsDescription" xml:space="preserve">
+    <value>Muestra los botones Jugar, Más y Editar en la cabecera del detalle. Desactívalos para usar solo los laterales u ocultarlos por completo.</value>
+  </data>
+  <data name="SettingsDetailSideButtonsTitle" xml:space="preserve">
+    <value>Botones laterales</value>
+  </data>
+  <data name="SettingsDetailSideButtonsDescription" xml:space="preserve">
+    <value>Muestra pestañas flotantes de Jugar, Más y Editar que sobresalen del borde de la lista sobre el hero. Desactivado por defecto.</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="HomeFeatured" xml:space="preserve">
+    <value>Destacados</value>
+  </data>
+  <data name="HomeWhatToPlayNext" xml:space="preserve">
+    <value>¿A qué jugar ahora?</value>
+  </data>
+  <data name="HomeContinuePlaying" xml:space="preserve">
+    <value>Continuar jugando</value>
+  </data>
+  <data name="HomeRecentlyPlayed" xml:space="preserve">
+    <value>Jugados recientemente</value>
+  </data>
+  <data name="HomeRecentlyAdded" xml:space="preserve">
+    <value>Añadidos recientemente</value>
+  </data>
+  <data name="HomeFavoritePicks" xml:space="preserve">
+    <value>Favoritos</value>
+  </data>
+  <data name="HomeRecentAchievements" xml:space="preserve">
+    <value>Logros recientes</value>
+  </data>
+  <data name="HomeNoAchievements" xml:space="preserve">
+    <value>Aún no hay logros recientes. ¡Juega para desbloquear alguno!</value>
+  </data>
+  <data name="HomeViewAll" xml:space="preserve">
+    <value>Ver todo</value>
+  </data>
+  <data name="HomeContinue" xml:space="preserve">
+    <value>Continuar</value>
+  </data>
+  <data name="HomePlayNow" xml:space="preserve">
+    <value>Jugar ahora</value>
+  </data>
+  <data name="HomeEmptyLibrary" xml:space="preserve">
+    <value>Tu biblioteca está vacía. Importa juegos para construir tu Inicio.</value>
+  </data>
+  <data name="SettingsStartupSectionTitle" xml:space="preserve">
+    <value>Vista al iniciar</value>
+  </data>
+  <data name="SettingsStartupSectionDescription" xml:space="preserve">
+    <value>Elige qué vista se abre al iniciar Bridge: Inicio, Biblioteca o ROMs.</value>
+  </data>
+  <data name="SettingsMinimizeOnGameLaunchTitle" xml:space="preserve">
+    <value>Minimizar al iniciar juego</value>
+  </data>
+  <data name="SettingsMinimizeOnGameLaunchDescription" xml:space="preserve">
+    <value>Minimiza Bridge cuando inicia un juego y lo restaura al cerrar. Activado por defecto.</value>
+  </data>
+  <data name="SettingsDangerZoneTitle" xml:space="preserve">
+    <value>Zona de peligro</value>
+  </data>
+  <data name="SettingsDangerZoneDescription" xml:space="preserve">
+    <value>Acciones irreversibles. Procede con precaución.</value>
+  </data>
+  <data name="DeleteAllDataTitle" xml:space="preserve">
+    <value>Borrar toda la data</value>
+  </data>
+  <data name="DeleteAllDataDescription" xml:space="preserve">
+    <value>Borra permanentemente toda tu biblioteca, configuraciones, caché de imágenes y copias de seguridad. No se puede deshacer.</value>
+  </data>
+  <data name="DeleteAllDataButton" xml:space="preserve">
+    <value>Borrar toda la data</value>
+  </data>
+  <data name="DeleteAllDataConfirm1Title" xml:space="preserve">
+    <value>¿Borrar toda la data?</value>
+  </data>
+  <data name="DeleteAllDataConfirm1Message" xml:space="preserve">
+    <value>¿Estás seguro de que quieres borrar permanentemente TODA la data de Bridge? Se eliminará tu biblioteca, configuraciones, caché e imágenes y copias de seguridad. No se puede deshacer.</value>
+  </data>
+  <data name="DeleteAllDataConfirm2Title" xml:space="preserve">
+    <value>Escribe BORRAR para confirmar</value>
+  </data>
+  <data name="DeleteAllDataConfirm2Message" xml:space="preserve">
+    <value>Escribe BORRAR en el cuadro de abajo y marca la casilla para confirmar que entiendes que es irreversible.</value>
+  </data>
+  <data name="DeleteAllDataConfirm3Title" xml:space="preserve">
+    <value>Confirmación final</value>
+  </data>
+  <data name="DeleteAllDataConfirm3Message" xml:space="preserve">
+    <value>Esta es tu última oportunidad. Toda la data de Bridge será borrada y la app se reiniciará vacía. ¿Realmente quieres continuar?</value>
+  </data>
+  <data name="DeleteAllDataSuccess" xml:space="preserve">
+    <value>Toda la data ha sido borrada. Bridge se reiniciará ahora.</value>
+  </data>
+  <data name="DeleteAllDataFailedFormat" xml:space="preserve">
+    <value>No se pudo borrar la data: {0}</value>
+  </data>
+  <data name="TypeBorrarPlaceholder" xml:space="preserve">
+    <value>Escribe BORRAR</value>
+  </data>
+  <data name="IUnderstandIrreversible" xml:space="preserve">
+    <value>Entiendo que es irreversible</value>
   </data>
 </root>

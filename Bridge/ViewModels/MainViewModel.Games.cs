@@ -1,9 +1,11 @@
 using Bridge;
-using System.Diagnostics;
 using System.IO;
+using Bridge.Core.Utilities;
+using Bridge.Import.Steam;
 using Bridge.Resources;
 using Bridge.Services;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using Wpf.Ui.Controls;
 
 namespace Bridge.ViewModels;
@@ -195,7 +197,6 @@ public partial class MainViewModel
             RefreshGameDisplay(game);
     }
 
-    // Opens the selected game's install folder in Explorer.
     [RelayCommand]
     private void OpenCheats()
     {
@@ -207,6 +208,7 @@ public partial class MainViewModel
         _cheatsWindowOpener.Show(SelectedGame);
     }
 
+    /// <summary>Opens the selected game's install folder in Explorer.</summary>
     [RelayCommand]
     private void OpenGameLocation()
     {
@@ -224,13 +226,218 @@ public partial class MainViewModel
             return;
         }
 
-        try
-        {
-            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
-        }
-        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
+        if (!SafeLauncher.TryOpenDirectory(dir))
             StatusMessage = Strings.Format(nameof(Strings.CouldNotOpenDirectoryFormat), dir);
+    }
+
+    /// <summary>Opens the ROM save folder, or the user-chosen folder for Steam/Epic/external games.</summary>
+    [RelayCommand]
+    private void OpenSaveLocation()
+    {
+        if (SelectedGame is null)
+            return;
+
+        string? dir;
+        if (RomSaveBackupService.IsRomGame(SelectedGame))
+        {
+            dir = GameSaveLocationResolver.TryResolve(SelectedGame, new GameSaveLocationOptions
+            {
+                SteamInstallPath = SteamPaths.GetInstallationPath(),
+                RetroArchInstallPath = Config.EmulatorInstallPath,
+                IsManagedRom = _retroArch.IsManagedRom(SelectedGame)
+            });
         }
+        else
+        {
+            dir = GameSaveFolderStore.Get(SelectedGame.Id);
+        }
+
+        if (string.IsNullOrWhiteSpace(dir))
+        {
+            StatusMessage = Strings.Format(nameof(Strings.NoSaveLocationFormat), SelectedGame.Name);
+            return;
+        }
+
+        if (!Directory.Exists(dir))
+        {
+            if (RomSaveBackupService.IsRomGame(SelectedGame) &&
+                PathContainment.IsUnderRoot(dir, Config.EmulatorInstallPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    StatusMessage = Strings.Format(nameof(Strings.CouldNotOpenDirectoryFormat), dir);
+                    return;
+                }
+            }
+            else
+            {
+                StatusMessage = Strings.Format(nameof(Strings.NoSaveLocationFormat), SelectedGame.Name);
+                return;
+            }
+        }
+
+        if (!SafeLauncher.TryOpenDirectory(dir))
+            StatusMessage = Strings.Format(nameof(Strings.CouldNotOpenDirectoryFormat), dir);
+    }
+
+    private bool CanSetSaveLocation() => SelectedGameNeedsSaveFolder;
+
+    [RelayCommand(CanExecute = nameof(CanSetSaveLocation))]
+    private void SetSaveLocation()
+    {
+        if (SelectedGame is null || !SelectedGameNeedsSaveFolder)
+            return;
+
+        var current = GameSaveFolderStore.Get(SelectedGame.Id);
+        var dialog = new OpenFolderDialog
+        {
+            Title = Strings.SetSaveLocationDialogTitle
+        };
+        if (!string.IsNullOrWhiteSpace(current) && Directory.Exists(current))
+        {
+            dialog.InitialDirectory = current;
+        }
+        else
+        {
+            var suggested = GameSaveLocationResolver.TryResolve(SelectedGame, new GameSaveLocationOptions
+            {
+                SteamInstallPath = SteamPaths.GetInstallationPath(),
+                RetroArchInstallPath = Config.EmulatorInstallPath,
+                IsManagedRom = _retroArch.IsManagedRom(SelectedGame)
+            });
+            if (!string.IsNullOrWhiteSpace(suggested) && Directory.Exists(suggested))
+                dialog.InitialDirectory = suggested;
+            else if (!string.IsNullOrWhiteSpace(SelectedGame.InstallDirectory) &&
+                     Directory.Exists(SelectedGame.InstallDirectory))
+                dialog.InitialDirectory = SelectedGame.InstallDirectory;
+        }
+
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.FolderName))
+            return;
+
+        GameSaveFolderStore.Set(SelectedGame.Id, dialog.FolderName);
+        NotifySaveFolderBindings();
+        StatusMessage = Strings.Format(
+            nameof(Strings.SaveLocationSetFormat),
+            SelectedGame.Name,
+            dialog.FolderName);
+    }
+
+    private bool CanBackupRomSaves() => SelectedGameCanBackupSaves;
+
+    [RelayCommand(CanExecute = nameof(CanBackupRomSaves))]
+    private void BackupRomSaves()
+    {
+        if (SelectedGame is null || !SelectedGameCanBackupSaves)
+            return;
+
+        var result = RomSaveBackupService.Create(
+            SelectedGame,
+            RomSaveBackupKind.Manual,
+            customSaveFolder: GameSaveFolderStore.Get(SelectedGame.Id));
+        RefreshSelectedGameSaveBackups();
+        if (!result.Success)
+        {
+            StatusMessage = Strings.Format(
+                nameof(Strings.RomSaveBackupFailedFormat),
+                SelectedGame.Name,
+                result.Message ?? Strings.Unknown);
+            return;
+        }
+
+        var when = (result.CreatedUtc ?? DateTime.UtcNow).ToLocalTime().ToString("g");
+        StatusMessage = Strings.Format(
+            nameof(Strings.RomSaveBackupCreatedFormat),
+            SelectedGame.Name,
+            when,
+            result.FileCount);
+    }
+
+    [RelayCommand]
+    private void RestoreRomSave(RomSaveBackupListItem? item)
+    {
+        if (SelectedGame is null || item is null)
+            return;
+
+        var when = item.CreatedUtc.ToLocalTime().ToString("g");
+        var kind = item.Kind == RomSaveBackupKind.Manual
+            ? Strings.RomSaveBackupManual
+            : Strings.RomSaveBackupAutomatic;
+        if (!_dialogService.ShowConfirm(
+                Strings.Format(
+                    nameof(Strings.RomSaveRestoreConfirmFormat),
+                    item.FileCount,
+                    when,
+                    kind,
+                    SelectedGame.Name),
+                Strings.RestoreRomSaves,
+                SymbolRegular.ArrowReset24,
+                Strings.RestoreRomSaves,
+                Strings.Cancel))
+        {
+            return;
+        }
+
+        var result = RomSaveBackupService.Restore(
+            item.DirectoryPath,
+            RomSaveBackupService.GetPrimaryRomPath(SelectedGame),
+            customSaveFolder: GameSaveFolderStore.Get(SelectedGame.Id));
+        if (!result.Success)
+        {
+            StatusMessage = Strings.Format(
+                nameof(Strings.RomSaveRestoreFailedFormat),
+                SelectedGame.Name,
+                result.Message ?? Strings.Unknown);
+            return;
+        }
+
+        StatusMessage = Strings.Format(
+            nameof(Strings.RomSaveRestoredFormat),
+            SelectedGame.Name,
+            when,
+            result.FileCount);
+    }
+
+    internal void NotifySaveFolderBindings()
+    {
+        OnPropertyChanged(nameof(SelectedGameHasCustomSaveFolder));
+        OnPropertyChanged(nameof(SelectedGameCanBackupSaves));
+        BackupRomSavesCommand.NotifyCanExecuteChanged();
+        RefreshSelectedGameSaveBackups();
+    }
+
+    internal void RefreshSelectedGameSaveBackups()
+    {
+        SelectedGameSaveBackups.Clear();
+        if (SelectedGame is null || !SelectedGameCanBackupSaves)
+        {
+            OnPropertyChanged(nameof(SelectedGameHasRomSaveBackups));
+            return;
+        }
+
+        foreach (var snapshot in RomSaveBackupService.List(SelectedGame.Id))
+        {
+            var kind = snapshot.Kind == RomSaveBackupKind.Manual
+                ? Strings.RomSaveBackupManual
+                : Strings.RomSaveBackupAutomatic;
+            SelectedGameSaveBackups.Add(new RomSaveBackupListItem
+            {
+                DirectoryPath = snapshot.DirectoryPath,
+                CreatedUtc = snapshot.CreatedUtc,
+                Kind = snapshot.Kind,
+                FileCount = snapshot.FileCount,
+                Header = Strings.Format(
+                    nameof(Strings.RomSaveBackupItemFormat),
+                    kind,
+                    snapshot.CreatedUtc.ToLocalTime().ToString("g"),
+                    snapshot.FileCount)
+            });
+        }
+
+        OnPropertyChanged(nameof(SelectedGameHasRomSaveBackups));
     }
 }

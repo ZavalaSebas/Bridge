@@ -69,9 +69,9 @@ It brings those disconnected pieces into one searchable, customizable catalog wi
 
 ### Browse the way the moment calls for
 
-| **Covers** | **List** | **Table** |
-|:---:|:---:|:---:|
-| A visual wall for rediscovery | Fast browsing with an expandable detail panel | Dense metadata when you want the full picture |
+| **Home** | **Covers** | **List** | **Table** |
+|:---:|:---:|:---:|:---:|
+| A streaming-style hub with a featured carousel and smart rows | A visual wall for rediscovery | Fast browsing with an expandable detail panel | Dense metadata when you want the full picture |
 
 Search, favorites, install status, sorting, grouping, and detail filters stay consistent across every view.
 
@@ -82,6 +82,7 @@ Search, favorites, install status, sorting, grouping, and detail filters stay co
 - **ROM discovery** recognizes supported systems, reads archives, enriches titles, and watches saved folders for new games.
 - **Unified launching** starts each game through its native action and tracks playtime across sessions.
 - **Managed emulation** downloads or updates Bridge's RetroArch setup and required core on first use.
+- **Free game alerts** — a bell in the title bar surfaces active Epic Games Store and Steam giveaways (via GamerPower) with one-click claim links.
 
 ### Give every game a proper place
 
@@ -118,10 +119,13 @@ Search, favorites, install status, sorting, grouping, and detail filters stay co
 - SteamGridDB browser and picker with live previews.
 - Cinematic screenshot carousel with thumbnails, keyboard navigation, expansion, and auto-advance.
 - Default, black, or custom hero backgrounds preserved across metadata refreshes.
+- Open install folder from More / the game context menu. ROMs also open the RetroArch save folder; Steam, Epic, and other PC games need **Set Save Location** first (the picker can start in Steam Cloud, Epic Cloud, or a common Windows folder), then Open / Backup / Restore appear.
+- ROM and mapped PC save backups after play, manual backup/restore from More, and a Settings export of saves plus ROM files up to 500 MB.
 
 #### Emulation and achievements
 
 - Recursive ROM scanning, including `.zip` and `.7z` archives.
+- Per-platform folders and official DAT filenames after Scan ROMs (Settings → Organize ROMs).
 - NES, SNES, N64, GB/GBC/GBA, NDS, Genesis, Master System, Game Gear, Atari, PC Engine, Lynx, and WonderSwan detection.
 - No-Intro DAT matching for cleaner ROM identities.
 - Bridge-managed RetroArch and per-system core setup.
@@ -135,6 +139,7 @@ Search, favorites, install status, sorting, grouping, and detail filters stay co
 - Unified Settings hub, beta update channel, system tray, and optional Windows startup.
 - Covers compact info panel or full details at half width.
 - Library backup and restore for the database, preferences, and artwork cache.
+- ROM and mapped PC save backups, plus Settings export/import of saves and ROM files up to 500 MB.
 - Localized English and Spanish UI.
 - What's New notes after an update.
 

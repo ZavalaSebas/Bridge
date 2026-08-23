@@ -122,6 +122,23 @@ public sealed class WatchedScanFolderService : IDisposable
         }
     }
 
+    public void SuspendRomWatcher()
+    {
+        if (_romWatcher is not null)
+            _romWatcher.EnableRaisingEvents = false;
+
+        _scanRomPending = false;
+        if (!_scanInstalledPending)
+            _debounceTimer.Stop();
+    }
+
+    public void ResumeRomWatcher()
+    {
+        _scanRomPending = false;
+        if (_romWatcher is not null)
+            _romWatcher.EnableRaisingEvents = true;
+    }
+
     private void StopWatchers()
     {
         _romWatcher?.Dispose();

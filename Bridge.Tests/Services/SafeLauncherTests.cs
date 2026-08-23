@@ -35,4 +35,12 @@ public class SafeLauncherTests
         Assert.Equal(expectedFile, fileName);
         Assert.Equal(expectedArgs, arguments);
     }
+
+    [Fact]
+    public void TryOpenDirectory_ReturnsFalseWhenMissing()
+    {
+        Assert.False(SafeLauncher.TryOpenDirectory(Path.Combine(Path.GetTempPath(), "bridge-missing-" + Guid.NewGuid())));
+        Assert.False(SafeLauncher.TryOpenDirectory(null));
+        Assert.False(SafeLauncher.TryOpenDirectory(""));
+    }
 }

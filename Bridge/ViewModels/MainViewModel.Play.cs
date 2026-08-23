@@ -86,6 +86,8 @@ public partial class MainViewModel
         // close mid-game still records "played once / last played now".
         _gameRepository.Update(game);
         StatusMessage = Strings.Format(nameof(Strings.PlayingGameFormat), game.Name);
+        if (MinimizeOnGameLaunchSettingsStore.Load())
+            MinimizeWindowRequested?.Invoke();
     }
 
     private void OnGameStopped(Game game, ulong sessionSeconds)
@@ -114,6 +116,55 @@ public partial class MainViewModel
         RefreshStatistics();
         StatusMessage = Strings.Format(nameof(Strings.SessionSummaryFormat), game.Name, sessionSeconds, game.PlaytimeSeconds);
         HandleRetroArchSessionEnded(game);
+        TryAutoBackupRomSaves(game);
+        if (MinimizeOnGameLaunchSettingsStore.Load())
+            RestoreWindowRequested?.Invoke();
+    }
+
+    private void TryAutoBackupRomSaves(Game game)
+    {
+        try
+        {
+            RomSaveBackupResult? result = null;
+            if (RomSaveBackupService.IsRomGame(game))
+            {
+                if (!RomSaveAutoBackupSettingsStore.Load())
+                    return;
+
+                result = RomSaveBackupService.Create(game, RomSaveBackupKind.Automatic);
+            }
+            else
+            {
+                if (!PcSaveAutoBackupSettingsStore.Load())
+                    return;
+
+                var folder = GameSaveFolderStore.Get(game.Id);
+                if (string.IsNullOrWhiteSpace(folder))
+                    return;
+
+                result = RomSaveBackupService.Create(
+                    game,
+                    RomSaveBackupKind.Automatic,
+                    customSaveFolder: folder);
+            }
+
+            if (ReferenceEquals(SelectedGame, game))
+                RefreshSelectedGameSaveBackups();
+
+            if (result is null || !result.Success || result.Unchanged)
+                return;
+
+            var when = (result.CreatedUtc ?? DateTime.UtcNow).ToLocalTime().ToString("g");
+            StatusMessage = Strings.Format(
+                nameof(Strings.RomSaveAutoBackupStatusFormat),
+                game.Name,
+                when,
+                result.FileCount);
+        }
+        catch (Exception ex)
+        {
+            App.LogException(ex);
+        }
     }
 
     private void HandleRetroArchSessionEnded(Game game)

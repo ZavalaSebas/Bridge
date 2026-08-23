@@ -64,6 +64,20 @@ public static class Config
     public static string AutoApplyCheatsOnLaunchFilePath =>
         Path.Combine(ConfigDirectoryPath, "auto-apply-cheats-on-launch.txt");
 
+    // Dated per-game copies of RetroArch SRAM / savestates.
+    public static string SaveBackupsPath => Path.Combine(AppDataPath, "save-backups");
+
+    // ROM files restored from a ROM pack when the original folder is gone.
+    public static string ImportedRomsPath => Path.Combine(AppDataPath, "imported-roms");
+
+    // After each ROM session, copy SRAM and savestates into save-backups/.
+    public static string RomSaveAutoBackupFilePath =>
+        Path.Combine(ConfigDirectoryPath, "rom-save-auto-backup.txt");
+
+    // Move imported ROMs into per-platform folders named after the DAT title.
+    public static string RomOrganizeOnImportFilePath =>
+        Path.Combine(ConfigDirectoryPath, "rom-organize-on-import.txt");
+
     public static string ThemeFilePath => Path.Combine(ConfigDirectoryPath, "theme.json");
 
     public static string ViewModeFilePath => Path.Combine(ConfigDirectoryPath, "viewmode.txt");
@@ -107,6 +121,22 @@ public static class Config
     public static string TranslucentBackgroundFilePath =>
         Path.Combine(ConfigDirectoryPath, "translucent-background.txt");
 
+    // Detail hero buttons (Play / More / Edit) shown directly on the hero header.
+    public static string DetailHeroButtonsFilePath =>
+        Path.Combine(ConfigDirectoryPath, "detail-hero-buttons.txt");
+
+    // Floating side buttons (Play / More / Edit) protruding from the edge adjacent to the library list, over the hero image.
+    public static string DetailSideButtonsFilePath =>
+        Path.Combine(ConfigDirectoryPath, "detail-side-buttons.txt");
+
+    // Startup navigation section (Home / Library / ROMs)
+    public static string StartupSectionFilePath =>
+        Path.Combine(ConfigDirectoryPath, "startup-section.txt");
+
+    // Minimize on game launch / restore on exit
+    public static string MinimizeOnGameLaunchFilePath =>
+        Path.Combine(ConfigDirectoryPath, "minimize-on-game-launch.txt");
+
     // Last app version for which the What's New dialog was shown.
     public static string WhatsNewSeenFilePath =>
         Path.Combine(ConfigDirectoryPath, "whats-new-seen.txt");
@@ -129,6 +159,14 @@ public static class Config
 
     public static string GameDisplayPreferencesFilePath =>
         Path.Combine(ConfigDirectoryPath, "game-display-preferences.json");
+
+    // Per-game save folders for Steam/Epic/external titles (More → Set Save Location).
+    public static string GameSaveFoldersFilePath =>
+        Path.Combine(ConfigDirectoryPath, "game-save-folders.json");
+
+    // After each Steam/Epic/external session, copy the user-chosen save folder.
+    public static string PcSaveAutoBackupFilePath =>
+        Path.Combine(ConfigDirectoryPath, "pc-save-auto-backup.txt");
 
     public static string UserProfileDirectoryPath =>
         Path.Combine(AppDataPath, "profile");

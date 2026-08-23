@@ -715,6 +715,37 @@ public partial class LibraryDetailView : UserControl
             CompactInfoPanel.Visibility = Visibility.Collapsed;
 
         ApplyCompactDetailLayout(position);
+        ApplySideButtonsPosition(position);
+    }
+
+    private void ApplySideButtonsPosition(string position)
+    {
+        if (HeroSideButtonsHost is null)
+            return;
+
+        var onLeft = position != DetailPanelPositionSettingsStore.Left;
+        HeroSideButtonsHost.HorizontalAlignment = onLeft ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        // Keep pill rounded outward: left-docked pill is rounded on the right, right-docked on the left
+        foreach (var child in FindSideButtonBorders())
+        {
+            child.CornerRadius = onLeft ? new CornerRadius(0, 8, 8, 0) : new CornerRadius(8, 0, 0, 8);
+            child.BorderThickness = onLeft ? new Thickness(1, 1, 1, 1) : new Thickness(1, 1, 1, 1);
+        }
+    }
+
+    private System.Collections.Generic.IEnumerable<System.Windows.Controls.Border> FindSideButtonBorders()
+    {
+        if (HeroSideButtonsHost is null)
+            yield break;
+
+        if (HeroSideButtonsHost.Child is not System.Windows.Controls.StackPanel panel)
+            yield break;
+
+        foreach (var child in panel.Children)
+        {
+            if (child is System.Windows.Controls.Border border)
+                yield return border;
+        }
     }
 
     private void ApplyListDetailLayout(string position, bool visible, bool halfWidth)

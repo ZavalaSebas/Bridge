@@ -12,6 +12,9 @@ namespace Bridge.Core.Enums;
 /// </summary>
 public enum NavigationSection
 {
+    [Description("Home")]
+    Home,
+
     [Description("Library")]
     Library,
 
