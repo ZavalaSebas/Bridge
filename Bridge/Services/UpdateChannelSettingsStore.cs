@@ -48,12 +48,12 @@ public static class UpdateChannelSettingsStore
         {
             // Persisting must never crash the app.
         }
+    }
 
-        private static bool TryLoadFromFile(string path, out UpdateChannel channel)
-        {
-            channel = UpdateChannel.Stable;
-            return File.Exists(path) &&
-                Enum.TryParse<UpdateChannel>(File.ReadAllText(path).Trim(), out channel);
-        }
+    private static bool TryLoadFromFile(string path, out UpdateChannel channel)
+    {
+        channel = UpdateChannel.Stable;
+        return File.Exists(path) &&
+            Enum.TryParse<UpdateChannel>(File.ReadAllText(path).Trim(), out channel);
     }
 }

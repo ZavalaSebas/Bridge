@@ -40,12 +40,12 @@ public static class StartupSettingsStore
         {
             // Persisting must never crash the app.
         }
+    }
 
-        private static bool TryLoadFromFile(string path, out bool enabled)
-        {
-            enabled = false;
-            return File.Exists(path) &&
-                bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
-        }
+    private static bool TryLoadFromFile(string path, out bool enabled)
+    {
+        enabled = false;
+        return File.Exists(path) &&
+            bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
     }
 }

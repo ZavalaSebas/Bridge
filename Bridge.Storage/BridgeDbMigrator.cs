@@ -98,6 +98,10 @@ public static class BridgeDbMigrator
         if (addTimeToBeat is not null && TimeToBeatColumnsPresent(context))
             baselined.Add(addTimeToBeat);
 
+        var addMetadataSync = migrations.FirstOrDefault(m => m.EndsWith("AddMetadataSyncMarkers", StringComparison.Ordinal));
+        if (addMetadataSync is not null && MetadataSyncMarkersColumnsPresent(context))
+            baselined.Add(addMetadataSync);
+
         return baselined;
     }
 
@@ -153,6 +157,16 @@ public static class BridgeDbMigrator
 
     private static bool TimeToBeatColumnsPresent(BridgeDbContext context)
     {
+        return GamesColumnExists(context, "TimeToBeatMainSeconds");
+    }
+
+    private static bool MetadataSyncMarkersColumnsPresent(BridgeDbContext context)
+    {
+        return GamesColumnExists(context, "LinksSyncedAt");
+    }
+
+    private static bool GamesColumnExists(BridgeDbContext context, string columnName)
+    {
         using var connection = context.Database.GetDbConnection();
         var wasOpen = connection.State == ConnectionState.Open;
         if (!wasOpen)
@@ -165,7 +179,7 @@ public static class BridgeDbMigrator
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                if (reader.GetString(1).Equals("TimeToBeatMainSeconds", StringComparison.OrdinalIgnoreCase))
+                if (reader.GetString(1).Equals(columnName, StringComparison.OrdinalIgnoreCase))
                     return true;
             }
 

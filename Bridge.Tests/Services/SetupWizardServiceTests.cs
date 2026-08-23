@@ -4,28 +4,15 @@ namespace Bridge.Tests.Services;
 
 public class SetupWizardServiceTests : IDisposable
 {
-    private readonly string _setupPath = Config.SetupCompleteFilePath;
-    private readonly string _whatsNewPath = Config.WhatsNewSeenFilePath;
-    private readonly bool _hadSetup;
-    private readonly string? _previousSetup;
-    private readonly bool _hadWhatsNew;
-    private readonly string? _previousWhatsNew;
-
-    public SetupWizardServiceTests()
-    {
-        _hadSetup = File.Exists(_setupPath);
-        _previousSetup = _hadSetup ? File.ReadAllText(_setupPath) : null;
-        _hadWhatsNew = File.Exists(_whatsNewPath);
-        _previousWhatsNew = _hadWhatsNew ? File.ReadAllText(_whatsNewPath) : null;
-    }
+    private readonly TrackedFile _setup = Track(Config.SetupCompleteFilePath, Path.Combine(Config.AppDataPath, "setup-complete.txt"));
+    private readonly TrackedFile _whatsNew = Track(Config.WhatsNewSeenFilePath, Path.Combine(Config.AppDataPath, "whats-new-seen.txt"));
+    private readonly TrackedFile _romScanFolder = Track(Config.RomScanFolderFilePath, Path.Combine(Config.AppDataPath, "rom-scan-folder.txt"));
+    private readonly TrackedFile _installedScanFolder = Track(Config.InstalledScanFolderFilePath, Path.Combine(Config.AppDataPath, "installed-scan-folder.txt"));
 
     [Fact]
     public void ShouldShowSetup_ReturnsTrueForFreshInstall()
     {
-        if (File.Exists(_setupPath))
-            File.Delete(_setupPath);
-        if (File.Exists(_whatsNewPath))
-            File.Delete(_whatsNewPath);
+        ClearSetupState();
 
         Assert.True(SetupWizardService.ShouldShowSetup());
     }
@@ -33,8 +20,7 @@ public class SetupWizardServiceTests : IDisposable
     [Fact]
     public void ShouldShowSetup_SkipsWhenWhatsNewSeenExists()
     {
-        if (File.Exists(_setupPath))
-            File.Delete(_setupPath);
+        ClearSetupState();
         WhatsNewSettingsStore.Save(new Version(0, 4, 0));
 
         Assert.False(SetupWizardService.ShouldShowSetup());
@@ -43,15 +29,53 @@ public class SetupWizardServiceTests : IDisposable
 
     public void Dispose()
     {
-        RestoreFile(_setupPath, _hadSetup, _previousSetup);
-        RestoreFile(_whatsNewPath, _hadWhatsNew, _previousWhatsNew);
+        _setup.Restore();
+        _whatsNew.Restore();
+        _romScanFolder.Restore();
+        _installedScanFolder.Restore();
     }
 
-    private static void RestoreFile(string path, bool hadFile, string? previousContents)
+    private void ClearSetupState()
     {
-        if (hadFile && previousContents is not null)
-            File.WriteAllText(path, previousContents);
-        else if (File.Exists(path))
-            File.Delete(path);
+        _setup.DeleteBoth();
+        _whatsNew.DeleteBoth();
+        _romScanFolder.DeleteBoth();
+        _installedScanFolder.DeleteBoth();
+    }
+
+    private static TrackedFile Track(string currentPath, string legacyPath) => new(currentPath, legacyPath);
+
+    private sealed class TrackedFile(string currentPath, string legacyPath)
+    {
+        private readonly bool _hadCurrent = File.Exists(currentPath);
+        private readonly string? _previousCurrent = File.Exists(currentPath) ? File.ReadAllText(currentPath) : null;
+        private readonly bool _hadLegacy = File.Exists(legacyPath);
+        private readonly string? _previousLegacy = File.Exists(legacyPath) ? File.ReadAllText(legacyPath) : null;
+
+        public void DeleteBoth()
+        {
+            DeleteIfExists(currentPath);
+            DeleteIfExists(legacyPath);
+        }
+
+        public void Restore()
+        {
+            RestorePath(currentPath, _hadCurrent, _previousCurrent);
+            RestorePath(legacyPath, _hadLegacy, _previousLegacy);
+        }
+
+        private static void DeleteIfExists(string path)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+
+        private static void RestorePath(string path, bool hadFile, string? previousContents)
+        {
+            if (hadFile && previousContents is not null)
+                File.WriteAllText(path, previousContents);
+            else if (File.Exists(path))
+                File.Delete(path);
+        }
     }
 }

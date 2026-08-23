@@ -48,13 +48,13 @@ public static class LanguageSettingsStore
         {
             // Persisting must never crash the app.
         }
+    }
 
-        private static bool TryLoadFromFile(string path, out AppLanguage language)
-        {
-            language = AppLanguage.English;
-            return File.Exists(path) &&
-                Enum.TryParse<AppLanguage>(File.ReadAllText(path).Trim(), out language);
-        }
+    private static bool TryLoadFromFile(string path, out AppLanguage language)
+    {
+        language = AppLanguage.English;
+        return File.Exists(path) &&
+            Enum.TryParse<AppLanguage>(File.ReadAllText(path).Trim(), out language);
     }
 
     public static CultureInfo CultureFor(AppLanguage language) =>
