@@ -59,6 +59,12 @@ public partial class MainViewModel
             await ScanInstalledFolderAsync(installedFolder, silent: true);
         }
 
+        // Select a game as soon as the (fast, local) imports and folder scans have
+        // populated the library, so a first run doesn't wait for the slow metadata
+        // sync below to pick something. Only when nothing is chosen yet.
+        if (SelectedGame is null)
+            SelectedGame = SelectInitialGame(Games);
+
         await DownloadMissingSteamMetadataAsync(steamSourceId);
         var bridgeSourceId = InstalledGameImportService.EnsureBridgeSource(_sourceRepository);
         await DownloadMissingBridgeMetadataAsync(bridgeSourceId);
@@ -67,5 +73,12 @@ public partial class MainViewModel
         await DownloadMissingRomMetadataAsync();
         await DownloadMissingHowLongToBeatAsync();
         RefreshAllEmulatorDownloadStates();
+
+        // Clear the last "Downloading metadata…" text once the whole sync is done —
+        // EndStatusProgress only hides the bar, and a batch that matched nothing
+        // leaves its message set. Skip when a manual Refresh is running: it sets its
+        // own completion message right after this returns.
+        if (!_refreshInProgress)
+            StatusMessage = string.Empty;
     }
 }
