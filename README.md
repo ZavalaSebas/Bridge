@@ -1,164 +1,285 @@
 <div align="center">
 
-# Bridge
+<a href="https://zavalasebas.github.io/Bridge/">
+  <img src="./docs/readme-hero.svg" alt="Bridge - Every game, one home" width="100%">
+</a>
 
-### A local game library, unified — no plugins, no bloat, just your games.
+<br>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-10-512bd4?style=flat-square&logo=dotnet&logoColor=white&labelColor=1a1a2e)](https://dotnet.microsoft.com)
-[![Platform](https://img.shields.io/badge/Platform-Windows-00a4ef?style=flat-square&logo=windows&logoColor=white&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge)
-[![Version](https://img.shields.io/badge/Version-0.8.0-57F287?style=flat-square&labelColor=1a1a2e)](https://github.com/ZavalaSebas/Bridge/releases)
+[![Latest release](https://img.shields.io/github/v/release/ZavalaSebas/Bridge?display_name=tag&sort=semver&style=for-the-badge&label=RELEASE&labelColor=151A28&color=F59E0B)](https://github.com/ZavalaSebas/Bridge/releases/latest)
+[![Build and test](https://img.shields.io/github/actions/workflow/status/ZavalaSebas/Bridge/release.yml?branch=main&style=for-the-badge&label=BUILD&labelColor=151A28&color=10B981)](https://github.com/ZavalaSebas/Bridge/actions/workflows/release.yml)
+[![Windows](https://img.shields.io/badge/WINDOWS-10_%2F_11-60A5FA?style=for-the-badge&labelColor=151A28&logo=windows11&logoColor=white)](https://github.com/ZavalaSebas/Bridge/releases/latest)
+[![License](https://img.shields.io/github/license/ZavalaSebas/Bridge?style=for-the-badge&labelColor=151A28&color=A78BFA)](LICENSE)
 
-Bridge brings your games — from external libraries, manual entries, and emulated ROMs — into one fast, local catalog. No plugin runtime, no bloat.
+**A local-first game library for Windows.** Bring Steam, Epic, manual games, and emulated ROMs into one collection that feels like yours.
 
-[Get Started](#get-started) · [Features](#features) · [How It Works](#how-it-works) · [Build from Source](#build-from-source)
+[**Download Bridge**](https://github.com/ZavalaSebas/Bridge/releases/latest)
+&nbsp;&nbsp;&middot;&nbsp;&nbsp;
+[Website](https://zavalasebas.github.io/Bridge/)
+&nbsp;&nbsp;&middot;&nbsp;&nbsp;
+[Documentation](DEVELOPMENT.md)
+&nbsp;&nbsp;&middot;&nbsp;&nbsp;
+[Contribute](CONTRIBUTING.md)
 
 </div>
 
----
+<br>
 
-## What is Bridge?
+> [!IMPORTANT]
+> Bridge is under active development. Back up a library you care about before testing a new release.
 
-Bridge is an original game library manager: it unifies games from external libraries, manually added entries, and emulated ROMs into one local, self-contained catalog. It keeps what matters day to day — incremental import, local metadata, fast virtualized views, and emulation support — without a plugin runtime or a separate fullscreen frontend.
+## The library between you and every game
 
-[Playnite](https://playnite.link/) was the **original inspiration** when Bridge was first conceived — the idea of one local catalog for every game. Bridge is an independent project: its own code, architecture, UI, and scope (no plugin runtime, no shared internals).
+Launchers know what they installed. Folders know where files live. Emulators know how to run a ROM.
 
-> **Disclaimer:** Bridge is not affiliated with, endorsed by, or connected to Playnite, Valve/Steam, GOG, or any platform or emulator project referenced in this document. Bridge does not crack, bypass, or circumvent DRM. It organizes games you already own and emulators/ROMs you already have; it does not provide or distribute copyrighted game files.
+**Bridge knows the collection.**
 
----
+It brings those disconnected pieces into one searchable, customizable catalog without asking for another account, another subscription, or a runtime full of plugins. Metadata and artwork are cached locally, imports only update what changed, and the packaged app runs as a self-contained Windows executable.
 
-## Screenshot
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>One shelf for everything</h3>
+      Steam, Epic, standalone executables, and ROMs share the same search, filters, artwork, favorites, and play history.
+    </td>
+    <td width="50%" valign="top">
+      <h3>Your collection stays yours</h3>
+      The database, preferences, and artwork cache live on your PC. Back them up or restore them whenever you want.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Details without the chores</h3>
+      IGDB, Steam, SteamGridDB, and How Long to Beat turn sparse imports into rich game pages with covers, heroes, screenshots, and context.
+    </td>
+    <td width="50%" valign="top">
+      <h3>Old worlds, modern doorway</h3>
+      Scan ROM folders and let Bridge prepare its managed RetroArch frontend and the right core when you first press Play.
+    </td>
+  </tr>
+</table>
 
 <div align="center">
-
-> Screenshot coming soon — v0.2.0
-
+  <sub>NO NEW ACCOUNT &nbsp;&bull;&nbsp; NO SUBSCRIPTION &nbsp;&bull;&nbsp; NO PLUGIN SCAVENGER HUNT &nbsp;&bull;&nbsp; NO LIBRARY LOCK-IN</sub>
 </div>
 
 ---
 
-## How It Works
+## What Bridge feels like
 
-Bridge is a modular-monolith WPF application: internal modules (`Core`, `Storage`, `Import`, `Metadata`, `Emulation`, `App`) each own one responsibility, with no UI/domain mixing and no runtime plugin boundary. Games and their metadata are stored locally — images and metadata are cached on first fetch so nothing gets re-downloaded unnecessarily, and library imports run incrementally so re-scanning a source only updates what changed.
+### Browse the way the moment calls for
 
-The app uses [WPF-UI](https://github.com/lepoco/wpfui) 4.3.0 with a custom dark theme, Mica backdrop, Inter variable font, and sidebar-based navigation. It ships as a single self-contained `.exe` (~155 MB, verified — one file, no sidecar DLLs) — no .NET runtime install required, no external services beyond what's needed to fetch metadata. Measured cold-start time is ~2.6 seconds and ~180 MB RAM at rest (see `DEVELOPMENT.md` for the full measurement notes).
+| **Covers** | **List** | **Table** |
+|:---:|:---:|:---:|
+| A visual wall for rediscovery | Fast browsing with an expandable detail panel | Dense metadata when you want the full picture |
+
+Search, favorites, install status, sorting, grouping, and detail filters stay consistent across every view.
+
+### Press Play, not Configure
+
+- **Steam and Epic detection** reads the launchers' local manifests and imports installed games automatically.
+- **Manual discovery** scans shortcuts, folders, or a single executable while filtering common installers and helpers.
+- **ROM discovery** recognizes supported systems, reads archives, enriches titles, and watches saved folders for new games.
+- **Unified launching** starts each game through its native action and tracks playtime across sessions.
+- **Managed emulation** downloads or updates Bridge's RetroArch setup and required core on first use.
+
+### Give every game a proper place
+
+- **Metadata that layers intelligently** across Bridge's IGDB service, public/user IGDB providers, and Steam Store fallback.
+- **Artwork with intent** through SteamGridDB, web image search, local files, and persistent custom hero choices.
+- **A cinematic detail view** with screenshots, links, scores, genres, studios, release data, and How Long to Beat progress.
+- **Achievements in the library** for Steam, Epic, and supported ROMs through RetroAchievements.
+- **A library that remembers** favorites, sessions, playtime, recently played games, completion context, and statistics.
+
+### Make the room yours
+
+- Runtime accent colors and a custom color picker.
+- Optional translucent sidebar and blurred game artwork.
+- Sidebar position and visibility controls.
+- Reorderable detail sections and persistent view preferences.
+- English and Spanish interface.
+
+<details>
+<summary><strong>See the complete feature inventory</strong></summary>
+
+#### Library
+
+- Incremental Steam and Epic import with locally resolved icons.
+- Manual entries with dedicated editing for names, actions, genres, developers, publishers, platforms, and media.
+- Search plus presets for All, Favorites, Installed, Not Played, and Recently Played.
+- Sorting and grouping across names, playtime, activity, scores, studios, platforms, sources, install size, release year, and more.
+- Hidden games, favorites, watched scan folders, refresh-on-demand, and automatic startup sync.
+
+#### Game details
+
+- Covers, icons, hero backgrounds, descriptions, genres, developers, publishers, release dates, scores, links, and screenshots.
+- Clickable metadata values that become active library filters.
+- How Long to Beat estimates compared with real playtime.
+- SteamGridDB browser and picker with live previews.
+- Cinematic screenshot carousel with thumbnails, keyboard navigation, expansion, and auto-advance.
+- Default, black, or custom hero backgrounds preserved across metadata refreshes.
+
+#### Emulation and achievements
+
+- Recursive ROM scanning, including `.zip` and `.7z` archives.
+- NES, SNES, N64, GB/GBC/GBA, NDS, Genesis, Master System, Game Gear, Atari, PC Engine, Lynx, and WonderSwan detection.
+- No-Intro DAT matching for cleaner ROM identities.
+- Bridge-managed RetroArch and per-system core setup.
+- Optional RetroArch cheats from `libretro-database`.
+- Steam, Epic, and RetroAchievements progress in the game detail panel.
+
+#### Application
+
+- First-run profile and source setup.
+- Self-updater with database backup, safe executable swap, and automatic schema migrations.
+- Unified Settings hub, beta update channel, system tray, and optional Windows startup.
+- Library backup and restore for the database, preferences, and artwork cache.
+- Localized English and Spanish UI.
+- What's New notes after an update.
+
+</details>
 
 ---
 
-## Get Started
+## Start in under a minute
 
-**Download a Release**
+### Download the app
 
-Grab the latest `Bridge.exe` from [Releases](https://github.com/ZavalaSebas/Bridge/releases). Self-contained — no .NET required. Just run it.
+1. Open [**GitHub Releases**](https://github.com/ZavalaSebas/Bridge/releases/latest).
+2. Download `Bridge.exe`.
+3. Run it and follow the source setup.
 
-**Build from Source**
+The release is self-contained. **You do not need to install .NET.**
 
-```bash
+| Requirement | Release build | Build from source |
+|---|:---:|:---:|
+| Windows 10 or 11 | Required | Required |
+| .NET runtime | Not required | - |
+| .NET 10 SDK | - | Required |
+| Existing Steam/Epic install | Optional | Optional |
+| Your own emulators and ROMs | Optional | Optional |
+
+> [!NOTE]
+> Windows may show a SmartScreen warning for an unsigned build. Review the release, verify its source here, and only continue if you trust the download.
+
+### Build it yourself
+
+```powershell
 git clone https://github.com/ZavalaSebas/Bridge.git
 cd Bridge
-dotnet publish Bridge -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish Bridge/Bridge.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
 ```
 
----
-
-## Requirements
-
-- Windows 10/11
-- No .NET runtime install needed for the packaged `.exe` (self-contained)
-- .NET 10 SDK if building from source
-
----
-
-## Features
-
-- **Steam library auto-import** — detects installed Steam games automatically on startup (registry + `libraryfolders.vdf` + `appmanifest*.acf`)
-- **Steam Store metadata** — downloads name, description, release date, cover/background art, critic/community scores, genres, and more from the official Steam store (no login, no API key)
-- **IGDB metadata** — text and image metadata from IGDB with **zero configuration** (via Bridge's own Cloudflare Worker; a user-supplied Twitch key is optional). The Worker matches an exact name first (`where name ~`), falling back to IGDB's fuzzy `search` for titles that need it (ROM names with accents/hyphens), and Bridge shows a clear "no internet connection" message instead of "no metadata" when offline
-- **Multi-provider fallback** — metadata search tries Bridge's IGDB Worker first, then a legacy public IGDB proxy (`PlayniteIgdbProvider`), then the user's IGDB key, then Steam Store automatically
-- **Auto-metadata on import** — Steam games get metadata fetched from the store automatically when first imported
-- **Epic Games support** — detects installed Epic games from the launcher's local files, launches via the Epic client, and shows each game's exe icon
-- **Steam icons in the library list** — Steam games show the square 32x32 icon Steam caches locally (`appcache\librarycache\{appid}`), falling back to the `header.jpg` URL when none is cached
-- **Search, filter presets, sorting and grouping** — filter the list by name, switch between All / Favorites / Installed / Not Played / Recently Played, sort by 22 fields (name, playtime, play count, last played, scores, developer, platform, library, etc.) ascending or descending, and group by 21 fields (library, developer, platform, genre, playtime buckets, install size buckets, release year, etc.)
-- **Three view modes** — **List** (list + collapsible detail panel with cover, metadata, Play), **Covers** (cover wall with hover animations — scale + shadow + icon-only Play/Info overlay; compact side panel with screenshot strip, Details, and Overview), **Table** (themed grid with dynamic-width Name column) — plus a full-width **Statistics** dashboard overlay (library overview, playtime, completion, Top Played). Search/filter/sort/group apply across all game views
-- **How Long to Beat** — completion-time estimates (main / extras / completionist) from howlongtobeat.com, fetched with metadata sync and shown in the Details hero as a segmented progress bar filled by your real playtime
-- **SteamGridDB artwork** — optional community icons, covers, and hero banners from [SteamGridDB](https://www.steamgriddb.com/) in the game editor (free API key). Setup wizard, settings card, in-app browser fallback, and a picker with live preview
-- **Change art** — context menu **Change art** on any game opens the editor directly on the Media tab
-- **Hero banner modes** — Default (Steam/metadata), solid Black, or Custom URL/image; custom choices are preserved across Steam imports and metadata refresh
-- **Detail metadata filters** — click genre, platform, developer, publisher, library, or feature values in the game details panel to filter the library; chips in the header clear filters
-- **Translucent UI** — optional blurred game artwork behind the library and detail panels, plus a semi-transparent sidebar (Settings → Appearance)
-- **Redesigned artwork pickers** — web image search and SteamGridDB pickers use responsive tiles (full-width banners, two-column covers/icons), side preview, and theme-colored action buttons
-- **Cinematic screenshot gallery** — in the Table view and as a compact strip in Covers, games with screenshots show them as a carousel: a large image floating over a frosted backdrop, a drag-to-scroll thumbnail strip, counter, arrow buttons, keyboard navigation, click-to-expand into a full-window dark overlay, and auto-advance
-- **Sidebar navigation** — Icon rail (52px) with Library, ROMs, Favorites, Sources, Show hidden, Statistics, and Settings shortcuts, collapsible and re-positionable
-- **Dark theme + Mica + runtime theming** — custom indigo dark palette with Inter variable font, Mica backdrop on Windows 11, and a runtime accent switcher (9 color presets + custom picker) that recolors the whole UI
-- Manual game entries with a dedicated editor (Sorting Name, create-on-the-fly genres/devs/publishers/platforms, and web image search), edit, and delete
-- **Scan Automatically** — detect games installed on the PC from start-menu shortcuts, a folder, or a single executable (with installers/helpers filtered out), then import them with one click
-- Launch a game via its `GameAction` and track playtime automatically with poll-based monitoring — Steam games launch with an auto-resolved play action (`steam://rungameid/{appid}` via `steam.exe`, no per-game setup needed)
-- Basic statistics (totals, installed/not installed, favorites, total playtime)
-- **Zero-setup ROM support** — recursively scans folders (including `.zip`/`.7z` archives), detects supported systems from ROM extensions (`RomPlatformCatalog`: NES, SNES, N64, GB/GBC/GBA, NDS, Genesis, Master System, Game Gear, Atari, PC Engine, Lynx, WonderSwan), enriches games through the normal IGDB metadata pipeline, and installs/updates Bridge-managed RetroArch + the required core on first play. The Play button reads **Download** (then **Downloading…**) until the frontend/core is installed, then Play/Stop as usual
-- **RetroArch cheats** — context menu **Cheats** for managed ROMs: fetch from libretro-database, toggle per game, optional auto-apply on launch via emulator settings
-- **Achievements** — **Achievements** tab in the game detail panel for Steam (local progress + catalog fallback), Epic (launcher session), and ROMs (RetroAchievements). Settings → RetroAchievements: web API key for Bridge UI, account password for unlocks in RetroArch (rcheevos). ROM titles matched via No-Intro DAT catalogs on scan
-- **Refresh Library** — logo menu command re-imports Steam/Epic, rescans configured ROM and installed-game folders, and downloads missing metadata on demand (same core sync as startup, without checking for Bridge app updates)
-- **Self-updating** — Bridge checks GitHub Releases at startup (and on demand via **Check for updates…** in the app menu), downloads the new `Bridge.exe`, and restarts into it with a safe swap (running exe kept as `.old` until the new one proves it starts; the DB is backed up first). **Schema changes apply automatically too** — EF Core migrations update your existing `bridge.db` in place on the next launch, so a release can change the DB without you re-downloading or losing your library. Skip an update and a download button appears in the title bar until you apply it. See [DEVELOPMENT.md](DEVELOPMENT.md#version-management)
-- **Settings hub** — sidebar gear opens a unified preferences screen: **Profile** (name + avatar), emulator/IGDB/**RetroAchievements** shortcuts, appearance (theme, language, tray, detail panel position, detail section layout, keep selection across views), library backup & restore, update check, **beta channel**, **start with Windows**, and About
-- **English / Spanish UI** — switch language in Settings; Bridge restarts to apply
-- **Library backup & restore** — zip your database, preferences, and artwork cache; restore on next launch
-- **System tray** — close the window to keep Bridge running in the notification area; double-click the icon to reopen
-- **Start with Windows** — optional sign-in startup (published exe only)
-- **First-run setup wizard** — asks for display name, avatar, external games folder, and ROM folder; detects Steam/Epic automatically
-- **What's New on update** — summarized release notes from `CHANGELOG.md` after each app update
-- **Watched scan folders** — saved ROM and installed-game folders auto-import new files on startup and when they appear
-- **User profile** — display name and avatar in Statistics; editable in Settings → Profile
-- Self-contained single-file `.exe` (~155 MB) — no .NET runtime install required
+Your executable will be at `publish\Bridge.exe`.
 
 ---
 
 ## Architecture
 
-Modular monolith, no runtime plugins: `Core` (domain) → `Storage` (persistence) → `Import`/`Metadata`/`Emulation` (use cases) → `App` (WPF UI). ROM scanning and Bridge-managed RetroArch live in **`Bridge.Emulation/`**; launch/playtime tracking and app services live in **`Bridge/Services/`**. See [ARCHITECTURE.md](ARCHITECTURE.md) for the ADRs behind these decisions and [DEVELOPMENT.md](DEVELOPMENT.md#architecture-overview) for the full layer breakdown.
+Bridge is a **modular monolith**. Project references enforce the boundaries: the domain knows nothing about infrastructure, use-case modules stay persistence-agnostic, and the WPF application composes the system.
 
-**IGDB metadata without configuration:** Bridge gets IGDB metadata (cover, description, developers, genres, scores, links, **screenshots**) for any game — including Epic-only titles like Genshin Impact — via its own [Cloudflare Worker](Bridge.Infra/igdb-proxy-worker/) that holds the IGDB credentials server-side (Worker Secrets, never in the app). A public IGDB proxy fallback and a user-configured IGDB key act as additional providers. The Worker returns IGDB's real screenshots too, so Epic/manual games get the same Table-view screenshot gallery as Steam games. See [ADR-13](ARCHITECTURE.md#adr-13-own-cloudflare-worker-as-the-igdb-metadata-backend).
+```mermaid
+flowchart TB
+    APP["Bridge<br/>WPF UI / DI / application services"]
+
+    IMPORT["Bridge.Import<br/>Steam and Epic discovery"]
+    META["Bridge.Metadata<br/>IGDB / Steam / HLTB / achievements"]
+    EMU["Bridge.Emulation<br/>ROM scanning / DAT / RetroArch"]
+
+    STORAGE["Bridge.Storage<br/>EF Core / SQLite / repositories / cache"]
+    CORE["Bridge.Core<br/>Entities / rules / contracts / statistics"]
+
+    APP --> IMPORT
+    APP --> META
+    APP --> EMU
+    APP --> STORAGE
+    IMPORT --> CORE
+    META --> CORE
+    EMU --> CORE
+    STORAGE --> CORE
+
+    classDef app fill:#F59E0B,color:#171006,stroke:#F8C45C,stroke-width:2px;
+    classDef module fill:#232B40,color:#F7F5EF,stroke:#59647A;
+    classDef storage fill:#173B34,color:#F7F5EF,stroke:#10B981;
+    classDef core fill:#242037,color:#F7F5EF,stroke:#A78BFA;
+    class APP app;
+    class IMPORT,META,EMU module;
+    class STORAGE storage;
+    class CORE core;
+```
+
+| Layer | Responsibility |
+|---|---|
+| [`Bridge.Core/`](Bridge.Core/) | Domain entities, contracts, filters, rules, and statistics |
+| [`Bridge.Storage/`](Bridge.Storage/) | SQLite persistence, EF Core repositories, migrations, and local caches |
+| [`Bridge.Import/`](Bridge.Import/) | Pure Steam and Epic library discovery |
+| [`Bridge.Metadata/`](Bridge.Metadata/) | Metadata, artwork, playtime estimates, and achievement providers |
+| [`Bridge.Emulation/`](Bridge.Emulation/) | ROM scanning, DAT matching, RetroArch management, and cheats |
+| [`Bridge/`](Bridge/) | WPF UI, dependency injection, launch orchestration, settings, and updates |
+| [`Bridge.Tests/`](Bridge.Tests/) | Unit and opt-in live integration tests |
+
+Read the decisions behind the boundaries in [**ARCHITECTURE.md**](ARCHITECTURE.md).
 
 ---
 
-## Development
+## Work on Bridge
 
-| Document | Purpose |
-|----------|---------|
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Build, test, architecture, migrations, updater, key files |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | ADRs (design decisions) |
-| [PLAN.md](PLAN.md) | Phase tracker and scope |
-| [CHANGELOG.md](CHANGELOG.md) | Release history |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution standards |
-| [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) | Archival notes from project inception (internal; not a Bridge spec) |
-| [Bridge.Infra/igdb-proxy-worker/README.md](Bridge.Infra/igdb-proxy-worker/README.md) | IGDB Worker deploy guide |
+```powershell
+# Restore
+dotnet restore Bridge.slnx
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the full project guide.
+# Build
+dotnet build Bridge.slnx -c Release --no-restore
+
+# Run the normal test suite
+dotnet test Bridge.slnx -c Release --filter "Category!=Integration"
+```
+
+Live-network provider tests are intentionally excluded from the normal suite. See the [testing guide](DEVELOPMENT.md#tests) before running integration tests.
+
+### Find your way around
+
+| If you want to... | Start here |
+|---|---|
+| Understand setup, builds, tests, migrations, and releases | [Development guide](DEVELOPMENT.md) |
+| Understand why the system is shaped this way | [Architecture decisions](ARCHITECTURE.md) |
+| See what changed between releases | [Changelog](CHANGELOG.md) |
+| Propose or implement a change | [Contributing guide](CONTRIBUTING.md) |
+| Track current scope and future work | [Project plan](PLAN.md) |
+| Deploy the zero-config IGDB backend | [IGDB Worker guide](Bridge.Infra/igdb-proxy-worker/README.md) |
+
+Contributions are welcome. Please open an issue before beginning a large behavioral or architectural change so the direction can be discussed first.
 
 ---
 
-## License
+## Project position
 
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+Bridge was first conceived after studying unified game library managers, with [Playnite](https://playnite.link/) as the original inspiration for the idea of one local catalog. Bridge is an independent project with its own code, architecture, interface, and intentionally smaller plugin-free scope.
 
----
-
-## Acknowledgments
-
-Bridge was originally conceived after studying unified game library managers; [Playnite](https://playnite.link/) was the first inspiration for that idea. Bridge is built independently — a separate, smaller, plugin-free product in the same problem space.
+> [!CAUTION]
+> Bridge is not affiliated with or endorsed by Playnite, Valve/Steam, Epic Games, GOG, RetroArch, or any platform, storefront, metadata provider, or emulator referenced here. Bridge does not bypass DRM and does not provide copyrighted game files. It organizes games, emulators, and ROMs that you already have.
 
 ---
 
-## Sponsor
+## Support the project
 
-If you find Bridge useful, consider supporting the project:
+If Bridge earns a permanent place on your desktop, you can help fund its development:
 
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white&labelColor=1a1a2e)](https://ko-fi.com/sebastianzavala82573)
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=flat-square&logo=githubsponsors&logoColor=white&labelColor=1a1a2e)](https://github.com/sponsors/ZavalaSebas)
+<div align="center">
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub_Sponsors-Support_Bridge-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=151A28)](https://github.com/sponsors/ZavalaSebas)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy_a_coffee-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white&labelColor=151A28)](https://ko-fi.com/sebastianzavala82573)
+
+</div>
 
 ---
 
 <div align="center">
 
-Made with care by [ZavalaSebas](https://github.com/ZavalaSebas)
+Released under the [GNU GPL v3.0](LICENSE)
+
+Built with care by [ZavalaSebas](https://github.com/ZavalaSebas) and the Bridge contributors.
+
+<sub>Your games. Your machine. Your collection.</sub>
 
 </div>
