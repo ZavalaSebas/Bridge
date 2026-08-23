@@ -214,9 +214,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private UserProfile _userProfile = UserProfileSettingsStore.Load();
 
-    // True during bulk imports so the per-row collection changes don't each
-    // trigger a full RebuildDetailedRows (O(n²) on large libraries); the import
-    // calls RebuildDetailedRows once when it finishes.
+    // True during bulk imports and metadata sync so the per-row collection
+    // changes don't each trigger a full RebuildDetailedRows (O(n²) on large
+    // libraries); those operations call RebuildDetailedRows once when they finish.
+    // TODO: this is a bool with per-method save/restore — safe for the sequential
+    // startup sync, but a depth counter would harden it against two overlapping
+    // suspend regions (deferred; would also touch the import + the CollectionChanged handler).
     private bool _suspendDetailedRows;
 
     [ObservableProperty]

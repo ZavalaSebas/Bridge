@@ -114,6 +114,8 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
+        var previousSuspend = _suspendDetailedRows;
+        _suspendDetailedRows = true;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -167,12 +169,16 @@ public partial class MainViewModel
                 }
             }
 
+            if (applied > 0 && !previousSuspend)
+                RebuildDetailedRows();
+
             StatusMessage = applied > 0
                 ? Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count)
                 : Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count);
         }
         finally
         {
+            _suspendDetailedRows = previousSuspend;
             EndStatusProgress();
         }
     }
@@ -472,6 +478,8 @@ public partial class MainViewModel
             ReportBatchProgress(0, totalWork);
         }
 
+        var previousSuspend = _suspendDetailedRows;
+        _suspendDetailedRows = true;
         try
         {
             if (needMetadata.Count > 0)
@@ -574,9 +582,13 @@ public partial class MainViewModel
                     }
                 }
             }
+
+            if (applied > 0 && !previousSuspend)
+                RebuildDetailedRows();
         }
         finally
         {
+            _suspendDetailedRows = previousSuspend;
             if (totalWork > 0)
                 EndStatusProgress();
         }
@@ -616,6 +628,8 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
+        var previousSuspend = _suspendDetailedRows;
+        _suspendDetailedRows = true;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -663,6 +677,9 @@ public partial class MainViewModel
                 }
             }
 
+            if (applied > 0 && !previousSuspend)
+                RebuildDetailedRows();
+
             StatusMessage = applied > 0
                 ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count)
                 : !IsNetworkAvailable()
@@ -671,6 +688,7 @@ public partial class MainViewModel
         }
         finally
         {
+            _suspendDetailedRows = previousSuspend;
             EndStatusProgress();
         }
     }
@@ -698,6 +716,8 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
+        var previousSuspend = _suspendDetailedRows;
+        _suspendDetailedRows = true;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -749,11 +769,15 @@ public partial class MainViewModel
                 }
             }
 
+            if (applied > 0 && !previousSuspend)
+                RebuildDetailedRows();
+
             if (applied > 0)
                 StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
         }
         finally
         {
+            _suspendDetailedRows = previousSuspend;
             EndStatusProgress();
         }
     }
@@ -781,6 +805,8 @@ public partial class MainViewModel
         var total = candidates.Count;
         BeginStatusProgress(indeterminate: total <= 1);
         ReportBatchProgress(0, total);
+        var previousSuspend = _suspendDetailedRows;
+        _suspendDetailedRows = true;
         try
         {
             using var throttle = new SemaphoreSlim(4);
@@ -832,11 +858,15 @@ public partial class MainViewModel
                 }
             }
 
+            if (applied > 0 && !previousSuspend)
+                RebuildDetailedRows();
+
             if (applied > 0)
                 StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
         }
         finally
         {
+            _suspendDetailedRows = previousSuspend;
             EndStatusProgress();
         }
     }
@@ -852,35 +882,47 @@ public partial class MainViewModel
 
         using var throttle = new SemaphoreSlim(2);
 
-        foreach (var batch in candidates.Chunk(8))
+        var previousSuspend = _suspendDetailedRows;
+        _suspendDetailedRows = true;
+        try
         {
-            await Task.WhenAll(batch.Select(game => Task.Run(async () =>
+            foreach (var batch in candidates.Chunk(8))
             {
-                await throttle.WaitAsync();
-                try
+                await Task.WhenAll(batch.Select(game => Task.Run(async () =>
                 {
-                    var live = TryGetLiveGame(game);
-                    if (live is null)
-                        return;
-
-                    if (!await _howLongToBeat.TryEnrichGameAsync(live))
-                        return;
-
-                    RunOnUiThread(() =>
+                    await throttle.WaitAsync();
+                    try
                     {
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                    });
-                }
-                catch (Exception ex)
-                {
-                    App.LogException(ex);
-                }
-                finally
-                {
-                    throttle.Release();
-                }
-            })));
+                        var live = TryGetLiveGame(game);
+                        if (live is null)
+                            return;
+
+                        if (!await _howLongToBeat.TryEnrichGameAsync(live))
+                            return;
+
+                        RunOnUiThread(() =>
+                        {
+                            _gameRepository.Update(live);
+                            RefreshListDisplay(live);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        App.LogException(ex);
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                    }
+                })));
+            }
+
+            if (!previousSuspend)
+                RebuildDetailedRows();
+        }
+        finally
+        {
+            _suspendDetailedRows = previousSuspend;
         }
     }
 
