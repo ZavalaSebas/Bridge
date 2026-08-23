@@ -1,3 +1,5 @@
+using Bridge.Core.Contracts;
+using Bridge.Core.Utilities;
 using Bridge.Metadata;
 using Bridge.Resources;
 using Bridge.Settings;
@@ -9,6 +11,7 @@ namespace Bridge.ViewModels;
 public partial class IgdbSettingsViewModel : ObservableObject
 {
     private readonly IgdbSettings _settings;
+    private readonly IGameRepository _gameRepository;
 
     [ObservableProperty]
     private string _clientId;
@@ -21,9 +24,10 @@ public partial class IgdbSettingsViewModel : ObservableObject
 
     public event Action? Saved;
 
-    public IgdbSettingsViewModel(IgdbSettings settings)
+    public IgdbSettingsViewModel(IgdbSettings settings, IGameRepository gameRepository)
     {
         _settings = settings;
+        _gameRepository = gameRepository;
         _clientId = settings.ClientId;
         _clientSecret = settings.ClientSecret;
     }
@@ -31,6 +35,10 @@ public partial class IgdbSettingsViewModel : ObservableObject
     [RelayCommand]
     private void Save()
     {
+        // Track if credentials changed to reset sync markers
+        var credentialsChanged = ClientId.Trim() != _settings.ClientId || 
+                                ClientSecret.Trim() != _settings.ClientSecret;
+
         _settings.ClientId = ClientId.Trim();
         _settings.ClientSecret = ClientSecret.Trim();
 
@@ -42,6 +50,14 @@ public partial class IgdbSettingsViewModel : ObservableObject
         {
             StatusMessage = Strings.Format(nameof(Strings.SaveFailedFormat), ex.Message);
             return;
+        }
+
+        // If IGDB credentials changed, reset metadata sync markers to retry with new config
+        if (credentialsChanged)
+        {
+            var allGames = _gameRepository.GetAll();
+            _gameRepository.UpdateManyMetadataSyncMarkers(allGames, MetadataSyncMarker.Metadata);
+            _gameRepository.UpdateManyMetadataSyncMarkers(allGames, MetadataSyncMarker.Links);
         }
 
         StatusMessage = Strings.Saved;
