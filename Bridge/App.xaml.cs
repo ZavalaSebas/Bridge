@@ -47,9 +47,7 @@ namespace Bridge
                 return;
             }
 
-            Bridge.StartupTiming.Begin(); // TEMP: startup timing (revert)
             LanguageSettingsStore.ApplySavedLanguage();
-            Bridge.StartupTiming.Mark("ApplySavedLanguage"); // TEMP
             WindowsStartupRegistration.ApplySavedPreference();
 
             EventManager.RegisterClassHandler(
@@ -67,7 +65,6 @@ namespace Bridge
             var splash = new SplashWindow();
             splash.Show();
             splash.PumpFrame();
-            Bridge.StartupTiming.Mark("splash shown"); // TEMP
 
             try
             {
@@ -93,10 +90,8 @@ namespace Bridge
             // Numbered file/folder migrations under AppData (settings layout, legacy
             // paths). See AppDataMigrator — runs before bridge.db EF migrations.
             AppDataMigrator.MigrateToLatest();
-            Bridge.StartupTiming.Mark("appdata restore + migrate"); // TEMP
 
             var databaseRecovery = BridgeDatabaseRecovery.TryRestoreFromUpdateBackup();
-            Bridge.StartupTiming.Mark("db recovery"); // TEMP
             if (databaseRecovery == BridgeDatabaseRecovery.RecoveryResult.FileLocked)
             {
                 MessageDialogWindow.Show(
@@ -122,7 +117,6 @@ namespace Bridge
             var services = new ServiceCollection();
             ConfigureServices(services);
             Services = services.BuildServiceProvider();
-            Bridge.StartupTiming.Mark("configure services + DI"); // TEMP
 
             // Real EF migrations (see Bridge.Storage — Migrations/ and
             // BridgeDbMigrator). A fresh DB gets InitialCreate applied by
@@ -133,7 +127,6 @@ namespace Bridge
             var factory = Services.GetRequiredService<IDbContextFactory<BridgeDbContext>>();
             using var ctx = factory.CreateDbContext();
             ctx.MigrateToLatest();
-            Bridge.StartupTiming.Mark("EF migrate"); // TEMP
 
             // View-ViewModel wiring per DEVELOPMENT.md's MVVM section: build the
             // ViewModel via DI, assign it as the View's DataContext, then show it.
@@ -141,7 +134,6 @@ namespace Bridge
             // gets created. The saved theme accent is applied before the window
             // loads so the first render already uses it.
             ThemeManager.Load();
-            Bridge.StartupTiming.Mark("theme load"); // TEMP
 
             // If anything here throws (corrupt DB making EnsureCreated/VM fail,
             // broken XAML), the dispatcher handler below swallows it and the app
@@ -150,7 +142,6 @@ namespace Bridge
             try
             {
                 var viewModel = Services.GetRequiredService<MainViewModel>();
-                Bridge.StartupTiming.Mark("MainViewModel built"); // TEMP
                 var mainWindow = new MainWindow
                 {
                     DataContext = viewModel
@@ -160,17 +151,10 @@ namespace Bridge
                 // window opens with it already up (no black flash). Disk/local only —
                 // returns immediately if it would need a download.
                 viewModel.WarmSelectedHeroFromDisk();
-                // TEMP: confirm the hero is warmed at Hero (and not duplicated at Native) before Show
-                var heroBg = viewModel.SelectedGame?.BackgroundImage;
-                Bridge.StartupTiming.Note(HeroBackground.IsCustom(heroBg)
-                    ? $"pre-Show hero cached: Native={RemoteImageCache.IsCached(heroBg!, ArtworkDecodeSize.Native)} Hero={RemoteImageCache.IsCached(heroBg!, ArtworkDecodeSize.Hero)}"
-                    : "pre-Show hero: default/empty");
-                Bridge.StartupTiming.Mark("hero warmed (pre-Show)"); // TEMP
                 // Start warming images while the splash is still up (non-blocking).
                 _ = viewModel.WaitForStartupArtworkAsync();
                 splash.Close();
                 mainWindow.Show();
-                Bridge.StartupTiming.Mark("MainWindow.Show"); // TEMP
                 TrayIcon.Attach(mainWindow);
                 ApplicationSingleInstance.ListenForShowWindowRequests(TrayIcon.ShowMainWindow);
 
@@ -216,7 +200,6 @@ namespace Bridge
                     ? Wpf.Ui.Controls.WindowBackdropType.Mica
                     : Wpf.Ui.Controls.WindowBackdropType.None,
                 updateAccent: false);
-            Bridge.StartupTiming.Mark("backdrop applied"); // TEMP
 
             Exit += (_, _) =>
             {
@@ -275,11 +258,9 @@ namespace Bridge
             // to MainViewModel without extra plumbing. Metadata and download
             // HttpClients are separate so long RetroArch downloads never share
             // timeout state with quick metadata/API calls.
-            Bridge.StartupTiming.Mark("DI registration (pre-settings)"); // TEMP
             services.AddSingleton(IgdbSettingsStore.Load());
             services.AddSingleton(RetroAchievementsSettingsStore.Load());
             services.AddSingleton(SteamGridDbSettingsStore.Load());
-            Bridge.StartupTiming.Mark("settings stores load"); // TEMP
             services.AddSingleton<MetadataHttpClient>();
             services.AddSingleton<DownloadHttpClient>();
 

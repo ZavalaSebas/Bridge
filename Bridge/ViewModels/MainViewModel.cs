@@ -653,7 +653,6 @@ public partial class MainViewModel : ObservableObject
     private void RebuildDetailedRows()
     {
         EnsureReferenceCaches();
-        Bridge.StartupTiming.Mark("VM.EnsureReferenceCaches"); // TEMP
         DetailedRows.Clear();
         foreach (var item in GamesView)
         {
@@ -741,7 +740,6 @@ public partial class MainViewModel : ObservableObject
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
-        Bridge.StartupTiming.Mark("VM.LoadGames (total)"); // TEMP
         SelectedGame = SelectInitialGame(Games);
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
@@ -753,7 +751,6 @@ public partial class MainViewModel : ObservableObject
             }
         };
         RebuildDetailedRows();
-        Bridge.StartupTiming.Mark("VM.RebuildDetailedRows (ctor)"); // TEMP
         ActiveGenreFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         ActivePlatformFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
         ActiveLibraryFilters.CollectionChanged += (_, _) => OnDetailFiltersChanged();
@@ -869,7 +866,6 @@ public partial class MainViewModel : ObservableObject
         if (urls.Count == 0)
             return;
 
-        Bridge.StartupTiming.Mark($"preload start ({urls.Count} urls)"); // TEMP
         BeginStatusProgress(indeterminate: urls.Count <= 1);
         ReportBatchProgress(0, urls.Count);
         try
@@ -877,19 +873,12 @@ public partial class MainViewModel : ObservableObject
             await RemoteImageCache.PreloadAndWaitAsync(
                 urls,
                 new Progress<(int Completed, int Total)>(p => ReportBatchProgress(p.Completed, p.Total)));
-            // TEMP: hero cache diagnostic + fin de la medición de arranque
-            var heroBg = SelectedGame?.BackgroundImage;
-            Bridge.StartupTiming.Note(string.IsNullOrWhiteSpace(heroBg)
-                ? "hero background: Default/empty -> se muestra fallback"
-                : $"hero background cached: Native={RemoteImageCache.IsCached(heroBg, ArtworkDecodeSize.Native)} Hero={RemoteImageCache.IsCached(heroBg, ArtworkDecodeSize.Hero)}");
-            Bridge.StartupTiming.Stop("preload done (hero listo)"); // TEMP
         }
         finally
         {
             EndStatusProgress();
         }
     }
-
 
     // Startup preload: selected game hero art + the first grid page, not the
     // entire library — keeps cold start snappy on large collections.
@@ -959,14 +948,17 @@ public partial class MainViewModel : ObservableObject
 
     private void LoadGames()
     {
-        MigrateUserManagedGames();
+        // Load the whole library once and reuse it for both the one-time source
+        // migration and the in-memory population. A second GetAll() here would
+        // re-query and re-materialize every row for no benefit.
+        var games = _gameRepository.GetAll();
+        MigrateUserManagedGames(games);
 
-        foreach (var game in _gameRepository.GetAll())
+        foreach (var game in games)
         {
             ApplySteamLocalArtwork(game);
             AddGameSorted(game);
         }
-        Bridge.StartupTiming.Mark("VM.LoadGames GetAll+addSorted"); // TEMP
 
         // IsRunning is in-memory only (not persisted). Reset on startup so a
         // stale in-process flag can't survive a hot reload during development.
@@ -978,14 +970,13 @@ public partial class MainViewModel : ObservableObject
         }
 
         RefreshStatistics();
-        Bridge.StartupTiming.Mark("VM.RefreshStatistics (LibraryStatistics.Compute)"); // TEMP
         RefreshAllEmulatorDownloadStates();
     }
 
-    private void MigrateUserManagedGames()
+    private void MigrateUserManagedGames(IReadOnlyList<Game> games)
     {
         var bridgeSourceId = InstalledGameImportService.EnsureBridgeSource(_sourceRepository);
-        foreach (var game in _gameRepository.GetAll())
+        foreach (var game in games)
         {
             var changed = false;
 
@@ -1009,9 +1000,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     // Startup selection: resume where the user left off. On a fresh app start the
-    // is selected (LastActivity is persisted when a game is launched). Falls back
-    // to the first game when nothing has been played yet. Pure so it can be
-    // unit-tested without constructing the whole MainViewModel.
+    // most-recently-played game is selected (LastActivity is persisted when a game
+    // is launched). Falls back to the first game when nothing has been played yet.
+    // Pure so it can be unit-tested without constructing the whole MainViewModel.
     public static Game? SelectInitialGame(IEnumerable<Game> games)
     {
         var lastPlayed = games
@@ -1137,15 +1128,16 @@ public partial class MainViewModel : ObservableObject
         if (!uint.TryParse(game.ExternalId, out _))
             return;
 
-        var icon = SteamLocalIconResolver.TryGetLocalIconPath(game.ExternalId);
+        // One registry read + one directory enumeration for all three, instead of
+        // three of each — this runs for every Steam game on the library-load path.
+        var (icon, cover, background) = SteamLocalIconResolver.TryGetLocalArtwork(game.ExternalId);
+
         if (!string.IsNullOrWhiteSpace(icon) && HeroBackground.ShouldFillArtwork(game.Icon, overwrite))
             game.Icon = icon;
 
-        var cover = SteamLocalIconResolver.TryGetLocalCoverPath(game.ExternalId);
         if (!string.IsNullOrWhiteSpace(cover) && HeroBackground.ShouldFillArtwork(game.CoverImage, overwrite))
             game.CoverImage = cover;
 
-        var background = SteamLocalIconResolver.TryGetLocalBackgroundPath(game.ExternalId);
         if (!string.IsNullOrWhiteSpace(background) &&
             HeroBackground.ShouldFillHeroFromSteamLocal(game.BackgroundImage, overwrite))
             game.BackgroundImage = background;
