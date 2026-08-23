@@ -30,6 +30,21 @@ public static class BridgeDbMigrator
         var applied = context.Database.GetAppliedMigrations().ToList();
         var migrations = context.Database.GetMigrations().ToList();
 
+        // Fast path for the common case (every startup after the first): the
+        // database already has a migration history and every known migration is
+        // applied. Returning here skips Database.Migrate(), which otherwise
+        // re-queries the history table and spins up the whole migration pipeline on
+        // each launch even when the schema is already current. The extra
+        // HasPendingModelChanges() check is a safety net — if the model and the
+        // snapshot ever drift out of sync, we fall through to the normal path
+        // instead of silently skipping migration work.
+        if (applied.Count > 0 &&
+            migrations.All(applied.Contains) &&
+            !context.Database.HasPendingModelChanges())
+        {
+            return;
+        }
+
         // Baseline: the DB already has the InitialCreate schema (EnsureCreated
         // era) but no migration history. Record only InitialCreate as applied —
         // do NOT mark later migrations applied, or AddUniqueIndexes and friends
