@@ -259,6 +259,7 @@ public partial class SteamGridDbBrowserWindow : FluentWindow
             core.NewWindowRequested -= OnNewWindowRequested;
         }
 
+        Browser.Dispose();
         base.OnClosed(e);
     }
 }
