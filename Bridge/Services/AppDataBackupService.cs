@@ -140,8 +140,9 @@ public static class AppDataBackupService
             RestoreProfileDirectory(stagingPath, appDataPath);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            App.LogException(ex);
             return false;
         }
         finally

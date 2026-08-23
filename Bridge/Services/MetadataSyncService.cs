@@ -48,7 +48,7 @@ public sealed class MetadataSyncService(
         bool romImport,
         CancellationToken cancellationToken = default) =>
         SearchByNameAsync(
-            romImport ? gameName : gameName,
+            gameName,
             romImport ? MetadataSearchMode.RomImport : MetadataSearchMode.SteamFirst,
             cancellationToken);
 

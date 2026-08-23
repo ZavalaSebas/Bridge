@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using SharpCompress.Archives;
-
 namespace Bridge.Emulation;
 
 /// MD5 hash of ROM bytes — used by RetroAchievements for game identification.
@@ -44,20 +42,5 @@ public static class RomMd5
         Convert.ToHexString(MD5.HashData(stream)).ToLowerInvariant();
 
     private static string? TryComputeFromArchiveEntry(string archivePath, string entryPath)
-    {
-        if (!File.Exists(archivePath))
-            return null;
-
-        using var archive = ArchiveFactory.OpenArchive(archivePath);
-        var normalizedEntry = entryPath.Replace('\\', '/').TrimStart('/');
-        var entry = archive.Entries.FirstOrDefault(candidate =>
-            !candidate.IsDirectory &&
-            string.Equals(candidate.Key?.Replace('\\', '/').TrimStart('/'), normalizedEntry, StringComparison.OrdinalIgnoreCase));
-
-        if (entry is null)
-            return null;
-
-        using var stream = entry.OpenEntryStream();
-        return ComputeHex(stream);
-    }
+        => RomArchiveEntryLookup.TryComputeHexFromArchiveEntry(archivePath, entryPath, ComputeHex);
 }

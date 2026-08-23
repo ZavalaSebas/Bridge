@@ -17,9 +17,6 @@ public sealed class RetroArchCheatService
     private static readonly Regex CheatDatabasePathLinePattern =
         new(@"^[ \t]*cheat_database_path[ \t]*=.*\r?\n?", RegexOptions.Multiline);
 
-    private static readonly Regex RguiConfigDirectoryPattern =
-        new(@"^[ \t]*rgui_config_directory[ \t]*=[ \t]*""?([^""\r\n]*)""?[ \t]*$", RegexOptions.Multiline);
-
     private readonly HttpClient _httpClient;
     private readonly string _cheatsDirectory;
 
@@ -120,7 +117,7 @@ public sealed class RetroArchCheatService
         }
 
         var coreName = platform.RetroArchCoreName!;
-        var retroArchConfigDirectory = ResolveConfigDirectory(retroArchExecutablePath);
+        var retroArchConfigDirectory = RetroArchConfigPaths.ResolveConfigDirectory(retroArchExecutablePath);
         var cheatBaseName = RomCheatNameResolver.GetCheatBaseName(game);
         var overridePath = Path.Combine(retroArchConfigDirectory, coreName, $"{cheatBaseName}.cfg");
         var existing = File.Exists(overridePath) ? await File.ReadAllTextAsync(overridePath, ct) : string.Empty;
@@ -164,28 +161,6 @@ public sealed class RetroArchCheatService
         var sourceUrl = File.Exists(sourcePath) ? await File.ReadAllTextAsync(sourcePath, ct) : null;
 
         return new CheatsResult { Outcome = CheatFetchOutcome.Success, Cheats = parseResult.Cheats, SourceFileUrl = sourceUrl };
-    }
-
-    private static string ResolveConfigDirectory(string retroArchExecutablePath)
-    {
-        var executableDirectory = Path.GetDirectoryName(retroArchExecutablePath) ?? string.Empty;
-        var mainConfigPath = Path.Combine(executableDirectory, "retroarch.cfg");
-        if (!File.Exists(mainConfigPath))
-        {
-            return executableDirectory;
-        }
-
-        var match = RguiConfigDirectoryPattern.Match(File.ReadAllText(mainConfigPath));
-        var configuredValue = match.Success ? match.Groups[1].Value.Trim() : string.Empty;
-
-        if (configuredValue.Length == 0 || configuredValue == "default")
-        {
-            return executableDirectory;
-        }
-
-        return configuredValue[0] == ':'
-            ? Path.Combine(executableDirectory, configuredValue[1..].TrimStart('\\', '/'))
-            : configuredValue;
     }
 
     private string GetGameRootDirectory(Game game) => Path.Combine(_cheatsDirectory, game.Id.ToString());

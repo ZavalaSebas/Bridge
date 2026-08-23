@@ -94,7 +94,8 @@ public class SteamLibraryImporter
     }
 
     internal static GameMetadata? ParseManifest(string manifestPath, string steamAppsDir)
-    {        Dictionary<string, object> appState;
+    {
+        Dictionary<string, object> appState;
         try
         {
             var root = VdfParser.Parse(File.ReadAllText(manifestPath));

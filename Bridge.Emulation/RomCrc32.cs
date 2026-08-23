@@ -1,6 +1,4 @@
 using System.Buffers;
-using SharpCompress.Archives;
-
 namespace Bridge.Emulation;
 
 /// CRC-32 (PKZIP / clrmame / No-Intro polynomial) for ROM identification.
@@ -74,22 +72,7 @@ public static class RomCrc32
     }
 
     private static string? TryComputeFromArchiveEntry(string archivePath, string entryPath)
-    {
-        if (!File.Exists(archivePath))
-            return null;
-
-        using var archive = ArchiveFactory.OpenArchive(archivePath);
-        var normalizedEntry = entryPath.Replace('\\', '/').TrimStart('/');
-        var entry = archive.Entries.FirstOrDefault(candidate =>
-            !candidate.IsDirectory &&
-            string.Equals(candidate.Key?.Replace('\\', '/').TrimStart('/'), normalizedEntry, StringComparison.OrdinalIgnoreCase));
-
-        if (entry is null)
-            return null;
-
-        using var stream = entry.OpenEntryStream();
-        return ComputeHex(stream);
-    }
+        => RomArchiveEntryLookup.TryComputeHexFromArchiveEntry(archivePath, entryPath, ComputeHex);
 
     private static uint Compute(ReadOnlySpan<byte> data)
     {

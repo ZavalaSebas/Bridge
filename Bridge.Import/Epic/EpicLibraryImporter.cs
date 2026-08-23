@@ -109,8 +109,9 @@ public class EpicLibraryImporter
                     return normalized;
                 }
             }
-            catch
+            catch (Exception)
             {
+                // Malformed/too-long/invalid path — skip this candidate.
             }
         }
 
@@ -201,9 +202,11 @@ public class EpicLibraryImporter
             }
             catch (IOException)
             {
+                // Locked/half-written/removed manifest — skip this file.
             }
             catch (UnauthorizedAccessException)
             {
+                // No permission to read this manifest — skip this file.
             }
         }
 
