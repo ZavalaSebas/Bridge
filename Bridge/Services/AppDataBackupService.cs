@@ -17,9 +17,10 @@ public static class AppDataBackupService
 {
     public const string RestoreStagingDirectoryName = ".restore-staging";
     public const string RestorePendingMarkerFileName = ".restore-pending";
+    private const string ConfigDirectoryName = "config";
 
     private static readonly byte[] SqliteHeader = "SQLite format 3\0"u8.ToArray();
-    private static readonly string[] SettingFileNames =
+    private static readonly string[] LegacySettingFileNames =
     [
         "theme.json",
         "viewmode.txt",
@@ -135,6 +136,7 @@ public static class AppDataBackupService
                 BridgeDatabaseRecovery.DeleteSidecarFiles(databasePath);
 
             File.Copy(Path.Combine(stagingPath, "bridge.db"), databasePath, overwrite: true);
+            RestoreConfigDirectory(stagingPath, appDataPath);
             RestoreSettingFiles(stagingPath, appDataPath);
             RestoreImageCache(stagingPath, appDataPath);
             RestoreProfileDirectory(stagingPath, appDataPath);
@@ -153,7 +155,7 @@ public static class AppDataBackupService
 
     private static void RestoreSettingFiles(string stagingRoot, string appDataPath)
     {
-        foreach (var name in SettingFileNames)
+        foreach (var name in LegacySettingFileNames)
         {
             var source = Path.Combine(stagingRoot, name);
             if (!File.Exists(source))
@@ -161,6 +163,19 @@ public static class AppDataBackupService
 
             File.Copy(source, Path.Combine(appDataPath, name), overwrite: true);
         }
+    }
+
+    private static void RestoreConfigDirectory(string stagingRoot, string appDataPath)
+    {
+        var source = Path.Combine(stagingRoot, ConfigDirectoryName);
+        var destination = Path.Combine(appDataPath, ConfigDirectoryName);
+        if (!Directory.Exists(source))
+            return;
+
+        if (Directory.Exists(destination))
+            Directory.Delete(destination, recursive: true);
+
+        CopyDirectoryIfExists(source, destination);
     }
 
     private static void RestoreImageCache(string stagingRoot, string appDataPath)
@@ -232,7 +247,13 @@ public static class AppDataBackupService
                 if (File.Exists(databasePath))
                     BackupDatabase(databasePath, Path.Combine(tempRoot, "bridge.db"));
 
-                CopySettingFiles(appDataPath, tempRoot);
+                CopyConfigDirectory(appDataPath, tempRoot);
+                if (!Directory.Exists(Path.Combine(appDataPath, ConfigDirectoryName)))
+                    CopySettingFiles(appDataPath, tempRoot);
+
+                CopyFileIfExists(
+                    Path.Combine(appDataPath, Config.AppDataVersionFileName),
+                    Path.Combine(tempRoot, Config.AppDataVersionFileName));
                 CopyDirectoryIfExists(
                     Path.Combine(appDataPath, "image-cache"),
                     Path.Combine(tempRoot, "image-cache"));
@@ -275,12 +296,19 @@ public static class AppDataBackupService
 
     private static void CopySettingFiles(string appDataPath, string destinationRoot)
     {
-        foreach (var name in SettingFileNames)
+        foreach (var name in LegacySettingFileNames)
         {
             var source = Path.Combine(appDataPath, name);
             if (File.Exists(source))
                 File.Copy(source, Path.Combine(destinationRoot, name), overwrite: true);
         }
+    }
+
+    private static void CopyConfigDirectory(string appDataPath, string destinationRoot)
+    {
+        CopyDirectoryIfExists(
+            Path.Combine(appDataPath, ConfigDirectoryName),
+            Path.Combine(destinationRoot, ConfigDirectoryName));
     }
 
     private static void CopyDirectoryIfExists(string sourceDirectory, string destinationDirectory)
@@ -307,13 +335,10 @@ public static class AppDataBackupService
             contents = new[]
             {
                 "bridge.db",
-                "theme.json",
-                "viewmode.txt",
-                "scrollpositions.txt",
-                "igdb-settings.json",
-                "update-channel.txt",
+                "config/",
                 Config.AppDataVersionFileName,
-                "image-cache/"
+                "image-cache/",
+                "profile/"
             }
         };
 
@@ -331,5 +356,11 @@ public static class AppDataBackupService
         }
 
         return null;
+    }
+
+    private static void CopyFileIfExists(string source, string destination)
+    {
+        if (File.Exists(source))
+            File.Copy(source, destination, overwrite: true);
     }
 }
