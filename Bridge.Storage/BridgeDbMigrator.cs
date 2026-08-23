@@ -34,10 +34,16 @@ public static class BridgeDbMigrator
         // database already has a migration history and every known migration is
         // applied. Returning here skips Database.Migrate(), which otherwise
         // re-queries the history table and spins up the whole migration pipeline on
-        // each launch even when the schema is already current. The extra
-        // HasPendingModelChanges() check is a safety net — if the model and the
-        // snapshot ever drift out of sync, we fall through to the normal path
-        // instead of silently skipping migration work.
+        // each launch even when the schema is already current.
+        //
+        // The HasPendingModelChanges() guard is essential, not just an optimization
+        // gate. Migrate() validates the runtime model against the migration snapshot
+        // even on a no-op run, so skipping it unconditionally would let a build that
+        // forgot a required migration run against a stale schema until normal queries
+        // fail. Falling through whenever the model has drifted preserves that
+        // validation. (Caveat for the future: a UseSeeding seeder would also run on
+        // no-op migrations, so this shortcut would have to account for it if one is
+        // ever added.)
         if (applied.Count > 0 &&
             migrations.All(applied.Contains) &&
             !context.Database.HasPendingModelChanges())

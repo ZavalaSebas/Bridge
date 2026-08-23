@@ -25,18 +25,16 @@ public static class ExeIconLoader
 
         var icon = Load(exePath);
 
-        // Stop growing once full; a miss past the cap simply re-extracts on demand
-        // (icon extraction is cheap and rare) rather than evicting live entries.
-        // If another thread cached the same path first, return the shared instance
-        // so callers still converge on one BitmapSource per path.
-        if (Cache.Count < MaxCacheEntries &&
-            !Cache.TryAdd(exePath, icon) &&
-            Cache.TryGetValue(exePath, out var raced))
-        {
-            return raced;
-        }
+        // Cache below the cap; a miss past the cap re-extracts on demand rather than
+        // evicting live entries (icon extraction is cheap and rare). Either way,
+        // re-read afterwards so that if another thread cached this path first we
+        // return that shared instance — callers converge on one BitmapSource per
+        // path. Only fall back to the locally loaded value when nothing is cached,
+        // i.e. when the capacity cap prevented the insert.
+        if (Cache.Count < MaxCacheEntries)
+            Cache.TryAdd(exePath, icon);
 
-        return icon;
+        return Cache.TryGetValue(exePath, out var winner) ? winner : icon;
     }
 
     private static BitmapSource? Load(string path)
