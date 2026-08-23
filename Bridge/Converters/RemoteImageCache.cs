@@ -64,6 +64,28 @@ public static class RemoteImageCache
     public static bool IsCached(string url, ArtworkDecodeSize size = ArtworkDecodeSize.Native) =>
         Cache.ContainsKey(new CacheKey(url, size));
 
+    // TEMP: memory diagnostics — count and rough decoded-byte estimate of the live
+    // image cache. Frozen BitmapImages are thread-safe to read. Reversible: delete
+    // this method and the MemoryDiagnostics caller.
+    internal static (int Count, long ApproxBytes) MemorySnapshot()
+    {
+        long bytes = 0;
+        foreach (var image in Cache.Values)
+        {
+            try
+            {
+                // Decoded BGRA32 footprint estimate: width * height * 4 bytes.
+                bytes += (long)image.PixelWidth * image.PixelHeight * 4;
+            }
+            catch
+            {
+                // Ignore any image that can't report its dimensions.
+            }
+        }
+
+        return (Cache.Count, bytes);
+    }
+
     /// <summary>
     /// Synchronously decodes <paramref name="url"/> into the (url, size) cache from
     /// LOCAL sources only — a local file path, or a remote image whose bytes are
