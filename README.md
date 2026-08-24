@@ -17,9 +17,9 @@
 &nbsp;&nbsp;&middot;&nbsp;&nbsp;
 [Website](https://zavalasebas.github.io/Bridge/)
 &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-[Documentation](DEVELOPMENT.md)
+[Documentation](docs/DEVELOPMENT.md)
 &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-[Contribute](CONTRIBUTING.md)
+[Contribute](docs/CONTRIBUTING.md)
 
 </div>
 
@@ -224,7 +224,7 @@ flowchart TB
 | [`Bridge/`](Bridge/) | WPF UI, dependency injection, launch orchestration, settings, and updates |
 | [`Bridge.Tests/`](Bridge.Tests/) | Unit and opt-in live integration tests |
 
-Read the decisions behind the boundaries in [**ARCHITECTURE.md**](ARCHITECTURE.md).
+Read the decisions behind the boundaries in [**ARCHITECTURE.md**](docs/ARCHITECTURE.md).
 
 ---
 
@@ -241,17 +241,17 @@ dotnet build Bridge.slnx -c Release --no-restore
 dotnet test Bridge.slnx -c Release --filter "Category!=Integration"
 ```
 
-Live-network provider tests are intentionally excluded from the normal suite. See the [testing guide](DEVELOPMENT.md#tests) before running integration tests.
+Live-network provider tests are intentionally excluded from the normal suite. See the [testing guide](docs/DEVELOPMENT.md#tests) before running integration tests.
 
 ### Find your way around
 
 | If you want to... | Start here |
 |---|---|
-| Understand setup, builds, tests, migrations, and releases | [Development guide](DEVELOPMENT.md) |
-| Understand why the system is shaped this way | [Architecture decisions](ARCHITECTURE.md) |
-| See what changed between releases | [Changelog](CHANGELOG.md) |
-| Propose or implement a change | [Contributing guide](CONTRIBUTING.md) |
-| Track current scope and future work | [Project plan](PLAN.md) |
+| Understand setup, builds, tests, migrations, and releases | [Development guide](docs/DEVELOPMENT.md) |
+| Understand why the system is shaped this way | [Architecture decisions](docs/ARCHITECTURE.md) |
+| See what changed between releases | [Changelog](docs/CHANGELOG.md) |
+| Propose or implement a change | [Contributing guide](docs/CONTRIBUTING.md) |
+| Track current scope and future work | [Project plan](docs/PLAN.md) |
 | Deploy the zero-config IGDB backend | [IGDB Worker guide](Bridge.Infra/igdb-proxy-worker/README.md) |
 
 Contributions are welcome. Please open an issue before beginning a large behavioral or architectural change so the direction can be discussed first.

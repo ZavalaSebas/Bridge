@@ -34,15 +34,15 @@ When making changes, consider:
 
 | Document | Role |
 |----------|------|
-| [README.md](README.md) | User-facing overview, features, build instructions |
+| [README.md](../README.md) | User-facing overview, features, build instructions |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Developer guide (this file) — architecture, workflow, key files |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ADRs — why Bridge is structured this way |
 | [PLAN.md](PLAN.md) | Phase tracker and scope (living plan) |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes ([Keep a Changelog](https://keepachangelog.com/)) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution standards |
-| [PROJECT_FOUNDATION.md](PROJECT_FOUNDATION.md) | Archival notes from project inception — **not** a Bridge implementation spec |
-| [Bridge.Infra/igdb-proxy-worker/README.md](Bridge.Infra/igdb-proxy-worker/README.md) | Cloudflare Worker deploy guide |
-| [docs/index.html](docs/index.html) | Static landing page (updated by release CI) |
+| [PROJECT_FOUNDATION.md](archive/PROJECT_FOUNDATION.md) | Archival notes from project inception — **not** a Bridge implementation spec (archived in 1.0) |
+| [Bridge.Infra/igdb-proxy-worker/README.md](../Bridge.Infra/igdb-proxy-worker/README.md) | Cloudflare Worker deploy guide |
+| [index.html](index.html) | Static landing page (updated by release CI) |
 
 **Code = truth.** When docs disagree with the repo, update the docs.
 
@@ -297,11 +297,11 @@ All styling is defined in `Bridge/Styles/Theme.xaml` (indigo-tinted dark palette
 **Single source of truth**: `<Version>` in `Bridge/Bridge.csproj`
 
 ```xml
-<Version>0.2.0</Version>
+<Version>1.0.0</Version>
 <AssemblyVersion>$(Version).0</AssemblyVersion>
 ```
 
-- `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `0.2.0.0`)
+- `AssemblyVersion` derives from `$(Version)` so assembly version is correct (e.g., `1.0.0.0`) — single source of truth for the updater and About window
 - **Updater (implemented)** — `Bridge/Services/AppUpdateService.cs` checks `https://api.github.com/repos/{owner}/{repo}/releases?per_page=100` (User-Agent `Bridge/{version}`, `Accept: application/vnd.github+json`), picks the newest release that matches the **update channel**, compares its `tag_name` numeric prefix against `Config.AssemblyVersion`, and when remote is newer finds the `Bridge.exe` asset (`browser_download_url`). The channel lives in `UpdateChannelSettingsStore` (`update-channel.txt` under AppDataPath): **Stable** (default) skips GitHub prereleases, **Beta** accepts them, toggled in **Settings → Updates**. Prerelease tags keep their suffix in the repo but are compared by numeric prefix only (`v0.3.0-beta1` never beats an installed `0.3.0` stable, so a stable user can't be downgraded onto a beta); the `prerelease` flag is what distinguishes channels. Registered as a singleton in `App.xaml.cs` alongside the shared `HttpClient` (whose `Timeout` is now `Config.RequestTimeoutSeconds = 10`). The check runs automatically (silently) at startup and on demand from **Check for updates…** in the app menu; "Not now" on the confirm dialog keeps the update pending and shows the download button next to the random-game button (tooltip + `ApplyPendingUpdateCommand`). On the stable channel, when a newer prerelease exists but no newer stable, the up-to-date message points the user to the beta toggle.
 
   The most critical part is the **safe executable swap** — never overwrite the running `.exe` directly:

@@ -1,8 +1,8 @@
 # Bridge - Project Plan
 
-> **Status:** In development — MVP core loop complete (Fases 1–8). Fase 9 consolidation and audit batches are largely done; remaining gaps are tracked in the phase table below.
+> **Status:** Stable — 1.0 released. All planned phases (Fases 0–9) complete. Future work is tracked in the backlog below.
 >
-> **Last updated:** 2026-08-23 (v0.9.0 — achievements, covers layout, compact art)
+> **Last updated:** 2026-08-24 (v1.0.0 — Home hub, statistics history, save backups, ROM organizer)
 
 ## Project Overview
 
@@ -48,11 +48,13 @@ A modular-monolith WPF application (no runtime plugins) split into internal-only
 
 ## Scope: Current vs Future
 
-### Current Version (0.9.0)
-- **Achievements** — Steam, Epic, and RetroAchievements ROM progress in the detail panel; RetroArch rcheevos unlock-on-play; No-Intro DAT ROM naming on scan
-- **Covers detail layout** — compact 320px info panel (default) or full details at half the window width
-- **AppData `config/` layout** — settings and DPAPI secrets migrated under `config/` (v2 AppData migration)
-- **Metadata sync markers** — skip re-download for 30 days when a game already has metadata
+### Current Version (1.0.0)
+- **Home hub** — streaming-style featured carousel, draggable rows, right rail with Continue/achievements, quick-view popup, startup view setting
+- **Statistics history** — play sessions (`PlaySessions`, `CompletedAt`) with completion board and historical timeline
+- **Save backups** — ROM and per-game PC save snapshots, restore, and library pack export/import
+- **ROM organizer** — per-platform folders and DAT title renaming
+- **Hero side buttons & free-game bell** — floating side tabs, GamerPower alerts, minimize-on-launch, danger zone purge
+- **Previous (0.9.0)** — Achievements, covers layout, compact art, `config/` layout, metadata sync markers
 
 ### Previous (0.8.0)
 - **SteamGridDB artwork** — optional community icons, covers, and hero banners in the game editor (API key setup, picker with preview)
@@ -106,10 +108,33 @@ The MVP defined in the foundation notes:
 - **ROMs sidebar (v0.5.0)** — filters the library to games with ROMs
 - **Detail panel position / keep selection (v0.5.0)** — dock detail panel left or right; optional keep selection when switching List/Covers/Table
 
-### Future Versions — Backlog
-- Additional library sources beyond Steam and Epic (GOG, itch.io, ...)
+### Future Versions — Backlog (1.1+ candidates — added 2026-08-24)
+
+#### Import & library sources
+- **More launchers** — EA App (Origin), Xbox / Microsoft Store, Ubisoft Connect, GOG Galaxy beyond Steam/Epic
+- **Account-linked import** — OAuth / authenticated session per launcher to fetch full catalog (including not-installed games) with richer fields (ownership, cloud saves, achievements)
+- **Not-installed behavior** — verify UX for games without local install (install / download action, grayed play, metadata-only display)
+
+#### Metadata & external services
+- **More metadata providers** — ScreenScraper (priority for ROMs), plus fallback chain tuning
+- **Nexus Mods integration** — browse / track modded titles per game
+- **Discord Rich Presence** — especially for ROMs / RetroArch sessions (game + playtime)
+
+#### Emulation
+- **RetroArch settings hub** — expose `retroarch.cfg` / core options in Settings (video, input, shaders) instead of hand-editing
+- **External emulator choice** — allow a user-configured standalone emulator per system/profile; RetroArch remains default but not mandatory
+
+#### UI / visual polish
+- **More animations & polish** — page/hero/row transitions, skeleton states
+- **Extended theming** — primary + secondary accent colors (currently single accent `#007ACC` / Play `#10B981` in `Bridge/Styles/Theme.xaml`)
+- **Full i18n** — every UI string through `Strings.resx` (audit remaining hard-coded literals) for multi-language packs
+- **Nintendo Switch-style view** — horizontal scroll / grid + detail inspired by Switch home
+- **Square covers toggle** — Covers view option for 1:1 covers instead of 2:3 (current 200×300 in `Bridge/Views/HomeView.xaml` / `MainWindow.xaml`)
+- **What to Play Next expansion** — more heuristics for the Home rows (`MainViewModel.Home.cs`) beyond recently added / continue / favorites (e.g., backlog, unfinished, random from underplayed)
+
+#### General
 - Full metadata provider pipeline (`SkipExistingValues` semantics, result caching — multi-source field resolution already exists)
-- Full emulation subsystem: multiple emulator profiles, scanner exclusions. (Bridge-managed RetroArch covers 15 systems today via `RomPlatformCatalog`; No-Intro DAT matching and RetroAchievements hash lookup exist for ROM titles and achievements; third-party emulators still need manual configuration.)
+- Full emulation subsystem: multiple emulator profiles, scanner exclusions. (Bridge-managed RetroArch covers 15 systems today via `RomPlatformCatalog`; No-Intro DAT matching and RetroAchievements hash lookup exist; third-party emulators still need manual configuration.)
 - Bulk/multi-game editing
 - Fullscreen mode (explicitly deferred, not ruled out)
 - Plugin system (explicitly deferred, not ruled out — the internal module boundaries are drawn so this remains possible later without a rewrite)

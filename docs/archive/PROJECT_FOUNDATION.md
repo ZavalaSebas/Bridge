@@ -1,3 +1,5 @@
+> **Archivado en 1.0 — 2026-08-24:** Este documento es histórico. Todas las fases y módulos descritos (Fases 0–9, §16–§26) están implementados en Bridge 1.0 — ver docs/PLAN.md y docs/CHANGELOG.md. No usar como backlog activo.
+
 DOCUMENTACION DE CONVERSACION â€” ARCHIVO DE INICIO DEL PROYECTO
 
 Fecha: 2026-08-05

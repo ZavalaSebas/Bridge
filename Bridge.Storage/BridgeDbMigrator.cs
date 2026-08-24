@@ -102,6 +102,10 @@ public static class BridgeDbMigrator
         if (addMetadataSync is not null && MetadataSyncMarkersColumnsPresent(context))
             baselined.Add(addMetadataSync);
 
+        var addStatisticsHistory = migrations.FirstOrDefault(m => m.EndsWith("AddStatisticsHistory", StringComparison.Ordinal));
+        if (addStatisticsHistory is not null && StatisticsHistoryColumnsPresent(context))
+            baselined.Add(addStatisticsHistory);
+
         return baselined;
     }
 
@@ -163,6 +167,11 @@ public static class BridgeDbMigrator
     private static bool MetadataSyncMarkersColumnsPresent(BridgeDbContext context)
     {
         return GamesColumnExists(context, "LinksSyncedAt");
+    }
+
+    private static bool StatisticsHistoryColumnsPresent(BridgeDbContext context)
+    {
+        return GamesColumnExists(context, "CompletedAt") && GamesColumnExists(context, "PlaySessions");
     }
 
     private static bool GamesColumnExists(BridgeDbContext context, string columnName)

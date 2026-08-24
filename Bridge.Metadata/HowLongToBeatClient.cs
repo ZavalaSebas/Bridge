@@ -162,7 +162,7 @@ public sealed class HowLongToBeatClient(HttpClient httpClient)
                 ["randomizer"] = 0
             },
             ["useCache"] = true,
-            [auth.HpKey] = auth.HpVal
+            [auth.HpKey!] = auth.HpVal
         };
 
         return JsonSerializer.Serialize(payload);

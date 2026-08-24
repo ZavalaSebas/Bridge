@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-08-24
 
 ### Added
 - **Home view** — a streaming-style hub above Library in the sidebar: a big featured carousel with auto-advance, Play-now/More and dot indicators; draggable "What to play next", "Continue playing", "Recently added", and "Favorite picks" rows with chevron paging (wheel still scrolls the page); a compact right rail with Continue and recent achievements; clicking a never-played game opens an in-Home quick-view popup (hero, overview, screenshots, prev/next, Play goes to the detail view) while played games jump straight to their detail; empty-library placeholder with import shortcuts (`HomeView`, `MainViewModel.Home.cs`).
@@ -19,11 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ROM save backups** — After each ROM session, SRAM and savestates are copied into a dated snapshot under `%LOCALAPPDATA%\Bridge\save-backups\` (last 5 automatic copies per game). More menu: **Backup Saves** and **Restore Saves** (with timestamp). Settings → Library & data can export/import all ROM saves plus ROM files up to 500 MB.
 - **Steam, Epic, and PC save backups** — More → **Set Save Location** stores a per-game folder in `config/game-save-folders.json`. After play (toggle in Settings), that folder is copied into the same `save-backups/` snapshots. Export includes mapped folders; files larger than 64 MB are skipped.
 - **Organize ROMs** — On import (and from Settings → Organize ROMs), files under the scan folder are moved into per-platform directories and renamed to the official DAT title. Sidecar SRAM next to the ROM moves with it.
+- **Statistics history** — play sessions and completion timestamps (`CompletedAt`, `PlaySessions` on `Game`, `GamePlaySession` entity) power a new completion board, historical timeline and persisted session history in the statistics dashboard (`LibraryStatistics`, migration `AddStatisticsHistory`, `MainViewModel.Games.cs` sets `CompletedAt`).
 
 
 ### Changed
 - **Settings hub redesign** — grouped sections (Profile, Appearance, Integrations, Library & data, Updates & About) with a two-column card grid, accent section headers, larger paddings/radii, and a red Danger zone footer.
 - **Achievements summary separator** — the `{0}/{1} · {2} left` bar now uses a plain `-` (the middle dot was double-encoded and rendered as `Â·`).
+- **Documentation for 1.0** — version bumped to `1.0.0`, docs consolidated under `docs/`, `PROJECT_FOUNDATION.md` archived (all planned phases implemented).
+
+### Fixed
+- **Build warnings as errors** — `CS0246` missing `Bridge.Core.Entities` in `MainViewModel.Games.cs`, `CS9107` factory capture in `GameRepository`, `CS8604` nullable key in `HowLongToBeatClient`, `CS8625` null literals in `PlayButtonDisplayConverterTests` — now 0 warnings, 0 errors on clean build.
+- **Migration duplicate column** — `BridgeDbMigrator` now baselines `AddStatisticsHistory` (`CompletedAt`/`PlaySessions`) for pre-migration databases created via `EnsureCreated`, fixing `duplicate column name: CompletedAt` in `MigrationTests`.
 ## [0.9.0] - 2026-08-23
 
 ### Added

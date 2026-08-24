@@ -5,12 +5,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Bridge.Storage.Repositories;
 
-public class GameRepository(IDbContextFactory<BridgeDbContext> factory)
-    : Repository<Game>(factory), IGameRepository
+public class GameRepository : Repository<Game>, IGameRepository
 {
+    private readonly IDbContextFactory<BridgeDbContext> _factory;
+
+    public GameRepository(IDbContextFactory<BridgeDbContext> factory)
+        : base(factory)
+    {
+        _factory = factory;
+    }
+
     public Game? FindByExternalId(string externalId, Guid sourceId)
     {
-        using var context = factory.CreateDbContext();
+        using var context = _factory.CreateDbContext();
         return context.Games
             .AsNoTracking()
             .FirstOrDefault(g => g.ExternalId == externalId && g.SourceId == sourceId);
@@ -26,7 +33,7 @@ public class GameRepository(IDbContextFactory<BridgeDbContext> factory)
         if (games.Count == 0)
             return;
 
-        using var context = factory.CreateDbContext();
+        using var context = _factory.CreateDbContext();
         context.Games.AddRange(games);
         context.SaveChanges();
     }
@@ -43,7 +50,7 @@ public class GameRepository(IDbContextFactory<BridgeDbContext> factory)
 
         var now = DateTime.Now;  // Local time, consistent with existing code (Added, Modified)
         
-        using var context = factory.CreateDbContext();
+        using var context = _factory.CreateDbContext();
         
         // Attach and seal games in this isolated context — does NOT modify UI's Games collection
         foreach (var game in games)

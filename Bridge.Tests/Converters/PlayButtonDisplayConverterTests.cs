@@ -16,7 +16,7 @@ public class PlayButtonDisplayConverterTests
         var text = _converter.Convert(
             [game, game, Strings.Download, "ArrowDownload24"],
             typeof(string),
-            null,
+            null!,
             CultureInfo.InvariantCulture);
         var symbol = _converter.Convert(
             [game, game, Strings.Download, "ArrowDownload24"],
@@ -37,7 +37,7 @@ public class PlayButtonDisplayConverterTests
         var text = _converter.Convert(
             [game, selected, Strings.Play, "Play24"],
             typeof(string),
-            parameter: null,
+            parameter: null!,
             CultureInfo.InvariantCulture);
 
         Assert.Equal(Strings.Stop, text);
@@ -52,7 +52,7 @@ public class PlayButtonDisplayConverterTests
         var text = _converter.Convert(
             [game, selected, Strings.Play, "Play24"],
             typeof(string),
-            null,
+            null!,
             CultureInfo.InvariantCulture);
         var symbol = _converter.Convert(
             [game, selected, Strings.Play, "Play24"],

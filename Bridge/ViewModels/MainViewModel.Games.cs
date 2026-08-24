@@ -1,4 +1,5 @@
 using Bridge;
+using Bridge.Core.Entities;
 using Bridge.Core.Enums;
 using System.IO;
 using Bridge.Core.Utilities;
