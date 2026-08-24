@@ -1,0 +1,7 @@
+# GitHub Pages (Jekyll) config for Bridge docs
+# Exclude archival material that is not meant for the site and may contain
+# non-UTF-8 bytes that break kramdown.
+exclude:
+  - archive
+  - archive/*
+  - README.md
