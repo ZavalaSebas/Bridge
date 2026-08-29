@@ -50,9 +50,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Inter Variable font, embedded as a WPF Resource so the app ships
-         self-contained without depending on it being installed on the machine. -->
+    <!-- Inter Variable + Outfit Variable embedded as WPF Resources so the app ships
+         self-contained without depending on them being installed on the machine. -->
     <Resource Include="Fonts\InterVariable.ttf" />
+    <Resource Include="Fonts\OutfitVariable.ttf" />
     <Resource Include="Assets\Bridge.ico" />
     <Resource Include="Assets\BridgeLogo.png" />
   </ItemGroup>

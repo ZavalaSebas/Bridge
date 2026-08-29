@@ -131,7 +131,7 @@
     <value>Could not load the selected image. Try another result.</value>
   </data>
   <data name="LoadingImage" xml:space="preserve">
-    <value>Loading imageâ€¦</value>
+    <value>Loading image…</value>
   </data>
   <data name="ResultsCountFormat" xml:space="preserve">
     <value>{0} results</value>
@@ -152,7 +152,7 @@
     <value>IGDB Settings</value>
   </data>
   <data name="IgdbSettingsHelp" xml:space="preserve">
-    <value>Get a free Client ID and Secret from a Twitch Developer account: dev.twitch.tv/console/apps â€” register any app, "Client Type" doesn't matter for this.</value>
+    <value>Get a free Client ID and Secret from a Twitch Developer account: dev.twitch.tv/console/apps — register any app, "Client Type" doesn''t matter for this.</value>
   </data>
   <data name="ConfigureEmulatorTitle" xml:space="preserve">
     <value>Configure Emulator</value>
@@ -188,13 +188,13 @@
     <value>Select an image to preview it here.</value>
   </data>
   <data name="ImageDimensionsFormat" xml:space="preserve">
-    <value>{0} Ã— {1}</value>
+    <value>{0} × {1}</value>
   </data>
   <data name="CustomThemeColorTitle" xml:space="preserve">
     <value>Custom Theme Color</value>
   </data>
   <data name="CustomThemeColorDescription" xml:space="preserve">
-    <value>Pick an accent color â€” the whole theme recomputes from it.</value>
+    <value>Pick an accent color — the whole theme recomputes from it.</value>
   </data>
   <data name="ViewList" xml:space="preserve">
     <value>List view</value>
@@ -250,6 +250,9 @@
   <data name="Play" xml:space="preserve">
     <value>Play</value>
   </data>
+  <data name="Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
   <data name="RefreshLibrary" xml:space="preserve">
     <value>Refresh Library</value>
   </data>
@@ -296,7 +299,7 @@
     <value>Manual</value>
   </data>
   <data name="RomSaveBackupItemFormat" xml:space="preserve">
-    <value>{0} â€” {1} ({2} files)</value>
+    <value>{0} — {1} ({2} files)</value>
   </data>
   <data name="RomSaveBackupCreatedFormat" xml:space="preserve">
     <value>Saved a backup of {0} ({2} files) at {1}.</value>
@@ -422,10 +425,10 @@
     <value>Scan failed: {0}</value>
   </data>
   <data name="SteamNotDetectedSkippedImport" xml:space="preserve">
-    <value>Steam not detected â€” skipped import.</value>
+    <value>Steam not detected — skipped import.</value>
   </data>
   <data name="EpicNotDetectedSkippedImport" xml:space="preserve">
-    <value>Epic Games Launcher not detected â€” skipped import.</value>
+    <value>Epic Games Launcher not detected — skipped import.</value>
   </data>
   <data name="ImportResultFormat" xml:space="preserve">
     <value>{0} import: {1} new, {2} updated.</value>
@@ -467,7 +470,7 @@
     <value>Metadata sync complete: no updates ({0} game(s) checked).</value>
   </data>
   <data name="MetadataSyncNoInternet" xml:space="preserve">
-    <value>Metadata sync could not run â€” no internet connection. It will retry the next time Bridge opens with a connection.</value>
+    <value>Metadata sync could not run — no internet connection. It will retry the next time Bridge opens with a connection.</value>
   </data>
   <data name="LaunchingUninstallerFormat" xml:space="preserve">
     <value>Launching uninstaller for '{0}'...</value>
@@ -479,10 +482,10 @@
     <value>Uninstaller for '{0}' finished but the game is still detected as installed.</value>
   </data>
   <data name="GameRunningCloseBeforeDeleteFormat" xml:space="preserve">
-    <value>'{0}' is running â€” close it before deleting.</value>
+    <value>''{0}'' is running — close it before deleting.</value>
   </data>
   <data name="GameRunningCloseBeforeUninstallFormat" xml:space="preserve">
-    <value>'{0}' is running â€” close it before uninstalling.</value>
+    <value>''{0}'' is running — close it before uninstalling.</value>
   </data>
   <data name="NoUninstallerFoundFormat" xml:space="preserve">
     <value>No uninstaller found for '{0}'.</value>
@@ -506,7 +509,7 @@
     <value>Playing {0}...</value>
   </data>
   <data name="SessionSummaryFormat" xml:space="preserve">
-    <value>{0} â€” session: {1}s, total: {2}s</value>
+    <value>{0} $emdash session: {1}s, total: {2}s</value>
   </data>
   <data name="ShowHiddenGames" xml:space="preserve">
     <value>Show hidden games</value>
@@ -923,7 +926,7 @@
     <value>Connect SteamGridDB for community icons, covers, and hero art.</value>
   </data>
   <data name="SteamGridDbSetupHint" xml:space="preserve">
-    <value>Free API key. Setup opens steamgriddb.com in your browser â€” the recommended and secure way.</value>
+    <value>Free API key. Setup opens steamgriddb.com in your browser — the recommended and secure way.</value>
   </data>
   <data name="SteamGridDbSetupSecureNote" xml:space="preserve">
     <value>Bridge never sees your Steam password; only the API key you paste.</value>
@@ -935,7 +938,7 @@
     <value>SteamGridDB provides community-made icons, covers, and hero banners for games.</value>
   </data>
   <data name="SteamGridDbSettingsIntro" xml:space="preserve">
-    <value>SteamGridDB is a well-known community site for custom game artwork â€” icons, grid covers, hero banners, and more.</value>
+    <value>SteamGridDB is a well-known community site for custom game artwork — icons, grid covers, hero banners, and more.</value>
   </data>
   <data name="SteamGridDbApiKeyNeeded" xml:space="preserve">
     <value>To browse that artwork from Bridge, you need a free API key from your SteamGridDB profile.</value>
@@ -971,10 +974,10 @@
     <value>Open in Bridge instead</value>
   </data>
   <data name="SteamGridDbInAppHint" xml:space="preserve">
-    <value>Embedded WebView2 browser â€” same steamgriddb.com and Steam sites, with auto-refresh after sign-in. Bridge never sees or stores your Steam password; use this only to simplify the flow.</value>
+    <value>Embedded WebView2 browser — same steamgriddb.com and Steam sites, with auto-refresh after sign-in. Bridge never sees or stores your Steam password; use this only to simplify the flow.</value>
   </data>
   <data name="SteamGridDbBrowserTitle" xml:space="preserve">
-    <value>SteamGridDB â€” API key</value>
+    <value>SteamGridDB — API key</value>
   </data>
   <data name="SteamGridDbBrowserTrustNote" xml:space="preserve">
     <value>Same steamgriddb.com and Steam sign-in as your browser. Bridge never sees your Steam password.</value>
@@ -1028,7 +1031,7 @@
     <value>Select game</value>
   </data>
   <data name="SteamGridDbPickGameHint" xml:space="preserve">
-    <value>Multiple matches â€” pick the correct game on the left.</value>
+    <value>Multiple matches — pick the correct game on the left.</value>
   </data>
   <data name="SteamGridDbMatchesTitle" xml:space="preserve">
     <value>Matching games</value>
@@ -1096,6 +1099,9 @@
   <data name="BackgroundImageLabel" xml:space="preserve">
     <value>Background Image</value>
   </data>
+  <data name="LogoLabel" xml:space="preserve">
+    <value>Logo</value>
+  </data>
   <data name="Browse" xml:space="preserve">
     <value>Browse...</value>
   </data>
@@ -1148,13 +1154,13 @@
     <value>About Bridge</value>
   </data>
   <data name="AboutDescription" xml:space="preserve">
-    <value>Bridge unifies your games â€” from external libraries, manual entries and emulated ROMs â€” into one fast, local, self-contained catalog. Incremental import, local metadata, fast virtualized views and emulation support, without a plugin runtime or a separate fullscreen frontend. Playnite is an inspiration, not a specification: Bridge's structure, architecture and implementation are its own.</value>
+    <value>Bridge unifies your games — from external libraries, manual entries and emulated ROMs — into one fast, local, self-contained catalog. Incremental import, local metadata, fast virtualized views and emulation support, without a plugin runtime or a separate fullscreen frontend. Playnite is an inspiration, not a specification: Bridge''s structure, architecture and implementation are its own.</value>
   </data>
   <data name="Credits" xml:space="preserve">
     <value>Credits</value>
   </data>
   <data name="AboutArtCredit" xml:space="preserve">
-    <value>App icon and logo artwork by Erick NuÃ±ez.</value>
+    <value>App icon and logo artwork by Erick Nuñez.</value>
   </data>
   <data name="Project" xml:space="preserve">
     <value>Project</value>
@@ -1223,7 +1229,7 @@
     <value>English</value>
   </data>
   <data name="SettingsLanguageSpanish" xml:space="preserve">
-    <value>EspaÃ±ol</value>
+    <value>Español</value>
   </data>
   <data name="SettingsTrayIconTitle" xml:space="preserve">
     <value>System tray icon</value>
@@ -1271,7 +1277,7 @@
     <value>Achievements</value>
   </data>
   <data name="AchievementsLoading" xml:space="preserve">
-    <value>Loading achievementsâ€¦</value>
+    <value>Loading achievements…</value>
   </data>
   <data name="AchievementsNotSupported" xml:space="preserve">
     <value>Achievements are not available for this game.</value>
@@ -1304,7 +1310,7 @@
     <value>{0}/{1} - {2} left</value>
   </data>
   <data name="AchievementsBarCompleteFormat" xml:space="preserve">
-    <value>{0}/{1} âœ“</value>
+    <value>{0}/{1} ✓</value>
   </data>
   <data name="AchievementsCompletionPercentFormat" xml:space="preserve">
     <value>{0:0.#}% complete</value>
@@ -1316,7 +1322,7 @@
     <value>{0} achievements</value>
   </data>
   <data name="AchievementsCatalogOnlyHint" xml:space="preserve">
-    <value>Catalog only â€” your progress in this copy is not tracked.</value>
+    <value>Catalog only — your progress in this copy is not tracked.</value>
   </data>
   <data name="AchievementGlobalPercentFormat" xml:space="preserve">
     <value>{0:0.#}% of players</value>
@@ -1391,13 +1397,13 @@
     <value>Saves</value>
   </data>
   <data name="SettingsRomSavesDescription" xml:space="preserve">
-    <value>ROM saves are found automatically. Steam, Epic, and other PC games need More â†’ Set Save Location first â€” there is no single save path. The folder picker starts in Steam Cloud, Epic Cloud, or a common Windows folder when one exists. After play, Bridge can copy that folder into dated backups. Restore from More. Export also packs ROM files up to 500 MB and any mapped PC save folders.</value>
+    <value>ROM saves are found automatically. Steam, Epic, and other PC games need More → Set Save Location first — there is no single save path. The folder picker starts in Steam Cloud, Epic Cloud, or a common Windows folder when one exists. After play, Bridge can copy that folder into dated backups. Restore from More. Export also packs ROM files up to 500 MB and any mapped PC save folders.</value>
   </data>
   <data name="SettingsRomSaveAutoBackupTitle" xml:space="preserve">
     <value>Backup ROM saves after play</value>
   </data>
   <data name="SettingsRomSaveAutoBackupDescription" xml:space="preserve">
-    <value>Keep dated copies of SRAM and savestates in AppData. Export includes those saves plus lightweight ROM files (max 500 MB each). Import restores saves and copies those ROMs back.</value>
+    <value>ROM saves are found automatically. Steam, Epic, and other PC games need More → Set Save Location first — there is no single save path. The folder picker starts in Steam Cloud, Epic Cloud, or a common Windows folder when one exists. After play, Bridge can copy that folder into dated backups. Restore from More. Export also packs ROM files up to 500 MB and any mapped PC save folders.</value>
   </data>
   <data name="SettingsPcSaveAutoBackupTitle" xml:space="preserve">
     <value>Backup Steam, Epic, and PC saves after play</value>
@@ -1495,7 +1501,7 @@ Download and restart now?</value>
     <value>Could not install the update: {0}</value>
   </data>
   <data name="PendingUpdateTooltipFormat" xml:space="preserve">
-    <value>Version {0} is available â€” click to download and restart</value>
+    <value>Version {0} is available — click to download and restart</value>
   </data>
   <data name="NoInternetCheckUpdates" xml:space="preserve">
     <value>No internet connection. Check for updates again when you're back online.</value>
@@ -1516,10 +1522,10 @@ Download and restart now?</value>
     <value>Click to expand</value>
   </data>
   <data name="PreviousScreenshotTooltip" xml:space="preserve">
-    <value>Previous (â†)</value>
+    <value>Previous (←)</value>
   </data>
   <data name="NextScreenshotTooltip" xml:space="preserve">
-    <value>Next (â†’)</value>
+    <value>Next (→)</value>
   </data>
   <data name="ViewScreenshotTooltip" xml:space="preserve">
     <value>View screenshot</value>
@@ -1884,7 +1890,7 @@ Restore a backup manually, or rename/delete bridge.db to start with an empty lib
     <value>Store libraries</value>
   </data>
   <data name="SetupStoreLibrariesHelp" xml:space="preserve">
-    <value>These launchers are scanned on startup â€” no folder setup needed.</value>
+    <value>These launchers are scanned on startup — no folder setup needed.</value>
   </data>
   <data name="SetupSteamDetected" xml:space="preserve">
     <value>Steam detected</value>
@@ -1896,7 +1902,7 @@ Restore a backup manually, or rename/delete bridge.db to start with an empty lib
     <value>Steam not detected</value>
   </data>
   <data name="SetupSteamNotDetectedHelp" xml:space="preserve">
-    <value>Install Steam anytime â€” Bridge will import your library on the next launch.</value>
+    <value>Install Steam anytime — Bridge will import your library on the next launch.</value>
   </data>
   <data name="SetupEpicDetected" xml:space="preserve">
     <value>Epic Games detected</value>
@@ -1908,13 +1914,13 @@ Restore a backup manually, or rename/delete bridge.db to start with an empty lib
     <value>Epic Games not detected</value>
   </data>
   <data name="SetupEpicNotDetectedHelp" xml:space="preserve">
-    <value>Install the Epic Games Launcher anytime â€” Bridge will import your library on the next launch.</value>
+    <value>Install the Epic Games Launcher anytime — Bridge will import your library on the next launch.</value>
   </data>
   <data name="SetupExternalGamesFolderTitle" xml:space="preserve">
     <value>External games folder</value>
   </data>
   <data name="SetupExternalGamesFolderHelp" xml:space="preserve">
-    <value>For games outside Steam and Epic â€” GOG, itch.io, portable installs, and other local folders. Bridge watches this folder and adds new games automatically.</value>
+    <value>For games outside Steam and Epic — GOG, itch.io, portable installs, and other local folders. Bridge watches this folder and adds new games automatically.</value>
   </data>
   <data name="SetupInvalidExternalGamesFolder" xml:space="preserve">
     <value>The external games folder does not exist.</value>
@@ -2065,5 +2071,119 @@ Restore a backup manually, or rename/delete bridge.db to start with an empty lib
   </data>
   <data name="IUnderstandIrreversible" xml:space="preserve">
     <value>I understand this is irreversible</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="FreeGamesTitle" xml:space="preserve">
+    <value>Free games</value>
+  </data>
+  <data name="FreeGamesMarkAsSeen" xml:space="preserve">
+    <value>Mark as seen</value>
+  </data>
+  <data name="FreeGamesClaim" xml:space="preserve">
+    <value>Claim</value>
+  </data>
+  <data name="FreeGamesEmptyState" xml:space="preserve">
+    <value>No free games right now. Check back soon!</value>
+  </data>
+  <data name="FreeGamesRefresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="InstallingGameFormat" xml:space="preserve">
+    <value>Installing {0}...</value>
+  </data>
+  <data name="CouldNotOpenStoreLink" xml:space="preserve">
+    <value>Could not open store link</value>
+  </data>
+  <data name="PlaytimeHoursPlayedFormat" xml:space="preserve">
+    <value>{0}h played</value>
+  </data>
+  <data name="PlaytimeMinutesPlayedFormat" xml:space="preserve">
+    <value>{0}m played</value>
+  </data>
+  <data name="DeleteConfirmKeyword" xml:space="preserve">
+    <value>BORRAR</value>
+  </data>
+  <data name="InstallingUpdate" xml:space="preserve">
+    <value>Installing update...</value>
+  </data>
+  <data name="DownloadingUpdatePercentFormat" xml:space="preserve">
+    <value>Downloading update... {0}%</value>
+  </data>
+  <data name="UpdateNoBetaReleaseFound" xml:space="preserve">
+    <value>No compatible beta release was found on GitHub.</value>
+  </data>
+  <data name="UpdateNoReleaseFound" xml:space="preserve">
+    <value>No compatible release was found on GitHub.</value>
+  </data>
+  <data name="BetaBuildAvailableHint" xml:space="preserve">
+    <value>A beta build is available. Enable the beta channel in About to receive it.</value>
+  </data>
+  <data name="BackupFileNotFound" xml:space="preserve">
+    <value>The backup file was not found.</value>
+  </data>
+  <data name="BackupArchiveMissingDb" xml:space="preserve">
+    <value>The archive does not contain bridge.db.</value>
+  </data>
+  <data name="BackupInvalidDatabase" xml:space="preserve">
+    <value>bridge.db is not a valid SQLite database.</value>
+  </data>
+  <data name="RomPackFileNotFound" xml:space="preserve">
+    <value>The pack file was not found.</value>
+  </data>
+  <data name="RomPackInvalidArchive" xml:space="preserve">
+    <value>The archive is not a Bridge ROM pack.</value>
+  </data>
+  <data name="RomSaveNoFolder" xml:space="preserve">
+    <value>The game has no save folder.</value>
+  </data>
+  <data name="RomSaveNoFilesFound" xml:space="preserve">
+    <value>No save files found.</value>
+  </data>
+  <data name="RomSaveBackupMissing" xml:space="preserve">
+    <value>The backup is missing or invalid.</value>
+  </data>
+  <data name="RomSaveBackupEmpty" xml:space="preserve">
+    <value>The backup has no files.</value>
+  </data>
+  <data name="BackupFileFilter" xml:space="preserve">
+    <value>Bridge backup (*.zip)|*.zip</value>
+  </data>
+  <data name="RomPackFileFilter" xml:space="preserve">
+    <value>Bridge ROM pack (*.zip)|*.zip</value>
+  </data>
+  <data name="UpdateLatestVersionReadFailed" xml:space="preserve">
+    <value>The latest release version could not be read.</value>
+  </data>
+  <data name="UpdateReleaseNoAssetFormat" xml:space="preserve">
+    <value>Release v{0} has no {1} asset.</value>
+  </data>
+  <data name="UpdateNoPublishedReleaseFound" xml:space="preserve">
+    <value>No published release was found on GitHub.</value>
+  </data>
+  <data name="UpdateCouldNotReachGitHubFormat" xml:space="preserve">
+    <value>Could not reach GitHub: {0}</value>
+  </data>
+  <data name="UpdateUntrustedHostFormat" xml:space="preserve">
+    <value>Bridge refused an untrusted update host: {0}.</value>
+  </data>
+  <data name="UpdateDownloadTooLarge" xml:space="preserve">
+    <value>The update download is larger than Bridge's safety limit.</value>
+  </data>
+  <data name="UpdateDownloadExceededLimit" xml:space="preserve">
+    <value>The update download exceeded Bridge's safety limit.</value>
+  </data>
+  <data name="UpdateTooManyRedirects" xml:space="preserve">
+    <value>The update download did not resolve after too many redirects.</value>
+  </data>
+  <data name="UpdateExecutablePathNotFound" xml:space="preserve">
+    <value>Bridge could not resolve its executable path.</value>
+  </data>
+  <data name="SettingsFontTitle" xml:space="preserve">
+    <value>Font family</value>
+  </data>
+  <data name="SettingsFontDescription" xml:space="preserve">
+    <value>Choose the font used throughout the app. Changes apply instantly.</value>
   </data>
 </root>

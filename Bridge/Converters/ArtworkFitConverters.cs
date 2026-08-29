@@ -14,7 +14,7 @@ public static class ArtworkFit
         if (sourceWidth <= 0 || sourceHeight <= 0)
             return FallbackSize(maxWidth, maxHeight);
 
-        var scale = Math.Min(maxWidth / sourceWidth, maxHeight / sourceHeight);
+        var scale = Math.Min(1, Math.Min(maxWidth / sourceWidth, maxHeight / sourceHeight));
         return (sourceWidth * scale, sourceHeight * scale);
     }
 

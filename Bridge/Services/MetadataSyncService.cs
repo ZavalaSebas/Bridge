@@ -55,7 +55,7 @@ public sealed class MetadataSyncService(
     public Task<(GameMetadata Metadata, string ProviderName)?> SearchByNameChainAsync(
         string gameName,
         CancellationToken cancellationToken = default) =>
-        SearchByNameAsync(gameName, MetadataSearchMode.IgdbFirst, cancellationToken);
+        SearchByNameAsync(gameName, MetadataSearchMode.SteamFirst, cancellationToken);
 
     public async Task<(GameMetadata Metadata, string ProviderName)?> SearchRomMetadataAsync(
         string displayName,

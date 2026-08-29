@@ -71,7 +71,7 @@ namespace Bridge
             var input = new System.Windows.Controls.TextBox { Margin = new Thickness(0, 6, 0, 0) };
             var dialog = new Window
             {
-                Title = $"Add {kind}",
+                Title = Strings.Format(nameof(Strings.AddReferenceTitleFormat), kind),
                 Owner = owner,
                 Width = 320,
                 SizeToContent = SizeToContent.Height,
@@ -84,7 +84,7 @@ namespace Bridge
                     ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE0, 0xE0, 0xE0))
             };
             var panel = new StackPanel { Margin = new Thickness(14) };
-            panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"Name for the new {kind.ToLowerInvariant()}:" });
+            panel.Children.Add(new System.Windows.Controls.TextBlock { Text = Strings.Format(nameof(Strings.AddReferenceNamePromptFormat), kind.ToLowerInvariant()) });
             panel.Children.Add(input);
             var ok = new System.Windows.Controls.Button { Content = Strings.OK, Width = 70, IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
             var cancel = new System.Windows.Controls.Button { Content = Strings.Cancel, Width = 70, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 8, 0) };
@@ -127,7 +127,7 @@ namespace Bridge
                 var dialog = new OpenFileDialog
                 {
                     Title = Strings.SelectImageTitle,
-                    Filter = "Images (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp"
+                    Filter = Strings.ImageFilesFilter
                 };
 
                 if (dialog.ShowDialog(this) == true)
@@ -178,6 +178,9 @@ namespace Bridge
                 case "BackgroundImage":
                     _viewModel.HeroBackgroundKind = HeroBackground.Kind.Default;
                     break;
+                case "LogoImage":
+                    _viewModel.ClearLogo();
+                    break;
             }
         }
 
@@ -203,6 +206,9 @@ namespace Bridge
                 case "BackgroundImage":
                     _viewModel.HeroBackgroundKind = HeroBackground.Kind.Custom;
                     _viewModel.BackgroundImage = url;
+                    break;
+                case "LogoImage":
+                    _viewModel.LogoImage = url;
                     break;
             }
         }

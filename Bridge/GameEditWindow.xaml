@@ -1,4 +1,4 @@
-<ui:FluentWindow x:Class="Bridge.GameEditWindow"
+﻿<ui:FluentWindow x:Class="Bridge.GameEditWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:Bridge.Converters"
@@ -16,7 +16,7 @@
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}"
         Foreground="{StaticResource TextFillColorPrimaryBrush}"
-        FontFamily="{StaticResource Bridge.FontFamily}"
+        FontFamily="{DynamicResource Bridge.FontFamily}"
         FontSize="{StaticResource Bridge.FontSize.Body}">
     <Window.Resources>
         <ResourceDictionary>
@@ -304,6 +304,29 @@
                                                 <Button Content="{x:Static res:Strings.SteamGridDb}" Padding="10,6" Margin="0,0,6,0" Click="SteamGridDb_Click" Tag="BackgroundImage" IsEnabled="{Binding IsSteamGridDbConfigured}"/>
                                                 <Button Content="{x:Static res:Strings.SearchWeb}" Padding="10,6" Margin="0,0,6,0" Click="SearchWeb_Click" Tag="BackgroundImage"/>
                                                 <Button Content="{x:Static res:Strings.Browse}" Padding="10,6" Margin="0,0,6,0" Click="Browse_Click" Tag="BackgroundImage"/>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{DynamicResource Bridge.Sidebar.Background}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource Bridge.SeparatorBrush}" BorderThickness="1" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static res:Strings.LogoLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextFillColorTertiaryBrush}" Margin="0,0,0,8"/>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="96" Height="54" Background="#1B2132" CornerRadius="4" ClipToBounds="True" Margin="0,0,10,0">
+                                            <Image Stretch="Uniform" converters:CachedImage.SourceUrl="{Binding LogoImage}" converters:CachedImage.DecodeSize="Large" RenderOptions.BitmapScalingMode="Fant"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox MinWidth="120" Text="{Binding LogoImage, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" Margin="0,0,0,8"/>
+                                            <WrapPanel>
+                                                <Button Content="{x:Static res:Strings.SteamGridDb}" Padding="10,6" Margin="0,0,6,0" Click="SteamGridDb_Click" Tag="LogoImage" IsEnabled="{Binding IsSteamGridDbConfigured}"/>
+                                                <Button Content="{x:Static res:Strings.SearchWeb}" Padding="10,6" Margin="0,0,6,0" Click="SearchWeb_Click" Tag="LogoImage"/>
+                                                <Button Content="{x:Static res:Strings.Browse}" Padding="10,6" Margin="0,0,6,0" Click="Browse_Click" Tag="LogoImage"/>
+                                                <Button Content="{x:Static res:Strings.Clear}" Padding="10,6" Click="ClearMedia_Click" Tag="LogoImage"/>
                                             </WrapPanel>
                                         </StackPanel>
                                     </Grid>

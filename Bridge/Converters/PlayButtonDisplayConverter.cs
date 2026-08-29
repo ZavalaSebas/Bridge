@@ -31,6 +31,18 @@ public class PlayButtonDisplayConverter : IMultiValueConverter
         if (game.NeedsEmulatorDownload)
             return useSymbol ? "ArrowDownload24" : Strings.Download;
 
+        if (!game.IsInstalled)
+        {
+            // ROMs and user-managed (manual / bridge-scanned) games can't be
+            // "installed" via a store — show Not installed. Steam/Epic can be
+            // installed with one click (steam:// / epic launcher).
+            var isStore = !GameSource.IsUserManaged(game.SourceId) && game.Roms.Count == 0;
+            if (isStore)
+                return useSymbol ? "ArrowDownload24" : Strings.Install;
+
+            return useSymbol ? "DismissCircle24" : Strings.NotInstalled;
+        }
+
         return useSymbol ? "Play24" : Strings.Play;
     }
 

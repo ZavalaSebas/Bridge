@@ -4,6 +4,7 @@ using System.Text.Json;
 using Bridge.Core.Entities;
 using Bridge.Core.Utilities;
 using Bridge.Emulation;
+using Bridge.Resources;
 
 namespace Bridge.Services;
 
@@ -188,7 +189,7 @@ public static class RomLibraryPackService
     public static RomLibraryPackResult Validate(string zipPath)
     {
         if (!File.Exists(zipPath))
-            return new RomLibraryPackResult(false, "The pack file was not found.");
+            return new RomLibraryPackResult(false, Strings.RomPackFileNotFound);
 
         try
         {
@@ -196,13 +197,13 @@ public static class RomLibraryPackService
             var entry = archive.Entries.FirstOrDefault(item =>
                 item.Name.Equals(ManifestFileName, StringComparison.OrdinalIgnoreCase));
             if (entry is null)
-                return new RomLibraryPackResult(false, "The archive is not a Bridge ROM pack.");
+                return new RomLibraryPackResult(false, Strings.RomPackInvalidArchive);
 
             using var stream = entry.Open();
             using var reader = new StreamReader(stream);
             var manifest = JsonSerializer.Deserialize<PackManifest>(reader.ReadToEnd(), JsonOptions);
             if (manifest is null || !string.Equals(manifest.Kind, KindValue, StringComparison.Ordinal))
-                return new RomLibraryPackResult(false, "The archive is not a Bridge ROM pack.");
+                return new RomLibraryPackResult(false, Strings.RomPackInvalidArchive);
 
             return new RomLibraryPackResult(true, null, zipPath);
         }

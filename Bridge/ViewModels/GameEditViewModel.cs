@@ -64,6 +64,9 @@ public partial class GameEditViewModel : ObservableObject
     private string _backgroundImage;
 
     [ObservableProperty]
+    private string _logoImage;
+
+    [ObservableProperty]
     private HeroBackground.Kind _heroBackgroundKind;
 
     public bool IsSteamGridDbConfigured => _steamGridDbSettings.IsConfigured;
@@ -104,6 +107,7 @@ public partial class GameEditViewModel : ObservableObject
         Icon = game.Icon;
         CoverImage = game.CoverImage;
         BackgroundImage = game.BackgroundImage;
+        LogoImage = game.LogoImage;
         HeroBackgroundKind = HeroBackground.KindFromValue(game.BackgroundImage);
 
         Genres = ToSelectable(genreRepository.GetAll(), game.GenreIds);
@@ -160,6 +164,8 @@ public partial class GameEditViewModel : ObservableObject
     public void ClearIcon() => Icon = string.Empty;
 
     public void ClearCover() => CoverImage = string.Empty;
+
+    public void ClearLogo() => LogoImage = string.Empty;
 
     public void NotifySteamGridDbConfigurationChanged() => OnPropertyChanged(nameof(IsSteamGridDbConfigured));
 
@@ -218,6 +224,7 @@ public partial class GameEditViewModel : ObservableObject
             _game.Icon = Icon;
             _game.CoverImage = CoverImage;
             _game.BackgroundImage = ResolveBackgroundImageForSave();
+            _game.LogoImage = LogoImage;
             _game.Modified = DateTime.Now;
 
             if (IsNewGame)
@@ -246,6 +253,7 @@ public partial class GameEditViewModel : ObservableObject
         _game.Icon = Icon;
         _game.CoverImage = CoverImage;
         _game.BackgroundImage = ResolveBackgroundImageForSave();
+        _game.LogoImage = LogoImage;
         _game.GenreIds = Genres.Where(x => x.IsSelected).Select(x => x.Id).ToList();
         _game.DeveloperIds = Developers.Where(x => x.IsSelected).Select(x => x.Id).ToList();
         _game.PublisherIds = Publishers.Where(x => x.IsSelected).Select(x => x.Id).ToList();

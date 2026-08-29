@@ -72,6 +72,7 @@ public partial class MainViewModel
         await ReidentifyRomGamesFromDatAsync();
         await DownloadMissingRomMetadataAsync();
         await DownloadMissingHowLongToBeatAsync();
+        await DownloadMissingLogosAsync();
         RefreshAllEmulatorDownloadStates();
 
         // Clear the last "Downloading metadata…" text once the whole sync is done —

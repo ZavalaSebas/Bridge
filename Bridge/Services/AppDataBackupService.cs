@@ -1,6 +1,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
+using Bridge.Resources;
 using Microsoft.Data.Sqlite;
 
 namespace Bridge.Services;
@@ -54,19 +55,19 @@ public static class AppDataBackupService
     public static AppDataBackupResult ValidateBackupArchive(string zipPath)
     {
         if (!File.Exists(zipPath))
-            return new AppDataBackupResult(false, "The backup file was not found.");
+            return new AppDataBackupResult(false, Strings.BackupFileNotFound);
 
         try
         {
             using var archive = ZipFile.OpenRead(zipPath);
             var entry = FindDatabaseEntry(archive);
             if (entry is null)
-                return new AppDataBackupResult(false, "The archive does not contain bridge.db.");
+                return new AppDataBackupResult(false, Strings.BackupArchiveMissingDb);
 
             using var stream = entry.Open();
             Span<byte> header = stackalloc byte[16];
             if (stream.Read(header) != 16 || !header.SequenceEqual(SqliteHeader))
-                return new AppDataBackupResult(false, "bridge.db is not a valid SQLite database.");
+                return new AppDataBackupResult(false, Strings.BackupInvalidDatabase);
 
             return new AppDataBackupResult(true, null, zipPath);
         }
@@ -98,7 +99,7 @@ public static class AppDataBackupService
             if (!BridgeDatabaseRecovery.IsValidSqliteFile(Path.Combine(stagingPath, "bridge.db")))
             {
                 TryDeleteDirectory(stagingPath);
-                return new AppDataBackupResult(false, "bridge.db is not a valid SQLite database.");
+                return new AppDataBackupResult(false, Strings.BackupInvalidDatabase);
             }
 
             File.WriteAllText(RestorePendingMarkerPath(appDataPath), DateTime.UtcNow.ToString("O"));

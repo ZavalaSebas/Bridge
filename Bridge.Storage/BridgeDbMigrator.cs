@@ -106,6 +106,10 @@ public static class BridgeDbMigrator
         if (addStatisticsHistory is not null && StatisticsHistoryColumnsPresent(context))
             baselined.Add(addStatisticsHistory);
 
+        var addLogo = migrations.FirstOrDefault(m => m.EndsWith("AddGameLogo", StringComparison.Ordinal));
+        if (addLogo is not null && GamesColumnExists(context, "LogoImage"))
+            baselined.Add(addLogo);
+
         return baselined;
     }
 

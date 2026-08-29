@@ -250,6 +250,9 @@
   <data name="Play" xml:space="preserve">
     <value>Jugar</value>
   </data>
+  <data name="Install" xml:space="preserve">
+    <value>Instalar</value>
+  </data>
   <data name="RefreshLibrary" xml:space="preserve">
     <value>Actualizar biblioteca</value>
   </data>
@@ -1095,6 +1098,9 @@
   </data>
   <data name="BackgroundImageLabel" xml:space="preserve">
     <value>Imagen de fondo</value>
+  </data>
+  <data name="LogoLabel" xml:space="preserve">
+    <value>Logo</value>
   </data>
   <data name="Browse" xml:space="preserve">
     <value>Examinar...</value>
@@ -2065,5 +2071,119 @@ Restaura una copia de seguridad manualmente, o renombra/elimina bridge.db para e
   </data>
   <data name="IUnderstandIrreversible" xml:space="preserve">
     <value>Entiendo que es irreversible</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notificaciones</value>
+  </data>
+  <data name="FreeGamesTitle" xml:space="preserve">
+    <value>Juegos gratis</value>
+  </data>
+  <data name="FreeGamesMarkAsSeen" xml:space="preserve">
+    <value>Marcar como visto</value>
+  </data>
+  <data name="FreeGamesClaim" xml:space="preserve">
+    <value>Reclamar</value>
+  </data>
+  <data name="FreeGamesEmptyState" xml:space="preserve">
+    <value>No hay juegos gratis por ahora. ¡Vuelve pronto!</value>
+  </data>
+  <data name="FreeGamesRefresh" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="InstallingGameFormat" xml:space="preserve">
+    <value>Instalando {0}...</value>
+  </data>
+  <data name="CouldNotOpenStoreLink" xml:space="preserve">
+    <value>No se pudo abrir el enlace de la tienda</value>
+  </data>
+  <data name="PlaytimeHoursPlayedFormat" xml:space="preserve">
+    <value>{0}h jugadas</value>
+  </data>
+  <data name="PlaytimeMinutesPlayedFormat" xml:space="preserve">
+    <value>{0}m jugados</value>
+  </data>
+  <data name="DeleteConfirmKeyword" xml:space="preserve">
+    <value>BORRAR</value>
+  </data>
+  <data name="InstallingUpdate" xml:space="preserve">
+    <value>Instalando actualización...</value>
+  </data>
+  <data name="DownloadingUpdatePercentFormat" xml:space="preserve">
+    <value>Descargando actualización... {0}%</value>
+  </data>
+  <data name="UpdateNoBetaReleaseFound" xml:space="preserve">
+    <value>No se encontró una versión beta compatible en GitHub.</value>
+  </data>
+  <data name="UpdateNoReleaseFound" xml:space="preserve">
+    <value>No se encontró una versión compatible en GitHub.</value>
+  </data>
+  <data name="BetaBuildAvailableHint" xml:space="preserve">
+    <value>Hay una compilación beta disponible. Activa el canal beta en Acerca de para recibirla.</value>
+  </data>
+  <data name="BackupFileNotFound" xml:space="preserve">
+    <value>No se encontró el archivo de respaldo.</value>
+  </data>
+  <data name="BackupArchiveMissingDb" xml:space="preserve">
+    <value>El archivo no contiene bridge.db.</value>
+  </data>
+  <data name="BackupInvalidDatabase" xml:space="preserve">
+    <value>bridge.db no es una base de datos SQLite válida.</value>
+  </data>
+  <data name="RomPackFileNotFound" xml:space="preserve">
+    <value>No se encontró el archivo del pack.</value>
+  </data>
+  <data name="RomPackInvalidArchive" xml:space="preserve">
+    <value>El archivo no es un pack de ROMs de Bridge.</value>
+  </data>
+  <data name="RomSaveNoFolder" xml:space="preserve">
+    <value>El juego no tiene carpeta de guardado.</value>
+  </data>
+  <data name="RomSaveNoFilesFound" xml:space="preserve">
+    <value>No se encontraron archivos de guardado.</value>
+  </data>
+  <data name="RomSaveBackupMissing" xml:space="preserve">
+    <value>El respaldo no existe o es inválido.</value>
+  </data>
+  <data name="RomSaveBackupEmpty" xml:space="preserve">
+    <value>El respaldo no tiene archivos.</value>
+  </data>
+  <data name="BackupFileFilter" xml:space="preserve">
+    <value>Respaldo de Bridge (*.zip)|*.zip</value>
+  </data>
+  <data name="RomPackFileFilter" xml:space="preserve">
+    <value>Pack de ROMs de Bridge (*.zip)|*.zip</value>
+  </data>
+  <data name="UpdateLatestVersionReadFailed" xml:space="preserve">
+    <value>No se pudo leer la versión de la última release.</value>
+  </data>
+  <data name="UpdateReleaseNoAssetFormat" xml:space="preserve">
+    <value>La release v{0} no tiene el asset {1}.</value>
+  </data>
+  <data name="UpdateNoPublishedReleaseFound" xml:space="preserve">
+    <value>No se encontró ninguna release publicada en GitHub.</value>
+  </data>
+  <data name="UpdateCouldNotReachGitHubFormat" xml:space="preserve">
+    <value>No se pudo contactar con GitHub: {0}</value>
+  </data>
+  <data name="UpdateUntrustedHostFormat" xml:space="preserve">
+    <value>Bridge rechazó un host de actualización no confiable: {0}.</value>
+  </data>
+  <data name="UpdateDownloadTooLarge" xml:space="preserve">
+    <value>La descarga de la actualización supera el límite de seguridad de Bridge.</value>
+  </data>
+  <data name="UpdateDownloadExceededLimit" xml:space="preserve">
+    <value>La descarga de la actualización excedió el límite de seguridad de Bridge.</value>
+  </data>
+  <data name="UpdateTooManyRedirects" xml:space="preserve">
+    <value>La descarga de la actualización no se resolvió tras demasiadas redirecciones.</value>
+  </data>
+  <data name="UpdateExecutablePathNotFound" xml:space="preserve">
+    <value>Bridge no pudo resolver la ruta de su ejecutable.</value>
+  </data>
+  <data name="SettingsFontTitle" xml:space="preserve">
+    <value>Familia tipográfica</value>
+  </data>
+  <data name="SettingsFontDescription" xml:space="preserve">
+    <value>Elige la fuente usada en toda la app. Se aplica al instante.</value>
   </data>
 </root>

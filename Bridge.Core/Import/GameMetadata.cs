@@ -37,6 +37,7 @@ public class GameMetadata
     public string? Icon { get; set; }
     public string? CoverImage { get; set; }
     public string? BackgroundImage { get; set; }
+    public string? LogoImage { get; set; }
 
     /// <summary>Full-resolution screenshots shown as a gallery in the details view (Steam path_full).</summary>
     public List<string> Screenshots { get; set; } = [];

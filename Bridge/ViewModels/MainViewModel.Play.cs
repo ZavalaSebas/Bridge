@@ -1,5 +1,6 @@
 using Bridge.Core.Entities;
 using Bridge;
+using Bridge.Core.Utilities;
 using Bridge.Emulation;
 using Bridge.Resources;
 using Bridge.Services;
@@ -17,6 +18,77 @@ public partial class MainViewModel
         var target = game ?? SelectedGame;
         if (target is null)
         {
+            return;
+        }
+
+        // Not-installed handling: external/manual/ROM files just show "Not installed".
+        // Store games (Steam/Epic) trigger the store's install flow but must NOT
+        // enter the playing/tracking state (IsRunning → Stop) — that's the bug
+        // where "Install" immediately flips to "Stop" as if the game were running.
+        if (!target.IsInstalled)
+        {
+            if (_retroArch.IsManagedRom(target))
+            {
+                // ROM file missing — handled below via emulator launch path (will
+                // throw "ROM file not found" and still show NotInstalled via the
+                // play button). Just block the tracking path.
+                SetStatus($"{target.Name} — {Strings.NotInstalled}", StatusMessageKind.Warning);
+                return;
+            }
+
+            if (IsStoreGame(target))
+            {
+                var installUrl = TryGetStoreInstallUrl(target);
+                if (!string.IsNullOrWhiteSpace(installUrl))
+                {
+                    try
+                    {
+                        // Mirror GameLauncher.StartUrlAction's steam.exe -silent path
+                        // but WITHOUT marking IsRunning/PlayCount or starting the
+                        // directory tracker — an install is not a play session.
+                        if (installUrl.StartsWith("steam://", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var steamPath = Bridge.Import.Steam.SteamPaths.GetInstallationPath();
+                            if (!string.IsNullOrWhiteSpace(steamPath))
+                            {
+                                var steamExe = Path.Combine(steamPath, "steam.exe");
+                                if (File.Exists(steamExe))
+                                {
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                                    {
+                                        FileName = steamExe,
+                                        Arguments = $"-silent \"{installUrl}\"",
+                                        UseShellExecute = true
+                                    });
+                                    SetStatus(Strings.Format(nameof(Strings.InstallingGameFormat), target.Name), StatusMessageKind.Normal);
+                                    return;
+                                }
+                            }
+                        }
+
+                        if (Bridge.Services.SafeLauncher.TryOpenUrl(installUrl))
+                        {
+                            SetStatus(Strings.Format(nameof(Strings.InstallingGameFormat), target.Name), StatusMessageKind.Normal);
+                        }
+                        else
+                        {
+                            SetStatus(Strings.Format(nameof(Strings.CouldNotLaunchGameFormat), target.Name, Strings.CouldNotOpenStoreLink), StatusMessageKind.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        SetStatus(Strings.Format(nameof(Strings.CouldNotLaunchGameFormat), target.Name, ex.Message), StatusMessageKind.Error);
+                    }
+
+                    return;
+                }
+
+                SetStatus($"{target.Name} — {Strings.NotInstalled}", StatusMessageKind.Warning);
+                return;
+            }
+
+            // External / manual — no store to install from
+            SetStatus($"{target.Name} — {Strings.NotInstalled}", StatusMessageKind.Warning);
             return;
         }
 
@@ -279,5 +351,17 @@ public partial class MainViewModel
             false);
 
         await _cheevosService.ApplyLaunchConfigAsync(executablePath, credentials);
+    }
+
+    private string? TryGetStoreInstallUrl(Game game)
+    {
+        // Epic already stores its launch URL as a GameAction; Steam creates it
+        // runtime via SteamPlayActions. Prefer the stored Url action first.
+        var storedUrl = game.GameActions.FirstOrDefault(a => a.IsPlayAction && a.Type == Bridge.Core.Enums.GameActionType.Url)?.Path;
+        if (!string.IsNullOrWhiteSpace(storedUrl) && Bridge.Core.Utilities.UrlValidator.IsSafeToOpen(storedUrl))
+            return storedUrl;
+
+        var steamAction = Bridge.Import.Steam.SteamPlayActions.CreatePlayAction(game);
+        return steamAction?.Path;
     }
 }

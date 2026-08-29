@@ -118,7 +118,7 @@ The original ADR-3 (2026-08-05) planned to ship with plain WPF and introduce WPF
 
 3. **Palette (dark-first):** `Bridge/Styles/Theme.xaml` overrides WPF-UI 3.x semantic tokens (`Color`+`Brush` paired, because WPF-UI brushes reference their colors via `StaticResource`). Primary accent `#007ACC` (nav/focus/selection). Secondary accent `#10B981` (Emerald) **exclusive** to Play/CTA buttons.
 
-4. **Typography:** Inter Variable (`InterVariable.ttf` embedded in `Bridge/Fonts/`, sourced from `rsms/inter` release v4.1). Font sizes defined as tokens: Caption(11)/BodySmall(12)/Body(13)/BodyLarge(14)/Heading(15)/Title(20)/TitleLarge(24)/Display(34).
+4. **Typography:** Inter Variable (`InterVariable.ttf` 879KB) + Outfit Variable (`OutfitVariable.ttf` 110KB) embedded in `Bridge/Fonts/` (Inter from `rsms/inter` v4.1, Outfit from `google/fonts` OFL) plus system fallbacks Segoe UI / Georgia (serif) / Consolas (mono). `Bridge.FontFamily` is a `DynamicResource` token so `FontManager` (`Bridge/Services/FontManager.cs`, 5 curated presets, persisted to `config/font.txt`) can switch it at runtime with `ThemeManager.RefreshWindow()`. Font sizes defined as tokens: Caption(11)/BodySmall(12)/Body(13)/BodyLarge(14)/Heading(15)/Title(20)/TitleLarge(24)/Display(34). Each `ComboBoxItem` in the picker previews its own typeface.
 
 5. **Motion:** Duration tokens (`Fast` 120ms, `Normal` 150ms, `Slow` 200ms) + `EaseOut`/`EaseInOut` KeySplines defined in Theme.xaml. Used in Covers hover animations (120ms `CubicEase EaseOut`).
 

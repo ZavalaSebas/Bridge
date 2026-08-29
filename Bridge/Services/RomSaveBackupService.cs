@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bridge.Core.Entities;
 using Bridge.Core.Utilities;
 using Bridge.Emulation;
+using Bridge.Resources;
 
 namespace Bridge.Services;
 
@@ -79,7 +80,7 @@ public static class RomSaveBackupService
         }
 
         if (string.IsNullOrWhiteSpace(customSaveFolder) || !Directory.Exists(customSaveFolder))
-            return new RomSaveBackupResult(false, "The game has no save folder.");
+            return new RomSaveBackupResult(false, Strings.RomSaveNoFolder);
 
         return CreateFromSources(game, kind, EnumerateFolderSources(customSaveFolder), backupsRoot, romPath: null);
     }
@@ -130,7 +131,7 @@ public static class RomSaveBackupService
         string? romPath)
     {
         if (files.Count == 0)
-            return new RomSaveBackupResult(false, "No save files found.");
+            return new RomSaveBackupResult(false, Strings.RomSaveNoFilesFound);
 
         if (kind == RomSaveBackupKind.Automatic &&
             IsSameAsLatestAutomatic(game.Id, files, backupsRoot))
@@ -228,11 +229,11 @@ public static class RomSaveBackupService
     {
         retroArchInstallPath ??= Config.EmulatorInstallPath;
         if (TryReadManifest(snapshotDirectory) is not { } manifest)
-            return new RomSaveBackupResult(false, "The backup is missing or invalid.");
+            return new RomSaveBackupResult(false, Strings.RomSaveBackupMissing);
 
         var filesRoot = Path.Combine(snapshotDirectory, FilesDirectoryName);
         if (!Directory.Exists(filesRoot))
-            return new RomSaveBackupResult(false, "The backup has no files.");
+            return new RomSaveBackupResult(false, Strings.RomSaveBackupEmpty);
 
         try
         {
@@ -283,7 +284,7 @@ public static class RomSaveBackupService
             }
 
             return restored == 0
-                ? new RomSaveBackupResult(false, "The backup has no files.")
+                ? new RomSaveBackupResult(false, Strings.RomSaveBackupEmpty)
                 : new RomSaveBackupResult(true, null, snapshotDirectory, restored, manifest.CreatedUtc);
         }
         catch (Exception ex)

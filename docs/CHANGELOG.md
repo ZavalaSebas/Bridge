@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Font family picker** — Settings → Appearance → Font family: Inter (default, embedded), Segoe UI, Outfit (geometric, embedded 110KB), Georgia (serif) and Consolas (mono) — system fallbacks need no extra download. `Bridge.FontFamily` is now a `DynamicResource` so `FontManager` (`Bridge/Services/FontManager.cs`, `FontSettingsStore` `config/font.txt`) switches it instantly with live preview in the dropdown (`Bridge/Views/SettingsOverlayView.xaml`). Inter/Outfit remain embedded in `Bridge/Fonts/` (`Bridge/Bridge.csproj`).
+- **Sidebar Exit button** — bottom of the 52px icon rail (`Bridge/MainWindow.xaml:147`, `SignOut24` `#FF6B6B` with red hover, `Separator` above) calls `SidebarExit_Click` → `RequestExit()` (`Bridge/MainWindow.xaml.cs:187` `_forceExit` + `App.TrayIcon.Dispose()` + `Close()`) so the app closes definitively and no tray icon remains, bypassing `TryMinimizeToTray()`.
+
+### Fixed
+- **SteamGridDB preview quality** — `ArtworkFit.Fit()` no longer upscales small thumbs beyond native size, avoiding blur when previewing 512px assets in a 352px tile.
+- **Mojibake sweep** — `Bridge/Resources/Strings.resx` fixed 27 double-encoded UTF-8 sequences (`â—`→`—`, `Ã—`→`×`, `âœ“`→`✓` etc.), notably `ImageDimensionsFormat` (`512 Å—512`→`512 × 512`) and achievements `23/23 a€`→`23/23 ✓`.
+
 ## [1.0.0] - 2026-08-24
 
 ### Added
