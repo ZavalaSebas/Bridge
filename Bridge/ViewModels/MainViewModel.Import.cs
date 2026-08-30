@@ -62,9 +62,6 @@ public partial class MainViewModel
             // between set and restore) so it nests cleanly even if a watched-folder
             // scan overlaps. Persist the batch BEFORE adding rows to the UI so a
             // failed insert can't leave games showing that aren't in the database.
-            // Defer the view refresh so the batch insert doesn't trigger N refreshes
-            // and doesn't hit "Cannot change contents while Refresh is deferred" when
-            // the view is sorting/grouping.
             _suspendDetailedRows++;
             try
             {
@@ -99,12 +96,9 @@ public partial class MainViewModel
                 if (added.Count > 0)
                 {
                     _gameRepository.AddMany(added);
-                    using (GamesView.DeferRefresh())
+                    foreach (var game in added)
                     {
-                        foreach (var game in added)
-                        {
-                            AddGameSorted(game);
-                        }
+                        AddGameSorted(game);
                     }
                 }
             }
@@ -168,12 +162,9 @@ public partial class MainViewModel
             _suspendDetailedRows++;
             try
             {
-                using (GamesView.DeferRefresh())
+                foreach (var game in result.Added)
                 {
-                    foreach (var game in result.Added)
-                    {
-                        AddGameSorted(game);
-                    }
+                    AddGameSorted(game);
                 }
             }
             finally
@@ -264,86 +255,83 @@ public partial class MainViewModel
         Func<List<GameMetadata>> enumerate,
         Action<Game>? applyLocalArtwork)
     {
+        var found = await Task.Run(enumerate);
+        int added = 0, updated = 0;
+
         _suspendDetailedRows++;
         try
         {
-            var found = await Task.Run(enumerate);
-            int added = 0, updated = 0;
-
-            using (GamesView.DeferRefresh())
+            foreach (var metadata in found)
             {
-                foreach (var metadata in found)
+                // Yield periodically so a large library doesn't freeze the UI
+                // while the window is already interactive.
+                if ((added + updated) > 0 && (added + updated) % 25 == 0)
                 {
-                    // Yield periodically so a large library doesn't freeze the UI
-                    // while the window is already interactive.
-                    if ((added + updated) > 0 && (added + updated) % 25 == 0)
+                    await Task.Yield();
+                }
+
+                var existing = _gameRepository.FindByExternalId(metadata.ExternalId, sourceId);
+                if (existing is null)
+                {
+                    var game = new Game
                     {
-                        await Task.Yield();
+                        Name = metadata.Name,
+                        ExternalId = metadata.ExternalId,
+                        SourceId = sourceId,
+                        InstallDirectory = metadata.InstallDirectory,
+                        InstallSizeBytes = metadata.InstallSizeBytes,
+                        Icon = metadata.Icon ?? string.Empty,
+                        IsInstalled = metadata.IsInstalled,
+                        Added = DateTime.Now,
+                        GameActions = metadata.GameActions,
+                        Links = metadata.Links,
+                        PlaytimeSeconds = metadata.PlaytimeSeconds,
+                        LastActivity = metadata.LastActivity
+                    };
+                    // Resolve locally-cached artwork (Steam) BEFORE the row binds
+                    // so the library shows complete art the moment it's added.
+                    applyLocalArtwork?.Invoke(game);
+                    _gameRepository.Add(game);
+                    AddGameSorted(game);
+                    added++;
+                }
+                else
+                {
+                    // FindByExternalId returns a detached snapshot — mutate the live
+                    // instance bound to the UI so import + metadata sync see the same object.
+                    var live = Games.FirstOrDefault(g => g.Id == existing.Id);
+                    if (live is null)
+                    {
+                        continue;
                     }
 
-                    var existing = _gameRepository.FindByExternalId(metadata.ExternalId, sourceId);
-                    if (existing is null)
+                    // Re-import only syncs install state — leave user/metadata fields alone.
+                    live.IsInstalled = metadata.IsInstalled;
+                    live.InstallDirectory = metadata.InstallDirectory;
+                    live.InstallSizeBytes = metadata.InstallSizeBytes;
+                    // Steam's locally-recorded playtime fills in the real number
+                    // without ever shrinking what Bridge already tracked (the two
+                    // overlap, so taking the max can't double-count), and
+                    // LastActivity only moves forward.
+                    live.PlaytimeSeconds = Math.Max(live.PlaytimeSeconds, metadata.PlaytimeSeconds);
+                    if (metadata.LastActivity is { } steamPlayed &&
+                        (live.LastActivity is null || steamPlayed > live.LastActivity))
                     {
-                        var game = new Game
-                        {
-                            Name = metadata.Name,
-                            ExternalId = metadata.ExternalId,
-                            SourceId = sourceId,
-                            InstallDirectory = metadata.InstallDirectory,
-                            InstallSizeBytes = metadata.InstallSizeBytes,
-                            Icon = metadata.Icon ?? string.Empty,
-                            IsInstalled = metadata.IsInstalled,
-                            Added = DateTime.Now,
-                            GameActions = metadata.GameActions,
-                            Links = metadata.Links,
-                            PlaytimeSeconds = metadata.PlaytimeSeconds,
-                            LastActivity = metadata.LastActivity
-                        };
-                        // Resolve locally-cached artwork (Steam) BEFORE the row binds
-                        // so the library shows complete art the moment it's added.
-                        applyLocalArtwork?.Invoke(game);
-                        _gameRepository.Add(game);
-                        AddGameSorted(game);
-                        added++;
+                        live.LastActivity = steamPlayed;
                     }
-                    else
+                    // Fill a missing icon from the source (Epic exe icon, Steam
+                    // local art) without overwriting one the user set. A local
+                    // file icon (the Epic exe) always wins over a remote URL.
+                    var srcIcon = metadata.Icon;
+                    if (!string.IsNullOrWhiteSpace(srcIcon) &&
+                        (string.IsNullOrWhiteSpace(live.Icon) || Path.IsPathRooted(srcIcon)))
                     {
-                        // FindByExternalId returns a detached snapshot — mutate the live
-                        // instance bound to the UI so import + metadata sync see the same object.
-                        var live = Games.FirstOrDefault(g => g.Id == existing.Id);
-                        if (live is null)
-                        {
-                            continue;
-                        }
-
-                        // Re-import only syncs install state — leave user/metadata fields alone.
-                        live.IsInstalled = metadata.IsInstalled;
-                        live.InstallDirectory = metadata.InstallDirectory;
-                        live.InstallSizeBytes = metadata.InstallSizeBytes;
-                        // Steam's locally-recorded playtime fills in the real number
-                        // without ever shrinking what Bridge already tracked (the two
-                        // overlap, so taking the max can't double-count), and
-                        // LastActivity only moves forward.
-                        live.PlaytimeSeconds = Math.Max(live.PlaytimeSeconds, metadata.PlaytimeSeconds);
-                        if (metadata.LastActivity is { } steamPlayed &&
-                            (live.LastActivity is null || steamPlayed > live.LastActivity))
-                        {
-                            live.LastActivity = steamPlayed;
-                        }
-                        // Fill a missing icon from the source (Epic exe icon, Steam
-                        // local art) without overwriting one the user set. A local
-                        // file icon (the Epic exe) always wins over a remote URL.
-                        var srcIcon = metadata.Icon;
-                        if (!string.IsNullOrWhiteSpace(srcIcon) &&
-                            (string.IsNullOrWhiteSpace(live.Icon) || Path.IsPathRooted(srcIcon)))
-                        {
-                            live.Icon = srcIcon;
-                        }
-                        applyLocalArtwork?.Invoke(live);
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                        updated++;
+                        live.Icon = srcIcon;
                     }
+                    applyLocalArtwork?.Invoke(live);
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    updated++;
                 }
             }
 
@@ -352,17 +340,14 @@ public partial class MainViewModel
             // uninstall). This keeps Space War (480) and similar titles from staying
             // stuck as "Play" after an external uninstall.
             var foundIds = new HashSet<string>(found.Select(m => m.ExternalId), StringComparer.OrdinalIgnoreCase);
-            using (GamesView.DeferRefresh())
+            foreach (var game in Games.Where(g => g.SourceId == sourceId).ToList())
             {
-                foreach (var game in Games.Where(g => g.SourceId == sourceId).ToList())
+                if (!foundIds.Contains(game.ExternalId) && game.IsInstalled)
                 {
-                    if (!foundIds.Contains(game.ExternalId) && game.IsInstalled)
-                    {
-                        game.IsInstalled = false;
-                        _gameRepository.Update(game);
-                        RefreshListDisplay(game);
-                        updated++;
-                    }
+                    game.IsInstalled = false;
+                    _gameRepository.Update(game);
+                    RefreshListDisplay(game);
+                    updated++;
                 }
             }
 
@@ -529,7 +514,7 @@ public partial class MainViewModel
 
         var root = Path.GetFullPath(folder);
         var targets = new List<RomOrganizeTarget>();
-        foreach (var game in Games)
+        foreach (var game in Games.ToList())
         {
             if (game.Roms.Count == 0)
                 continue;
@@ -574,7 +559,7 @@ public partial class MainViewModel
             var byOriginal = result.Changes.ToDictionary(
                 change => change.OriginalRomPath,
                 StringComparer.OrdinalIgnoreCase);
-            foreach (var game in Games)
+            foreach (var game in Games.ToList())
             {
                 if (game.Roms.Count == 0)
                     continue;

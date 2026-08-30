@@ -40,7 +40,7 @@ public sealed class MetadataSyncService(
             }
         }
 
-        return await SearchByNameAsync(gameName, romImport ? MetadataSearchMode.RomImport : MetadataSearchMode.IgdbFirst, cancellationToken);
+        return await SearchByNameAsync(gameName, MetadataSearchMode.IgdbFirst, cancellationToken);
     }
 
     public Task<(GameMetadata Metadata, string ProviderName)?> SearchForAddedGameAsync(
@@ -49,7 +49,7 @@ public sealed class MetadataSyncService(
         CancellationToken cancellationToken = default) =>
         SearchByNameAsync(
             gameName,
-            romImport ? MetadataSearchMode.RomImport : MetadataSearchMode.SteamFirst,
+            romImport ? MetadataSearchMode.IgdbFirst : MetadataSearchMode.SteamFirst,
             cancellationToken);
 
     public Task<(GameMetadata Metadata, string ProviderName)?> SearchByNameChainAsync(
@@ -69,10 +69,7 @@ public sealed class MetadataSyncService(
         var searchNames = RomScanner.GetMetadataSearchNames(displayName, datName);
         for (var i = 0; i < searchNames.Count; i++)
         {
-            var mode = i == searchNames.Count - 1
-                ? MetadataSearchMode.RomImport
-                : MetadataSearchMode.IgdbFirst;
-            var found = await SearchByNameAsync(searchNames[i], mode, cancellationToken);
+            var found = await SearchByNameAsync(searchNames[i], MetadataSearchMode.IgdbFirst, cancellationToken);
             if (found is not null)
                 return found;
         }

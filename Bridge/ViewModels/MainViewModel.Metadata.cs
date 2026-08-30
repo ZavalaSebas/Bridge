@@ -126,12 +126,6 @@ public partial class MainViewModel
             return;
         }
 
-        if (!IsNetworkAvailable())
-        {
-            SetStatus(Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count), StatusMessageKind.Normal);
-            return;
-        }
-
         SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
@@ -164,35 +158,32 @@ public partial class MainViewModel
                 })));
 
             int applied = 0;
-            using (GamesView.DeferRefresh())
+            foreach (var (game, metadata, providerName) in results)
             {
-                foreach (var (game, metadata, providerName) in results)
+                if (metadata is null || providerName is null)
+                    continue;
+
+                try
                 {
-                    if (metadata is null || providerName is null)
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
                         continue;
 
-                    try
-                    {
-                        var live = TryGetLiveGame(game);
-                        if (live is null)
-                            continue;
+                    if (providerName == _steamMetadataProvider.Name)
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                        if (providerName == _steamMetadataProvider.Name)
-                            await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                    ApplyMetadata(live, metadata);
+                    ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                    ApplySteamLocalArtwork(live);
 
-                        ApplyMetadata(live, metadata);
-                        ApplyMetadataReferences(live, metadata);
-                        await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
-                        ApplySteamLocalArtwork(live);
-
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                        applied++;
-                    }
-                    catch (Exception ex)
-                    {
-                        App.LogException(ex);
-                    }
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
                 }
             }
 
@@ -484,12 +475,6 @@ public partial class MainViewModel
             .Where(g => g.SourceId == steamSourceId)
             .ToList();
 
-        if (!IsNetworkAvailable())
-        {
-            SetStatus(allSteam.Count > 0 ? Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), allSteam.Count) : Strings.NoInternetMetadataDeferred, StatusMessageKind.Normal);
-            return;
-        }
-
         // Two distinct needs, handled differently so we don't re-download a
         // game's full Steam metadata on every open just to fetch a missing link:
         //  - Missing a description → fetch the full Steam metadata (+ IGDB links).
@@ -548,40 +533,38 @@ public partial class MainViewModel
                         }
                     })));
 
-                using (GamesView.DeferRefresh())
+                foreach (var (game, metadata) in results)
                 {
-                    foreach (var (game, metadata) in results)
+                    if (metadata is null)
+                        continue;
+
+                    try
                     {
-                        if (metadata is null)
+                        // This sync runs after the window is interactive — the game may
+                        // have been deleted (or had its actions edited) while the awaits
+                        // above were in flight. Only mutate/save what's still live.
+                        var live = TryGetLiveGame(game);
+                        if (live is null)
                             continue;
 
-                        try
-                        {
-                            // This sync runs after the window is interactive — the game may
-                            // have been deleted (or had its actions edited) while the awaits
-                            // above were in flight. Only mutate/save what's still live.
-                            var live = TryGetLiveGame(game);
-                            if (live is null)
-                                continue;
+                        // Steam provides store/community links; our IGDB Worker adds the
+                        // social links (YouTube, Reddit, ...) so the automatic sync is
+                        // complete, not just the manual one.
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                            // Steam provides store/community links; our IGDB Worker adds the
-                            // social links (YouTube, Reddit, ...) so the automatic sync is
-                            // complete, not just the manual one.
-                            await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                        ApplyMetadata(live, metadata, overwrite: false);
+                        ApplyMetadataReferences(live, metadata);
+                        await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                        ApplySteamLocalArtwork(live);
 
-                            ApplyMetadata(live, metadata, overwrite: false);
-                            ApplyMetadataReferences(live, metadata);
-                            ApplySteamLocalArtwork(live);
-
-                            _gameRepository.Update(live);
-                            RefreshListDisplay(live);
-                            applied++;
-                        }
-                        catch (Exception ex)
-                        {
-                            // One bad game shouldn't abort the whole sync — log and continue.
-                            App.LogException(ex);
-                        }
+                        _gameRepository.Update(live);
+                        RefreshListDisplay(live);
+                        applied++;
+                    }
+                    catch (Exception ex)
+                    {
+                        // One bad game shouldn't abort the whole sync — log and continue.
+                        App.LogException(ex);
                     }
                 }
             }
@@ -589,37 +572,34 @@ public partial class MainViewModel
             // Games that already have their description but never got the IGDB social
             // links (e.g. the Worker was unreachable on a previous run). Add just the
             // links — a light IGDB call, no Steam metadata re-download.
-            using (GamesView.DeferRefresh())
+            foreach (var game in needLinksOnly)
             {
-                foreach (var game in needLinksOnly)
+                try
                 {
-                    try
-                    {
-                        var live = TryGetLiveGame(game);
-                        if (live is null)
-                            continue;
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
+                        continue;
 
-                        var metadata = new GameMetadata();
-                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
-                        if (metadata.Links.Count == 0)
-                            continue;
+                    var metadata = new GameMetadata();
+                    await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                    if (metadata.Links.Count == 0)
+                        continue;
 
-                        ApplyMetadata(live, metadata, overwrite: false);
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                        applied++;
-                    }
-                    catch (Exception ex)
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                }
+                finally
+                {
+                    if (totalWork > 0)
                     {
-                        App.LogException(ex);
-                    }
-                    finally
-                    {
-                        if (totalWork > 0)
-                        {
-                            completed++;
-                            ReportBatchProgress(completed, totalWork);
-                        }
+                        completed++;
+                        ReportBatchProgress(completed, totalWork);
                     }
                 }
             }
@@ -663,12 +643,6 @@ public partial class MainViewModel
             return;
         }
 
-        if (!IsNetworkAvailable())
-        {
-            SetStatus(Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count), StatusMessageKind.Normal);
-            return;
-        }
-
         SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
@@ -699,30 +673,29 @@ public partial class MainViewModel
                 })));
 
             int applied = 0;
-            using (GamesView.DeferRefresh())
+            foreach (var (game, metadata) in results)
             {
-                foreach (var (game, metadata) in results)
+                if (metadata is null)
+                    continue;
+
+                try
                 {
-                    if (metadata is null)
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
                         continue;
 
-                    try
-                    {
-                        var live = TryGetLiveGame(game);
-                        if (live is null)
-                            continue;
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                    ApplySteamLocalArtwork(live);
 
-                        ApplyMetadata(live, metadata, overwrite: false);
-                        ApplyMetadataReferences(live, metadata);
-
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                        applied++;
-                    }
-                    catch (Exception ex)
-                    {
-                        App.LogException(ex);
-                    }
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
                 }
             }
 
@@ -755,12 +728,6 @@ public partial class MainViewModel
         if (candidates.Count == 0)
             return;
 
-        if (!IsNetworkAvailable())
-        {
-            SetStatus(Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count), StatusMessageKind.Normal);
-            return;
-        }
-
         SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
@@ -791,34 +758,32 @@ public partial class MainViewModel
                 })));
 
             int applied = 0;
-            using (GamesView.DeferRefresh())
+            foreach (var (game, metadata, providerName) in results)
             {
-                foreach (var (game, metadata, providerName) in results)
+                if (metadata is null || providerName is null)
+                    continue;
+
+                try
                 {
-                    if (metadata is null || providerName is null)
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
                         continue;
 
-                    try
-                    {
-                        var live = TryGetLiveGame(game);
-                        if (live is null)
-                            continue;
+                    if (providerName == _steamMetadataProvider.Name)
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                        if (providerName == _steamMetadataProvider.Name)
-                            await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                    ApplySteamLocalArtwork(live);
 
-                        ApplyMetadata(live, metadata, overwrite: false);
-                        ApplyMetadataReferences(live, metadata);
-                        ApplySteamLocalArtwork(live);
-
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                        applied++;
-                    }
-                    catch (Exception ex)
-                    {
-                        App.LogException(ex);
-                    }
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
                 }
             }
 
@@ -846,12 +811,6 @@ public partial class MainViewModel
 
         if (candidates.Count == 0)
             return;
-
-        if (!IsNetworkAvailable())
-        {
-            SetStatus(Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count), StatusMessageKind.Normal);
-            return;
-        }
 
         SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
@@ -883,34 +842,32 @@ public partial class MainViewModel
                 })));
 
             int applied = 0;
-            using (GamesView.DeferRefresh())
+            foreach (var (game, metadata, providerName) in results)
             {
-                foreach (var (game, metadata, providerName) in results)
+                if (metadata is null || providerName is null)
+                    continue;
+
+                try
                 {
-                    if (metadata is null || providerName is null)
+                    var live = TryGetLiveGame(game);
+                    if (live is null)
                         continue;
 
-                    try
-                    {
-                        var live = TryGetLiveGame(game);
-                        if (live is null)
-                            continue;
+                    if (providerName == _steamMetadataProvider.Name)
+                        await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
 
-                        if (providerName == _steamMetadataProvider.Name)
-                            await _metadataSync.EnrichSteamLinksFromIgdbAsync(live.Name, metadata);
+                    ApplyMetadata(live, metadata, overwrite: false);
+                    ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                    ApplySteamLocalArtwork(live);
 
-                        ApplyMetadata(live, metadata, overwrite: false);
-                        ApplyMetadataReferences(live, metadata);
-                        ApplySteamLocalArtwork(live);
-
-                        _gameRepository.Update(live);
-                        RefreshListDisplay(live);
-                        applied++;
-                    }
-                    catch (Exception ex)
-                    {
-                        App.LogException(ex);
-                    }
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
                 }
             }
 
@@ -937,7 +894,7 @@ public partial class MainViewModel
                         (g.TimeToBeatSyncedAt == null || now - g.TimeToBeatSyncedAt > METADATA_SYNC_TTL))
             .ToList();
 
-        if (candidates.Count == 0 || !IsNetworkAvailable())
+        if (candidates.Count == 0)
             return;
 
         using var throttle = new SemaphoreSlim(2);
@@ -975,13 +932,10 @@ public partial class MainViewModel
                 {
                     RunOnUiThread(() =>
                     {
-                        using (GamesView.DeferRefresh())
+                        foreach (var live in toUpdate)
                         {
-                            foreach (var live in toUpdate)
-                            {
-                                _gameRepository.Update(live);
-                                RefreshListDisplay(live);
-                            }
+                            _gameRepository.Update(live);
+                            RefreshListDisplay(live);
                         }
                     });
                     updatedGames.AddRange(toUpdate);
@@ -1034,8 +988,6 @@ public partial class MainViewModel
             HeroBackground.IsDefault(g.BackgroundImage) ||
             string.IsNullOrWhiteSpace(g.Icon)).ToList();
         if (candidates.Count == 0 || _steamGridDbClient is null || !_steamGridDbClient.IsConfigured)
-            return;
-        if (!IsNetworkAvailable())
             return;
 
         SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
