@@ -119,7 +119,7 @@ public partial class RomScanner(RomDatMatcher datMatcher)
             displayName = fallbackName;
         }
 
-        var game = new Game { Name = displayName };
+        var game = new Game { Name = displayName, IsInstalled = true };
         game.Roms.Add(new GameRom
         {
             Name = displayName,

@@ -167,21 +167,48 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (SelectedGame is not null && !SelectedGame.IsInstalled)
+        if (SelectedGame is not null)
         {
-            if (IsStoreGame(SelectedGame))
+            // ROMs: IsInstalled stale → check file existence directly.
+            // Solo mostrar "Not installed" si el archivo realmente falta.
+            if (_retroArch.IsManagedRom(SelectedGame))
             {
-                PlayButtonText = Strings.Install;
-                PlayButtonSymbol = "ArrowDownload24";
+                var romPath = SelectedGame.Roms.FirstOrDefault()?.Path;
+                if (!string.IsNullOrWhiteSpace(romPath) && !RomArchivePath.RomFileExists(romPath))
+                {
+                    PlayButtonText = Strings.NotInstalled;
+                    PlayButtonSymbol = "DismissCircle24";
+                    PlayButtonIsStop = false;
+                    return;
+                }
             }
-            else
+            else if (SelectedGame.Roms.Count > 0)
             {
-                PlayButtonText = Strings.NotInstalled;
-                PlayButtonSymbol = "DismissCircle24";
+                var romPath = SelectedGame.Roms.FirstOrDefault()?.Path;
+                if (!string.IsNullOrWhiteSpace(romPath) && !RomArchivePath.RomFileExists(romPath))
+                {
+                    PlayButtonText = Strings.NotInstalled;
+                    PlayButtonSymbol = "DismissCircle24";
+                    PlayButtonIsStop = false;
+                    return;
+                }
             }
+            else if (!SelectedGame.IsInstalled)
+            {
+                if (IsStoreGame(SelectedGame))
+                {
+                    PlayButtonText = Strings.Install;
+                    PlayButtonSymbol = "ArrowDownload24";
+                }
+                else
+                {
+                    PlayButtonText = Strings.NotInstalled;
+                    PlayButtonSymbol = "DismissCircle24";
+                }
 
-            PlayButtonIsStop = false;
-            return;
+                PlayButtonIsStop = false;
+                return;
+            }
         }
 
         PlayButtonText = Strings.Play;
@@ -1133,9 +1160,28 @@ public partial class MainViewModel : ObservableObject
             game.IsRunning = false;
         }
 
+        SyncRomInstallStates();
+
         RefreshStatistics();
         RefreshHome();
         RefreshAllEmulatorDownloadStates();
+    }
+
+    private void SyncRomInstallStates()
+    {
+        foreach (var game in Games.Where(g => g.Roms.Count > 0).ToList())
+        {
+            var romPath = game.Roms[0].Path;
+            if (string.IsNullOrWhiteSpace(romPath))
+                continue;
+
+            var exists = RomArchivePath.RomFileExists(romPath);
+            if (game.IsInstalled == exists)
+                continue;
+
+            game.IsInstalled = exists;
+            _gameRepository.Update(game);
+        }
     }
 
     private void MigrateUserManagedGames(IReadOnlyList<Game> games)

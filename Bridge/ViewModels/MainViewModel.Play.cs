@@ -21,21 +21,38 @@ public partial class MainViewModel
             return;
         }
 
-        // Not-installed handling: external/manual/ROM files just show "Not installed".
-        // Store games (Steam/Epic) trigger the store's install flow but must NOT
-        // enter the playing/tracking state (IsRunning → Stop) — that's the bug
-        // where "Install" immediately flips to "Stop" as if the game were running.
-        if (!target.IsInstalled)
+        // ROMs: verificar existencia real del archivo — solo mostrar
+        // "Not installed" si la ROM fue borrada / no está donde debe.
+        if (_retroArch.IsManagedRom(target) || target.Roms.Count > 0)
         {
-            if (_retroArch.IsManagedRom(target))
+            var romPath = target.Roms.FirstOrDefault()?.Path;
+            if (!string.IsNullOrWhiteSpace(romPath) && !RomArchivePath.RomFileExists(romPath))
             {
-                // ROM file missing — handled below via emulator launch path (will
-                // throw "ROM file not found" and still show NotInstalled via the
-                // play button). Just block the tracking path.
+                if (target.IsInstalled)
+                {
+                    target.IsInstalled = false;
+                    _gameRepository.Update(target);
+                    UpdatePlayButtonState();
+                }
+
                 SetStatus($"{target.Name} — {Strings.NotInstalled}", StatusMessageKind.Warning);
                 return;
             }
 
+            // ROM existe → asegurar IsInstalled para consistencia y continuar
+            // al flujo de emulación (no bloquear con "Not installed").
+            if (!target.IsInstalled)
+            {
+                target.IsInstalled = true;
+                _gameRepository.Update(target);
+                UpdatePlayButtonState();
+            }
+        }
+        else if (!target.IsInstalled)
+        {
+            // Store games (Steam/Epic) trigger the store's install flow but must NOT
+            // enter the playing/tracking state (IsRunning → Stop) — that's the bug
+            // where "Install" immediately flips to "Stop" as if the game were running.
             if (IsStoreGame(target))
             {
                 var installUrl = TryGetStoreInstallUrl(target);

@@ -111,8 +111,10 @@ public partial class MainViewModel
             await ReidentifyRomGamesFromDatAsync();
             await OrganizeRomsInFolderAsync(folder, force: false);
 
+            SyncRomInstallStates();
             RefreshStatistics();
             RefreshAllEmulatorDownloadStates();
+            UpdatePlayButtonState();
             if (added.Count > 0)
             {
                 SetStatus(Strings.Format(nameof(Strings.ScanCompleteFormat), added.Count, folder), StatusMessageKind.Normal);
