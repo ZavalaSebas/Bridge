@@ -204,9 +204,17 @@ public partial class MainViewModel
 
     private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
     {
-        var renameFromMetadata = game.Roms.Count > 0
+        // Never rename a ROM that didn't match the No-Intro DAT (hack/homebrew/bad dump):
+        // the filename is the only reliable identity and an IGDB "Pokemon Black 2: DE"
+        // coincidence would clobber the user's hack name. DAT-matched ROMs have a
+        // populated DatRegion; hacks keep it null (see RomScanner.ProcessRom).
+        var isDatMatchedRom = game.Roms.Count > 0 && game.Roms[0].DatRegion is not null;
+        var renameFromMetadata = (isDatMatchedRom || game.Roms.Count == 0)
             && !string.IsNullOrWhiteSpace(metadata.Name)
             && (overwrite || string.IsNullOrWhiteSpace(game.Description));
+        // For non-DAT ROMs, also never clobber the display name even if description is empty.
+        if (!isDatMatchedRom && game.Roms.Count > 0)
+            renameFromMetadata = false;
 
         if (!string.IsNullOrWhiteSpace(metadata.Description))
             game.Description = metadata.Description;
