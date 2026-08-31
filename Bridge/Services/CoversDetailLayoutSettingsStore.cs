@@ -13,36 +13,13 @@ public static class CoversDetailLayoutSettingsStore
 
     private static string SettingsFile => Config.CoversDetailLayoutFilePath;
 
-    public static string Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) && IsValid(saved))
-                return saved;
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
-
-        return Compact;
-    }
+    public static string Load() =>
+        ScalarSettingStore.Load(SettingsFile, null, Compact, TryParseLayout);
 
     public static bool UsesCompact() => Load() == Compact;
 
-    public static void Save(string layout)
-    {
-        var normalized = Normalize(layout);
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, normalized);
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
+    public static void Save(string layout) =>
+        ScalarSettingStore.Save(SettingsFile, Normalize(layout));
 
     internal static string Normalize(string raw)
     {
@@ -52,16 +29,9 @@ public static class CoversDetailLayoutSettingsStore
         return Compact;
     }
 
-    internal static bool IsValid(string layout) =>
-        layout is Compact or Standard;
-
-    private static bool TryLoadFromFile(string path, out string value)
+    private static bool TryParseLayout(string raw, out string value)
     {
-        value = string.Empty;
-        if (!File.Exists(path))
-            return false;
-
-        value = Normalize(File.ReadAllText(path));
+        value = Normalize(raw);
         return true;
     }
 }

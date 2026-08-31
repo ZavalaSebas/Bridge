@@ -11,47 +11,22 @@ public static class WhatsNewSettingsStore
     private static string SettingsFile => Config.WhatsNewSeenFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "whats-new-seen.txt");
 
-    public static Version? Load()
+    public static Version? Load() =>
+        ScalarSettingStore.Load<Version?>(SettingsFile, LegacySettingsFile, null, TryParseVersion);
+
+    public static void Save(Version version) =>
+        ScalarSettingStore.Save(SettingsFile, Normalize(version).ToString(3));
+
+    private static bool TryParseVersion(string raw, out Version? value)
     {
-        try
+        if (Version.TryParse(raw, out var version))
         {
-            if (TryLoadFromFile(SettingsFile) is { } current)
-                return current;
-
-            if (TryLoadFromFile(LegacySettingsFile) is { } legacy)
-                return legacy;
-        }
-        catch
-        {
-            // Corrupt/missing settings — treat as never seen.
+            value = Normalize(version);
+            return true;
         }
 
-        return null;
-    }
-
-    public static void Save(Version version)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, Normalize(version).ToString(3));
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
-
-    private static Version? TryLoadFromFile(string path)
-    {
-        if (!File.Exists(path))
-            return null;
-
-        var text = File.ReadAllText(path).Trim();
-        if (Version.TryParse(text, out var version))
-                return Normalize(version);
-
-        return null;
+        value = null;
+        return false;
     }
 
     internal static Version Normalize(Version version) =>

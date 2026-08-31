@@ -3,8 +3,8 @@ namespace Bridge.Services;
 internal static class TaskExtensions
 {
     /// <summary>
-    /// Observes a fire-and-forget task so exceptions reach errors.log instead of
-    /// staying unobserved on the thread pool.
+    /// Observes a fire-and-forget task so exceptions reach the app log (bridge.log)
+    /// instead of staying unobserved on the thread pool.
     /// </summary>
     internal static void FireAndForget(this Task task, string context)
     {

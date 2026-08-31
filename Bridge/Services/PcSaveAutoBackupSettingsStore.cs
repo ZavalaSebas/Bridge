@@ -10,34 +10,9 @@ public static class PcSaveAutoBackupSettingsStore
 {
     private static string SettingsFile => Config.PcSaveAutoBackupFilePath;
 
-    public static bool Load()
-    {
-        try
-        {
-            if (File.Exists(SettingsFile) &&
-                bool.TryParse(File.ReadAllText(SettingsFile).Trim(), out var saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static bool Load() =>
+        ScalarSettingStore.Load(SettingsFile, null, true, bool.TryParse);
 
-        return true;
-    }
-
-    public static void Save(bool enabled)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, enabled.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
+    public static void Save(bool enabled) =>
+        ScalarSettingStore.Save(SettingsFile, enabled.ToString());
 }

@@ -19,41 +19,10 @@ public static class UpdateChannelSettingsStore
     private static string SettingsFile => Config.UpdateChannelFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "update-channel.txt");
 
-    public static UpdateChannel Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static UpdateChannel Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, UpdateChannel.Stable,
+            static (string raw, out UpdateChannel value) => Enum.TryParse(raw, out value));
 
-        return UpdateChannel.Stable;
-    }
-
-    public static void Save(UpdateChannel channel)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, channel.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out UpdateChannel channel)
-    {
-        channel = UpdateChannel.Stable;
-        return File.Exists(path) &&
-            Enum.TryParse<UpdateChannel>(File.ReadAllText(path).Trim(), out channel);
-    }
+    public static void Save(UpdateChannel channel) =>
+        ScalarSettingStore.Save(SettingsFile, channel.ToString());
 }

@@ -11,41 +11,9 @@ public static class AutoApplyCheatsSettingsStore
     private static string SettingsFile => Config.AutoApplyCheatsOnLaunchFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "auto-apply-cheats-on-launch.txt");
 
-    public static bool Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static bool Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, true, bool.TryParse);
 
-        return true;
-    }
-
-    public static void Save(bool autoApplyCheatsOnLaunch)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, autoApplyCheatsOnLaunch.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out bool enabled)
-    {
-        enabled = true;
-        return File.Exists(path) &&
-            bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
-    }
+    public static void Save(bool autoApplyCheatsOnLaunch) =>
+        ScalarSettingStore.Save(SettingsFile, autoApplyCheatsOnLaunch.ToString());
 }

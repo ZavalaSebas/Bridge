@@ -11,39 +11,9 @@ public static class DetailSideButtonsSettingsStore
     private static string SettingsFile => Config.DetailSideButtonsFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "detail-side-buttons.txt");
 
-    public static bool Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-        }
+    public static bool Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, false, bool.TryParse);
 
-        return false;
-    }
-
-    public static void Save(bool enabled)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, enabled.ToString());
-        }
-        catch
-        {
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out bool enabled)
-    {
-        enabled = false;
-        return File.Exists(path) &&
-            bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
-    }
+    public static void Save(bool enabled) =>
+        ScalarSettingStore.Save(SettingsFile, enabled.ToString());
 }

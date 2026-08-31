@@ -156,7 +156,7 @@ Uses `Microsoft.EntityFrameworkCore.Sqlite` (see [ADR-4](ARCHITECTURE.md#adr-4-l
 
 Verified at runtime (not just compiled) against a real SQLite database file: create → save a `Game` with populated `GameActions`/`Roms`/`Links`/`GenreIds`/`ReleaseDate` → close the context → reopen a fresh context pointing at the same file → every field reads back correctly, including the dedup lookup by `(ExternalId, SourceId)`.
 
-**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` is registered via `AddDbContextFactory`, and every repository is a `Singleton` that creates a short-lived context per operation through `IDbContextFactory<BridgeDbContext>`, so concurrent background work such as metadata sync or imports never shares one non-thread-safe context), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `BridgeDbMigrator.MigrateToLatest()` (migrates to the latest schema, baselining pre-migrations DBs — see the Updater/Migrations section below). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\errors.log` via `App.LogException` — minimal, deliberately not a full `ILogger` setup (see Logging).
+**Wired up and verified end-to-end (2026-08-05).** `Bridge/Config.cs` defines `AppDataPath`/`DatabasePath`; `Bridge/App.xaml.cs`'s `OnStartup` builds the DI container (`Microsoft.Extensions.DependencyInjection`, see `ConfigureServices` — `BridgeDbContext` is registered via `AddDbContextFactory`, and every repository is a `Singleton` that creates a short-lived context per operation through `IDbContextFactory<BridgeDbContext>`, so concurrent background work such as metadata sync or imports never shares one non-thread-safe context), creates `%LOCALAPPDATA%\Bridge\` if missing, and calls `BridgeDbMigrator.MigrateToLatest()` (migrates to the latest schema, baselining pre-migrations DBs — see the Updater/Migrations section below). Verified by actually launching the built `Bridge.exe` (not just `dotnet build`) and confirming the real `bridge.db` file gets the correct 14 tables. There's a global `DispatcherUnhandledException` handler showing a `MessageBox` and writing the exception to `%LOCALAPPDATA%\Bridge\logs\bridge.log` via `App.LogException` (a thin wrapper over the `AppLog` facade) — minimal, deliberately not a full `ILogger` setup (see Logging).
 
 ### `Bridge.Metadata` — what's in it
 
@@ -466,7 +466,10 @@ Covered by `Bridge.Tests/Services/AppDataMigratorTests.cs`.
 
 Files under `%LOCALAPPDATA%\Bridge\config\` (DPAPI secrets under `config\secrets\`),
 same tolerant read/write pattern as `ViewModeSettingsStore` — corrupt/missing files
-fall back to safe defaults; saving never crashes the app. Each store also falls back
+fall back to safe defaults; saving never crashes the app. The shared load/save
+mechanics for single-value files (primary→legacy fallback, trimming, directory-creating
+save, logged swallow) live in `ScalarSettingStore`; each store keeps its own parse
+delegate. Each store also falls back
 to the pre-`config/` root path on read (see [AppData Migrations](#appdata-migrations)
 v2), so an interrupted migration never loses a preference.
 
@@ -880,14 +883,14 @@ Metadata image downloads use the same URL rules in `RemoteImageCache`. IGDB cred
 
 ## Logging
 
-The project does **not** use `Microsoft.Extensions.Logging` / `ILogger` — that was aspirational. The real logging is a single entry point: `App.LogException(Exception)` in `Bridge/App.xaml.cs`, which appends a timestamped full-exception dump to `%LOCALAPPDATA%\Bridge\logs\errors.log` (creating the `logs` folder on demand). It's called from the global `DispatcherUnhandledException` handler (before the `MessageBox`) and from the catch blocks of fire-and-forget paths that never reach the dispatcher, so failures aren't silently swallowed.
+The project does **not** use `Microsoft.Extensions.Logging` / `ILogger` — that was aspirational. The real logging is a lightweight facade, `AppLog` (`Bridge/Services/AppLog.cs`), with `Info`/`Warn`/`Error(message, exception?)` methods that append timestamped lines to `%LOCALAPPDATA%\Bridge\logs\bridge.log` (creating the `logs` folder on demand, rotating to `bridge.log.1` at ~1 MB). `App.LogException(Exception)` in `Bridge/App.xaml.cs` is now a thin wrapper that delegates to `AppLog.Error`. It's called from the global `DispatcherUnhandledException` handler (before the `MessageBox`) and from the catch blocks of fire-and-forget paths that never reach the dispatcher; the `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException` handlers (registered in `OnStartup`) also route through `AppLog`, so background and task-pool failures aren't silently swallowed either. Settings-store persistence failures log through `AppLog.Warn` (see `ScalarSettingStore`).
 
 ### Requirements
 
-- **Route exceptions through `App.LogException`** — the one place unhandled errors reach disk
-- **Never swallow exceptions silently** — code that catches and continues (e.g. `RemoteImageCache`'s decode catch) must still call `App.LogException`
-- **No `Debug.WriteLine`** — `App.LogException` is the only logging surface
-- **Logging must never crash the app** — `App.LogException` swallows its own failures by design
+- **Route exceptions through `AppLog`** (or `App.LogException`, which wraps it) — the one place unhandled errors reach disk
+- **Never swallow exceptions silently** — code that catches and continues (e.g. `RemoteImageCache`'s decode catch) must still call `AppLog`/`App.LogException`
+- **No `Debug.WriteLine`** — `AppLog` is the only logging surface
+- **Logging must never crash the app** — `AppLog` swallows its own failures by design
 
 ---
 

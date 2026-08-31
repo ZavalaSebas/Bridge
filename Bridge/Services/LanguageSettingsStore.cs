@@ -19,43 +19,12 @@ public static class LanguageSettingsStore
     private static string SettingsFile => Config.LanguageFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "language.txt");
 
-    public static AppLanguage Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static AppLanguage Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, AppLanguage.English,
+            static (string raw, out AppLanguage value) => Enum.TryParse(raw, out value));
 
-        return AppLanguage.English;
-    }
-
-    public static void Save(AppLanguage language)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, language.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out AppLanguage language)
-    {
-        language = AppLanguage.English;
-        return File.Exists(path) &&
-            Enum.TryParse<AppLanguage>(File.ReadAllText(path).Trim(), out language);
-    }
+    public static void Save(AppLanguage language) =>
+        ScalarSettingStore.Save(SettingsFile, language.ToString());
 
     public static CultureInfo CultureFor(AppLanguage language) =>
         language switch

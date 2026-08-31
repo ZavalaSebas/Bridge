@@ -225,7 +225,7 @@ Flat layout — every project sits directly under the repo root, no `src/`/`test
 | SQLitePCLRaw.bundle_e_sqlite3 | 3.0.5 | Native SQLite binary (SourceGear.sqlite3) | Explicit pin in `Bridge.Storage`; see [Dependencies](#dependencies) risk register |
 | CommunityToolkit.Mvvm | 8.4.2 | MVVM boilerplate (`ObservableObject`, `RelayCommand`) | Matches `DEVELOPMENT.md` MVVM conventions |
 | Microsoft.Extensions.DependencyInjection | 10.0.11 | DI container | Matches `DEVELOPMENT.md` DI conventions |
-| ~~Microsoft.Extensions.Logging~~ | — | **Not a dependency** — no `ILogger<T>` in the codebase; logging goes through `App.LogException` to `errors.log` | Code-verified — do not re-add without reason |
+| ~~Microsoft.Extensions.Logging~~ | — | **Not a dependency** — no `ILogger<T>` in the codebase; logging goes through the `AppLog` facade (and `App.LogException`, which wraps it) to `bridge.log` | Code-verified — do not re-add without reason |
 | WPF-UI | 4.3.0 | Modern WPF controls/theming — `FluentWindow`, `TitleBar`, `SymbolIcon`, theme dictionaries | In use since Fase 7, see [ADR-3](ARCHITECTURE.md#adr-3-wpf-ui-430-for-the-visual-overhaul-supersedes-the-original-plain-wpf-first-adr) |
 | SharpCompress | 0.50.4 | 7z/zip extraction for the managed RetroArch install (`ArchiveFactory.WriteToDirectory` for solid 7z) | Pinned for RetroArch install; see the Managed Emulation section in DEVELOPMENT.md |
 

@@ -11,41 +11,9 @@ public static class StartupSettingsStore
     private static string SettingsFile => Config.StartupFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "startup.txt");
 
-    public static bool Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static bool Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, false, bool.TryParse);
 
-        return false;
-    }
-
-    public static void Save(bool launchAtStartup)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, launchAtStartup.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out bool enabled)
-    {
-        enabled = false;
-        return File.Exists(path) &&
-            bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
-    }
+    public static void Save(bool launchAtStartup) =>
+        ScalarSettingStore.Save(SettingsFile, launchAtStartup.ToString());
 }
