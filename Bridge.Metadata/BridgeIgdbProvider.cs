@@ -31,12 +31,12 @@ public sealed class BridgeIgdbProvider(HttpClient httpClient) : IGameMetadataPro
             using var response = await httpClient.PostAsJsonAsync(
                 MetadataEndpoint,
                 new WorkerMetadataRequest(gameName.Trim()),
-                cts.Token);
+                cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
                 return null;
 
-            var game = await response.Content.ReadFromJsonAsync<WorkerGame>(cancellationToken: cts.Token);
+            var game = await response.Content.ReadFromJsonAsync<WorkerGame>(cancellationToken: cts.Token).ConfigureAwait(false);
             return game is null ? null : Map(game);
         }
         catch (OperationCanceledException)

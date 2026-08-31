@@ -25,7 +25,7 @@ public sealed class EpicAchievementsClient(HttpClient httpClient)
             accessToken,
             AchievementDefinitionsQuery,
             new { sandboxId, locale },
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
         return EpicAchievementCatalog.TryParse(payload);
     }
@@ -40,7 +40,7 @@ public sealed class EpicAchievementsClient(HttpClient httpClient)
             accessToken,
             PlayerAchievementsQuery,
             new { epicAccountId = accountId, sandboxId },
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
         return EpicPlayerAchievementRecord.TryParse(payload, sandboxId);
     }
@@ -59,12 +59,12 @@ public sealed class EpicAchievementsClient(HttpClient httpClient)
             Encoding.UTF8,
             "application/json");
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     private const string AchievementDefinitionsQuery = """

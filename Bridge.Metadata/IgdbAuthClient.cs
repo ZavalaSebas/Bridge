@@ -27,7 +27,7 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
 
         // Guard the refresh so two concurrent callers don't both hit the token
         // endpoint (and so the second one uses the token the first one fetched).
-        await _tokenLock.WaitAsync(cancellationToken);
+        await _tokenLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             // Re-check after acquiring the lock — another caller may have
@@ -53,10 +53,10 @@ public class IgdbAuthClient(HttpClient httpClient, IgdbSettings settings)
                 })
             };
             request.Headers.UserAgent.ParseAdd("Bridge/0.1");
-            using var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var payload = await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken: cancellationToken)
+            var payload = await response.Content.ReadFromJsonAsync<TwitchTokenResponse>(cancellationToken: cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("Twitch token endpoint returned an empty response.");
 
             // A missing/blank token must not be cached as valid — that would make

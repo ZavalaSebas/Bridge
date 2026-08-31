@@ -33,8 +33,8 @@ public sealed class HowLongToBeatClient(HttpClient httpClient)
         if (string.IsNullOrWhiteSpace(gameName))
             return null;
 
-        var auth = await GetAuthTokenAsync(cancellationToken);
-        var results = await SearchAsync(gameName, auth, limit: 8, cancellationToken);
+        var auth = await GetAuthTokenAsync(cancellationToken).ConfigureAwait(false);
+        var results = await SearchAsync(gameName, auth, limit: 8, cancellationToken).ConfigureAwait(false);
         return PickBestMatch(gameName, results);
     }
 
@@ -78,11 +78,11 @@ public sealed class HowLongToBeatClient(HttpClient httpClient)
         request.Headers.TryAddWithoutValidation("x-hp-key", auth.HpKey);
         request.Headers.TryAddWithoutValidation("x-hp-val", auth.HpVal);
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return [];
 
-        var envelope = await response.Content.ReadFromJsonAsync<HltbSearchEnvelope>(JsonOptions, cancellationToken);
+        var envelope = await response.Content.ReadFromJsonAsync<HltbSearchEnvelope>(JsonOptions, cancellationToken).ConfigureAwait(false);
         if (envelope?.Data is not { Count: > 0 } rows)
             return [];
 
@@ -97,7 +97,7 @@ public sealed class HowLongToBeatClient(HttpClient httpClient)
         if (_authToken is not null && DateTimeOffset.UtcNow < _authTokenExpiry - TimeSpan.FromMinutes(1))
             return _authToken;
 
-        await _tokenLock.WaitAsync(cancellationToken);
+        await _tokenLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_authToken is not null && DateTimeOffset.UtcNow < _authTokenExpiry - TimeSpan.FromMinutes(1))
@@ -107,10 +107,10 @@ public sealed class HowLongToBeatClient(HttpClient httpClient)
             request.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
             request.Headers.TryAddWithoutValidation("Referer", $"{BaseUrl}/");
 
-            using var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var token = await response.Content.ReadFromJsonAsync<HltbAuthToken>(JsonOptions, cancellationToken);
+            var token = await response.Content.ReadFromJsonAsync<HltbAuthToken>(JsonOptions, cancellationToken).ConfigureAwait(false);
             if (token?.Token is not { Length: > 0 } ||
                 token.HpKey is not { Length: > 0 } ||
                 token.HpVal is not { Length: > 0 })

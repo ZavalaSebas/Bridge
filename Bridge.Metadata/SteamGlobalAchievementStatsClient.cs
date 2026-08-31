@@ -24,12 +24,12 @@ public sealed class SteamGlobalAchievementStatsClient(HttpClient httpClient)
         var url =
             $"https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid={appId}";
 
-        using var response = await httpClient.GetAsync(url, cancellationToken);
+        using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return Empty;
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var payload = await JsonSerializer.DeserializeAsync<GlobalPercentagesResponse>(stream, JsonOptions, cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        var payload = await JsonSerializer.DeserializeAsync<GlobalPercentagesResponse>(stream, JsonOptions, cancellationToken).ConfigureAwait(false);
         var entries = payload?.AchievementPercentages?.Achievements;
         if (entries is null || entries.Count == 0)
             return Empty;
