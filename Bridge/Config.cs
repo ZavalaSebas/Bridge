@@ -98,6 +98,9 @@ public static class Config
     // UI language (English/Spanish). Plain file like update-channel.txt.
     public static string LanguageFilePath => Path.Combine(ConfigDirectoryPath, "language.txt");
 
+    // UI font family (curated list: Inter / Segoe UI / Segoe UI Variable / Consolas).
+    public static string FontFilePath => Path.Combine(ConfigDirectoryPath, "font.txt");
+
     // Launch Bridge at Windows sign-in. Plain file like update-channel.txt.
     public static string StartupFilePath => Path.Combine(ConfigDirectoryPath, "startup.txt");
 

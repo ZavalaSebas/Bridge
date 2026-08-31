@@ -129,6 +129,7 @@ The MVP defined in the foundation notes:
 - **Extended theming** — primary + secondary accent colors (currently single accent `#007ACC` / Play `#10B981` in `Bridge/Styles/Theme.xaml`)
 - **Full i18n** — every UI string through `Strings.resx` (audit remaining hard-coded literals) for multi-language packs
 - **Nintendo Switch-style view** — horizontal scroll / grid + detail inspired by Switch home
+- **Vista horizontal tipo Switch para ROMs / Emuladores (diferido)** — vista dedicada para la sección ROMs: scroll horizontal por sistema/plataforma (estilo Nintendo Switch), covers grandes con navegación lateral + detalle inline. Diferido — no bloquea 1.0; reutiliza `RomPlatformCatalog`/`Game.GroupField=Plataforma` y el layout de `Covers`, pero con `ViewMode`/`NavigationSection.Roms` propio y virtualización horizontal
 - **Square covers toggle** — Covers view option for 1:1 covers instead of 2:3 (current 200×300 in `Bridge/Views/HomeView.xaml` / `MainWindow.xaml`)
 - **What to Play Next expansion** — more heuristics for the Home rows (`MainViewModel.Home.cs`) beyond recently added / continue / favorites (e.g., backlog, unfinished, random from underplayed)
 

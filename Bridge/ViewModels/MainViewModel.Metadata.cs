@@ -1,4 +1,4 @@
-using Bridge.Core.Entities;
+﻿using Bridge.Core.Entities;
 using Bridge.Core.Import;
 using Bridge.Core.Utilities;
 using Bridge.Emulation;
@@ -14,6 +14,14 @@ public partial class MainViewModel
     /// <summary>Elapsed time before retrying metadata sync for a game that was last attempted (success or fail).</summary>
     private static readonly TimeSpan METADATA_SYNC_TTL = TimeSpan.FromDays(30);
 
+    private static bool NeedsMetadataRefresh(Game game, DateTime now) =>
+        (string.IsNullOrWhiteSpace(game.Description) ||
+         string.IsNullOrWhiteSpace(game.CoverImage) ||
+         HeroBackground.IsDefault(game.BackgroundImage) ||
+         string.IsNullOrWhiteSpace(game.LogoImage) ||
+         game.Screenshots.Count == 0) &&
+        (game.MetadataSyncedAt == null || now - game.MetadataSyncedAt > METADATA_SYNC_TTL);
+
     [RelayCommand]
     private async Task DownloadMetadataAsync()
     {
@@ -27,7 +35,7 @@ public partial class MainViewModel
         var romImport = game.Roms.Count > 0;
         var gameName = romImport ? RomScanner.ToSearchName(game.Name) : game.Name;
 
-        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGameFormat), game.Name);
+        SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGameFormat), game.Name), StatusMessageKind.Normal);
 
         BeginStatusProgress(indeterminate: true);
         try
@@ -53,6 +61,7 @@ public partial class MainViewModel
 
                 ApplyMetadata(game, metadata);
                 ApplyMetadataReferences(game, metadata);
+                await TryEnrichArtworkFromSteamGridDbAsync(game, overwrite: true);
                 ApplySteamLocalArtwork(game, overwrite: true);
                 metadataApplied = true;
             }
@@ -76,15 +85,15 @@ public partial class MainViewModel
 
             if (!metadataApplied && !hltbApplied)
             {
-                StatusMessage = IsNetworkAvailable()
+                SetStatus(IsNetworkAvailable()
                     ? Strings.Format(nameof(Strings.NoMetadataFoundFormat), gameName)
-                    : Strings.NoInternetMetadataDeferred;
+                    : Strings.NoInternetMetadataDeferred, StatusMessageKind.Normal);
                 return;
             }
 
-            StatusMessage = metadataApplied
+            SetStatus(metadataApplied
                 ? Strings.Format(nameof(Strings.MetadataAppliedToGameFormat), game.Name, providerName!)
-                : Strings.Format(nameof(Strings.HowLongToBeatAppliedToGameFormat), game.Name);
+                : Strings.Format(nameof(Strings.HowLongToBeatAppliedToGameFormat), game.Name), StatusMessageKind.Normal);
         }
         finally
         {
@@ -110,21 +119,14 @@ public partial class MainViewModel
     {
         var now = DateTime.Now;
         var candidates = games
-            .Where(g => string.IsNullOrWhiteSpace(g.Description) &&
-                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
+            .Where(g => NeedsMetadataRefresh(g, now))
             .ToList();
         if (candidates.Count == 0)
         {
             return;
         }
 
-        if (!IsNetworkAvailable())
-        {
-            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
-            return;
-        }
-
-        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
+        SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
         var total = candidates.Count;
@@ -172,6 +174,7 @@ public partial class MainViewModel
 
                     ApplyMetadata(live, metadata);
                     ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
                     ApplySteamLocalArtwork(live);
 
                     _gameRepository.Update(live);
@@ -187,9 +190,10 @@ public partial class MainViewModel
             // Batch seal metadata markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
-            StatusMessage = applied > 0
-                ? Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count)
-                : Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count);
+            if (applied > 0)
+                SetStatus(Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count), StatusMessageKind.Normal);
+            else
+                SetStatus(Strings.Format(nameof(Strings.NoMetadataFoundForAddedGamesFormat), candidates.Count), StatusMessageKind.Normal);
         }
         finally
         {
@@ -200,9 +204,17 @@ public partial class MainViewModel
 
     private static void ApplyMetadata(Game game, GameMetadata metadata, bool overwrite = true)
     {
-        var renameFromMetadata = game.Roms.Count > 0
+        // Never rename a ROM that didn't match the No-Intro DAT (hack/homebrew/bad dump):
+        // the filename is the only reliable identity and an IGDB "Pokemon Black 2: DE"
+        // coincidence would clobber the user's hack name. DAT-matched ROMs have a
+        // populated DatRegion; hacks keep it null (see RomScanner.ProcessRom).
+        var isDatMatchedRom = game.Roms.Count > 0 && game.Roms[0].DatRegion is not null;
+        var renameFromMetadata = (isDatMatchedRom || game.Roms.Count == 0)
             && !string.IsNullOrWhiteSpace(metadata.Name)
             && (overwrite || string.IsNullOrWhiteSpace(game.Description));
+        // For non-DAT ROMs, also never clobber the display name even if description is empty.
+        if (!isDatMatchedRom && game.Roms.Count > 0)
+            renameFromMetadata = false;
 
         if (!string.IsNullOrWhiteSpace(metadata.Description))
             game.Description = metadata.Description;
@@ -246,6 +258,14 @@ public partial class MainViewModel
             var background = UrlValidator.SanitizePersistedUrl(metadata.BackgroundImage);
             if (!string.IsNullOrWhiteSpace(background))
                 game.BackgroundImage = background;
+        }
+
+        if (!string.IsNullOrWhiteSpace(metadata.LogoImage) &&
+            (overwrite || string.IsNullOrWhiteSpace(game.LogoImage)))
+        {
+            var logo = UrlValidator.SanitizePersistedUrl(metadata.LogoImage);
+            if (!string.IsNullOrWhiteSpace(logo))
+                game.LogoImage = logo;
         }
 
         if (metadata.Screenshots is { Count: > 0 } &&
@@ -463,14 +483,6 @@ public partial class MainViewModel
             .Where(g => g.SourceId == steamSourceId)
             .ToList();
 
-        if (!IsNetworkAvailable())
-        {
-            StatusMessage = allSteam.Count > 0
-                ? Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), allSteam.Count)
-                : Strings.NoInternetMetadataDeferred;
-            return;
-        }
-
         // Two distinct needs, handled differently so we don't re-download a
         // game's full Steam metadata on every open just to fetch a missing link:
         //  - Missing a description → fetch the full Steam metadata (+ IGDB links).
@@ -478,12 +490,12 @@ public partial class MainViewModel
         //    Worker for the links; no Steam re-download.
         var now = DateTime.Now;
         var needMetadata = allSteam
-            .Where(g => string.IsNullOrWhiteSpace(g.Description) &&
-                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
+            .Where(g => NeedsMetadataRefresh(g, now))
             .ToList();
         var needLinksOnly = allSteam
             .Where(g => !string.IsNullOrWhiteSpace(g.Description) &&
-                        !g.Links.Any(l => !IsSteamLink(l.Name)))
+                        !g.Links.Any(l => !IsSteamLink(l.Name)) &&
+                        !NeedsMetadataRefresh(g, now))
             .ToList();
 
         int applied = 0;
@@ -500,7 +512,7 @@ public partial class MainViewModel
         {
             if (needMetadata.Count > 0)
             {
-                StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), needMetadata.Count);
+                SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), needMetadata.Count), StatusMessageKind.Normal);
 
                 // Fetch the HTTP payloads with bounded parallelism (4 at a time): the
                 // requests are the slow part, and firing all of them at once would trip
@@ -550,6 +562,7 @@ public partial class MainViewModel
 
                         ApplyMetadata(live, metadata, overwrite: false);
                         ApplyMetadataReferences(live, metadata);
+                        await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
                         ApplySteamLocalArtwork(live);
 
                         _gameRepository.Update(live);
@@ -613,11 +626,12 @@ public partial class MainViewModel
                 EndStatusProgress();
         }
 
-        StatusMessage = applied > 0
-            ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, needMetadata.Count + needLinksOnly.Count)
-            : needMetadata.Count + needLinksOnly.Count > 0 && !IsNetworkAvailable()
-                ? Strings.MetadataSyncNoInternet
-                : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), needMetadata.Count + needLinksOnly.Count);
+        if (applied > 0)
+            SetStatus(Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, needMetadata.Count + needLinksOnly.Count), StatusMessageKind.Normal);
+        else if (needMetadata.Count + needLinksOnly.Count > 0 && !IsNetworkAvailable())
+            SetStatus(Strings.MetadataSyncNoInternet, StatusMessageKind.Normal);
+        else
+            SetStatus(Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), needMetadata.Count + needLinksOnly.Count), StatusMessageKind.Normal);
     }
 
     // Downloads metadata for games from sources without an appid-based lookup
@@ -629,9 +643,7 @@ public partial class MainViewModel
     {
         var now = DateTime.Now;
         var candidates = Games
-            .Where(g => sourceIds.Contains(g.SourceId) && 
-                        string.IsNullOrWhiteSpace(g.Description) &&
-                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
+            .Where(g => sourceIds.Contains(g.SourceId) && NeedsMetadataRefresh(g, now))
             .ToList();
 
         if (candidates.Count == 0)
@@ -639,13 +651,7 @@ public partial class MainViewModel
             return;
         }
 
-        if (!IsNetworkAvailable())
-        {
-            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
-            return;
-        }
-
-        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
+        SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
         var total = candidates.Count;
@@ -688,6 +694,8 @@ public partial class MainViewModel
 
                     ApplyMetadata(live, metadata, overwrite: false);
                     ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                    ApplySteamLocalArtwork(live);
 
                     _gameRepository.Update(live);
                     RefreshListDisplay(live);
@@ -702,11 +710,12 @@ public partial class MainViewModel
             // Batch seal metadata markers
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
-            StatusMessage = applied > 0
-                ? Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count)
-                : !IsNetworkAvailable()
-                    ? Strings.MetadataSyncNoInternet
-                    : Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), candidates.Count);
+            if (applied > 0)
+                SetStatus(Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count), StatusMessageKind.Normal);
+            else if (!IsNetworkAvailable())
+                SetStatus(Strings.MetadataSyncNoInternet, StatusMessageKind.Normal);
+            else
+                SetStatus(Strings.Format(nameof(Strings.MetadataSyncNoUpdatesFormat), candidates.Count), StatusMessageKind.Normal);
         }
         finally
         {
@@ -721,21 +730,13 @@ public partial class MainViewModel
     {
         var now = DateTime.Now;
         var candidates = Games
-            .Where(g => g.Roms.Count > 0 && 
-                        string.IsNullOrWhiteSpace(g.Description) &&
-                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
+            .Where(g => g.Roms.Count > 0 && NeedsMetadataRefresh(g, now))
             .ToList();
 
         if (candidates.Count == 0)
             return;
 
-        if (!IsNetworkAvailable())
-        {
-            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
-            return;
-        }
-
-        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
+        SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
         var total = candidates.Count;
@@ -781,6 +782,7 @@ public partial class MainViewModel
 
                     ApplyMetadata(live, metadata, overwrite: false);
                     ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
                     ApplySteamLocalArtwork(live);
 
                     _gameRepository.Update(live);
@@ -797,7 +799,7 @@ public partial class MainViewModel
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
             if (applied > 0)
-                StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
+                SetStatus(Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count), StatusMessageKind.Normal);
         }
         finally
         {
@@ -812,21 +814,13 @@ public partial class MainViewModel
     {
         var now = DateTime.Now;
         var candidates = Games
-            .Where(g => g.SourceId == bridgeSourceId && 
-                        string.IsNullOrWhiteSpace(g.Description) &&
-                        (g.MetadataSyncedAt == null || now - g.MetadataSyncedAt > METADATA_SYNC_TTL))
+            .Where(g => g.SourceId == bridgeSourceId && NeedsMetadataRefresh(g, now))
             .ToList();
 
         if (candidates.Count == 0)
             return;
 
-        if (!IsNetworkAvailable())
-        {
-            StatusMessage = Strings.Format(nameof(Strings.NoInternetMetadataDeferredForGamesFormat), candidates.Count);
-            return;
-        }
-
-        StatusMessage = Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count);
+        SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
 
         var completed = 0;
         var total = candidates.Count;
@@ -872,6 +866,7 @@ public partial class MainViewModel
 
                     ApplyMetadata(live, metadata, overwrite: false);
                     ApplyMetadataReferences(live, metadata);
+                    await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
                     ApplySteamLocalArtwork(live);
 
                     _gameRepository.Update(live);
@@ -888,7 +883,7 @@ public partial class MainViewModel
             _gameRepository.UpdateManyMetadataSyncMarkers(candidates, MetadataSyncMarker.Metadata);
 
             if (applied > 0)
-                StatusMessage = Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count);
+                SetStatus(Strings.Format(nameof(Strings.MetadataSyncCompleteFormat), applied, candidates.Count), StatusMessageKind.Normal);
         }
         finally
         {
@@ -901,47 +896,58 @@ public partial class MainViewModel
     {
         var now = DateTime.Now;
         var candidates = Games
-            .Where(g => TimeToBeatHelper.GetProgressTarget(g) == 0 &&
+            .Where(g => (g.TimeToBeatMainSeconds is null or 0 ||
+                         g.TimeToBeatExtraSeconds is null or 0 ||
+                         g.TimeToBeatCompleteSeconds is null or 0) &&
                         (g.TimeToBeatSyncedAt == null || now - g.TimeToBeatSyncedAt > METADATA_SYNC_TTL))
             .ToList();
 
-        if (candidates.Count == 0 || !IsNetworkAvailable())
+        if (candidates.Count == 0)
             return;
 
         using var throttle = new SemaphoreSlim(2);
 
+        var updatedGames = new List<Game>();
         _suspendDetailedRows++;
         try
         {
             foreach (var batch in candidates.Chunk(8))
             {
-                await Task.WhenAll(batch.Select(game => Task.Run(async () =>
+                var batchResults = await Task.WhenAll(batch.Select(game => Task.Run(async () =>
                 {
                     await throttle.WaitAsync();
                     try
                     {
                         var live = TryGetLiveGame(game);
                         if (live is null)
-                            return;
-
+                            return (Game?)null;
                         if (!await _howLongToBeat.TryEnrichGameAsync(live))
-                            return;
-
-                        RunOnUiThread(() =>
-                        {
-                            _gameRepository.Update(live);
-                            RefreshListDisplay(live);
-                        });
+                            return null;
+                        return live;
                     }
                     catch (Exception ex)
                     {
                         App.LogException(ex);
+                        return null;
                     }
                     finally
                     {
                         throttle.Release();
                     }
                 })));
+                var toUpdate = batchResults.Where(g => g is not null).Cast<Game>().ToList();
+                if (toUpdate.Count > 0)
+                {
+                    RunOnUiThread(() =>
+                    {
+                        foreach (var live in toUpdate)
+                        {
+                            _gameRepository.Update(live);
+                            RefreshListDisplay(live);
+                        }
+                    });
+                    updatedGames.AddRange(toUpdate);
+                }
             }
 
             // Batch seal TimeToBeat markers
@@ -952,6 +958,168 @@ public partial class MainViewModel
         {
             EndDetailRowSuspension();
         }
+    }
+
+    private async Task TryEnrichLogoAsync(Game game, bool overwrite = true)
+    {
+        if (_steamGridDbClient is null || !_steamGridDbClient.IsConfigured)
+            return;
+        if (!string.IsNullOrWhiteSpace(game.LogoImage) && !overwrite)
+            return;
+        try
+        {
+            var search = await _steamGridDbClient.SearchGamesAsync(game.Name);
+            if (search.Count == 0)
+                return;
+            var logos = await _steamGridDbClient.GetAssetsAsync(search[0].Id, SteamGridDbAssetKind.Logo);
+            if (logos.Count == 0)
+                return;
+            var logo = logos[0].Url;
+            if (!string.IsNullOrWhiteSpace(logo) && (overwrite || string.IsNullOrWhiteSpace(game.LogoImage)))
+            {
+                var sanitized = UrlValidator.SanitizePersistedUrl(logo);
+                if (!string.IsNullOrWhiteSpace(sanitized))
+                    game.LogoImage = sanitized;
+            }
+        }
+        catch
+        {
+            // Best effort — logo is optional, never fail metadata sync.
+        }
+    }
+
+    private async Task DownloadMissingLogosAsync()
+    {
+        var candidates = Games.Where(g =>
+            string.IsNullOrWhiteSpace(g.LogoImage) ||
+            string.IsNullOrWhiteSpace(g.CoverImage) ||
+            HeroBackground.IsDefault(g.BackgroundImage) ||
+            string.IsNullOrWhiteSpace(g.Icon)).ToList();
+        if (candidates.Count == 0 || _steamGridDbClient is null || !_steamGridDbClient.IsConfigured)
+            return;
+
+        SetStatus(Strings.Format(nameof(Strings.DownloadingMetadataForGamesFormat), candidates.Count), StatusMessageKind.Normal);
+        var completed = 0;
+        var total = candidates.Count;
+        BeginStatusProgress(indeterminate: total <= 1);
+        ReportBatchProgress(0, total);
+        _suspendDetailedRows++;
+        try
+        {
+            using var throttle = new SemaphoreSlim(4);
+            var results = await Task.WhenAll(candidates.Select(game =>
+                Task.Run(async () =>
+                {
+                    await throttle.WaitAsync();
+                    try
+                    {
+                        var live = TryGetLiveGame(game);
+                        if (live is null)
+                            return (live, false);
+                        var hadLogo = !string.IsNullOrWhiteSpace(live.LogoImage);
+                        var hadCover = !string.IsNullOrWhiteSpace(live.CoverImage);
+                        var hadHero = !HeroBackground.IsDefault(live.BackgroundImage);
+                        var hadIcon = !string.IsNullOrWhiteSpace(live.Icon);
+                        if (hadLogo && hadCover && hadHero && hadIcon)
+                            return (live, false);
+                        await TryEnrichArtworkFromSteamGridDbAsync(live, overwrite: false);
+                        var hasNew = (!hadLogo && !string.IsNullOrWhiteSpace(live.LogoImage)) ||
+                                     (!hadCover && !string.IsNullOrWhiteSpace(live.CoverImage)) ||
+                                     (!hadHero && !HeroBackground.IsDefault(live.BackgroundImage)) ||
+                                     (!hadIcon && !string.IsNullOrWhiteSpace(live.Icon));
+                        return (live, hasNew);
+                    }
+                    catch { return (null, false); }
+                    finally
+                    {
+                        throttle.Release();
+                        var done = Interlocked.Increment(ref completed);
+                        RunOnUiThread(() => ReportBatchProgress(done, total));
+                    }
+                })));
+
+            int applied = 0;
+            foreach (var (live, hasNew) in results)
+            {
+                if (live is null || !hasNew)
+                    continue;
+                try
+                {
+                    _gameRepository.Update(live);
+                    RefreshListDisplay(live);
+                    applied++;
+                }
+                catch (Exception ex) { App.LogException(ex); }
+            }
+
+            if (applied > 0)
+                SetStatus(Strings.Format(nameof(Strings.MetadataAppliedBatchFormat), applied, candidates.Count), StatusMessageKind.Normal);
+        }
+        finally
+        {
+            EndDetailRowSuspension();
+            EndStatusProgress();
+        }
+    }
+
+    private async Task TryEnrichArtworkFromSteamGridDbAsync(Game game, bool overwrite = false)
+    {
+        if (_steamGridDbClient is null || !_steamGridDbClient.IsConfigured)
+            return;
+        var needsLogo = overwrite || string.IsNullOrWhiteSpace(game.LogoImage);
+        var needsCover = overwrite || string.IsNullOrWhiteSpace(game.CoverImage);
+        var needsHero = overwrite || HeroBackground.IsDefault(game.BackgroundImage);
+        var needsIcon = overwrite || string.IsNullOrWhiteSpace(game.Icon);
+        if (!needsLogo && !needsCover && !needsHero && !needsIcon)
+            return;
+        try
+        {
+            var search = await _steamGridDbClient.SearchGamesAsync(game.Name);
+            if (search.Count == 0)
+                return;
+            var gameId = search[0].Id;
+            if (needsLogo)
+            {
+                var logos = await _steamGridDbClient.GetAssetsAsync(gameId, SteamGridDbAssetKind.Logo);
+                if (logos.Count > 0)
+                {
+                    var sanitized = UrlValidator.SanitizePersistedUrl(logos[0].Url);
+                    if (!string.IsNullOrWhiteSpace(sanitized) && (overwrite || string.IsNullOrWhiteSpace(game.LogoImage)))
+                        game.LogoImage = sanitized;
+                }
+            }
+            if (needsCover)
+            {
+                var covers = await _steamGridDbClient.GetAssetsAsync(gameId, SteamGridDbAssetKind.Cover);
+                if (covers.Count > 0)
+                {
+                    var sanitized = UrlValidator.SanitizePersistedUrl(covers[0].Url);
+                    if (!string.IsNullOrWhiteSpace(sanitized) && (overwrite || string.IsNullOrWhiteSpace(game.CoverImage)))
+                        game.CoverImage = sanitized;
+                }
+            }
+            if (needsHero)
+            {
+                var heroes = await _steamGridDbClient.GetAssetsAsync(gameId, SteamGridDbAssetKind.Hero);
+                if (heroes.Count > 0)
+                {
+                    var sanitized = UrlValidator.SanitizePersistedUrl(heroes[0].Url);
+                    if (!string.IsNullOrWhiteSpace(sanitized) && (overwrite || HeroBackground.IsDefault(game.BackgroundImage)))
+                        game.BackgroundImage = sanitized;
+                }
+            }
+            if (needsIcon)
+            {
+                var icons = await _steamGridDbClient.GetAssetsAsync(gameId, SteamGridDbAssetKind.Icon);
+                if (icons.Count > 0)
+                {
+                    var sanitized = UrlValidator.SanitizePersistedUrl(icons[0].Url);
+                    if (!string.IsNullOrWhiteSpace(sanitized) && (overwrite || string.IsNullOrWhiteSpace(game.Icon)))
+                        game.Icon = sanitized;
+                }
+            }
+        }
+        catch { }
     }
 
     private static string? GetPrimaryRomPath(Game game) =>

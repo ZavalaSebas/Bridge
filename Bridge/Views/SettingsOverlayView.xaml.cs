@@ -29,6 +29,7 @@ public partial class SettingsOverlayView : UserControl
     private bool _loadingDetailSideButtons;
     private bool _loadingStartupSection;
     private bool _loadingMinimizeOnGameLaunch;
+    private bool _loadingFont;
     private bool _loadingRomSaveAutoBackup;
     private bool _loadingPcSaveAutoBackup;
     private bool _loadingRomOrganize;
@@ -119,6 +120,10 @@ public partial class SettingsOverlayView : UserControl
             _loadingMinimizeOnGameLaunch = true;
             MinimizeOnGameLaunchToggle.IsChecked = MinimizeOnGameLaunchSettingsStore.Load();
             _loadingMinimizeOnGameLaunch = false;
+
+            _loadingFont = true;
+            FontFamilyCombo.SelectedIndex = (int)FontSettingsStore.Load();
+            _loadingFont = false;
 
             _loadingRomSaveAutoBackup = true;
             RomSaveAutoBackupToggle.IsChecked = RomSaveAutoBackupSettingsStore.Load();
@@ -280,7 +285,7 @@ public partial class SettingsOverlayView : UserControl
         var dialog = new SaveFileDialog
         {
             Title = Strings.BackupSaveDialogTitle,
-            Filter = "Bridge backup (*.zip)|*.zip",
+            Filter = Strings.BackupFileFilter,
             FileName = $"Bridge-backup-{DateTime.Now:yyyy-MMdd-HHmm}.zip",
             DefaultExt = ".zip",
             AddExtension = true
@@ -313,7 +318,7 @@ public partial class SettingsOverlayView : UserControl
         var dialog = new OpenFileDialog
         {
             Title = Strings.BackupRestoreDialogTitle,
-            Filter = "Bridge backup (*.zip)|*.zip",
+            Filter = Strings.BackupFileFilter,
             CheckFileExists = true
         };
 
@@ -583,6 +588,14 @@ public partial class SettingsOverlayView : UserControl
         StartupSectionSettingsStore.Save(selected);
     }
 
+    private void FontFamilyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingFont || FontFamilyCombo.SelectedIndex < 0) return;
+        var selected = (AppFont)FontFamilyCombo.SelectedIndex;
+        if (selected == FontSettingsStore.Load()) return;
+        FontManager.Apply(selected);
+    }
+
     private void DeleteAllData_Click(object sender, RoutedEventArgs e)
     {
         var owner = Window.GetWindow(this);
@@ -671,7 +684,7 @@ public partial class SettingsOverlayView : UserControl
         var dialog = new SaveFileDialog
         {
             Title = Strings.RomPackSaveDialogTitle,
-            Filter = "Bridge ROM pack (*.zip)|*.zip",
+            Filter = Strings.RomPackFileFilter,
             FileName = $"Bridge-roms-{DateTime.Now:yyyy-MMdd-HHmm}.zip",
             DefaultExt = ".zip",
             AddExtension = true
@@ -726,7 +739,7 @@ public partial class SettingsOverlayView : UserControl
         var dialog = new OpenFileDialog
         {
             Title = Strings.RomPackRestoreDialogTitle,
-            Filter = "Bridge ROM pack (*.zip)|*.zip",
+            Filter = Strings.RomPackFileFilter,
             CheckFileExists = true
         };
 

@@ -1,4 +1,4 @@
-<ui:FluentWindow x:Class="Bridge.ScanRomWindow"
+﻿<ui:FluentWindow x:Class="Bridge.ScanRomWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Bridge.Controls"
@@ -11,7 +11,7 @@
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}"
         Foreground="{StaticResource TextFillColorPrimaryBrush}"
-        FontFamily="{StaticResource Bridge.FontFamily}"
+        FontFamily="{DynamicResource Bridge.FontFamily}"
         FontSize="{StaticResource Bridge.FontSize.Body}">
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/></Grid.RowDefinitions>

@@ -8,7 +8,8 @@ public enum SteamGridDbAssetKind
 {
     Icon,
     Cover,
-    Hero
+    Hero,
+    Logo
 }
 
 public sealed record SteamGridDbGame(int Id, string Name);
@@ -55,6 +56,7 @@ public sealed class SteamGridDbClient(HttpClient httpClient, SteamGridDbSettings
             SteamGridDbAssetKind.Icon => "icons",
             SteamGridDbAssetKind.Cover => "grids",
             SteamGridDbAssetKind.Hero => "heroes",
+            SteamGridDbAssetKind.Logo => "logos",
             _ => "grids"
         };
 
@@ -83,6 +85,7 @@ public sealed class SteamGridDbClient(HttpClient httpClient, SteamGridDbSettings
         "Icon" => SteamGridDbAssetKind.Icon,
         "CoverImage" => SteamGridDbAssetKind.Cover,
         "BackgroundImage" => SteamGridDbAssetKind.Hero,
+        "LogoImage" => SteamGridDbAssetKind.Logo,
         _ => SteamGridDbAssetKind.Cover
     };
 

@@ -54,6 +54,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogService;
     private readonly InstalledGameImportService _installedGameImport;
     private readonly WatchedScanFolderService _watchedScanFolders;
+    private readonly SteamGridDbClient? _steamGridDbClient;
 
     private IReadOnlyDictionary<Guid, string>? _companyNames;
     private IReadOnlyDictionary<Guid, string>? _platformNames;
@@ -100,7 +101,7 @@ public partial class MainViewModel : ObservableObject
     // "Download" when the selected ROM needs its frontend/core installed, and
     // "Downloading" while that install is in progress.
     [ObservableProperty]
-    private string _playButtonText = "Play";
+    private string _playButtonText = Strings.Play;
 
     [ObservableProperty]
     private string _playButtonSymbol = "Play24";
@@ -142,14 +143,92 @@ public partial class MainViewModel : ObservableObject
     private void UpdatePlayButtonState()
     {
         var running = SelectedGame?.IsRunning == true;
-        PlayButtonText = running ? Strings.Stop
-            : IsEmulationBusy ? Strings.Downloading
-            : NeedsEmulatorDownload ? Strings.Download
-            : Strings.Play;
-        PlayButtonSymbol = running ? "Stop24"
-            : NeedsEmulatorDownload || IsEmulationBusy ? "ArrowDownload24"
-            : "Play24";
-        PlayButtonIsStop = running;
+        if (running)
+        {
+            PlayButtonText = Strings.Stop;
+            PlayButtonSymbol = "Stop24";
+            PlayButtonIsStop = true;
+            return;
+        }
+
+        if (IsEmulationBusy)
+        {
+            PlayButtonText = Strings.Downloading;
+            PlayButtonSymbol = "ArrowDownload24";
+            PlayButtonIsStop = false;
+            return;
+        }
+
+        if (NeedsEmulatorDownload)
+        {
+            PlayButtonText = Strings.Download;
+            PlayButtonSymbol = "ArrowDownload24";
+            PlayButtonIsStop = false;
+            return;
+        }
+
+        if (SelectedGame is not null)
+        {
+            // ROMs: IsInstalled stale → check file existence directly.
+            // Solo mostrar "Not installed" si el archivo realmente falta.
+            if (_retroArch.IsManagedRom(SelectedGame))
+            {
+                var romPath = SelectedGame.Roms.FirstOrDefault()?.Path;
+                if (!string.IsNullOrWhiteSpace(romPath) && !RomArchivePath.RomFileExists(romPath))
+                {
+                    PlayButtonText = Strings.NotInstalled;
+                    PlayButtonSymbol = "DismissCircle24";
+                    PlayButtonIsStop = false;
+                    return;
+                }
+            }
+            else if (SelectedGame.Roms.Count > 0)
+            {
+                var romPath = SelectedGame.Roms.FirstOrDefault()?.Path;
+                if (!string.IsNullOrWhiteSpace(romPath) && !RomArchivePath.RomFileExists(romPath))
+                {
+                    PlayButtonText = Strings.NotInstalled;
+                    PlayButtonSymbol = "DismissCircle24";
+                    PlayButtonIsStop = false;
+                    return;
+                }
+            }
+            else if (!SelectedGame.IsInstalled)
+            {
+                if (IsStoreGame(SelectedGame))
+                {
+                    PlayButtonText = Strings.Install;
+                    PlayButtonSymbol = "ArrowDownload24";
+                }
+                else
+                {
+                    PlayButtonText = Strings.NotInstalled;
+                    PlayButtonSymbol = "DismissCircle24";
+                }
+
+                PlayButtonIsStop = false;
+                return;
+            }
+        }
+
+        PlayButtonText = Strings.Play;
+        PlayButtonSymbol = "Play24";
+        PlayButtonIsStop = false;
+    }
+
+    private bool IsStoreGame(Game game)
+    {
+        // Steam / Epic are the only store sources that support a one-click
+        // "Install" via their launcher URL. Everything else (manual / bridge /
+        // unknown) is a local path — when not installed it can't be launched.
+        EnsureReferenceCaches();
+        if (_sourceNames is not null && _sourceNames.TryGetValue(game.SourceId, out var name))
+        {
+            return string.Equals(name, "Steam", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "Epic", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     partial void OnSearchTextChanged(string value)
@@ -767,7 +846,8 @@ public partial class MainViewModel : ObservableObject
         IDialogService dialogService,
         InstalledGameImportService installedGameImport,
         WatchedScanFolderService watchedScanFolders,
-        FreeGamesService? freeGamesService = null)
+        FreeGamesService? freeGamesService = null,
+        SteamGridDbClient? steamGridDbClient = null)
     {
         _gameRepository = gameRepository;
         _genreRepository = genreRepository;
@@ -801,6 +881,7 @@ public partial class MainViewModel : ObservableObject
         _installedGameImport = installedGameImport;
         _watchedScanFolders = watchedScanFolders;
         _freeGamesService = freeGamesService;
+        _steamGridDbClient = steamGridDbClient;
         _launcher.GameStarted += OnGameStarted;
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
@@ -1079,9 +1160,28 @@ public partial class MainViewModel : ObservableObject
             game.IsRunning = false;
         }
 
+        SyncRomInstallStates();
+
         RefreshStatistics();
         RefreshHome();
         RefreshAllEmulatorDownloadStates();
+    }
+
+    private void SyncRomInstallStates()
+    {
+        foreach (var game in Games.Where(g => g.Roms.Count > 0).ToList())
+        {
+            var romPath = game.Roms[0].Path;
+            if (string.IsNullOrWhiteSpace(romPath))
+                continue;
+
+            var exists = RomArchivePath.RomFileExists(romPath);
+            if (game.IsInstalled == exists)
+                continue;
+
+            game.IsInstalled = exists;
+            _gameRepository.Update(game);
+        }
     }
 
     private void MigrateUserManagedGames(IReadOnlyList<Game> games)

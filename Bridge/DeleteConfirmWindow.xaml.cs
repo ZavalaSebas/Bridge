@@ -17,7 +17,7 @@ public partial class DeleteConfirmWindow : Window
 
     private void UpdateState()
     {
-        var textOk = string.Equals(InputBox.Text?.Trim(), "BORRAR", StringComparison.Ordinal);
+        var textOk = string.Equals(InputBox.Text?.Trim(), Bridge.Resources.Strings.DeleteConfirmKeyword, StringComparison.Ordinal);
         var checkOk = ConfirmCheck.IsChecked == true;
         ConfirmButton.IsEnabled = textOk && checkOk;
     }

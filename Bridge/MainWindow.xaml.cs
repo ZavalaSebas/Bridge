@@ -188,6 +188,8 @@ namespace Bridge
             Close();
         }
 
+        private void SidebarExit_Click(object sender, RoutedEventArgs e) => RequestExit();
+
         private void MainTitleBar_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             // TitleBar.Header does not stretch, so the center column only exists

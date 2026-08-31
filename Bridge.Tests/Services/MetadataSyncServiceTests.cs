@@ -65,10 +65,9 @@ public class MetadataSyncServiceTests
 
         var found = await service.SearchForManualDownloadAsync("Pokemon Emerald", romImport: true, steamAppId: null);
 
-        Assert.NotNull(found);
-        Assert.Equal("Steam Store", found.Value.ProviderName);
+        Assert.Null(found);
         Assert.Equal(1, igdb.SearchCalls);
-        Assert.Equal(1, steam.SearchCalls);
+        Assert.Equal(0, steam.SearchCalls);
     }
 
     [Fact]

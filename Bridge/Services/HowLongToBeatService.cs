@@ -14,7 +14,10 @@ public sealed class HowLongToBeatService(HowLongToBeatClient client)
 {
     public async Task<bool> TryEnrichGameAsync(Game game, bool overwrite = false, CancellationToken cancellationToken = default)
     {
-        if (!overwrite && TimeToBeatHelper.GetProgressTarget(game) > 0)
+        if (!overwrite &&
+            game.TimeToBeatMainSeconds is > 0 &&
+            game.TimeToBeatExtraSeconds is > 0 &&
+            game.TimeToBeatCompleteSeconds is > 0)
             return false;
 
         var searchName = game.Roms.Count > 0

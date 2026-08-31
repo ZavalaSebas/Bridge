@@ -85,11 +85,11 @@ public class PlaytimeShortConverter : IValueConverter
     {
         if (value is ulong seconds)
         {
-            if (seconds == 0) return "Not played";
+            if (seconds == 0) return Bridge.Resources.Strings.PlaytimeNotPlayed;
             var hours = seconds / 3600;
-            if (hours > 0) return $"{hours}h played";
+            if (hours > 0) return Bridge.Resources.Strings.Format(nameof(Bridge.Resources.Strings.PlaytimeHoursPlayedFormat), hours);
             var minutes = seconds / 60;
-            return $"{minutes}m played";
+            return Bridge.Resources.Strings.Format(nameof(Bridge.Resources.Strings.PlaytimeMinutesPlayedFormat), minutes);
         }
         return "";
     }

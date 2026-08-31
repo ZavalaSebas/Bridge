@@ -95,6 +95,7 @@ Search, favorites, install status, sorting, grouping, and detail filters stay co
 ### Make the room yours
 
 - Runtime accent colors and a custom color picker.
+- Font family picker (Inter / Segoe UI / Outfit / Georgia / Consolas) with instant preview.
 - Optional translucent sidebar and blurred game artwork.
 - Sidebar position and visibility controls.
 - Reorderable detail sections, Covers compact vs full-details layout, and persistent view preferences.

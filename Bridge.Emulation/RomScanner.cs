@@ -7,7 +7,7 @@ using Bridge.Emulation.Dat;
 namespace Bridge.Emulation;
 
 /// Recursively imports ROMs recognized by <see cref="RomPlatformCatalog"/>,
-/// including ROM files stored inside supported archives (.zip, .7z).
+/// including ROM files stored inside supported archives (.zip, .7z, .rar).
 /// Persistence is handled by the caller.
 public partial class RomScanner(RomDatMatcher datMatcher)
 {
@@ -62,6 +62,9 @@ public partial class RomScanner(RomDatMatcher datMatcher)
     // Imports one ROM: skips it if already in the library (no hashing needed),
     // otherwise runs a SINGLE DAT match — which computes the CRC once and is reused
     // for the display name and the stored ROM fields — before building the Game.
+    // A DAT mismatch (hack/modified ROM) must NEVER prevent the import: the ROM is
+    // always added using the extension to resolve its platform and the sanitized
+    // filename as the display name.
     private void ProcessRom(IReadOnlySet<string> alreadyImported, ICollection<Game> results, string romPath)
     {
         var normalized = RomArchivePath.Normalize(romPath);
@@ -73,25 +76,50 @@ public partial class RomScanner(RomDatMatcher datMatcher)
         string? crcHex;
         string? datRegion = null;
         var datPlatform = RomDatMatcher.ResolvePlatformName(normalized);
-        var fallbackName = SanitizeName(Path.GetFileNameWithoutExtension(RomArchivePath.GetRomFileName(normalized)));
-        string displayName;
-
-        if (_datMatcher.TryMatch(normalized, out var match))
+        var rawFileName = Path.GetFileNameWithoutExtension(RomArchivePath.GetRomFileName(normalized));
+        var fallbackName = SanitizeName(rawFileName);
+        if (string.IsNullOrWhiteSpace(fallbackName))
         {
-            datRegion = match!.Region;
+            fallbackName = rawFileName.Trim();
+            if (string.IsNullOrWhiteSpace(fallbackName))
+            {
+                fallbackName = RomArchivePath.GetRomFileName(normalized);
+            }
+        }
+
+        string displayName;
+        bool matched = false;
+        RomDatMatch? match = null;
+
+        try
+        {
+            matched = _datMatcher.TryMatch(normalized, out match);
+        }
+        catch
+        {
+            // DAT database download or parsing failed (offline, corrupt DAT).
+            // Never let a DAT error block a hack / modified ROM — fall through
+            // to the fallback path.
+            matched = false;
+            match = null;
+        }
+
+        if (matched && match is not null)
+        {
+            datRegion = match.Region;
             datPlatform = match.PlatformName;
             crcHex = match.Crc;
             displayName = string.IsNullOrWhiteSpace(match.Name) ? fallbackName : match.Name.Trim();
         }
         else
         {
-            // No DAT entry — still record the CRC so a later rescan/re-identify can
-            // match it without re-reading the file.
+            // No DAT entry (hack, homebrew, bad dump) — still record the CRC so a
+            // later rescan/re-identify can match it without re-reading the file.
             crcHex = RomCrc32.TryComputeFromRomPath(normalized);
             displayName = fallbackName;
         }
 
-        var game = new Game { Name = displayName };
+        var game = new Game { Name = displayName, IsInstalled = true };
         game.Roms.Add(new GameRom
         {
             Name = displayName,

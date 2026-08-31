@@ -147,6 +147,7 @@ namespace Bridge
             // gets created. The saved theme accent is applied before the window
             // loads so the first render already uses it.
             ThemeManager.Load();
+            FontManager.Load();
 
             // If anything here throws (corrupt DB making EnsureCreated/VM fail,
             // broken XAML), the dispatcher handler below swallows it and the app

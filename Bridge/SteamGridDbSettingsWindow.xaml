@@ -1,4 +1,4 @@
-<ui:FluentWindow x:Class="Bridge.SteamGridDbSettingsWindow"
+﻿<ui:FluentWindow x:Class="Bridge.SteamGridDbSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -13,7 +13,7 @@
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}"
         Foreground="{StaticResource TextFillColorPrimaryBrush}"
-        FontFamily="{StaticResource Bridge.FontFamily}"
+        FontFamily="{DynamicResource Bridge.FontFamily}"
         FontSize="{StaticResource Bridge.FontSize.Body}"
         xmlns:res="clr-namespace:Bridge.Resources">
     <Grid>

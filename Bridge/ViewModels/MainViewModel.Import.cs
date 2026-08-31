@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Net.NetworkInformation;
 using Bridge.Core.Entities;
 using Bridge.Core.Import;
@@ -111,11 +111,13 @@ public partial class MainViewModel
             await ReidentifyRomGamesFromDatAsync();
             await OrganizeRomsInFolderAsync(folder, force: false);
 
+            SyncRomInstallStates();
             RefreshStatistics();
             RefreshAllEmulatorDownloadStates();
+            UpdatePlayButtonState();
             if (added.Count > 0)
             {
-                StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), added.Count, folder);
+                SetStatus(Strings.Format(nameof(Strings.ScanCompleteFormat), added.Count, folder), StatusMessageKind.Normal);
                 if (!silent)
                 {
                     SelectedGame = added[0];
@@ -125,11 +127,12 @@ public partial class MainViewModel
             }
             else if (!silent)
             {
-                StatusMessage = Strings.Format(nameof(Strings.ScanCompleteFormat), 0, folder);
+                SetStatus(Strings.Format(nameof(Strings.ScanCompleteFormat), 0, folder), StatusMessageKind.Normal);
             }
         }
         catch (Exception ex)
         {
+            App.LogException(ex);
             SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), ex.Message), StatusMessageKind.Error);
         }
     }
@@ -158,16 +161,25 @@ public partial class MainViewModel
             _watchedScanFolders.RestartWatchers();
 
             var result = await Task.Run(() => _installedGameImport.ImportNewFromFolder(scanFolder));
-            foreach (var game in result.Added)
+            _suspendDetailedRows++;
+            try
             {
-                AddGameToLibrary(game);
+                foreach (var game in result.Added)
+                {
+                    AddGameSorted(game);
+                }
+            }
+            finally
+            {
+                EndDetailRowSuspension();
             }
 
+            InvalidateReferenceCaches();
             RefreshStatistics();
             RefreshAllEmulatorDownloadStates();
             if (result.Added.Count > 0)
             {
-                StatusMessage = Strings.Format(nameof(Strings.InstalledScanCompleteFormat), result.Added.Count, scanFolder);
+                SetStatus(Strings.Format(nameof(Strings.InstalledScanCompleteFormat), result.Added.Count, scanFolder), StatusMessageKind.Normal);
                 if (!silent)
                 {
                     SelectedGame = result.Added[0];
@@ -177,11 +189,12 @@ public partial class MainViewModel
             }
             else if (!silent)
             {
-                StatusMessage = Strings.Format(nameof(Strings.InstalledScanCompleteFormat), 0, scanFolder);
+                SetStatus(Strings.Format(nameof(Strings.InstalledScanCompleteFormat), 0, scanFolder), StatusMessageKind.Normal);
             }
         }
         catch (Exception ex)
         {
+            App.LogException(ex);
             SetStatus(Strings.Format(nameof(Strings.ScanFailedFormat), ex.Message), StatusMessageKind.Error);
         }
     }
@@ -244,12 +257,12 @@ public partial class MainViewModel
         Func<List<GameMetadata>> enumerate,
         Action<Game>? applyLocalArtwork)
     {
+        var found = await Task.Run(enumerate);
+        int added = 0, updated = 0;
+
         _suspendDetailedRows++;
         try
         {
-            var found = await Task.Run(enumerate);
-            int added = 0, updated = 0;
-
             foreach (var metadata in found)
             {
                 // Yield periodically so a large library doesn't freeze the UI
@@ -320,6 +333,22 @@ public partial class MainViewModel
                     applyLocalArtwork?.Invoke(live);
                     _gameRepository.Update(live);
                     RefreshListDisplay(live);
+                    updated++;
+                }
+            }
+
+            // Games of this source that were previously installed but are no longer
+            // enumerated are now uninstalled (e.g. Steam appmanifest removed after
+            // uninstall). This keeps Space War (480) and similar titles from staying
+            // stuck as "Play" after an external uninstall.
+            var foundIds = new HashSet<string>(found.Select(m => m.ExternalId), StringComparer.OrdinalIgnoreCase);
+            foreach (var game in Games.Where(g => g.SourceId == sourceId).ToList())
+            {
+                if (!foundIds.Contains(game.ExternalId) && game.IsInstalled)
+                {
+                    game.IsInstalled = false;
+                    _gameRepository.Update(game);
+                    RefreshListDisplay(game);
                     updated++;
                 }
             }
@@ -487,7 +516,7 @@ public partial class MainViewModel
 
         var root = Path.GetFullPath(folder);
         var targets = new List<RomOrganizeTarget>();
-        foreach (var game in Games)
+        foreach (var game in Games.ToList())
         {
             if (game.Roms.Count == 0)
                 continue;
@@ -532,7 +561,7 @@ public partial class MainViewModel
             var byOriginal = result.Changes.ToDictionary(
                 change => change.OriginalRomPath,
                 StringComparer.OrdinalIgnoreCase);
-            foreach (var game in Games)
+            foreach (var game in Games.ToList())
             {
                 if (game.Roms.Count == 0)
                     continue;

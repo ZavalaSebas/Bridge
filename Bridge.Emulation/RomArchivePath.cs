@@ -7,7 +7,7 @@ public static class RomArchivePath
     public const char Delimiter = '#';
 
     public static bool IsContainerExtension(string extension) =>
-        extension is "zip" or "7z";
+        extension is "zip" or "7z" or "rar";
 
     public static bool IsArchiveContentPath(string path) =>
         path.Contains(Delimiter, StringComparison.Ordinal);

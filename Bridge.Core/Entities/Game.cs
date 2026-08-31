@@ -22,6 +22,7 @@ public class Game : DatabaseObject, System.ComponentModel.INotifyPropertyChanged
     public string Icon { get; set; } = string.Empty;
     public string CoverImage { get; set; } = string.Empty;
     public string BackgroundImage { get; set; } = string.Empty;
+    public string LogoImage { get; set; } = string.Empty;
     public List<string> Screenshots { get; set; } = [];
 
     // Install / runtime state — the Is* flags are transient, reset on every DB load

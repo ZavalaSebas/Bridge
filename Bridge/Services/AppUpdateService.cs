@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using Bridge.Resources;
 
 namespace Bridge.Services;
 
@@ -193,7 +194,7 @@ public sealed class AppUpdateService
         {
             return new AppUpdateCheckResult(
                 AppUpdateStatus.NotApplicable,
-                Message: "Updates apply only to the published Bridge.exe.");
+                Message: Strings.UpdatesNotApplicableMessage);
         }
 
         var effectiveChannel = channel ?? UpdateChannelSettingsStore.Load();
@@ -214,8 +215,8 @@ public sealed class AppUpdateService
                 return new AppUpdateCheckResult(
                     AppUpdateStatus.Failed,
                     Message: effectiveChannel == UpdateChannel.Beta
-                        ? "No compatible beta release was found on GitHub."
-                        : "No compatible release was found on GitHub.");
+                        ? Strings.UpdateNoBetaReleaseFound
+                        : Strings.UpdateNoReleaseFound);
             }
 
             var tagName = release.Value.TryGetProperty("tag_name", out var tagProperty)
@@ -225,7 +226,7 @@ public sealed class AppUpdateService
             {
                 return new AppUpdateCheckResult(
                     AppUpdateStatus.Failed,
-                    Message: "The latest release version could not be read.");
+                    Message: Strings.UpdateLatestVersionReadFailed);
             }
 
             var currentVersion = Config.AssemblyVersion;
@@ -247,7 +248,7 @@ public sealed class AppUpdateService
             {
                 return new AppUpdateCheckResult(
                     AppUpdateStatus.Failed,
-                    Message: $"Release v{remoteVersion.ToString(3)} has no {Config.UpdateAssetName} asset.");
+                    Message: Strings.Format(nameof(Strings.UpdateReleaseNoAssetFormat), remoteVersion.ToString(3), Config.UpdateAssetName));
             }
 
             return new AppUpdateCheckResult(
@@ -258,13 +259,13 @@ public sealed class AppUpdateService
         {
             return new AppUpdateCheckResult(
                 AppUpdateStatus.Failed,
-                Message: "No published release was found on GitHub.");
+                Message: Strings.UpdateNoPublishedReleaseFound);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             return new AppUpdateCheckResult(
                 AppUpdateStatus.Failed,
-                Message: $"Could not reach GitHub: {ex.Message}");
+                Message: Strings.Format(nameof(Strings.UpdateCouldNotReachGitHubFormat), ex.Message));
         }
     }
 
@@ -353,7 +354,7 @@ public sealed class AppUpdateService
                 : null;
             if (TryParseTagVersion(tag, out var version) && version > currentVersion)
             {
-                return "A beta build is available. Enable the beta channel in About to receive it.";
+                return Strings.BetaBuildAvailableHint;
             }
         }
 
@@ -366,11 +367,11 @@ public sealed class AppUpdateService
         CancellationToken cancellationToken = default)
     {
         var currentExe = Environment.ProcessPath
-            ?? throw new InvalidOperationException("Bridge could not resolve its executable path.");
+            ?? throw new InvalidOperationException(Strings.UpdateExecutablePathNotFound);
 
         if (!CanSelfUpdate)
         {
-            throw new InvalidOperationException("Updates apply only to the published Bridge.exe.");
+            throw new InvalidOperationException(Strings.UpdatesNotApplicableMessage);
         }
 
         var tempExe = Path.Combine(Path.GetTempPath(), $"Bridge_update_{Guid.NewGuid():N}.exe");
@@ -378,10 +379,10 @@ public sealed class AppUpdateService
 
         try
         {
-            progress?.Report(new AppUpdateProgress("Downloading update...", 0));
+            progress?.Report(new AppUpdateProgress(Strings.DownloadingUpdate, 0));
             await DownloadFileAsync(update.DownloadUrl, tempExe, progress, cancellationToken);
 
-            progress?.Report(new AppUpdateProgress("Installing update...", null));
+            progress?.Report(new AppUpdateProgress(Strings.InstallingUpdate, null));
 
             // Back up the library DB before touching the exe. If the new version
             // corrupts or migrates the DB and then fails, the user can restore
@@ -514,7 +515,7 @@ public sealed class AppUpdateService
         {
             if (current.Scheme != Uri.UriSchemeHttps || !IsAllowedDownloadHost(current.Host))
             {
-                throw new InvalidOperationException($"Bridge refused an untrusted update host: {current.Host}.");
+                throw new InvalidOperationException(Strings.Format(nameof(Strings.UpdateUntrustedHostFormat), current.Host));
             }
 
             using var response = await client.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -529,7 +530,7 @@ public sealed class AppUpdateService
             response.EnsureSuccessStatusCode();
             if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
             {
-                throw new InvalidOperationException("The update download is larger than Bridge's safety limit.");
+                throw new InvalidOperationException(Strings.UpdateDownloadTooLarge);
             }
 
             long written = 0;
@@ -543,21 +544,21 @@ public sealed class AppUpdateService
                 written += read;
                 if (written > MaximumDownloadBytes)
                 {
-                    throw new InvalidOperationException("The update download exceeded Bridge's safety limit.");
+                    throw new InvalidOperationException(Strings.UpdateDownloadExceededLimit);
                 }
 
                 await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                 if (total > 0)
                 {
                     var percent = written * 100.0 / total;
-                    progress?.Report(new AppUpdateProgress($"Downloading update... {percent:F0}%", percent));
+                    progress?.Report(new AppUpdateProgress(Strings.Format(nameof(Strings.DownloadingUpdatePercentFormat), $"{percent:F0}"), percent));
                 }
             }
 
             return;
         }
 
-        throw new InvalidOperationException("The update download did not resolve after too many redirects.");
+        throw new InvalidOperationException(Strings.UpdateTooManyRedirects);
     }
 
     private static string UserAgent()

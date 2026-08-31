@@ -269,6 +269,9 @@
                                                             <DataTrigger Binding="{Binding DataContext.SelectedGame.NeedsEmulatorDownload, ElementName=LibraryRoot}" Value="True">
                                                                 <Setter Property="Width" Value="138"/>
                                                             </DataTrigger>
+                                                            <DataTrigger Binding="{Binding DataContext.SelectedGame.IsInstalled, ElementName=LibraryRoot}" Value="False">
+                                                                <Setter Property="Width" Value="148"/>
+                                                            </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Border.Style>
@@ -335,37 +338,8 @@
                                                         </ControlTemplate>
                                                     </Button.Template>
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                        <ui:SymbolIcon FontSize="26" Foreground="White">
-                                                            <ui:SymbolIcon.Style>
-                                                                <Style TargetType="ui:SymbolIcon">
-                                                                    <Setter Property="Symbol" Value="Play24"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding DataContext.SelectedGame.IsRunning, ElementName=LibraryRoot}" Value="True">
-                                                                            <Setter Property="Symbol" Value="Stop24"/>
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding DataContext.SelectedGame.NeedsEmulatorDownload, ElementName=LibraryRoot}" Value="True">
-                                                                            <Setter Property="Symbol" Value="ArrowDownload24"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </ui:SymbolIcon.Style>
-                                                        </ui:SymbolIcon>
-                                                        <TextBlock Margin="7,0,0,0" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" Foreground="White">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                    <Setter Property="Text" Value="{x:Static res:Strings.Play}"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding DataContext.SelectedGame.IsRunning, ElementName=LibraryRoot}" Value="True">
-                                                                            <Setter Property="Text" Value="{x:Static res:Strings.Stop}"/>
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding DataContext.SelectedGame.NeedsEmulatorDownload, ElementName=LibraryRoot}" Value="True">
-                                                                            <Setter Property="Text" Value="{x:Static res:Strings.Download}"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
+                                                        <ui:SymbolIcon Symbol="{Binding DataContext.PlayButtonSymbol, ElementName=LibraryRoot}" FontSize="26" Foreground="White" />
+                                                        <TextBlock Text="{Binding DataContext.PlayButtonText, ElementName=LibraryRoot}" Margin="7,0,0,0" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" Foreground="White" />
                                                     </StackPanel>
                                                 </Button>
                                             </Border>
@@ -387,7 +361,7 @@
                                     <DockPanel Panel.ZIndex="2" MaxWidth="1024" HorizontalAlignment="Stretch" Margin="20,12,20,72" VerticalAlignment="Bottom" ContextMenu="{StaticResource Bridge.HeroContextMenu}">
                                         <Grid x:Name="CoverHost" DockPanel.Dock="Right" VerticalAlignment="Bottom" ClipToBounds="False" ContextMenu="{StaticResource HeroCoverContextMenu}" MouseEnter="CoverFavorite_MouseEnter" MouseLeave="CoverFavorite_MouseLeave"><StackPanel x:Name="CoverContentRow" Orientation="Horizontal" VerticalAlignment="Bottom" Panel.ZIndex="1"><ToggleButton x:Name="CoverFavoriteButton" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,14,0" IsChecked="{Binding Favorite}" Cursor="Hand" ToolTip="{x:Static res:Strings.Favorite}" AutomationProperties.Name="{x:Static res:Strings.Favorite}" OverridesDefaultStyle="True" Opacity="0" Checked="CoverFavorite_Checked" Unchecked="CoverFavorite_Unchecked"><ToggleButton.RenderTransform><TransformGroup><TranslateTransform x:Name="CoverFavoriteTranslate" X="26"/><ScaleTransform x:Name="CoverFavoriteScale" ScaleX="1" ScaleY="1" CenterX="11" CenterY="11"/></TransformGroup></ToggleButton.RenderTransform><ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></ControlTemplate></ToggleButton.Template><ui:SymbolIcon Symbol="Star24" FontSize="22" VerticalAlignment="Center"><ui:SymbolIcon.Style><Style TargetType="ui:SymbolIcon"><Setter Property="Foreground" Value="{StaticResource TextFillColorSecondaryBrush}"/><Setter Property="Filled" Value="False"/><Style.Triggers><DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True"><Setter Property="Foreground" Value="#F5A623"/><Setter Property="Filled" Value="True"/></DataTrigger></Style.Triggers></Style></ui:SymbolIcon.Style></ui:SymbolIcon></ToggleButton><Viewbox x:Name="CoverScaleHost" Stretch="Uniform" MaxHeight="170" VerticalAlignment="Bottom" Margin="0,0,16,0" RenderTransformOrigin="0.5,1"><Viewbox.RenderTransform><ScaleTransform x:Name="CoverLayoutScale" ScaleX="1" ScaleY="1"/></Viewbox.RenderTransform><Grid VerticalAlignment="Bottom"><Border><Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.35" Color="#000000"/></Border.Effect><Border x:Name="DetailsCover" CornerRadius="4" ClipToBounds="True"><Border.Clip><MultiBinding Converter="{StaticResource RoundedClip}" ConverterParameter="4"><Binding Path="ActualWidth" ElementName="DetailsCover"/><Binding Path="ActualHeight" ElementName="DetailsCover"/></MultiBinding></Border.Clip><controls:FadeImage x:Name="DetailsCoverImage" SourceUrl="{Binding CoverImage}" FallbackArtwork="{x:Static art:GameArtworkFallback.Cover}" Stretch="Uniform" Height="170"/></Border></Border></Grid></Viewbox></StackPanel><Canvas x:Name="CoverCompletionOverlay" Panel.ZIndex="2" IsHitTestVisible="False" ClipToBounds="False"><Border x:Name="CoverCompletionBadge" Canvas.Left="0" Canvas.Top="105" CornerRadius="4" Padding="9,4" Background="{Binding CompletionStatusId, Converter={StaticResource CompletionStatusToColor}}" Visibility="{Binding CompletionStatusId, Converter={StaticResource EmptyGuidToVis}}"><Border.Effect><DropShadowEffect ShadowDepth="2" BlurRadius="5" Opacity="0.45" RenderingBias="Quality"/></Border.Effect><TextBlock Text="{Binding CompletionStatusId, Converter={StaticResource CompletionStatusIdToText}, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" TextWrapping="NoWrap" Foreground="{StaticResource TextOnAccentFillColorPrimaryBrush}"/></Border></Canvas></Grid>
                                         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Bottom" Margin="0,0,16,0" MinWidth="0">
-                                            <TextBlock Text="{Binding Name, Mode=OneWay}" FontSize="{StaticResource Bridge.FontSize.Display}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,4"><TextBlock.Effect><DropShadowEffect ShadowDepth="3" BlurRadius="6" Opacity="0.6" RenderingBias="Quality"/></TextBlock.Effect></TextBlock>
+                                            <Grid MinHeight="48"><TextBlock Text="{Binding Name, Mode=OneWay}" FontSize="{StaticResource Bridge.FontSize.Display}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,4"><TextBlock.Effect><DropShadowEffect ShadowDepth="3" BlurRadius="6" Opacity="0.6" RenderingBias="Quality"/></TextBlock.Effect><TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding LogoImage, Converter={StaticResource EmptyToVis}}" Value="Visible"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><Image x:Name="HeroLogoImage" MaxWidth="380" MaxHeight="120" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,4" RenderOptions.BitmapScalingMode="HighQuality" converters:CachedImage.SourceUrl="{Binding LogoImage}" Panel.ZIndex="1"><Image.Effect><DropShadowEffect ShadowDepth="4" BlurRadius="8" Opacity="0.85" RenderingBias="Quality"/></Image.Effect><Image.Style><Style TargetType="Image"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding LogoImage, Converter={StaticResource EmptyToVis}}" Value="Visible"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Image.Style></Image></Grid>
                                             <WrapPanel x:Name="CompactButtonsRow" Margin="0,4,0,0" Background="Transparent">
                                                 <WrapPanel.Style>
                                                     <Style TargetType="WrapPanel">
