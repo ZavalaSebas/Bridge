@@ -886,7 +886,7 @@ public partial class MainViewModel : ObservableObject
         _launcher.GameStopped += OnGameStopped;
         LoadGames();
         SelectedGame = SelectInitialGame(Games);
-        Games.CollectionChanged += (_, _) => RefreshHome();
+        Games.CollectionChanged += (_, _) => { RefreshHome(); RefreshRoms(); };
         GamesView = CollectionViewSource.GetDefaultView(Games);
         GamesView.Filter = GameMatchesSearch;
         ((INotifyCollectionChanged)GamesView).CollectionChanged += (_, _) =>
@@ -1164,6 +1164,7 @@ public partial class MainViewModel : ObservableObject
 
         RefreshStatistics();
         RefreshHome();
+        RefreshRoms();
         RefreshAllEmulatorDownloadStates();
     }
 
