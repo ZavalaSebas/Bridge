@@ -45,6 +45,13 @@ public static class Config
     // render instantly instead of re-downloading every remote image.
     public static string ImageCachePath => Path.Combine(AppDataPath, "image-cache");
 
+    // Diagnostic log directory and the general application log file used by
+    // AppLog. Kept under AppData (not the config dir) so it survives a settings
+    // reset and is easy to find when a user reports an issue.
+    public static string LogsDirectoryPath => Path.Combine(AppDataPath, "logs");
+
+    public static string LogFilePath => Path.Combine(LogsDirectoryPath, "bridge.log");
+
     // Bridge-managed RetroArch installation. Kept separate from the game database
     // so deleting an emulator install never risks a user's library data.
     public static string EmulatorInstallPath => Path.Combine(AppDataPath, "emulators", "retroarch");

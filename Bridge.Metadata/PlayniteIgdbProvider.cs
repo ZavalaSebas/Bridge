@@ -31,12 +31,12 @@ public sealed class PlayniteIgdbProvider(HttpClient httpClient) : IGameMetadataP
             using var response = await httpClient.PostAsJsonAsync(
                 BackendBase + "metadata",
                 new PlayniteMetadataRequest(gameName.Trim()),
-                cts.Token);
+                cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
                 return null;
 
-            var envelope = await response.Content.ReadFromJsonAsync<PlayniteEnvelope<PlayniteGame>>(cancellationToken: cts.Token);
+            var envelope = await response.Content.ReadFromJsonAsync<PlayniteEnvelope<PlayniteGame>>(cancellationToken: cts.Token).ConfigureAwait(false);
             return envelope?.Data is { } game ? Map(game) : null;
         }
         catch (OperationCanceledException)

@@ -11,39 +11,9 @@ public static class DetailHeroButtonsSettingsStore
     private static string SettingsFile => Config.DetailHeroButtonsFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "detail-hero-buttons.txt");
 
-    public static bool Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-        }
+    public static bool Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, true, bool.TryParse);
 
-        return true;
-    }
-
-    public static void Save(bool enabled)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, enabled.ToString());
-        }
-        catch
-        {
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out bool enabled)
-    {
-        enabled = true;
-        return File.Exists(path) &&
-            bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
-    }
+    public static void Save(bool enabled) =>
+        ScalarSettingStore.Save(SettingsFile, enabled.ToString());
 }

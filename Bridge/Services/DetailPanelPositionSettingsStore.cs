@@ -14,24 +14,8 @@ public static class DetailPanelPositionSettingsStore
     private static string SettingsFile => Config.DetailPanelPositionFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "detail-panel-position.txt");
 
-    public static string Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                if (IsValid(saved))
-                    return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
-
-        return Right;
-    }
+    public static string Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, Right, TryParsePosition);
 
     public static void Save(string position)
     {
@@ -44,15 +28,7 @@ public static class DetailPanelPositionSettingsStore
         else
             return;
 
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, normalized);
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
+        ScalarSettingStore.Save(SettingsFile, normalized);
     }
 
     internal static string Normalize(string raw)
@@ -67,16 +43,9 @@ public static class DetailPanelPositionSettingsStore
         return Right;
     }
 
-    internal static bool IsValid(string position) =>
-        position is Left or Right;
-
-    private static bool TryLoadFromFile(string path, out string value)
+    private static bool TryParsePosition(string raw, out string value)
     {
-        value = string.Empty;
-        if (!File.Exists(path))
-            return false;
-
-        value = Normalize(File.ReadAllText(path));
+        value = Normalize(raw);
         return true;
     }
 }

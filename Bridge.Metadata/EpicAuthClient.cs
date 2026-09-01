@@ -44,12 +44,12 @@ public sealed class EpicAuthClient(HttpClient httpClient)
             ["token_type"] = "eg1",
         });
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var payload = await JsonSerializer.DeserializeAsync<EpicOAuthResponse>(stream, JsonOptions, cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        var payload = await JsonSerializer.DeserializeAsync<EpicOAuthResponse>(stream, JsonOptions, cancellationToken).ConfigureAwait(false);
         if (payload is null ||
             string.IsNullOrWhiteSpace(payload.AccessToken) ||
             string.IsNullOrWhiteSpace(payload.AccountId))

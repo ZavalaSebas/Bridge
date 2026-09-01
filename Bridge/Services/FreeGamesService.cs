@@ -46,8 +46,9 @@ public sealed class FreeGamesService
             _lastFetch = DateTime.UtcNow;
             return filtered;
         }
-        catch
+        catch (Exception ex)
         {
+            AppLog.Warn("Failed to fetch free games from GamerPower.", ex);
             return (IReadOnlyList<FreeGameNotification>?)_cache ?? Array.Empty<FreeGameNotification>();
         }
     }
@@ -80,7 +81,11 @@ public sealed class FreeGamesService
                     PublishedDate = TryParseDate(d.published_date)
                 }).ToList();
         }
-        catch { return new List<FreeGameNotification>(); }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Failed to fetch free games for a GamerPower platform.", ex);
+            return new List<FreeGameNotification>();
+        }
     }
 
     private static DateTime TryParseDate(string? s)

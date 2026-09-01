@@ -29,34 +29,12 @@ public static class ViewModeSettingsStore
         return trimmed;
     }
 
-    public static ViewMode Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-                return saved;
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static ViewMode Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, ViewMode.List,
+            static (string raw, out ViewMode value) => Enum.TryParse(NormalizeLegacyName(raw), out value));
 
-        return ViewMode.List;
-    }
-
-    public static void Save(ViewMode mode)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, mode.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
+    public static void Save(ViewMode mode) =>
+        ScalarSettingStore.Save(SettingsFile, mode.ToString());
 
     /// <summary>
     /// One-time on-disk fix for legacy "Grid" persisted before ViewMode.Covers.
@@ -70,15 +48,5 @@ public static class ViewModeSettingsStore
             var normalized = NormalizeLegacyName(text);
             return Enum.TryParse<ViewMode>(normalized, out var mode) ? mode.ToString() : normalized;
         });
-    }
-
-    private static bool TryLoadFromFile(string path, out ViewMode mode)
-    {
-        mode = ViewMode.List;
-        if (!File.Exists(path))
-            return false;
-
-        var normalized = NormalizeLegacyName(File.ReadAllText(path));
-        return Enum.TryParse(normalized, out mode);
     }
 }

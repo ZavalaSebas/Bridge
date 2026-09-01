@@ -11,41 +11,9 @@ public static class TrayIconSettingsStore
     private static string SettingsFile => Config.TrayIconFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "tray-icon.txt");
 
-    public static bool Load()
-    {
-        try
-        {
-            if (TryLoadFromFile(SettingsFile, out var saved) ||
-                TryLoadFromFile(LegacySettingsFile, out saved))
-            {
-                return saved;
-            }
-        }
-        catch
-        {
-            // Corrupt/missing settings — fall back to the default.
-        }
+    public static bool Load() =>
+        ScalarSettingStore.Load(SettingsFile, LegacySettingsFile, true, bool.TryParse);
 
-        return true;
-    }
-
-    public static void Save(bool minimizeToTray)
-    {
-        try
-        {
-            Directory.CreateDirectory(Config.ConfigDirectoryPath);
-            File.WriteAllText(SettingsFile, minimizeToTray.ToString());
-        }
-        catch
-        {
-            // Persisting must never crash the app.
-        }
-    }
-
-    private static bool TryLoadFromFile(string path, out bool enabled)
-    {
-        enabled = true;
-        return File.Exists(path) &&
-            bool.TryParse(File.ReadAllText(path).Trim(), out enabled);
-    }
+    public static void Save(bool minimizeToTray) =>
+        ScalarSettingStore.Save(SettingsFile, minimizeToTray.ToString());
 }

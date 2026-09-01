@@ -29,11 +29,11 @@ public sealed class SteamGridDbClient(HttpClient httpClient, SteamGridDbSettings
             return [];
 
         using var request = CreateRequest(HttpMethod.Get, $"search/autocomplete/{Uri.EscapeDataString(term.Trim())}");
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return [];
 
-        var payload = await response.Content.ReadFromJsonAsync<SgdbResponse<SgdbGameDto[]>>(cancellationToken: cancellationToken);
+        var payload = await response.Content.ReadFromJsonAsync<SgdbResponse<SgdbGameDto[]>>(cancellationToken: cancellationToken).ConfigureAwait(false);
         if (payload?.Data is not { Length: > 0 } games)
             return [];
 
@@ -61,11 +61,11 @@ public sealed class SteamGridDbClient(HttpClient httpClient, SteamGridDbSettings
         };
 
         using var request = CreateRequest(HttpMethod.Get, $"{segment}/game/{gameId}");
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return [];
 
-        var payload = await response.Content.ReadFromJsonAsync<SgdbResponse<SgdbAssetDto[]>>(cancellationToken: cancellationToken);
+        var payload = await response.Content.ReadFromJsonAsync<SgdbResponse<SgdbAssetDto[]>>(cancellationToken: cancellationToken).ConfigureAwait(false);
         if (payload?.Data is not { Length: > 0 } assets)
             return [];
 

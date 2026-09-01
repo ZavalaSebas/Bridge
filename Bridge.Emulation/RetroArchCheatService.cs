@@ -46,7 +46,7 @@ public sealed class RetroArchCheatService
                 var localCandidatePath = GetCheatFilePathForBase(game, platform, candidate);
                 if (localCandidatePath is not null && File.Exists(localCandidatePath))
                 {
-                    return await LoadLocalAsync(localCandidatePath, ct);
+                    return await LoadLocalAsync(localCandidatePath, ct).ConfigureAwait(false);
                 }
             }
         }
@@ -55,7 +55,7 @@ public sealed class RetroArchCheatService
         var localPath = GetCheatFilePath(game, platform);
         if (localPath is not null && File.Exists(localPath))
         {
-            return await LoadLocalAsync(localPath, ct);
+            return await LoadLocalAsync(localPath, ct).ConfigureAwait(false);
         }
 
         string? lastNotFoundUrl = null;
@@ -71,7 +71,7 @@ public sealed class RetroArchCheatService
                 string content;
                 try
                 {
-                    using var response = await _httpClient.GetAsync(rawUrl, ct);
+                    using var response = await _httpClient.GetAsync(rawUrl, ct).ConfigureAwait(false);
                     if (response.StatusCode == HttpStatusCode.NotFound)
                     {
                         lastNotFoundUrl = rawUrl;
@@ -79,7 +79,7 @@ public sealed class RetroArchCheatService
                     }
 
                     response.EnsureSuccessStatusCode();
-                    content = await response.Content.ReadAsStringAsync(ct);
+                    content = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
                 {
@@ -106,8 +106,8 @@ public sealed class RetroArchCheatService
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
-                await File.WriteAllTextAsync(localPath, content, ct);
-                await File.WriteAllTextAsync(GetSourceSidecarPath(game, platform)!, blobUrl, ct);
+                await File.WriteAllTextAsync(localPath, content, ct).ConfigureAwait(false);
+                await File.WriteAllTextAsync(GetSourceSidecarPath(game, platform)!, blobUrl, ct).ConfigureAwait(false);
 
                 return new CheatsResult { Outcome = CheatFetchOutcome.Success, Cheats = parseResult.Cheats, SourceFileUrl = blobUrl };
             }
@@ -147,9 +147,9 @@ public sealed class RetroArchCheatService
     {
         var localPath = GetCheatFilePath(game, platform)
             ?? throw new InvalidOperationException($"No known RetroArch core name for platform '{platform.PlatformName}'.");
-        var content = await File.ReadAllTextAsync(localPath, ct);
+        var content = await File.ReadAllTextAsync(localPath, ct).ConfigureAwait(false);
         var updated = CheatFileParser.SetEnabled(content, cheatIndex, enabled);
-        await File.WriteAllTextAsync(localPath, updated, ct);
+        await File.WriteAllTextAsync(localPath, updated, ct).ConfigureAwait(false);
     }
 
     public string? GetCheatDirectoryIfExists(Game game, RomPlatformDefinition platform)
@@ -175,7 +175,7 @@ public sealed class RetroArchCheatService
         var retroArchConfigDirectory = RetroArchConfigPaths.ResolveConfigDirectory(retroArchExecutablePath);
         var cheatBaseName = RomCheatNameResolver.GetCheatBaseName(game);
         var overridePath = Path.Combine(retroArchConfigDirectory, coreName, $"{cheatBaseName}.cfg");
-        var existing = File.Exists(overridePath) ? await File.ReadAllTextAsync(overridePath, ct) : string.Empty;
+        var existing = File.Exists(overridePath) ? await File.ReadAllTextAsync(overridePath, ct).ConfigureAwait(false) : string.Empty;
 
         var cheatDatabasePathLine = $"cheat_database_path = \"{cheatDirectory}\"\n";
         var withCheatDatabasePath = CheatDatabasePathLinePattern.IsMatch(existing)
@@ -196,12 +196,12 @@ public sealed class RetroArchCheatService
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(overridePath)!);
-        await File.WriteAllTextAsync(overridePath, updated, ct);
+        await File.WriteAllTextAsync(overridePath, updated, ct).ConfigureAwait(false);
     }
 
     private async Task<CheatsResult> LoadLocalAsync(string localPath, CancellationToken ct)
     {
-        var content = await File.ReadAllTextAsync(localPath, ct);
+        var content = await File.ReadAllTextAsync(localPath, ct).ConfigureAwait(false);
         var parseResult = CheatFileParser.Parse(content);
         if (!parseResult.IsValid)
         {
@@ -213,7 +213,7 @@ public sealed class RetroArchCheatService
         }
 
         var sourcePath = Path.Combine(Path.GetDirectoryName(localPath)!, SourceSidecarFileName);
-        var sourceUrl = File.Exists(sourcePath) ? await File.ReadAllTextAsync(sourcePath, ct) : null;
+        var sourceUrl = File.Exists(sourcePath) ? await File.ReadAllTextAsync(sourcePath, ct).ConfigureAwait(false) : null;
 
         return new CheatsResult { Outcome = CheatFetchOutcome.Success, Cheats = parseResult.Cheats, SourceFileUrl = sourceUrl };
     }

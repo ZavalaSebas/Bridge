@@ -17,7 +17,7 @@ public sealed class RetroAchievementsClient(HttpClient httpClient)
     {
         var payload = await GetJsonAsync(
             $"{ApiBase}API_GetConsoleIDs.php?y={Uri.EscapeDataString(webApiKey)}&a=1&g=1",
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
         if (payload.ValueKind != JsonValueKind.Array)
             return EmptyConsoleMap;
@@ -45,7 +45,7 @@ public sealed class RetroAchievementsClient(HttpClient httpClient)
     {
         var url =
             $"{ApiBase}API_GetGameList.php?y={Uri.EscapeDataString(webApiKey)}&i={consoleId}&f=1&h=1";
-        var payload = await GetJsonAsync(url, cancellationToken);
+        var payload = await GetJsonAsync(url, cancellationToken).ConfigureAwait(false);
         if (payload.ValueKind != JsonValueKind.Array)
             return EmptyHashMap;
 
@@ -82,7 +82,7 @@ public sealed class RetroAchievementsClient(HttpClient httpClient)
     {
         var url =
             $"{ApiBase}API_GetGameInfoAndUserProgress.php?y={Uri.EscapeDataString(webApiKey)}&u={Uri.EscapeDataString(username)}&g={gameId}";
-        var payload = await GetJsonAsync(url, cancellationToken);
+        var payload = await GetJsonAsync(url, cancellationToken).ConfigureAwait(false);
         if (payload.ValueKind != JsonValueKind.Object)
             return null;
 
@@ -177,12 +177,12 @@ public sealed class RetroAchievementsClient(HttpClient httpClient)
 
     private async Task<JsonElement> GetJsonAsync(string url, CancellationToken cancellationToken)
     {
-        using var response = await httpClient.GetAsync(url, cancellationToken);
+        using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return default;
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
         return document.RootElement.Clone();
     }
 

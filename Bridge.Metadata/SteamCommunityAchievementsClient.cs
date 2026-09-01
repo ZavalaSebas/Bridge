@@ -22,11 +22,11 @@ public sealed partial class SteamCommunityAchievementsClient(HttpClient httpClie
         var locale = MapCommunityLanguage(language);
         var url = $"https://steamcommunity.com/stats/{appId}/achievements/?l={Uri.EscapeDataString(locale)}";
 
-        using var response = await httpClient.GetAsync(url, cancellationToken);
+        using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        var html = await response.Content.ReadAsStringAsync(cancellationToken);
+        var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(html) || !html.Contains("achieveRow", StringComparison.Ordinal))
             return null;
 

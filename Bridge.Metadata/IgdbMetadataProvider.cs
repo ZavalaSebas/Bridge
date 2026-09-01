@@ -22,7 +22,7 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
             throw new InvalidOperationException("IGDB Client ID/Secret are not configured — set them up before downloading metadata.");
         }
 
-        var token = await authClient.GetAccessTokenAsync(cancellationToken);
+        var token = await authClient.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, GamesEndpoint)
         {
@@ -36,10 +36,10 @@ public class IgdbMetadataProvider(HttpClient httpClient, IgdbSettings settings, 
         // IGDB rejects requests without a valid User-Agent (403).
         request.Headers.UserAgent.ParseAdd("Bridge/0.1");
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        var results = await response.Content.ReadFromJsonAsync<List<IgdbGame>>(cancellationToken: cancellationToken);
+        var results = await response.Content.ReadFromJsonAsync<List<IgdbGame>>(cancellationToken: cancellationToken).ConfigureAwait(false);
         var match = results?.FirstOrDefault();
         return match is null ? null : MapToGameMetadata(match);
     }

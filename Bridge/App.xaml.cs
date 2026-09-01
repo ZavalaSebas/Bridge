@@ -62,6 +62,19 @@ namespace Bridge
 
             DispatcherUnhandledException += OnDispatcherUnhandledException;
 
+            // Background/task exceptions never reach DispatcherUnhandledException,
+            // so before this they left no trace at all. Log them (best-effort)
+            // without changing process lifetime: the non-UI handler can't mark
+            // anything handled, and the task handler deliberately doesn't call
+            // SetObserved, so runtime behavior stays exactly as before.
+            AppDomain.CurrentDomain.UnhandledException += static (_, args) =>
+            {
+                if (args.ExceptionObject is Exception ex)
+                    AppLog.Error("Unhandled non-UI exception.", ex);
+            };
+            TaskScheduler.UnobservedTaskException += static (_, args) =>
+                AppLog.Error("Unobserved task exception.", args.Exception);
+
             var splash = new SplashWindow();
             splash.Show();
             splash.PumpFrame();
@@ -347,21 +360,8 @@ namespace Bridge
         // Errors from the fire-and-forget tasks (_ = ...) never reach the
         // dispatcher, but every UI-thread exception does - log it so bugs aren't
         // silently swallowed by the MessageBox-and-continue handler above.
-        internal static void LogException(Exception exception)
-        {
-            try
-            {
-                var logDirectory = Path.Combine(Config.AppDataPath, "logs");
-                Directory.CreateDirectory(logDirectory);
-                File.AppendAllText(
-                    Path.Combine(logDirectory, "errors.log"),
-                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exception}\r\n\r\n");
-            }
-            catch
-            {
-                // Logging must never take the app down.
-            }
-        }
+        internal static void LogException(Exception exception) =>
+            AppLog.Error("Unhandled UI-thread exception.", exception);
 
         private static bool IsFatalStartupException(Exception exception)
         {

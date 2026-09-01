@@ -152,10 +152,10 @@ public sealed class RetroArchService
         var definition = RomPlatformCatalog.FindByPlatformName(platform.Name)
             ?? throw new InvalidOperationException($"Bridge does not yet manage an emulator core for '{platform.Name}'.");
 
-        var emulator = await EnsureFrontendAsync(progress, cancellationToken);
+        var emulator = await EnsureFrontendAsync(progress, cancellationToken).ConfigureAwait(false);
         // A core already on disk is left alone on Play; refreshing cores to
         // the latest nightly is the explicit "Check for updates" action.
-        var corePath = await EnsureCoreAsync(definition, progress, cancellationToken);
+        var corePath = await EnsureCoreAsync(definition, progress, cancellationToken).ConfigureAwait(false);
         var profile = emulator.Profiles.FirstOrDefault(item => item.Name == platform.Name);
         if (profile is null)
         {
@@ -176,7 +176,7 @@ public sealed class RetroArchService
 
     public async Task<string> GetStatusAsync(CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
         return IsFrontendInstalled
             ? $"installed:{InstalledCoreCount}"
             : "missing";
@@ -187,17 +187,17 @@ public sealed class RetroArchService
         var managed = _emulatorRepository.GetAll().FirstOrDefault(item => item.Name == "Bridge RetroArch");
         if (managed is null)
         {
-            await EnsureFrontendAsync(progress, cancellationToken);
+            await EnsureFrontendAsync(progress, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        await EnsureFrontendAsync(progress, cancellationToken, force: true);
+        await EnsureFrontendAsync(progress, cancellationToken, force: true).ConfigureAwait(false);
         foreach (var profile in managed.Profiles.Where(profile => !string.IsNullOrWhiteSpace(profile.CorePath)))
         {
             var definition = RomPlatformCatalog.FindByPlatformName(profile.Name);
             if (definition is not null)
             {
-                await EnsureCoreAsync(definition, progress, cancellationToken, force: true);
+                await EnsureCoreAsync(definition, progress, cancellationToken, force: true).ConfigureAwait(false);
             }
         }
     }
@@ -212,7 +212,7 @@ public sealed class RetroArchService
             return GetOrCreateManagedEmulator(executable);
         }
 
-        await _installGate.WaitAsync(cancellationToken);
+        await _installGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             // Re-check under the gate: a concurrent Play may have just installed it.
@@ -225,7 +225,7 @@ public sealed class RetroArchService
             try
             {
                 progress?.Report(new EmulatorProgress("Finding the latest RetroArch release..."));
-                asset = await GetLatestWindowsAssetAsync(cancellationToken);
+                asset = await GetLatestWindowsAssetAsync(cancellationToken).ConfigureAwait(false);
             }
             catch when (File.Exists(executable) && !force)
             {
@@ -238,7 +238,7 @@ public sealed class RetroArchService
             // version string is the change signal: same resolved version → already
             // current, keep the existing install.
             if (File.Exists(executable) && File.Exists(_paths.VersionMarkerPath) &&
-                string.Equals(await File.ReadAllTextAsync(_paths.VersionMarkerPath, cancellationToken), asset.Version, StringComparison.OrdinalIgnoreCase))
+                string.Equals(await File.ReadAllTextAsync(_paths.VersionMarkerPath, cancellationToken).ConfigureAwait(false), asset.Version, StringComparison.OrdinalIgnoreCase))
             {
                 return GetOrCreateManagedEmulator(executable);
             }
@@ -246,7 +246,7 @@ public sealed class RetroArchService
             progress?.Report(new EmulatorProgress($"Downloading RetroArch {asset.Version}...", 0));
             try
             {
-                var archive = await DownloadAsync(asset.Url, FrontendHosts, asset.Size, progress, cancellationToken);
+                var archive = await DownloadAsync(asset.Url, FrontendHosts, asset.Size, progress, cancellationToken).ConfigureAwait(false);
                 try
                 {
                     progress?.Report(new EmulatorProgress("Installing RetroArch...", null));
@@ -264,13 +264,13 @@ public sealed class RetroArchService
                             var nestedExecutable = Directory.EnumerateFiles(staging, "retroarch.exe", SearchOption.AllDirectories).FirstOrDefault()
                                 ?? throw new InvalidOperationException("The RetroArch archive did not contain retroarch.exe.");
                             ReplaceInstallation(Path.GetDirectoryName(nestedExecutable)!);
-                        }, cancellationToken);
+                        }, cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {
                         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
                     }
-                    await File.WriteAllTextAsync(_paths.VersionMarkerPath, asset.Version, cancellationToken);
+                    await File.WriteAllTextAsync(_paths.VersionMarkerPath, asset.Version, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -303,7 +303,7 @@ public sealed class RetroArchService
             return corePath;
         }
 
-        await _installGate.WaitAsync(cancellationToken);
+        await _installGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             // Re-check under the gate: a concurrent Play may have just installed it.
@@ -318,7 +318,7 @@ public sealed class RetroArchService
                 // Core archives on the buildbot are named after the DLL
                 // ("mgba_libretro.dll.zip") — the ".dll" must stay in the URL.
                 var url = $"https://buildbot.libretro.com/nightly/windows/x86_64/latest/{definition.CoreFileName}.zip";
-                var archive = await DownloadAsync(url, CoreHosts, 64L * 1024 * 1024, progress, cancellationToken);
+                var archive = await DownloadAsync(url, CoreHosts, 64L * 1024 * 1024, progress, cancellationToken).ConfigureAwait(false);
                 try
                 {
                     Directory.CreateDirectory(coresDirectory);
@@ -371,9 +371,9 @@ public sealed class RetroArchService
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/libretro/RetroArch/releases/latest");
         request.Headers.UserAgent.ParseAdd("Bridge/0.2");
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken));
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
         var tagName = document.RootElement.GetProperty("tag_name").GetString();
         var version = tagName?.TrimStart('v');
         if (string.IsNullOrWhiteSpace(version))
@@ -398,7 +398,7 @@ public sealed class RetroArchService
                 throw new InvalidOperationException($"Bridge refused an untrusted emulator download host: {current.Host}.");
             }
 
-            using var response = await DownloadClient.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await DownloadClient.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             if (response.StatusCode is HttpStatusCode.Moved or HttpStatusCode.Redirect or HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect)
             {
                 current = response.Headers.Location is { IsAbsoluteUri: true } absolute ? absolute : new Uri(current, response.Headers.Location!);
@@ -419,16 +419,16 @@ public sealed class RetroArchService
             long written = 0;
             try
             {
-                await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 await using var output = File.Create(destination);
                 var buffer = new byte[81920];
                 int read;
                 var total = response.Content.Headers.ContentLength ?? 0;
-                while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
+                while ((read = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
                 {
                     written += read;
                     if (written > maximumBytes) throw new InvalidOperationException("The emulator download exceeded Bridge's safety limit.");
-                    await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                     if (total > 0 && written % (4L * 1024 * 1024) < buffer.Length)
                     {
                         progress?.Report(new EmulatorProgress(

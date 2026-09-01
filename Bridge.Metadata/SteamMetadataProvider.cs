@@ -26,11 +26,11 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
 
     public async Task<GameMetadata?> SearchAsync(string gameName, CancellationToken cancellationToken = default)
     {
-        var appId = await SearchAppIdAsync(gameName, cancellationToken);
+        var appId = await SearchAppIdAsync(gameName, cancellationToken).ConfigureAwait(false);
         if (appId is null)
             return null;
 
-        return await GetByAppIdAsync(appId.Value.ToString(), cancellationToken);
+        return await GetByAppIdAsync(appId.Value.ToString(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<GameMetadata?> GetByAppIdAsync(string appId, CancellationToken cancellationToken = default)
@@ -38,14 +38,14 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         if (!uint.TryParse(appId, out var steamAppId))
             return null;
 
-        var appDetails = await GetAppDetailsAsync(steamAppId, cancellationToken);
+        var appDetails = await GetAppDetailsAsync(steamAppId, cancellationToken).ConfigureAwait(false);
         if (appDetails is null)
             return null;
 
         int? communityScore = null;
         try
         {
-            var reviews = await GetAppReviewsAsync(steamAppId, cancellationToken);
+            var reviews = await GetAppReviewsAsync(steamAppId, cancellationToken).ConfigureAwait(false);
             if (reviews is { TotalReviews: > 0 } &&
                 reviews.TotalPositive + reviews.TotalNegative > 0)
             {
@@ -65,7 +65,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         try
         {
             var url = string.Format(SearchUrl, Uri.EscapeDataString(gameName));
-            var html = await httpClient.GetStringAsync(url, cancellationToken);
+            var html = await httpClient.GetStringAsync(url, cancellationToken).ConfigureAwait(false);
 
             var queryWords = Tokenize(gameName);
             var matches = SearchEntryRegex().Matches(html);
@@ -134,7 +134,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         try
         {
             var url = string.Format(AppDetailsUrl, appId);
-            var response = await httpClient.GetFromJsonAsync<Dictionary<string, SteamAppDetailsResponse>>(url, cancellationToken: cancellationToken);
+            var response = await httpClient.GetFromJsonAsync<Dictionary<string, SteamAppDetailsResponse>>(url, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (response is null || !response.TryGetValue(appId.ToString(), out var entry))
                 return null;
@@ -153,7 +153,7 @@ public partial class SteamMetadataProvider(HttpClient httpClient) : IGameMetadat
         try
         {
             var url = string.Format(AppReviewsUrl, appId);
-            var response = await httpClient.GetFromJsonAsync<SteamAppReviewsResponse>(url, cancellationToken: cancellationToken);
+            var response = await httpClient.GetFromJsonAsync<SteamAppReviewsResponse>(url, cancellationToken: cancellationToken).ConfigureAwait(false);
             return response is { Success: 1 } ? response.QuerySummary : null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

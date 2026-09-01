@@ -25,7 +25,7 @@ These are **mandatory practices** for all contributions.
 ### Error Handling
 
 - Never swallow exceptions silently (no empty catch blocks)
-- Log failures through `App.LogException` (writes to `errors.log` under AppData) — Bridge does not use `Microsoft.Extensions.Logging` today
+- Log failures through `AppLog` (`Info`/`Warn`/`Error`) — or `App.LogException`, which wraps `AppLog.Error` — writing to `bridge.log` under AppData; Bridge does not use `Microsoft.Extensions.Logging` today
 - User-facing errors should notify the user appropriately (via `IDialogService` / `MessageDialogWindow`)
 - Use custom exceptions for domain-specific errors only when they add real value (Bridge currently uses built-in `InvalidOperationException`/`NotSupportedException` in most places)
 
@@ -33,7 +33,7 @@ These are **mandatory practices** for all contributions.
 
 Bridge uses a lightweight file logger, not `ILogger<T>`:
 
-- Call `App.LogException(ex, context)` from catch blocks in background work (`TaskExtensions.FireAndForget`, metadata sync, image cache, etc.)
+- Call `AppLog.Warn`/`AppLog.Error` (or `App.LogException(ex)`, which wraps `AppLog.Error`) from catch blocks in background work (`TaskExtensions.FireAndForget`, metadata sync, image cache, etc.)
 - Keep user-visible failures in dialogs or `StatusMessage` where appropriate
 - Do not add `Microsoft.Extensions.Logging` unless there is a concrete need — update DEVELOPMENT.md and this file if that changes
 

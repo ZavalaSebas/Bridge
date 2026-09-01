@@ -10,17 +10,8 @@ public static class InstalledScanFolderSettingsStore
     private static string SettingsFile => Config.InstalledScanFolderFilePath;
     private static string LegacySettingsFile => Path.Combine(Config.AppDataPath, "installed-scan-folder.txt");
 
-    public static string? Load()
-    {
-        try
-        {
-            return TryLoadFromFile(SettingsFile) ?? TryLoadFromFile(LegacySettingsFile);
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    public static string? Load() =>
+        ScalarSettingStore.Load<string?>(SettingsFile, LegacySettingsFile, null, TryParseFolder);
 
     public static void Save(string? folderPath)
     {
@@ -39,18 +30,15 @@ public static class InstalledScanFolderSettingsStore
 
             File.WriteAllText(SettingsFile, folderPath.Trim());
         }
-        catch
+        catch (Exception ex)
         {
-            // Persisting must never crash the app.
+            AppLog.Warn($"Failed to save setting to '{SettingsFile}'.", ex);
         }
     }
 
-    private static string? TryLoadFromFile(string path)
+    private static bool TryParseFolder(string raw, out string? value)
     {
-        if (!File.Exists(path))
-            return null;
-
-        var value = File.ReadAllText(path).Trim();
-        return string.IsNullOrWhiteSpace(value) ? null : value;
+        value = string.IsNullOrWhiteSpace(raw) ? null : raw;
+        return value is not null;
     }
 }
