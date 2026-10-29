@@ -16,6 +16,7 @@
     <!-- CVE-2025-6965: pin the 3.x bundle (SourceGear.sqlite3). 3.0.5 brings
          SQLite 3.53.x via SourceGear.sqlite3 3.53.4. Verified by EF round-trip
          and migration tests. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
   </ItemGroup>
 
